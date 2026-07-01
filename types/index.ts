@@ -126,6 +126,14 @@ export interface OnlineExam {
   my_student_count?: number
   formation_id?: number
   formation_name?: string
+  my_attempt?: {
+    id: number
+    status: string
+    score: number | null
+    feedback?: string | null
+    corrected_at?: string | null
+    submitted_at?: string | null
+  } | null
 }
 
 export interface ExamAttempt {

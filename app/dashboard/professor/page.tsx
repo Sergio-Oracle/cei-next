@@ -5,132 +5,121 @@ import Link from 'next/link'
 import api from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
-import type { OnlineExam } from '@/types'
 
 interface ProfDashboardAPI {
-  my_subjects: number
+  my_subjects:      number
   papers_corrected: number
 }
 
 export default function ProfessorDashboard() {
   const { user } = useAuth()
   const { error } = useToast()
-  const [dashData, setDashData] = useState<ProfDashboardAPI | null>(null)
-  const [activeExams, setActiveExams] = useState<OnlineExam[]>([])
+  const [data, setData]     = useState<ProfDashboardAPI | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, []) // eslint-disable-line
 
   async function load() {
     setLoading(true)
     try {
-      const [resDash, resExams] = await Promise.allSettled([
-        api.get<ProfDashboardAPI>('/api/professor/dashboard'),
-        api.get<OnlineExam[]>('/api/online_exams'),
-      ])
-
-      if (resDash.status === 'fulfilled') {
-        setDashData(resDash.value)
-      }
-
-      if (resExams.status === 'fulfilled') {
-        const exams = Array.isArray(resExams.value) ? resExams.value : (resExams.value as any).exams ?? []
-        setActiveExams(exams.filter((e: OnlineExam) => e.status === 'active'))
-      }
-    } catch { error('Erreur chargement') }
+      const res = await api.get<ProfDashboardAPI>('/api/professor/dashboard')
+      setData(res)
+    } catch { error('Erreur de chargement') }
     finally { setLoading(false) }
   }
 
-  const stats = [
-    { label: 'Mes sujets',         value: dashData?.my_subjects ?? 0,       icon: 'fa-file-lines',       color: '#3b82f6', href: '/dashboard/professor/subjects' },
-    { label: 'Examens actifs',     value: activeExams.length,               icon: 'fa-monitor-waveform', color: '#10b981', href: '/dashboard/professor/exams' },
-    { label: 'Corrections faites', value: dashData?.papers_corrected ?? 0,  icon: 'fa-pen-ruler',        color: '#f59e0b', href: '/dashboard/professor/papers' },
-  ]
-
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <h2><i className="fa-solid fa-chalkboard-teacher" style={{ marginRight: 10, color: 'var(--primary)' }} />Tableau de bord</h2>
-          <p>Bienvenue, {user?.full_name}</p>
+      {/* ── Header ───────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+        <div style={{ background: '#3b82f6', width: 46, height: 46, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <i className="fas fa-chart-line" style={{ color: 'white', fontSize: 20 }} />
         </div>
-        <Link href="/dashboard/professor/exams/new" className="btn btn-primary">
-          <i className="fa-solid fa-plus" /> Nouvel examen
-        </Link>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Tableau de bord</h2>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Bienvenue, <strong>{user?.full_name}</strong></p>
+        </div>
       </div>
 
-      <div className="grid">
-        {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="stat-card" style={{ borderColor: '#e2e8f0' }}>
-              <div style={{ height: 20, background: '#f1f5f9', borderRadius: 4, marginBottom: 8 }} />
-              <div style={{ height: 36, background: '#f1f5f9', borderRadius: 4 }} />
-            </div>
-          ))
-        ) : stats.map((s, i) => (
-          <Link key={i} href={s.href} style={{ textDecoration: 'none' }}>
-            <div className="stat-card" style={{ borderColor: s.color, cursor: 'pointer' }}>
-              <div className="stat-label">
-                <i className={`fa-solid ${s.icon}`} style={{ color: s.color }} /> {s.label}
-              </div>
-              <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
+      {/* ── Stat tiles ───────────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
+        <StatTile
+          icon="fa-book"
+          label="Mes Sujets"
+          value={loading ? '…' : (data?.my_subjects ?? 0)}
+          color="#3b82f6"
+          href="/dashboard/professor/subjects"
+        />
+        <StatTile
+          icon="fa-check-circle"
+          label="Copies Corrigées"
+          value={loading ? '…' : (data?.papers_corrected ?? 0)}
+          color="#10b981"
+          href="/dashboard/professor/papers"
+        />
+      </div>
+
+      {/* ── Actions rapides ──────────────────────────────────────────── */}
+      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', marginBottom: 28 }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <i className="fas fa-rocket" style={{ color: '#f59e0b' }} />
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Actions Rapides</h3>
+        </div>
+        <div style={{ padding: '20px', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+          <Link href="/dashboard/professor/subjects"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#3b82f6', color: 'white', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            <i className="fas fa-plus-circle" style={{ fontSize: 16 }} />
+            Créer un Sujet
+          </Link>
+          <Link href="/dashboard/professor/papers"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#10b981', color: 'white', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            <i className="fas fa-pencil-alt" style={{ fontSize: 16 }} />
+            Corriger des Copies
+          </Link>
+        </div>
+      </div>
+
+      {/* ── Liens rapides ────────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+        {QUICK_LINKS.map(a => (
+          <Link key={a.href} href={a.href} style={{ textDecoration: 'none' }}>
+            <div
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 14px', textAlign: 'center', cursor: 'pointer', transition: 'box-shadow .2s, transform .2s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(0,0,0,.1)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}>
+              <i className={`fas ${a.icon}`} style={{ fontSize: 26, color: a.color, marginBottom: 10, display: 'block' }} />
+              <div style={{ color: a.color, fontWeight: 600, fontSize: 13 }}>{a.label}</div>
             </div>
           </Link>
         ))}
       </div>
+    </div>
+  )
+}
 
-      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 24 }}>
-        {/* Examens actifs */}
-        <div className="card">
-          <div className="card-header">
-            <h3><i className="fa-solid fa-play" style={{ color: 'var(--success)' }} /> Examens en cours</h3>
-            <Link href="/dashboard/professor/exams" className="btn btn-sm btn-secondary">Voir tout</Link>
-          </div>
-          {loading ? <div style={{ textAlign: 'center', padding: 20 }}><i className="fa-solid fa-spinner spin" /></div>
-          : activeExams.length === 0 ? (
-            <p className="empty-message">Aucun examen actif</p>
-          ) : activeExams.slice(0, 5).map(exam => (
-            <div key={exam.id} className="reclamation-item">
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600 }}>{exam.title}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  <i className="fa-solid fa-users" /> {exam.attempts_count ?? 0} participants · {exam.duration_minutes} min
-                </div>
-              </div>
-              <Link href={`/proctor/${exam.id}`} className="btn btn-sm btn-success">
-                <i className="fa-solid fa-eye" /> Surveiller
-              </Link>
-            </div>
-          ))}
+const QUICK_LINKS = [
+  { href: '/dashboard/professor/exams',         icon: 'fa-laptop-code',  label: 'Examens en Ligne',   color: '#3b82f6' },
+  { href: '/dashboard/professor/subjects',      icon: 'fa-book',         label: 'Mes Sujets',          color: '#3b82f6' },
+  { href: '/dashboard/professor/questions',     icon: 'fa-database',     label: 'Banque Questions',    color: '#8b5cf6' },
+  { href: '/dashboard/professor/analytics',     icon: 'fa-chart-bar',    label: 'Résultats',           color: '#10b981' },
+  { href: '/dashboard/professor/reclamations',  icon: 'fa-exclamation-triangle', label: 'Réclamations', color: '#f59e0b' },
+  { href: '/dashboard/professor/notifications', icon: 'fa-bell',         label: 'Notifications',       color: '#64748b' },
+]
+
+function StatTile({ icon, label, value, color, href }: { icon: string; label: string; value: string | number; color: string; href: string }) {
+  return (
+    <Link href={href} style={{ textDecoration: 'none' }}>
+      <div style={{ background: 'var(--surface)', border: `1px solid var(--border)`, borderRadius: 14, padding: '22px 20px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', transition: 'box-shadow .2s, transform .2s', borderTop: `4px solid ${color}` }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(0,0,0,.1)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}>
+        <div style={{ width: 48, height: 48, background: `${color}15`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <i className={`fas ${icon}`} style={{ color, fontSize: 20 }} />
         </div>
-
-        {/* Actions rapides */}
-        <div className="card">
-          <div className="card-header"><h3><i className="fa-solid fa-bolt" style={{ color: 'var(--warning)' }} /> Actions rapides</h3></div>
-          <div style={{ padding: '8px 0' }}>
-            {[
-              { href: '/dashboard/professor/subjects', icon: 'fa-file-circle-plus', label: 'Créer un sujet', desc: 'Nouveau sujet ou upload PDF' },
-              { href: '/dashboard/professor/exams/new', icon: 'fa-plus-circle', label: 'Nouvel examen', desc: 'Planifier un examen en ligne' },
-              { href: '/dashboard/professor/papers', icon: 'fa-pen-ruler', label: 'Corriger des copies', desc: 'Correction manuelle ou automatique' },
-              { href: '/dashboard/professor/questions', icon: 'fa-question-circle', label: 'Banque de questions', desc: 'Gérer vos questions réutilisables' },
-              { href: '/dashboard/professor/analytics', icon: 'fa-chart-bar', label: 'Analytiques', desc: 'Statistiques et résultats' },
-              { href: '/dashboard/professor/reclamations', icon: 'fa-comment-exclamation', label: 'Réclamations', desc: 'Traiter les réclamations des étudiants' },
-            ].map((a, i) => (
-              <Link key={i} href={a.href} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 24px', borderBottom: '1px solid var(--border)', textDecoration: 'none' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--background)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                <div style={{ width: 36, height: 36, background: 'var(--primary)15', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <i className={`fa-solid ${a.icon}`} style={{ color: 'var(--primary)' }} />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>{a.label}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.desc}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
+        <div>
+          <div style={{ fontSize: 32, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
+          <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>{label}</div>
         </div>
       </div>
-    </div>
+    </Link>
   )
 }
