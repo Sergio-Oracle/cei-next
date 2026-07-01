@@ -7,6 +7,7 @@ import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam } from '@/types'
 import ExamDetailModal from './ExamDetailModal'
 import ExamCopiesModal from './ExamCopiesModal'
+import ProctorsManageModal from './ProctorsManageModal'
 
 /* ── Helpers ───────────────────────────────────────────────────── */
 type ExamStatus = 'draft' | 'scheduled' | 'active' | 'closed'
@@ -57,6 +58,7 @@ export default function AdminExamsPage() {
   const [detailExam,  setDetailExam]  = useState<OnlineExam | null>(null)
   const [copiesExamId, setCopiesExamId] = useState<number | null>(null)
   const [copiesTitle,  setCopiesTitle]  = useState('')
+  const [proctorsExamId, setProctorsExamId] = useState<number | null>(null)
 
   /* Rallonger modal */
   const [extendId,   setExtendId]   = useState<number | null>(null)
@@ -255,14 +257,17 @@ export default function AdminExamsPage() {
                     </div>
                   </div>
 
-                  {/* Indicateurs de sécurité */}
+                  {/* Indicateurs de sécurité — couleurs et logique identiques à la plateforme d'origine */}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                    <SecPill icon="fa-arrows-rotate" value={`${exam.max_tab_switches ?? 2} chgts`}    title="Changements d'onglet max"  color="#6366f1" bg="#eef2ff" />
-                    <SecPill icon="fa-face-smile"    value={`${exam.max_no_face_count ?? 10} visages`} title="Seuil détection visage"    color="#0891b2" bg="#ecfeff" />
-                    {exam.enable_copy_paste  && <SecPill icon="fa-copy"  value="C/C"        title="Copier-Coller autorisé"    color="#059669" bg="#f0fdf4" />}
-                    {exam.enable_right_click && <SecPill icon="fa-mouse" value="Clic droit" title="Clic droit autorisé"        color="#059669" bg="#f0fdf4" />}
-                    {exam.auto_correct       && <SecPill icon="fa-robot" value="IA auto"    title="Correction automatique IA" color="#7c3aed" bg="#f5f3ff" />}
-                    <SecPill icon="fa-users" value={`${exam.attempts_count ?? 0}`} title="Participants" color="#64748b" bg="#f8fafc" />
+                    <SecPill icon="fa-exchange-alt" value={`${exam.max_tab_switches ?? 2} chgt${(exam.max_tab_switches ?? 2) !== 1 ? 's' : ''}`} title="Seuil changements de fenêtre" color="#c2410c" bg="#fff7ed" />
+                    {(exam.max_no_face_count == null || exam.max_no_face_count >= 0) && (
+                      <SecPill icon="fa-eye-slash" value={`${exam.max_no_face_count ?? 10} visage${(exam.max_no_face_count ?? 10) !== 1 ? 's' : ''}`} title="Seuil visage absent" color="#ef4444" bg="#fef2f2" />
+                    )}
+                    {exam.ban_on_devtools     && <SecPill icon="fa-terminal" value="Dev ban"   title="Bannissement si outils dev"   color="#1d4ed8" bg="#eff6ff" />}
+                    {!exam.enable_copy_paste  && <SecPill icon="fa-ban"      value="C/C"        title="Copier-Coller interdit"       color="#64748b" bg="#f1f5f9" />}
+                    {!exam.enable_right_click && <SecPill icon="fa-ban"      value="Clic droit" title="Clic droit interdit"          color="#64748b" bg="#f1f5f9" />}
+                    {exam.auto_correct        && <SecPill icon="fa-robot"    value="IA auto"    title="Correction automatique par IA activée" color="#15803d" bg="#f0fdf4" />}
+                    <SecPill icon="fa-users" value={`${exam.attempts_count ?? 0}`} title="Participants" color="#2563eb" bg="#eff6ff" />
                   </div>
                 </div>
 
@@ -284,10 +289,10 @@ export default function AdminExamsPage() {
 
                   {/* Surveillants (planifié ou actif) */}
                   {(isScheduled || isActive) && (
-                    <Link href={`/dashboard/admin/exams/${exam.id}?tab=proctors`}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#92400e', textDecoration: 'none' }}>
+                    <button onClick={() => setProctorsExamId(exam.id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#92400e', cursor: 'pointer' }}>
                       <i className="fas fa-user-shield" />Surveillants
-                    </Link>
+                    </button>
                   )}
 
                   {/* Activer (brouillon ou planifié) */}
@@ -395,6 +400,14 @@ export default function AdminExamsPage() {
           examId={copiesExamId}
           examTitle={copiesTitle}
           onClose={() => setCopiesExamId(null)}
+        />
+      )}
+
+      {/* ── Modal Surveillants ── */}
+      {proctorsExamId !== null && (
+        <ProctorsManageModal
+          examId={proctorsExamId}
+          onClose={() => setProctorsExamId(null)}
         />
       )}
     </div>

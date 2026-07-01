@@ -114,7 +114,7 @@ export default function SurveillantDashboard() {
         </div>
 
         <div className="stat-card" style={{ borderColor: '#3b82f6' }}>
-          <div className="stat-icon" style={{ background: '#f5f3ff' }}>
+          <div className="stat-icon" style={{ background: '#eff6ff' }}>
             <i className="fas fa-user-graduate" style={{ color: '#3b82f6' }} />
           </div>
           <div>

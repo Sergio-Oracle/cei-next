@@ -334,7 +334,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
             {/* Toolbar */}
             {!loading && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-                <ToolBtn icon="fa-chart-bar"       label="Statistiques" bg="#ede9fe" color="#2563eb" onClick={() => setShowStats(true)} />
+                <ToolBtn icon="fa-chart-bar"       label="Statistiques" bg="#eff6ff" color="#2563eb" onClick={() => setShowStats(true)} />
                 <ToolBtn icon="fa-file-csv"         label={csvDownloading ? 'Export…' : 'Export CSV'}   bg="#d1fae5" color="#059669" onClick={exportCsv} />
                 <ToolBtn icon="fa-magnifying-glass" label="Plagiat"      bg="#fee2e2" color="#ef4444" onClick={() => setShowPlagiat(true)} />
                 <ToolBtn icon="fa-list-check"       label="Bilan"        bg="#e0f2fe" color="#0369a1" onClick={() => setShowBilan(true)} />
@@ -467,7 +467,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                                           <i className="fas fa-eye" />Voir
                                         </button>}
                                     <button onClick={() => setManualAttempt(a)}
-                                      style={{ background: '#ede9fe', color: '#2563eb', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize: 10, cursor: 'pointer' }} title="Correction manuelle">
+                                      style={{ background: '#eff6ff', color: '#2563eb', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize: 10, cursor: 'pointer' }} title="Correction manuelle">
                                       <i className="fas fa-pen" />
                                     </button>
                                     <button onClick={() => openIntegrityReport(a.id, a.student_name || '')}

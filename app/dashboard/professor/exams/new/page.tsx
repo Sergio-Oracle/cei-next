@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
@@ -9,199 +9,246 @@ import type { Subject, User } from '@/types'
 export default function NewExamPage() {
   const router = useRouter()
   const { success, error } = useToast()
-  const [subjects, setSubjects] = useState<Subject[]>([])
-  const [proctors, setProctors] = useState<User[]>([])
+  const [subjects, setSubjects]   = useState<Subject[]>([])
+  const [proctors, setProctors]   = useState<User[]>([])
   const [selectedProctors, setSelectedProctors] = useState<number[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading]     = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
   const [form, setForm] = useState({
-    title: '',
-    subject_id: '',
-    instructions: '',
-    duration_minutes: '60',
-    start_time: '',
-    end_time: '',
-    max_tab_switches: '3',
-    enable_copy_paste: false,
+    subject_id:        '',
+    title:              '',
+    instructions:       '',
+    start_time:         '',
+    end_time:           '',
+    max_tab_switches:   2,
+    max_no_face_count:  10,
+    ban_on_devtools:    true,
+    enable_copy_paste:  false,
     enable_right_click: false,
-    camera_required: false,
-    proctoring_enabled: true,
-    auto_correct: false,
+    auto_correct:       false,
   })
 
   useEffect(() => {
     Promise.all([
-      api.get<Subject[]>('/api/subjects').then(r => setSubjects(Array.isArray(r) ? r : (r as any).subjects ?? [])),
-      api.get<User[]>('/api/users/proctors').then(r => setProctors(Array.isArray(r) ? r : (r as any).users ?? [])).catch(() => {}),
+      api.get<any>('/api/subjects').then(r => setSubjects(Array.isArray(r) ? r : r.subjects ?? [])),
+      api.get<any>('/api/users/proctors').then(r => setProctors(Array.isArray(r) ? r : r.users ?? [])).catch(() => {}),
     ]).finally(() => setLoading(false))
   }, [])
+
+  function set(key: string, val: any) {
+    setForm(f => ({ ...f, [key]: val }))
+  }
 
   function toggleProctor(id: number) {
     setSelectedProctors(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
   }
 
+  function calcDuration() {
+    if (!form.start_time || !form.end_time) return null
+    const diff = new Date(form.end_time).getTime() - new Date(form.start_time).getTime()
+    return diff > 0 ? Math.round(diff / 60000) : null
+  }
+
   async function handleSubmit() {
+    if (!form.subject_id) { error('Sélectionnez un sujet'); return }
     if (!form.title.trim()) { error('Le titre est requis'); return }
-    if (!form.start_time) { error('La date de début est requise'); return }
-    if (!form.end_time) { error('La date de fin est requise'); return }
+    if (!form.start_time || !form.end_time) { error('Renseignez les dates de début et de fin'); return }
+
+    // UTC en ajoutant :00Z à la valeur brute du datetime-local (identique à la plateforme originale)
+    const startTime = form.start_time + ':00Z'
+    const endTime   = form.end_time   + ':00Z'
+    if (startTime >= endTime) { error('La date de fin doit être après la date de début'); return }
+
     setSubmitting(true)
     try {
-      const body: any = {
-        title: form.title,
-        instructions: form.instructions,
-        duration_minutes: Number(form.duration_minutes),
-        start_time: form.start_time,
-        end_time: form.end_time,
-        max_tab_switches: Number(form.max_tab_switches),
+      const res = await api.post<{ success: boolean; exam: { id: number; duration_minutes: number } }>('/api/online_exams', {
+        subject_id:        Number(form.subject_id),
+        title:             form.title,
+        instructions:      form.instructions,
+        start_time:        startTime,
+        end_time:          endTime,
+        max_tab_switches:  form.max_tab_switches,
+        max_no_face_count: form.max_no_face_count,
+        ban_on_devtools:   form.ban_on_devtools,
         enable_copy_paste: form.enable_copy_paste,
         enable_right_click: form.enable_right_click,
-        camera_required: form.camera_required,
-        proctoring_enabled: form.proctoring_enabled,
-        auto_correct: form.auto_correct,
-      }
-      if (form.subject_id) body.subject_id = Number(form.subject_id)
+        auto_correct:      form.auto_correct,
+      })
+      const examId = res.exam?.id
 
-      const res = await api.post<{ id: number; exam?: any }>('/api/online_exams', body)
-      const examId = res.id ?? (res as any).exam?.id
-
-      // Assign proctors
+      // L'API n'accepte qu'un seul proctor_id par appel — un POST par surveillant sélectionné
       if (examId && selectedProctors.length > 0) {
-        try {
-          await api.post(`/api/online_exams/${examId}/proctors`, { proctor_ids: selectedProctors })
-        } catch {
-          // Non-blocking
-        }
+        await Promise.all(
+          selectedProctors.map(pid =>
+            api.post(`/api/online_exams/${examId}/proctors`, { proctor_id: pid }).catch(() => {})
+          )
+        )
       }
 
-      success('Examen créé avec succès')
-      router.push('/dashboard/professor/exams')
+      success(`Examen créé — Durée : ${res.exam?.duration_minutes ?? '?'} min`)
+      router.push(`/dashboard/professor/exams`)
     } catch (e: any) {
-      error(e.message || 'Erreur création')
+      error(e.message || 'Erreur lors de la création')
     } finally {
       setSubmitting(false)
     }
   }
 
-  function set(key: string, value: any) {
-    setForm(p => ({ ...p, [key]: value }))
-  }
+  const duration = calcDuration()
 
   return (
     <div>
-      <div className="page-header">
+      {/* Page header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+        <div style={{ background: '#3b82f6', width: 42, height: 42, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <i className="fas fa-plus" style={{ color: 'white', fontSize: 16 }} />
+        </div>
         <div>
-          <h2><i className="fa-solid fa-plus-circle" style={{ marginRight: 10, color: 'var(--primary)' }} />Nouvel examen</h2>
-          <p>Créer et configurer un examen en ligne</p>
+          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Créer un Examen en Ligne</h2>
+          <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Configurez les paramètres de votre examen</p>
         </div>
       </div>
 
-      <div className="grid" style={{ gridTemplateColumns: '2fr 1fr', alignItems: 'start' }}>
-        <div>
-          {/* Informations générales */}
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div className="card-header"><h3><i className="fa-solid fa-circle-info" /> Informations générales</h3></div>
-            <div style={{ padding: '0 24px 24px' }}>
-              <div className="form-group">
-                <label>Titre *</label>
-                <input className="form-control" value={form.title} onChange={e => set('title', e.target.value)} placeholder="Titre de l'examen" />
-              </div>
-              <div className="form-group">
-                <label>Sujet associé</label>
-                <select className="form-control" value={form.subject_id} onChange={e => set('subject_id', e.target.value)}>
-                  <option value="">-- Aucun sujet --</option>
-                  {subjects.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Instructions</label>
-                <textarea className="form-control" rows={4} value={form.instructions} onChange={e => set('instructions', e.target.value)} placeholder="Instructions pour les étudiants..." />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Durée (minutes)</label>
-                  <input type="number" className="form-control" value={form.duration_minutes} onChange={e => set('duration_minutes', e.target.value)} min="10" max="480" />
-                </div>
-                <div className="form-group">
-                  <label>Changements d'onglet max</label>
-                  <input type="number" className="form-control" value={form.max_tab_switches} onChange={e => set('max_tab_switches', e.target.value)} min="0" max="10" />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Date de début *</label>
-                  <input type="datetime-local" className="form-control" value={form.start_time} onChange={e => set('start_time', e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Date de fin *</label>
-                  <input type="datetime-local" className="form-control" value={form.end_time} onChange={e => set('end_time', e.target.value)} />
-                </div>
-              </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'start' }}>
+
+        {/* Colonne principale */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 24 }}>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
+            <div style={{ gridColumn: '1 / -1', marginBottom: 18 }}>
+              <label style={lbl}><i className="fas fa-book" /> Sujet Associé <span style={{ color: '#ef4444' }}>*</span></label>
+              <select value={form.subject_id} onChange={e => set('subject_id', e.target.value)} style={inp}>
+                <option value="">-- Sélectionner un sujet --</option>
+                {subjects.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
+              </select>
+            </div>
+
+            <div style={{ gridColumn: '1 / -1', marginBottom: 18 }}>
+              <label style={lbl}><i className="fas fa-heading" /> Titre de l'Examen <span style={{ color: '#ef4444' }}>*</span></label>
+              <input type="text" value={form.title} onChange={e => set('title', e.target.value)} placeholder="Ex: Examen Final Blockchain" style={inp} />
+            </div>
+
+            <div style={{ marginBottom: 18 }}>
+              <label style={lbl}><i className="fas fa-calendar-plus" /> Début <span style={{ color: '#ef4444' }}>*</span></label>
+              <input type="datetime-local" value={form.start_time} onChange={e => set('start_time', e.target.value)} style={inp} />
+            </div>
+
+            <div style={{ marginBottom: 18 }}>
+              <label style={lbl}><i className="fas fa-calendar-minus" /> Fin <span style={{ color: '#ef4444' }}>*</span></label>
+              <input type="datetime-local" value={form.end_time} onChange={e => set('end_time', e.target.value)} style={inp} />
+              {duration !== null
+                ? <small style={{ color: '#3b82f6', fontSize: 12, display: 'block', marginTop: 4 }}><i className="fas fa-stopwatch" /> Durée : {duration} minutes</small>
+                : <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>Durée calculée automatiquement</small>
+              }
+            </div>
+
+            <div style={{ gridColumn: '1 / -1', marginBottom: 4 }}>
+              <label style={lbl}><i className="fas fa-align-left" /> Instructions</label>
+              <textarea value={form.instructions} onChange={e => set('instructions', e.target.value)} rows={3} placeholder="Consignes pour les étudiants..." style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }} />
             </div>
           </div>
 
-          {/* Options */}
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div className="card-header"><h3><i className="fa-solid fa-gear" /> Options de sécurité</h3></div>
-            <div style={{ padding: '0 24px 24px' }}>
-              {[
-                { key: 'proctoring_enabled', label: 'Surveillance activée', icon: 'fa-eye' },
-                { key: 'camera_required', label: 'Caméra obligatoire', icon: 'fa-video' },
-                { key: 'auto_correct', label: 'Correction automatique', icon: 'fa-robot' },
-                { key: 'enable_copy_paste', label: 'Autoriser copier/coller', icon: 'fa-clipboard' },
-                { key: 'enable_right_click', label: 'Autoriser clic droit', icon: 'fa-computer-mouse' },
-              ].map(opt => (
-                <div key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-                  <i className={`fa-solid ${opt.icon}`} style={{ color: 'var(--text-muted)', width: 16 }} />
-                  <span style={{ flex: 1 }}>{opt.label}</span>
-                  <label style={{ position: 'relative', display: 'inline-block', width: 44, height: 24 }}>
-                    <input type="checkbox" style={{ opacity: 0, width: 0, height: 0 }} checked={form[opt.key as keyof typeof form] as boolean} onChange={e => set(opt.key, e.target.checked)} />
-                    <span style={{
-                      position: 'absolute', cursor: 'pointer', inset: 0, borderRadius: 24,
-                      background: form[opt.key as keyof typeof form] ? 'var(--primary)' : '#cbd5e1',
-                      transition: '0.3s'
-                    }}>
-                      <span style={{ position: 'absolute', content: '', height: 16, width: 16, left: form[opt.key as keyof typeof form] ? 24 : 4, bottom: 4, background: 'white', borderRadius: '50%', transition: '0.3s' }} />
-                    </span>
-                  </label>
-                </div>
-              ))}
+          {/* Paramètres de Sécurité */}
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '16px 18px', marginTop: 18, marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <i className="fas fa-shield-alt" style={{ color: '#1d4ed8', fontSize: 15 }} />
+              <span style={{ fontWeight: 700, color: '#0f172a', fontSize: 14 }}>Paramètres de Sécurité</span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ ...lbl, fontSize: 13 }}><i className="fas fa-exchange-alt" style={{ color: '#f59e0b' }} /> Seuil — changements de fenêtre</label>
+                <input type="number" min={0} max={20} value={form.max_tab_switches} onChange={e => set('max_tab_switches', Number(e.target.value))} style={inp} />
+                <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>Bannissement après ce nombre (0 = aucun toléré)</small>
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ ...lbl, fontSize: 13 }}><i className="fas fa-eye-slash" style={{ color: '#ef4444' }} /> Seuil — visage absent (caméra)</label>
+                <input type="number" min={-1} max={100} value={form.max_no_face_count} onChange={e => set('max_no_face_count', Number(e.target.value))} style={inp} />
+                <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>Bannissement après N détections sans visage (-1 = désactivé)</small>
+              </div>
+            </div>
+
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 14px', marginBottom: 14, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <input type="checkbox" id="p_ban_devtools" checked={form.ban_on_devtools} onChange={e => set('ban_on_devtools', e.target.checked)} style={{ width: 'auto', marginTop: 2, flexShrink: 0, accentColor: '#dc2626' }} />
+              <div>
+                <label htmlFor="p_ban_devtools" style={{ fontSize: 13, fontWeight: 600, color: '#dc2626', cursor: 'pointer', margin: 0, display: 'block' }}>
+                  <i className="fas fa-terminal" /> Bannir immédiatement si outils développeur ouverts
+                </label>
+                <small style={{ color: '#64748b' }}>Exclusion instantanée en cas de tentative d'accès aux outils développeur (F12, Ctrl+Shift+I…)</small>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#475569' }}>
+                <input type="checkbox" checked={form.enable_copy_paste} onChange={e => set('enable_copy_paste', e.target.checked)} style={{ width: 'auto' }} />
+                <span>Autoriser Copier/Coller</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#475569' }}>
+                <input type="checkbox" checked={form.enable_right_click} onChange={e => set('enable_right_click', e.target.checked)} style={{ width: 'auto' }} />
+                <span>Autoriser Clic Droit</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Correction IA */}
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '16px 18px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <input type="checkbox" id="p_auto_correct" checked={form.auto_correct} onChange={e => set('auto_correct', e.target.checked)} style={{ width: 'auto', marginTop: 3, flexShrink: 0, accentColor: '#15803d' }} />
+            <div>
+              <label htmlFor="p_auto_correct" style={{ fontSize: 13, fontWeight: 600, color: '#15803d', cursor: 'pointer', margin: 0, display: 'block' }}>
+                <i className="fas fa-robot" /> Activer la correction automatique par IA
+              </label>
+              <small style={{ color: '#64748b', lineHeight: 1.5, display: 'block', marginTop: 3 }}>
+                Dès qu'un étudiant soumet sa copie, l'IA la corrige automatiquement.<br />
+                <strong>Désactivé par défaut</strong> — vous pouvez toujours réviser ou corriger manuellement après.
+              </small>
             </div>
           </div>
         </div>
 
         {/* Surveillants */}
-        <div className="card" style={{ position: 'sticky', top: 16 }}>
-          <div className="card-header"><h3><i className="fa-solid fa-shield-halved" /> Surveillants</h3></div>
-          <div style={{ padding: '0 16px 16px', maxHeight: 300, overflowY: 'auto' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, position: 'sticky', top: 16 }}>
+          <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="fas fa-shield-halved" style={{ color: '#1d4ed8', fontSize: 14 }} />
+            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>Surveillants</span>
+          </div>
+          <div style={{ padding: '8px 18px', maxHeight: 280, overflowY: 'auto' }}>
             {loading ? (
-              <div style={{ textAlign: 'center', padding: 20 }}><i className="fa-solid fa-spinner spin" /></div>
+              <div style={{ textAlign: 'center', padding: 20 }}><i className="fas fa-spinner fa-spin" /></div>
             ) : proctors.length === 0 ? (
-              <p className="empty-message">Aucun surveillant disponible</p>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>Aucun surveillant disponible</p>
             ) : proctors.map(p => (
-              <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}>
-                <input type="checkbox" checked={selectedProctors.includes(p.id)} onChange={() => toggleProctor(p.id)} />
+              <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}>
+                <input type="checkbox" checked={selectedProctors.includes(p.id)} onChange={() => toggleProctor(p.id)} style={{ width: 'auto' }} />
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>{p.full_name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.email}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{p.full_name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.email}</div>
                 </div>
               </label>
             ))}
           </div>
-
-          <div style={{ padding: 16, borderTop: '1px solid var(--border)' }}>
-            <button className="btn btn-primary btn-block" onClick={handleSubmit} disabled={submitting}>
+          <div style={{ padding: 16, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button onClick={handleSubmit} disabled={submitting} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 18px', background: submitting ? '#93c5fd' : '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer' }}>
               {submitting
-                ? <><i className="fa-solid fa-spinner spin" /> Création...</>
-                : <><i className="fa-solid fa-check" /> Créer l'examen</>
+                ? <><i className="fas fa-spinner fa-spin" /> Création...</>
+                : <><i className="fas fa-check" /> Créer l'Examen</>
               }
             </button>
-            <button className="btn btn-secondary btn-block" style={{ marginTop: 8 }} onClick={() => router.back()} disabled={submitting}>
-              Annuler
+            <button onClick={() => router.back()} disabled={submitting} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 18px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, fontWeight: 600, color: 'var(--text)', cursor: 'pointer' }}>
+              <i className="fas fa-times" /> Annuler
             </button>
           </div>
         </div>
       </div>
     </div>
   )
+}
+
+const lbl: CSSProperties = {
+  display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 6,
+}
+const inp: CSSProperties = {
+  width: '100%', padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8,
+  fontSize: 14, color: 'var(--text)', background: 'var(--surface)', boxSizing: 'border-box',
+  outline: 'none',
 }

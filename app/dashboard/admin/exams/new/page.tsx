@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, FormEvent, CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
@@ -15,22 +15,21 @@ export default function NewExamPage() {
   const [loading, setLoading] = useState(false)
 
   const [form, setForm] = useState({
-    subject_id: '',
-    title: '',
-    instructions: '',
-    start_time: '',
-    end_time: '',
-    max_tab_switches: 2,
+    subject_id:      '',
+    title:           '',
+    instructions:    '',
+    start_time:      '',
+    end_time:        '',
+    max_tab_switches:  2,
     max_no_face_count: 10,
+    ban_on_devtools:   true,
     enable_copy_paste: false,
     enable_right_click: false,
-    randomize_questions: false,
-    ban_on_devtools: true,
-    auto_correct: false,
+    auto_correct:      false,
   })
 
   useEffect(() => {
-    api.get<Subject[]>('/api/subjects').then(data => {
+    api.get<any>('/api/subjects').then(data => {
       setSubjects(Array.isArray(data) ? data : (data as any).subjects ?? [])
     }).catch(() => {})
   }, [])
@@ -39,117 +38,193 @@ export default function NewExamPage() {
     setForm(f => ({ ...f, [key]: val }))
   }
 
+  function calcDuration() {
+    if (!form.start_time || !form.end_time) return null
+    const diff = new Date(form.end_time).getTime() - new Date(form.start_time).getTime()
+    return diff > 0 ? Math.round(diff / 60000) : null
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!form.subject_id) { error('Sélectionnez un sujet'); return }
-    if (!form.start_time || !form.end_time) { error('Renseignez les dates'); return }
+    if (!form.start_time || !form.end_time) { error('Renseignez les dates de début et de fin'); return }
+
+    // Envoi UTC en ajoutant :00Z à la valeur brute du datetime-local (identique à la plateforme originale)
+    const startTime = form.start_time + ':00Z'
+    const endTime   = form.end_time   + ':00Z'
+    if (startTime >= endTime) { error('La date de fin doit être après la date de début'); return }
+
     setLoading(true)
     try {
-      const payload = {
-        ...form,
-        subject_id: Number(form.subject_id),
-        start_time: new Date(form.start_time).toISOString(),
-        end_time:   new Date(form.end_time).toISOString(),
-      }
-      const res = await api.post<{ exam: { id: number } }>('/api/online_exams', payload)
-      success('Examen créé')
-      router.push(`/dashboard/admin/exams/${(res as any).exam?.id ?? ''}`)
+      const res = await api.post<{ success: boolean; exam: { id: number; duration_minutes: number } }>('/api/online_exams', {
+        subject_id:        Number(form.subject_id),
+        title:             form.title,
+        instructions:      form.instructions,
+        start_time:        startTime,
+        end_time:          endTime,
+        max_tab_switches:  form.max_tab_switches,
+        max_no_face_count: form.max_no_face_count,
+        ban_on_devtools:   form.ban_on_devtools,
+        enable_copy_paste: form.enable_copy_paste,
+        enable_right_click: form.enable_right_click,
+        auto_correct:      form.auto_correct,
+      })
+      success(`Examen créé — Durée : ${res.exam?.duration_minutes ?? '?'} min`)
+      router.push('/dashboard/admin/exams')
     } catch (e: any) {
-      error(e.message || 'Erreur création')
+      error(e.message || 'Erreur lors de la création')
     } finally {
       setLoading(false)
     }
   }
 
+  const duration = calcDuration()
+
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <h2><i className="fa-solid fa-plus-circle" style={{ marginRight: 10, color: 'var(--primary)' }} />Nouvel examen</h2>
-          <p>Créer et configurer un examen en ligne</p>
+      {/* Page header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ background: '#3b82f6', width: 42, height: 42, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <i className="fas fa-plus" style={{ color: 'white', fontSize: 16 }} />
+          </div>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Créer un Examen en Ligne</h2>
+            <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Configurez les paramètres de votre examen</p>
+          </div>
         </div>
-        <Link href="/dashboard/admin/exams" className="btn btn-secondary">
-          <i className="fa-solid fa-arrow-left" /> Retour
+        <Link href="/dashboard/admin/exams" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}>
+          <i className="fas fa-arrow-left" /> Retour
         </Link>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        {/* Main card */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 24, marginBottom: 16 }}>
 
-          {/* Informations de base */}
-          <div className="card" style={{ gridColumn: '1 / -1' }}>
-            <h3 className="card-title"><i className="fa-solid fa-info-circle" /> Informations de base</h3>
-            <div className="form-group">
-              <label>Sujet <span style={{ color: 'var(--danger)' }}>*</span></label>
-              <select value={form.subject_id} onChange={e => set('subject_id', e.target.value)} required>
-                <option value="">— Sélectionner un sujet —</option>
+          {/* Grid : Sujet + Titre + Dates + Instructions */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
+
+            {/* Sujet */}
+            <div style={{ gridColumn: '1 / -1', marginBottom: 18 }}>
+              <label style={lbl}><i className="fas fa-book" /> Sujet Associé <span style={{ color: '#ef4444' }}>*</span></label>
+              <select value={form.subject_id} onChange={e => set('subject_id', e.target.value)} required style={inp}>
+                <option value="">-- Sélectionner un sujet --</option>
                 {subjects.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
               </select>
             </div>
-            <div className="form-group">
-              <label>Titre de l'examen <span style={{ color: 'var(--danger)' }}>*</span></label>
-              <input type="text" value={form.title} onChange={e => set('title', e.target.value)} placeholder="Ex: Examen de Mathématiques — S1 2026" required />
+
+            {/* Titre */}
+            <div style={{ gridColumn: '1 / -1', marginBottom: 18 }}>
+              <label style={lbl}><i className="fas fa-heading" /> Titre de l'Examen <span style={{ color: '#ef4444' }}>*</span></label>
+              <input type="text" value={form.title} onChange={e => set('title', e.target.value)} placeholder="Ex: Examen Final Blockchain" required style={inp} />
             </div>
-            <div className="form-group">
-              <label>Instructions (optionnel)</label>
-              <textarea value={form.instructions} onChange={e => set('instructions', e.target.value)} rows={3} placeholder="Instructions spécifiques pour les étudiants..." style={{ width: '100%', padding: '10px 14px', border: '2px solid var(--border)', borderRadius: 'var(--radius)', fontFamily: 'inherit', fontSize: 14, resize: 'vertical' }} />
+
+            {/* Début */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={lbl}><i className="fas fa-calendar-plus" /> Début <span style={{ color: '#ef4444' }}>*</span></label>
+              <input type="datetime-local" value={form.start_time} onChange={e => set('start_time', e.target.value)} required style={inp} />
+            </div>
+
+            {/* Fin */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={lbl}><i className="fas fa-calendar-minus" /> Fin <span style={{ color: '#ef4444' }}>*</span></label>
+              <input type="datetime-local" value={form.end_time} onChange={e => set('end_time', e.target.value)} required style={inp} />
+              {duration !== null
+                ? <small style={{ color: '#3b82f6', fontSize: 12, display: 'block', marginTop: 4 }}><i className="fas fa-stopwatch" /> Durée : {duration} minutes</small>
+                : <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>Durée calculée automatiquement</small>
+              }
+            </div>
+
+            {/* Instructions */}
+            <div style={{ gridColumn: '1 / -1', marginBottom: 4 }}>
+              <label style={lbl}><i className="fas fa-align-left" /> Instructions</label>
+              <textarea value={form.instructions} onChange={e => set('instructions', e.target.value)} rows={3} placeholder="Consignes pour les étudiants..." style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }} />
             </div>
           </div>
 
-          {/* Horaires */}
-          <div className="card">
-            <h3 className="card-title"><i className="fa-solid fa-clock" /> Horaires</h3>
-            <div className="form-group">
-              <label>Date et heure de début <span style={{ color: 'var(--danger)' }}>*</span></label>
-              <input type="datetime-local" value={form.start_time} onChange={e => set('start_time', e.target.value)} required />
+          {/* Paramètres de Sécurité */}
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '16px 18px', marginTop: 18, marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <i className="fas fa-shield-alt" style={{ color: '#1d4ed8', fontSize: 15 }} />
+              <span style={{ fontWeight: 700, color: '#0f172a', fontSize: 14 }}>Paramètres de Sécurité</span>
             </div>
-            <div className="form-group">
-              <label>Date et heure de fin <span style={{ color: 'var(--danger)' }}>*</span></label>
-              <input type="datetime-local" value={form.end_time} onChange={e => set('end_time', e.target.value)} required />
-            </div>
-            {form.start_time && form.end_time && new Date(form.end_time) > new Date(form.start_time) && (
-              <div className="alert alert-info" style={{ fontSize: 13 }}>
-                <i className="fa-solid fa-stopwatch" /> Durée calculée : {Math.round((new Date(form.end_time).getTime() - new Date(form.start_time).getTime()) / 60000)} minutes
+
+            {/* Seuils */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ ...lbl, fontSize: 13 }}><i className="fas fa-exchange-alt" style={{ color: '#f59e0b' }} /> Seuil — changements de fenêtre</label>
+                <input type="number" min={0} max={20} value={form.max_tab_switches} onChange={e => set('max_tab_switches', Number(e.target.value))} style={inp} />
+                <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>Bannissement après ce nombre (0 = aucun toléré)</small>
               </div>
-            )}
-          </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ ...lbl, fontSize: 13 }}><i className="fas fa-eye-slash" style={{ color: '#ef4444' }} /> Seuil — visage absent (caméra)</label>
+                <input type="number" min={-1} max={100} value={form.max_no_face_count} onChange={e => set('max_no_face_count', Number(e.target.value))} style={inp} />
+                <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>Bannissement après N détections sans visage (-1 = désactivé)</small>
+              </div>
+            </div>
 
-          {/* Sécurité */}
-          <div className="card">
-            <h3 className="card-title"><i className="fa-solid fa-shield-alt" /> Sécurité anti-triche</h3>
-            <div className="form-group">
-              <label>Changements d'onglet max</label>
-              <input type="number" min={0} max={20} value={form.max_tab_switches} onChange={e => set('max_tab_switches', Number(e.target.value))} />
-            </div>
-            <div className="form-group">
-              <label>Alertes caméra max (absence visage)</label>
-              <input type="number" min={0} max={50} value={form.max_no_face_count} onChange={e => set('max_no_face_count', Number(e.target.value))} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[
-                { key: 'ban_on_devtools', label: 'Bannir sur ouverture DevTools' },
-                { key: 'enable_copy_paste', label: 'Autoriser copier/coller' },
-                { key: 'enable_right_click', label: 'Autoriser clic droit' },
-                { key: 'randomize_questions', label: 'Mélanger les questions' },
-                { key: 'auto_correct', label: 'Correction IA automatique' },
-              ].map(({ key, label }) => (
-                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14 }}>
-                  <input type="checkbox" checked={(form as any)[key]} onChange={e => set(key, e.target.checked)} style={{ width: 16, height: 16 }} />
-                  {label}
+            {/* DevTools ban */}
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 14px', marginBottom: 14, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <input type="checkbox" id="ban_devtools" checked={form.ban_on_devtools} onChange={e => set('ban_on_devtools', e.target.checked)} style={{ width: 'auto', marginTop: 2, flexShrink: 0, accentColor: '#dc2626' }} />
+              <div>
+                <label htmlFor="ban_devtools" style={{ fontSize: 13, fontWeight: 600, color: '#dc2626', cursor: 'pointer', margin: 0, display: 'block' }}>
+                  <i className="fas fa-terminal" /> Bannir immédiatement si outils développeur ouverts
                 </label>
-              ))}
+                <small style={{ color: '#64748b' }}>Exclusion instantanée en cas de tentative d'accès aux outils développeur (F12, Ctrl+Shift+I…)</small>
+              </div>
+            </div>
+
+            {/* Copy-paste + Right-click */}
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#475569' }}>
+                <input type="checkbox" checked={form.enable_copy_paste} onChange={e => set('enable_copy_paste', e.target.checked)} style={{ width: 'auto' }} />
+                <span>Autoriser Copier/Coller</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#475569' }}>
+                <input type="checkbox" checked={form.enable_right_click} onChange={e => set('enable_right_click', e.target.checked)} style={{ width: 'auto' }} />
+                <span>Autoriser Clic Droit</span>
+              </label>
             </div>
           </div>
 
+          {/* Correction IA */}
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '16px 18px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <input type="checkbox" id="auto_correct" checked={form.auto_correct} onChange={e => set('auto_correct', e.target.checked)} style={{ width: 'auto', marginTop: 3, flexShrink: 0, accentColor: '#15803d' }} />
+            <div>
+              <label htmlFor="auto_correct" style={{ fontSize: 13, fontWeight: 600, color: '#15803d', cursor: 'pointer', margin: 0, display: 'block' }}>
+                <i className="fas fa-robot" /> Activer la correction automatique par IA
+              </label>
+              <small style={{ color: '#64748b', lineHeight: 1.5, display: 'block', marginTop: 3 }}>
+                Dès qu'un étudiant soumet sa copie, l'IA la corrige automatiquement.<br />
+                <strong>Désactivé par défaut</strong> — le professeur peut toujours réviser ou corriger manuellement après.
+              </small>
+            </div>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? <><i className="fa-solid fa-spinner spin" /> Création...</> : <><i className="fa-solid fa-check" /> Créer l'examen</>}
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <Link href="/dashboard/admin/exams" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}>
+            <i className="fas fa-times" /> Annuler
+          </Link>
+          <button type="submit" disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: loading ? '#93c5fd' : '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}>
+            {loading
+              ? <><i className="fas fa-spinner fa-spin" /> Création...</>
+              : <><i className="fas fa-check" /> Créer l'Examen</>
+            }
           </button>
-          <Link href="/dashboard/admin/exams" className="btn btn-secondary">Annuler</Link>
         </div>
       </form>
     </div>
   )
+}
+
+const lbl: CSSProperties = {
+  display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 6,
+}
+const inp: CSSProperties = {
+  width: '100%', padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8,
+  fontSize: 14, color: 'var(--text)', background: 'var(--surface)', boxSizing: 'border-box',
+  outline: 'none',
 }

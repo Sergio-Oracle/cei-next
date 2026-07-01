@@ -33,7 +33,7 @@ const STATUS_CFG: Record<string, { label: string; color: string; bg: string }> =
 const STUDENT_STATUS: Record<string, [string, string, string]> = {
   in_progress:    ['En cours',     '#3b82f6', '#dbeafe'],
   submitted:      ['Soumis',       '#10b981', '#dcfce7'],
-  auto_submitted: ['Auto-soumis',  '#3b82f6', '#f3e8ff'],
+  auto_submitted: ['Auto-soumis',  '#3b82f6', '#dbeafe'],
   banned:         ['Exclu',        '#ef4444', '#fef2f2'],
   not_started:    ['Pas commencé', '#94a3b8', '#f1f5f9'],
 }
