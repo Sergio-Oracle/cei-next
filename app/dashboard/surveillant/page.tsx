@@ -113,9 +113,9 @@ export default function SurveillantDashboard() {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {activeExams.map(ex => (
-              <Link key={ex.id} href={`/proctor/${ex.id}`}
+              <Link key={ex.id} href={`/proctor/monitor/${ex.id}`}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#10b981', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-                <i className="fas fa-eye" /> Surveiller maintenant
+                <i className="fas fa-shield-alt" /> Surveiller maintenant
                 {activeExams.length > 1 && <span style={{ opacity: .8 }}>— {ex.title}</span>}
               </Link>
             ))}
@@ -160,9 +160,9 @@ export default function SurveillantDashboard() {
                     </span>
                   </div>
                   {isActive && (
-                    <Link href={`/proctor/${exam.id}`}
+                    <Link href={`/proctor/monitor/${exam.id}`}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: '#10b981', color: 'white', borderRadius: 8, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
-                      <i className="fas fa-eye" /> Accéder à la salle
+                      <i className="fas fa-shield-alt" /> Surveiller
                     </Link>
                   )}
                 </div>

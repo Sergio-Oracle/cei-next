@@ -4,123 +4,216 @@ import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 
-interface SubjectStat {
-  subject_id: number
-  subject_title: string
-  total_papers: number
-  average_score: number
-  pass_rate: number
-  min_score: number
-  max_score: number
+interface ExamStat { title: string; avg_score: number; pass_rate: number; corrected: number }
+interface RecentCorrection { student_name: string; exam_title: string; score: number | null; corrected_at: string }
+interface Analytics {
+  total_exams?: number; total_attempts?: number; total_submitted?: number; total_corrected?: number
+  overall_avg?: number | null; overall_pass_rate?: number | null
+  status_counts?: Record<string, number>
+  top_exams?: ExamStat[]; bottom_exams?: ExamStat[]; recent_corrections?: RecentCorrection[]
 }
 
-interface Analytics {
-  subjects_stats?: SubjectStat[]
-  total_exams?: number
-  total_papers?: number
-  overall_average?: number
-  overall_pass_rate?: number
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  active: { label: 'Actif', color: '#10b981' }, scheduled: { label: 'Planifié', color: '#3b82f6' },
+  closed: { label: 'Terminé', color: '#64748b' }, draft: { label: 'Brouillon', color: '#f59e0b' },
+}
+
+function sc(v: number | null | undefined) {
+  if (v == null) return '#64748b'
+  return v >= 14 ? '#10b981' : v >= 10 ? '#3b82f6' : v >= 7 ? '#f59e0b' : '#ef4444'
 }
 
 export default function ProfessorAnalyticsPage() {
   const { error } = useToast()
-  const [analytics, setAnalytics] = useState<Analytics>({})
+  const [data, setData] = useState<Analytics>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { load() }, [])
 
   async function load() {
     setLoading(true)
-    try {
-      const res = await api.get<Analytics>('/api/professor/analytics')
-      setAnalytics(res)
-    } catch { error('Erreur chargement analytiques') }
+    try { setData(await api.get<Analytics>('/api/professor/analytics')) }
+    catch { error('Erreur de chargement des analytiques') }
     finally { setLoading(false) }
   }
 
-  function scoreColor(score: number) {
-    if (score >= 14) return '#10b981'
-    if (score >= 10) return '#3b82f6'
-    if (score >= 7) return '#f59e0b'
-    return '#ef4444'
-  }
-
-  function passColor(rate: number) {
-    if (rate >= 80) return '#10b981'
-    if (rate >= 60) return '#3b82f6'
-    if (rate >= 40) return '#f59e0b'
-    return '#ef4444'
-  }
+  const statusCounts = data.status_counts ?? {}
+  const passRate = data.overall_pass_rate ?? 0
+  const passDeg = Math.round(Math.min(passRate, 100) / 100 * 360)
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: 24 }}>
         <div>
-          <h2><i className="fa-solid fa-chart-bar" style={{ marginRight: 10, color: 'var(--primary)' }} />Analytiques</h2>
-          <p>Statistiques et résultats de vos examens</p>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <i className="fas fa-chart-bar" style={{ color: '#2563eb' }} />Analytique
+          </h2>
+          <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize: 14, display: 'flex', flexWrap: 'wrap', gap: '0 14px' }}>
+            {Object.entries(statusCounts).map(([s, n]) => {
+              const st = STATUS_LABELS[s] ?? { label: s, color: '#94a3b8' }
+              return (
+                <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: st.color, display: 'inline-block' }} />
+                  {st.label} <strong>{n}</strong>
+                </span>
+              )
+            })}
+          </p>
         </div>
-        <button className="btn btn-secondary" onClick={load}>
-          <i className="fa-solid fa-rotate" /> Actualiser
-        </button>
+        <button className="btn btn-secondary" onClick={load}><i className="fas fa-rotate" /> Actualiser</button>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 60 }}><i className="fa-solid fa-spinner spin" style={{ fontSize: 32 }} /></div>
+        <div style={{ textAlign: 'center', padding: '80px 24px' }}>
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 32, color: 'var(--primary)', display: 'block', marginBottom: 14 }} />
+          <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>Chargement…</span>
+        </div>
       ) : (
         <>
-          {/* Global stats */}
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
+          {/* ── KPI Cards ── */}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
             {[
-              { label: 'Examens',        value: analytics.total_exams ?? 0,          icon: 'fa-monitor-waveform', color: '#3b82f6' },
-              { label: 'Copies',         value: analytics.total_papers ?? 0,         icon: 'fa-file-pen',         color: '#3b82f6' },
-              { label: 'Moy. générale',  value: analytics.overall_average != null ? `${analytics.overall_average.toFixed(1)}/20` : '—', icon: 'fa-star', color: scoreColor(analytics.overall_average ?? 0) },
-              { label: 'Taux réussite',  value: analytics.overall_pass_rate != null ? `${analytics.overall_pass_rate.toFixed(0)}%` : '—', icon: 'fa-trophy', color: passColor(analytics.overall_pass_rate ?? 0) },
-            ].map((s, i) => (
-              <div key={i} className="stat-card" style={{ borderColor: s.color }}>
-                <div className="stat-label"><i className={`fa-solid ${s.icon}`} style={{ color: s.color }} /> {s.label}</div>
-                <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
+              { icon: 'fa-laptop-code',     label: 'Examens',          value: data.total_exams ?? 0,      color: '#2563eb', bg: '#dbeafe' },
+              { icon: 'fa-users',            label: 'Tentatives',       value: data.total_attempts ?? 0,   color: '#0ea5e9', bg: '#e0f2fe' },
+              { icon: 'fa-paper-plane',      label: 'Soumissions',      value: data.total_submitted ?? 0,  color: '#2563eb', bg: '#dbeafe' },
+              { icon: 'fa-clipboard-check',  label: 'Copies corrigées', value: data.total_corrected ?? 0,  color: '#10b981', bg: '#d1fae5' },
+              { icon: 'fa-star',             label: 'Moyenne globale',  value: data.overall_avg != null ? `${data.overall_avg}/20` : '—', color: sc(data.overall_avg), bg: '#fef3c7' },
+              { icon: 'fa-trophy',           label: 'Taux de réussite', value: data.overall_pass_rate != null ? `${data.overall_pass_rate}%` : '—', color: passRate >= 50 ? '#10b981' : '#f59e0b', bg: '#d1fae5' },
+            ].map(({ icon, label, value, color, bg }) => (
+              <div key={label} style={{ flex: '1 1 130px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                  <i className={`fas ${icon}`} style={{ color, fontSize: 14 }} />
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 800, color }}>{value}</div>
+                <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 2 }}>{label}</div>
               </div>
             ))}
           </div>
 
-          {/* Par sujet */}
-          {(analytics.subjects_stats ?? []).length > 0 && (
-            <div className="card">
-              <div className="card-header"><h3><i className="fa-solid fa-chart-column" /> Statistiques par sujet</h3></div>
-              <div className="table-responsive">
-                <table>
-                  <thead>
-                    <tr><th>Sujet</th><th>Copies</th><th>Moyenne</th><th>Min</th><th>Max</th><th>Taux réussite</th></tr>
-                  </thead>
-                  <tbody>
-                    {(analytics.subjects_stats ?? []).map(s => (
-                      <tr key={s.subject_id}>
-                        <td><div style={{ fontWeight: 600 }}>{s.subject_title}</div></td>
-                        <td>{s.total_papers}</td>
-                        <td>
-                          <strong style={{ color: scoreColor(s.average_score) }}>{s.average_score?.toFixed(1)}/20</strong>
-                        </td>
-                        <td style={{ color: '#ef4444' }}>{s.min_score?.toFixed(1)}</td>
-                        <td style={{ color: '#10b981' }}>{s.max_score?.toFixed(1)}</td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ flex: 1, height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden', minWidth: 80 }}>
-                              <div style={{ height: '100%', width: `${Math.min(s.pass_rate ?? 0, 100)}%`, background: passColor(s.pass_rate ?? 0), borderRadius: 4 }} />
-                            </div>
-                            <span style={{ fontSize: 13, color: passColor(s.pass_rate ?? 0), fontWeight: 600 }}>{s.pass_rate?.toFixed(0)}%</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {/* ── Graphiques CSS ── */}
+          {(data.total_corrected ?? 0) > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+              {/* Réussite / Échec — donut CSS */}
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text)', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <i className="fas fa-chart-pie" style={{ color: '#10b981' }} />Réussite / Échec
+                </p>
+                <div style={{ position: 'relative', width: 140, height: 140, borderRadius: '50%',
+                  background: `conic-gradient(#10b981 ${passDeg}deg, #ef4444 ${passDeg}deg)` }}>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+                    width: 88, height: 88, borderRadius: '50%', background: 'var(--surface)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 20, fontWeight: 800, color: passRate >= 50 ? '#10b981' : '#ef4444' }}>{passRate}%</span>
+                    <span style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase' }}>réussite</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 14 }}>
+                  <span style={{ fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 2, background: '#10b981', display: 'inline-block' }} />Réussite (≥10)
+                  </span>
+                  <span style={{ fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 2, background: '#ef4444', display: 'inline-block' }} />Échec (&lt;10)
+                  </span>
+                </div>
+              </div>
+
+              {/* Examens — synthèse */}
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 20px' }}>
+                <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <i className="fas fa-chart-bar" style={{ color: '#2563eb' }} />Synthèse des examens
+                </p>
+                {[
+                  { label: 'Soumissions / Tentatives', ratio: data.total_attempts ? (data.total_submitted ?? 0) / data.total_attempts : 0, a: data.total_submitted ?? 0, b: data.total_attempts ?? 0, color: '#2563eb' },
+                  { label: 'Copies corrigées / Soumissions', ratio: data.total_submitted ? (data.total_corrected ?? 0) / data.total_submitted : 0, a: data.total_corrected ?? 0, b: data.total_submitted ?? 0, color: '#10b981' },
+                  { label: 'Taux de réussite global', ratio: passRate / 100, a: passRate, b: 100, color: passRate >= 50 ? '#10b981' : '#f59e0b' },
+                ].map(({ label, ratio, a, b, color }) => (
+                  <div key={label} style={{ marginBottom: 14 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                      <span style={{ color: '#64748b' }}>{label}</span>
+                      <span style={{ fontWeight: 700, color }}>{a}/{b}</span>
+                    </div>
+                    <div style={{ height: 8, background: '#f1f5f9', borderRadius: 99 }}>
+                      <div style={{ width: `${Math.min(ratio * 100, 100)}%`, height: '100%', background: color, borderRadius: 99, transition: 'width .4s' }} />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {(analytics.subjects_stats ?? []).length === 0 && (
-            <div className="card">
-              <p className="empty-message">Aucune donnée analytique disponible pour le moment</p>
+          {/* ── Top / Bottom examens ── */}
+          {((data.top_exams ?? []).length > 0 || (data.bottom_exams ?? []).length > 0) && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
+                <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <i className="fas fa-trophy" style={{ color: '#f59e0b' }} />Meilleurs examens
+                </h3>
+                {(data.top_exams ?? []).length === 0
+                  ? <p style={{ color: '#94a3b8', fontSize: 12 }}>Min. 2 copies corrigées requises</p>
+                  : <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
+                    {(data.top_exams ?? []).map((exam, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '8px 10px', fontSize: 13 }}><span style={{ marginRight: 6 }}>{['🥇','🥈','🥉'][i] ?? '•'}</span>{exam.title}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: 700, fontSize: 13, color: sc(exam.avg_score), whiteSpace: 'nowrap' }}>{exam.avg_score}/20</td>
+                        <td style={{ padding: '8px 10px', fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>{exam.pass_rate}%</td>
+                      </tr>
+                    ))}
+                  </tbody></table>}
+              </div>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
+                <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <i className="fas fa-arrow-down" style={{ color: '#ef4444' }} />Examens à améliorer
+                </h3>
+                {(data.bottom_exams ?? []).length === 0
+                  ? <p style={{ color: '#94a3b8', fontSize: 12 }}>Min. 2 copies corrigées requises</p>
+                  : <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
+                    {(data.bottom_exams ?? []).map((exam, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '8px 10px', fontSize: 13 }}><i className="fas fa-arrow-down" style={{ color: '#ef4444', marginRight: 6, fontSize: 10 }} />{exam.title}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: 700, fontSize: 13, color: sc(exam.avg_score), whiteSpace: 'nowrap' }}>{exam.avg_score}/20</td>
+                        <td style={{ padding: '8px 10px', fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>{exam.pass_rate}%</td>
+                      </tr>
+                    ))}
+                  </tbody></table>}
+              </div>
+            </div>
+          )}
+
+          {/* ── Corrections récentes ── */}
+          {(data.recent_corrections ?? []).length > 0 && (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
+              <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <i className="fas fa-clock" style={{ color: '#2563eb' }} />Corrections récentes (10 dernières)
+              </h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f8fafc' }}>
+                  {['Étudiant','Examen','Note','Date'].map(h => (
+                    <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {(data.recent_corrections ?? []).map((c, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '7px 10px', fontSize: 13, fontWeight: 600 }}>{c.student_name}</td>
+                      <td style={{ padding: '7px 10px', fontSize: 13, color: '#64748b' }}>{c.exam_title}</td>
+                      <td style={{ padding: '7px 10px', fontSize: 13, fontWeight: 700, color: sc(c.score) }}>
+                        {c.score != null ? `${c.score}/20` : <span style={{ color: '#94a3b8', fontWeight: 400 }}>—</span>}
+                      </td>
+                      <td style={{ padding: '7px 10px', fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                        {c.corrected_at ? new Date(c.corrected_at).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {!data.total_exams && (
+            <div className="card" style={{ textAlign: 'center', padding: 60 }}>
+              <i className="fas fa-chart-bar" style={{ fontSize: 40, color: 'var(--text-muted)', display: 'block', marginBottom: 14, opacity: .3 }} />
+              <p style={{ margin: '0 0 6px', fontWeight: 600 }}>Aucune donnée analytique disponible</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Créez des examens en ligne et corrigez des copies pour voir les statistiques.</p>
             </div>
           )}
         </>

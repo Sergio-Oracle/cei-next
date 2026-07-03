@@ -81,7 +81,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--primary-dark);
+    background: #1d4ed8;
     padding: 20px;
     position: relative;
 }
@@ -101,11 +101,11 @@ body {
 
 .auth-container {
     background: white;
-    border-radius: var(--radius-lg);
+    border-radius: 16px;
     padding: 48px;
     width: 100%;
     max-width: 460px;
-    box-shadow: var(--shadow-xl);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     position: relative;
     z-index: 1;
     animation: fadeInUp 0.5s ease-out;
@@ -155,9 +155,9 @@ body {
 
 .auth-header > i {
     font-size: 64px;
-    color: var(--primary);
+    color: #3b82f6;
     margin-bottom: 16px;
-    display: block;
+    display: inline-block;
 }
 
 .auth-header p {
@@ -703,10 +703,12 @@ body {
 .btn-primary {
     background: var(--primary);
     color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .btn-primary:hover {
     background: var(--primary-dark);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
 .btn-secondary {

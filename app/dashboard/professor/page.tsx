@@ -66,7 +66,7 @@ export default function ProfessorDashboard() {
           <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Actions Rapides</h3>
         </div>
         <div style={{ padding: '20px', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-          <Link href="/dashboard/professor/subjects"
+          <Link href="/dashboard/professor/create-subject"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#3b82f6', color: 'white', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
             <i className="fas fa-plus-circle" style={{ fontSize: 16 }} />
             Créer un Sujet
@@ -100,7 +100,7 @@ export default function ProfessorDashboard() {
 const QUICK_LINKS = [
   { href: '/dashboard/professor/exams',         icon: 'fa-laptop-code',  label: 'Examens en Ligne',   color: '#3b82f6' },
   { href: '/dashboard/professor/subjects',      icon: 'fa-book',         label: 'Mes Sujets',          color: '#3b82f6' },
-  { href: '/dashboard/professor/questions',     icon: 'fa-database',     label: 'Banque Questions',    color: '#8b5cf6' },
+  { href: '/dashboard/professor/questions',     icon: 'fa-database',     label: 'Banque Questions',    color: '#0891b2' },
   { href: '/dashboard/professor/analytics',     icon: 'fa-chart-bar',    label: 'Résultats',           color: '#10b981' },
   { href: '/dashboard/professor/reclamations',  icon: 'fa-exclamation-triangle', label: 'Réclamations', color: '#f59e0b' },
   { href: '/dashboard/professor/notifications', icon: 'fa-bell',         label: 'Notifications',       color: '#64748b' },

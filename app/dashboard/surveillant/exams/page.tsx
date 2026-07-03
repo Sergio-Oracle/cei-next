@@ -103,7 +103,7 @@ export default function SurveillantExamsPage() {
                 </div>
               </div>
               {exam.status === 'active' && (
-                <Link href={`/proctor/${exam.id}`}
+                <Link href={`/proctor/monitor/${exam.id}`}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#2563eb', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
                   <i className="fas fa-shield-alt" /> Surveiller
                 </Link>
