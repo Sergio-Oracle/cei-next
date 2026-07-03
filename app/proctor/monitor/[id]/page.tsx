@@ -127,6 +127,7 @@ export default function ProctorMonitorPage() {
 
   /* enregistrements individuels */
   const [recSet, setRecSet] = useState<Set<number>>(new Set())
+  const roomEgressRef = useRef<string | null>(null)
 
   /* boutons écran par étudiant (visible si screen share actif) */
   const [screenSet, setScreenSet] = useState<Set<string>>(new Set())
@@ -423,10 +424,12 @@ export default function ProctorMonitorPage() {
       : `/api/online_exams/${id}/room_recording`
     try {
       if (!recording) {
-        await api.post(endpoint, { action: 'start' })
+        const res: any = await api.post(endpoint, { action: 'start' })
+        roomEgressRef.current = res?.egress_id ?? null
         setRecording(true); success(isSurv ? 'REC Groupe démarré' : 'REC Salle démarrée')
       } else {
-        await api.post(endpoint, { action: 'stop' })
+        await api.post(endpoint, { action: 'stop', egress_id: roomEgressRef.current })
+        roomEgressRef.current = null
         setRecording(false); success('Enregistrement arrêté')
       }
     } catch (e: any) { toastErr(e.message || 'Erreur enregistrement') }
@@ -1585,28 +1588,43 @@ export default function ProctorMonitorPage() {
                   window_blur:             'Fenêtre mise en arrière-plan',
                   teacher_warning:         "Avertissement de l'enseignant",
                   teacher_message:         "Message de l'enseignant",
-                  student_message:         'Message de l\'étudiant',
+                  student_message:         "Message de l'étudiant",
                   teacher_ban:             "Exclusion par l'enseignant",
                   proctor_note:            'Note de surveillance',
+                  'proctor note':          'Note de surveillance',
                   proctor_ban:             'Exclusion par le surveillant',
                   session_end:             'Fin de session',
                   extra_time:              'Temps supplémentaire accordé',
                   private_call:            'Appel privé',
-                  end_call:                'Fin d\'appel',
+                  teacher_private_call:    'Appel privé enseignant',
+                  'teacher private call':  'Appel privé enseignant',
+                  end_call:                "Fin d'appel",
+                  teacher_end_call:        "Fin d'appel enseignant",
+                  'teacher end call':      "Fin d'appel enseignant",
+                  unban:                   'Débannissement',
+                  warning_issued:          'Avertissement émis',
                 }
                 const iconMap: Record<string, { icon: string; color: string }> = {
-                  tab_switch:      { icon: 'exchange-alt',    color: '#f59e0b' },
-                  no_face_detected:{ icon: 'user-slash',      color: '#ef4444' },
-                  no_face:         { icon: 'user-slash',      color: '#ef4444' },
-                  multiple_faces:  { icon: 'users',           color: '#ef4444' },
-                  teacher_warning: { icon: 'exclamation-triangle', color: '#f59e0b' },
-                  teacher_message: { icon: 'comment',         color: '#3b82f6' },
-                  student_message: { icon: 'comment-dots',    color: '#6366f1' },
-                  proctor_note:    { icon: 'sticky-note',     color: '#a5b4fc' },
-                  teacher_ban:     { icon: 'ban',             color: '#ef4444' },
-                  proctor_ban:     { icon: 'ban',             color: '#ef4444' },
-                  extra_time:      { icon: 'clock',           color: '#f59e0b' },
-                  private_call:    { icon: 'phone',           color: '#10b981' },
+                  tab_switch:             { icon: 'exchange-alt',        color: '#f59e0b' },
+                  no_face_detected:       { icon: 'user-slash',          color: '#ef4444' },
+                  no_face:                { icon: 'user-slash',          color: '#ef4444' },
+                  multiple_faces:         { icon: 'users',               color: '#ef4444' },
+                  teacher_warning:        { icon: 'exclamation-triangle', color: '#f59e0b' },
+                  teacher_message:        { icon: 'comment',             color: '#3b82f6' },
+                  student_message:        { icon: 'comment-dots',        color: '#6366f1' },
+                  proctor_note:           { icon: 'sticky-note',         color: '#a5b4fc' },
+                  'proctor note':         { icon: 'sticky-note',         color: '#a5b4fc' },
+                  teacher_ban:            { icon: 'ban',                 color: '#ef4444' },
+                  proctor_ban:            { icon: 'ban',                 color: '#ef4444' },
+                  extra_time:             { icon: 'clock',               color: '#f59e0b' },
+                  private_call:           { icon: 'phone',               color: '#10b981' },
+                  teacher_private_call:   { icon: 'phone',               color: '#10b981' },
+                  'teacher private call': { icon: 'phone',               color: '#10b981' },
+                  end_call:               { icon: 'phone-slash',         color: '#94a3b8' },
+                  teacher_end_call:       { icon: 'phone-slash',         color: '#94a3b8' },
+                  'teacher end call':     { icon: 'phone-slash',         color: '#94a3b8' },
+                  unban:                  { icon: 'unlock',              color: '#10b981' },
+                  warning_issued:         { icon: 'exclamation-circle',  color: '#f59e0b' },
                 }
                 const et = log.event_type || log.type || 'event'
                 const label = labelMap[et] || et.replace(/_/g, ' ')

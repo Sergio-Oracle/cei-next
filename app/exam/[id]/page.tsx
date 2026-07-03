@@ -123,7 +123,10 @@ export default function ExamPage() {
   const [showWarnModal,setShowWarnModal]= useState(false)
   const [msgModalText, setMsgModalText] = useState('')
   const [showMsgModal, setShowMsgModal] = useState(false)
-  const [showBanModal, setShowBanModal] = useState(false)
+  const [showBanModal,         setShowBanModal]         = useState(false)
+  const [showPrivateCallModal, setShowPrivateCallModal] = useState(false)
+  const [privateCallActive,    setPrivateCallActive]    = useState(false)
+  const [privateMicOn,         setPrivateMicOn]         = useState(false)
   const [proctorActive,setProctorActive]= useState(false)
   const [teacherActive,setTeacherActive]= useState(false)
   // showConsent supprimé — attestation affichée directement en phase 'instructions'
@@ -144,11 +147,15 @@ export default function ExamPage() {
   const videoRef        = useRef<HTMLVideoElement|null>(null)
   const camStream       = useRef<MediaStream|null>(null)
   const screenStream    = useRef<MediaStream|null>(null)
-  const lkRoomRef       = useRef<any>(null)
-  const proctorVideoRef = useRef<HTMLVideoElement|null>(null)
-  const proctorAudioRef = useRef<HTMLAudioElement|null>(null)
-  const teacherVideoRef = useRef<HTMLVideoElement|null>(null)
-  const teacherAudioRef = useRef<HTMLAudioElement|null>(null)
+  const lkRoomRef           = useRef<any>(null)
+  const proctorVideoRef     = useRef<HTMLVideoElement|null>(null)
+  const proctorAudioRef     = useRef<HTMLAudioElement|null>(null)
+  const teacherVideoRef     = useRef<HTMLVideoElement|null>(null)
+  const teacherAudioRef     = useRef<HTMLAudioElement|null>(null)
+  const privateRoomRef      = useRef<any>(null)
+  const privateMicTrackRef  = useRef<any>(null)
+  const privateTeacherVidRef= useRef<HTMLVideoElement|null>(null)
+  const privateTeacherAudRef= useRef<HTMLAudioElement|null>(null)
   const lastMsgTsRef    = useRef<string|null>(null)
   const sessionEndedRef = useRef(false)
   const extraMinRef     = useRef(0)
@@ -450,7 +457,76 @@ export default function ExamPage() {
     } else if(msg.type==='message'){
       setMsgModalText(msg.message||''); setShowMsgModal(true)
       setAlerts(a=>[{type:'teacher_msg',msg:msg.message||'Message',at:new Date().toLocaleTimeString('fr-FR')},...a])
-    } else if(msg.type==='ban') { triggerBan() }
+    } else if(msg.type==='ban') {
+      triggerBan()
+    } else if(msg.type==='private_call') {
+      setShowPrivateCallModal(true)
+    } else if(msg.type==='end_call') {
+      if(privateRoomRef.current) leavePrivateCall()
+      setShowPrivateCallModal(false)
+    }
+  }
+
+  async function acceptPrivateCall() {
+    setShowPrivateCallModal(false)
+    const aId = attemptRef.current; if(!aId) return
+    try {
+      const tok = await api.get<{ws_url:string;token:string}>(`/api/exam_attempts/${aId}/private_token`)
+      const LK = (window as any).LivekitClient
+      if(!LK) { toastErr('LiveKit non disponible'); return }
+      const pr = new LK.Room({ adaptiveStream:true, dynacast:true })
+      privateRoomRef.current = pr
+      pr.on(LK.RoomEvent.TrackSubscribed, (track:any, _pub:any, participant:any) => {
+        if(track.kind === 'video') {
+          if(privateTeacherVidRef.current) track.attach(privateTeacherVidRef.current)
+        } else if(track.kind === 'audio') {
+          if(privateTeacherAudRef.current) track.attach(privateTeacherAudRef.current)
+        }
+      })
+      pr.on(LK.RoomEvent.Disconnected, () => { leavePrivateCall() })
+      await pr.connect(tok.ws_url, tok.token)
+      try {
+        const micTrack = await LK.createLocalAudioTrack()
+        await pr.localParticipant.publishTrack(micTrack)
+        privateMicTrackRef.current = micTrack
+        setPrivateMicOn(true)
+      } catch {}
+      setPrivateCallActive(true)
+      setAlerts(a=>[{type:'private_call',msg:"Appel privé avec le surveillant en cours",at:new Date().toLocaleTimeString('fr-FR')},...a])
+    } catch(e:any) { toastErr(e.message || "Impossible de rejoindre l'appel privé") }
+  }
+
+  async function leavePrivateCall() {
+    if(privateMicTrackRef.current) {
+      try { await privateRoomRef.current?.localParticipant.unpublishTrack(privateMicTrackRef.current) } catch {}
+      privateMicTrackRef.current.stop(); privateMicTrackRef.current = null
+    }
+    if(privateRoomRef.current) {
+      try { await privateRoomRef.current.disconnect() } catch {}
+      privateRoomRef.current = null
+    }
+    const aId = attemptRef.current
+    if(aId) api.post(`/api/exam_attempts/${aId}/student_message`,{message:'[FIN_APPEL] Appel privé terminé.'}).catch(()=>{})
+    setPrivateCallActive(false); setPrivateMicOn(false)
+    if(privateTeacherVidRef.current) { try { (privateTeacherVidRef.current as any).srcObject = null } catch {} }
+  }
+
+  async function togglePrivateMic() {
+    const LK = (window as any).LivekitClient
+    if(!privateRoomRef.current || !LK) return
+    if(privateMicOn) {
+      if(privateMicTrackRef.current) {
+        try { await privateRoomRef.current.localParticipant.unpublishTrack(privateMicTrackRef.current) } catch {}
+        privateMicTrackRef.current.stop(); privateMicTrackRef.current = null
+      }
+      setPrivateMicOn(false)
+    } else {
+      try {
+        const t = await LK.createLocalAudioTrack()
+        await privateRoomRef.current.localParticipant.publishTrack(t)
+        privateMicTrackRef.current = t; setPrivateMicOn(true)
+      } catch(e:any) { toastErr(e.message || 'Micro indisponible') }
+    }
   }
 
   async function captureSnapshot(eventType:string,aId:number) {
@@ -907,6 +983,61 @@ export default function ExamPage() {
               <span style={{display:'inline-block',width:7,height:7,background:'#ef4444',borderRadius:'50%',animation:'pulse 1s infinite'}}/>
               <span style={{color:'#bfdbfe',fontSize:12,fontWeight:600}}><i className="fas fa-user-shield" style={{marginRight:4}}/>Votre surveillant</span>
               <button onClick={()=>setProctorActive(false)} style={{marginLeft:'auto',background:'none',border:'none',color:'rgba(255,255,255,.5)',fontSize:14,cursor:'pointer'}}>✕</button>
+            </div>
+          </div>
+        )}
+
+        {/* Modal appel privé entrant */}
+        {showPrivateCallModal&&(
+          <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.75)',backdropFilter:'blur(6px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999}}>
+            <div style={{background:'white',borderRadius:16,padding:32,maxWidth:400,width:'92%',textAlign:'center',boxShadow:'0 20px 50px rgba(0,0,0,.4)'}}>
+              <div style={{width:64,height:64,margin:'0 auto 16px',background:'rgba(16,185,129,.1)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,color:'#10b981',animation:'ring 1s ease-in-out infinite'}}>
+                <i className="fas fa-phone"/>
+              </div>
+              <h3 style={{fontSize:18,fontWeight:700,marginBottom:8,color:'#0f172a'}}>Appel privé du surveillant</h3>
+              <p style={{fontSize:13,color:'#64748b',marginBottom:24}}>Le surveillant souhaite vous parler en privé.</p>
+              <div style={{display:'flex',gap:12,justifyContent:'center'}}>
+                <button onClick={()=>{setShowPrivateCallModal(false); const aId=attemptRef.current; if(aId) api.post(`/api/exam_attempts/${aId}/student_message`,{message:'Appel refusé',type:'end_call'}).catch(()=>{})}}
+                  style={{padding:'10px 22px',background:'#ef4444',color:'white',border:'none',borderRadius:10,fontWeight:700,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',gap:6}}>
+                  <i className="fas fa-phone-slash"/> Refuser
+                </button>
+                <button onClick={acceptPrivateCall}
+                  style={{padding:'10px 22px',background:'#10b981',color:'white',border:'none',borderRadius:10,fontWeight:700,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',gap:6}}>
+                  <i className="fas fa-phone"/> Accepter
+                </button>
+              </div>
+            </div>
+            <style>{`@keyframes ring{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}`}</style>
+          </div>
+        )}
+
+        {/* Panel appel privé actif */}
+        {privateCallActive&&(
+          <div style={{position:'fixed',bottom:24,right:24,zIndex:9500,background:'rgba(10,16,32,.96)',border:'2px solid #3b82f6',borderRadius:14,overflow:'hidden',width:320,boxShadow:'0 8px 32px rgba(0,0,0,.6)'}}>
+            <div style={{padding:'10px 14px',background:'rgba(37,99,235,.25)',display:'flex',alignItems:'center',gap:8}}>
+              <span style={{display:'inline-block',width:8,height:8,background:'#10b981',borderRadius:'50%',animation:'pulse 1s infinite'}}/>
+              <span style={{color:'#bfdbfe',fontSize:12,fontWeight:700}}><i className="fas fa-phone" style={{marginRight:5}}/>Appel privé en cours</span>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,padding:10}}>
+              <div style={{background:'#000',borderRadius:8,aspectRatio:'4/3',position:'relative',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <video ref={privateTeacherVidRef} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                <audio ref={privateTeacherAudRef} autoPlay style={{display:'none'}}/>
+                <div style={{position:'absolute',bottom:4,left:0,right:0,textAlign:'center',fontSize:9,color:'rgba(255,255,255,.55)',fontWeight:600}}>SURVEILLANT</div>
+              </div>
+              <div style={{background:'rgba(255,255,255,.04)',borderRadius:8,aspectRatio:'4/3',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4}}>
+                <i className="fas fa-user-graduate" style={{fontSize:22,color:'rgba(255,255,255,.3)'}}/>
+                <span style={{fontSize:9,color:'rgba(255,255,255,.35)',fontWeight:600}}>MOI</span>
+              </div>
+            </div>
+            <div style={{padding:'0 10px 10px',display:'flex',gap:6}}>
+              <button onClick={togglePrivateMic}
+                style={{flex:1,padding:'8px 0',border:'none',borderRadius:8,cursor:'pointer',fontWeight:700,fontSize:11,background:privateMicOn?'rgba(16,185,129,.2)':'rgba(100,116,139,.2)',color:privateMicOn?'#10b981':'#64748b',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+                <i className={`fas fa-microphone${privateMicOn?'':'-slash'}`}/>{privateMicOn?'Micro on':'Micro coupé'}
+              </button>
+              <button onClick={leavePrivateCall}
+                style={{flex:1,padding:'8px 0',border:'none',borderRadius:8,cursor:'pointer',fontWeight:700,fontSize:11,background:'rgba(239,68,68,.7)',color:'white',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+                <i className="fas fa-phone-slash"/> Raccrocher
+              </button>
             </div>
           </div>
         )}
