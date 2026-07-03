@@ -476,24 +476,44 @@ export default function ExamPage() {
       if(!LK) { toastErr('LiveKit non disponible'); return }
       const pr = new LK.Room({ adaptiveStream:true, dynacast:true })
       privateRoomRef.current = pr
-      pr.on(LK.RoomEvent.TrackSubscribed, (track:any, _pub:any, participant:any) => {
+
+      /* Afficher le panel immédiatement pour que les refs soient dans le DOM */
+      setPrivateCallActive(true)
+
+      function attachTrack(track:any) {
         if(track.kind === 'video') {
-          if(privateTeacherVidRef.current) track.attach(privateTeacherVidRef.current)
+          /* Tenter d'abord direct, sinon avec timeout pour laisser React rendre */
+          if(privateTeacherVidRef.current) { try { track.attach(privateTeacherVidRef.current) } catch {} }
+          else setTimeout(() => { if(privateTeacherVidRef.current) try { track.attach(privateTeacherVidRef.current) } catch {} }, 200)
         } else if(track.kind === 'audio') {
-          if(privateTeacherAudRef.current) track.attach(privateTeacherAudRef.current)
+          if(privateTeacherAudRef.current) { try { track.attach(privateTeacherAudRef.current) } catch {} }
+          else setTimeout(() => { if(privateTeacherAudRef.current) try { track.attach(privateTeacherAudRef.current) } catch {} }, 200)
         }
-      })
+      }
+
+      pr.on(LK.RoomEvent.TrackSubscribed, (track:any) => { attachTrack(track) })
       pr.on(LK.RoomEvent.Disconnected, () => { leavePrivateCall() })
+
       await pr.connect(tok.ws_url, tok.token)
+
+      /* Attacher les tracks déjà présents (si le professeur avait publié avant la connexion) */
+      pr.remoteParticipants.forEach((p:any) => {
+        p.trackPublications.forEach((pub:any) => {
+          if(pub.track) attachTrack(pub.track)
+        })
+      })
+
       try {
         const micTrack = await LK.createLocalAudioTrack()
         await pr.localParticipant.publishTrack(micTrack)
         privateMicTrackRef.current = micTrack
         setPrivateMicOn(true)
       } catch {}
-      setPrivateCallActive(true)
       setAlerts(a=>[{type:'private_call',msg:"Appel privé avec le surveillant en cours",at:new Date().toLocaleTimeString('fr-FR')},...a])
-    } catch(e:any) { toastErr(e.message || "Impossible de rejoindre l'appel privé") }
+    } catch(e:any) {
+      setPrivateCallActive(false)
+      toastErr(e.message || "Impossible de rejoindre l'appel privé")
+    }
   }
 
   async function leavePrivateCall() {
@@ -822,8 +842,8 @@ export default function ExamPage() {
                 api.post(`/api/exam_attempts/${attemptRef.current}/student_message`,{message:'[DEMANDE_APPEL] Je souhaite poser une question verbalement au surveillant.'}).catch(()=>{})
                 setMsgSent(p=>[...p,{text:'Demande d\'appel vocal envoyée',time:new Date().toLocaleTimeString('fr-FR')}])
               }} title="Demander un appel vocal"
-                style={{flex:1,background:'rgba(99,102,241,.15)',color:'#6366f1',border:'1px solid rgba(99,102,241,.3)',borderRadius:6,padding:'6px',cursor:'pointer',fontSize:11,display:'flex',alignItems:'center',justifyContent:'center',gap:4,fontWeight:600}}>
-                <i className="fas fa-microphone"/> Appel
+                style={{flex:1,background:'rgba(16,185,129,.15)',color:'#10b981',border:'1px solid rgba(16,185,129,.3)',borderRadius:6,padding:'6px',cursor:'pointer',fontSize:11,display:'flex',alignItems:'center',justifyContent:'center',gap:4,fontWeight:600}}>
+                <i className="fas fa-phone"/> Appel
               </button>
               <button onClick={sendMsg} title="Envoyer un message texte"
                 style={{flex:2,background:'#2563eb',color:'white',border:'none',borderRadius:6,padding:'6px 10px',cursor:'pointer',fontSize:11,display:'flex',alignItems:'center',justifyContent:'center',gap:4,fontWeight:600}}>
@@ -989,58 +1009,48 @@ export default function ExamPage() {
 
         {/* Modal appel privé entrant */}
         {showPrivateCallModal&&(
-          <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.75)',backdropFilter:'blur(6px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999}}>
-            <div style={{background:'white',borderRadius:16,padding:32,maxWidth:400,width:'92%',textAlign:'center',boxShadow:'0 20px 50px rgba(0,0,0,.4)'}}>
-              <div style={{width:64,height:64,margin:'0 auto 16px',background:'rgba(16,185,129,.1)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,color:'#10b981',animation:'ring 1s ease-in-out infinite'}}>
-                <i className="fas fa-phone"/>
-              </div>
-              <h3 style={{fontSize:18,fontWeight:700,marginBottom:8,color:'#0f172a'}}>Appel privé du surveillant</h3>
-              <p style={{fontSize:13,color:'#64748b',marginBottom:24}}>Le surveillant souhaite vous parler en privé.</p>
-              <div style={{display:'flex',gap:12,justifyContent:'center'}}>
-                <button onClick={()=>{setShowPrivateCallModal(false); const aId=attemptRef.current; if(aId) api.post(`/api/exam_attempts/${aId}/student_message`,{message:'Appel refusé',type:'end_call'}).catch(()=>{})}}
-                  style={{padding:'10px 22px',background:'#ef4444',color:'white',border:'none',borderRadius:10,fontWeight:700,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',gap:6}}>
-                  <i className="fas fa-phone-slash"/> Refuser
-                </button>
-                <button onClick={acceptPrivateCall}
-                  style={{padding:'10px 22px',background:'#10b981',color:'white',border:'none',borderRadius:10,fontWeight:700,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',gap:6}}>
-                  <i className="fas fa-phone"/> Accepter
-                </button>
+          <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999}}>
+            <div style={{background:'white',borderRadius:12,overflow:'hidden',maxWidth:400,width:'92%',boxShadow:'0 20px 40px rgba(0,0,0,.3)',borderTop:'4px solid #3b82f6'}}>
+              <div style={{padding:'24px 28px',textAlign:'center'}}>
+                <div style={{width:56,height:56,margin:'0 auto 14px',background:'rgba(37,99,235,.12)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,color:'#3b82f6'}}>
+                  <i className="fas fa-phone"/>
+                </div>
+                <h3 style={{fontSize:17,fontWeight:700,marginBottom:8,color:'#1e40af'}}>Appel du Surveillant</h3>
+                <p style={{fontSize:13,color:'#475569',marginBottom:20,lineHeight:1.5}}>Le surveillant souhaite vous parler en privé.<br/>Votre micro sera activé automatiquement.</p>
+                <div style={{display:'flex',gap:10,justifyContent:'center'}}>
+                  <button onClick={acceptPrivateCall}
+                    style={{padding:'9px 20px',background:'#10b981',color:'white',border:'none',borderRadius:8,fontWeight:700,cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',gap:6}}>
+                    <i className="fas fa-phone"/> Accepter
+                  </button>
+                  <button onClick={()=>setShowPrivateCallModal(false)}
+                    style={{padding:'9px 20px',background:'#ef4444',color:'white',border:'none',borderRadius:8,fontWeight:700,cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',gap:6}}>
+                    <i className="fas fa-phone-slash"/> Refuser
+                  </button>
+                </div>
               </div>
             </div>
-            <style>{`@keyframes ring{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}`}</style>
           </div>
         )}
 
-        {/* Panel appel privé actif */}
-        {privateCallActive&&(
-          <div style={{position:'fixed',bottom:24,right:24,zIndex:9500,background:'rgba(10,16,32,.96)',border:'2px solid #3b82f6',borderRadius:14,overflow:'hidden',width:320,boxShadow:'0 8px 32px rgba(0,0,0,.6)'}}>
-            <div style={{padding:'10px 14px',background:'rgba(37,99,235,.25)',display:'flex',alignItems:'center',gap:8}}>
-              <span style={{display:'inline-block',width:8,height:8,background:'#10b981',borderRadius:'50%',animation:'pulse 1s infinite'}}/>
-              <span style={{color:'#bfdbfe',fontSize:12,fontWeight:700}}><i className="fas fa-phone" style={{marginRight:5}}/>Appel privé en cours</span>
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,padding:10}}>
-              <div style={{background:'#000',borderRadius:8,aspectRatio:'4/3',position:'relative',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                <video ref={privateTeacherVidRef} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
-                <audio ref={privateTeacherAudRef} autoPlay style={{display:'none'}}/>
-                <div style={{position:'absolute',bottom:4,left:0,right:0,textAlign:'center',fontSize:9,color:'rgba(255,255,255,.55)',fontWeight:600}}>SURVEILLANT</div>
-              </div>
-              <div style={{background:'rgba(255,255,255,.04)',borderRadius:8,aspectRatio:'4/3',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4}}>
-                <i className="fas fa-user-graduate" style={{fontSize:22,color:'rgba(255,255,255,.3)'}}/>
-                <span style={{fontSize:9,color:'rgba(255,255,255,.35)',fontWeight:600}}>MOI</span>
-              </div>
-            </div>
-            <div style={{padding:'0 10px 10px',display:'flex',gap:6}}>
-              <button onClick={togglePrivateMic}
-                style={{flex:1,padding:'8px 0',border:'none',borderRadius:8,cursor:'pointer',fontWeight:700,fontSize:11,background:privateMicOn?'rgba(16,185,129,.2)':'rgba(100,116,139,.2)',color:privateMicOn?'#10b981':'#64748b',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
-                <i className={`fas fa-microphone${privateMicOn?'':'-slash'}`}/>{privateMicOn?'Micro on':'Micro coupé'}
-              </button>
-              <button onClick={leavePrivateCall}
-                style={{flex:1,padding:'8px 0',border:'none',borderRadius:8,cursor:'pointer',fontWeight:700,fontSize:11,background:'rgba(239,68,68,.7)',color:'white',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
-                <i className="fas fa-phone-slash"/> Raccrocher
-              </button>
-            </div>
+        {/* Panel appel privé — toujours dans le DOM pour que les refs soient disponibles */}
+        <div style={{display:privateCallActive?'block':'none',position:'fixed',left:296,bottom:12,zIndex:9500,background:'#0f172a',border:'2px solid #3b82f6',borderRadius:8,overflow:'hidden',width:230,boxShadow:'0 8px 32px rgba(0,0,0,.6)'}}>
+          <div style={{background:'#3b82f6',padding:'6px 10px',display:'flex',alignItems:'center',gap:8}}>
+            <i className="fas fa-phone" style={{color:'white',fontSize:10}}/>
+            <span style={{color:'white',fontSize:11,fontWeight:700}}>Appel privé avec le surveillant</span>
+            <button onClick={leavePrivateCall} style={{marginLeft:'auto',background:'rgba(239,68,68,.85)',color:'white',border:'none',borderRadius:4,padding:'3px 8px',cursor:'pointer',fontSize:10,fontWeight:700}}>
+              <i className="fas fa-phone-slash"/> Terminer
+            </button>
           </div>
-        )}
+          <video ref={privateTeacherVidRef} autoPlay playsInline
+            style={{width:'100%',display:'block',aspectRatio:'4/3',objectFit:'cover',background:'#000'}}/>
+          <audio ref={privateTeacherAudRef} autoPlay style={{display:'none'}}/>
+          <div style={{padding:'6px 10px',display:'flex',alignItems:'center',gap:6,background:'#1e293b'}}>
+            <button onClick={togglePrivateMic}
+              style={{background:privateMicOn?'rgba(16,185,129,.5)':'rgba(100,116,139,.2)',color:privateMicOn?'#a7f3d0':'#64748b',border:`1px solid ${privateMicOn?'rgba(16,185,129,.5)':'rgba(100,116,139,.3)'}`,borderRadius:4,padding:'4px 10px',cursor:'pointer',fontSize:10,fontWeight:600}}>
+              <i className={`fas fa-microphone${privateMicOn?'':'-slash'}`}/> {privateMicOn?'Micro':'Micro coupé'}
+            </button>
+          </div>
+        </div>
 
         {/* Modals */}
         {showWarnModal&&<Modal border="#f59e0b" icon="fa-chalkboard-teacher" iconBg="rgba(245,158,11,.1)" iconColor="#f59e0b" title="Avertissement" titleColor="#92400e" msg={warnText} msgColor="#78350f" bold onClose={()=>setShowWarnModal(false)}/>}

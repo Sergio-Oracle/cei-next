@@ -1503,48 +1503,51 @@ export default function ProctorMonitorPage() {
         )
       })()}
 
-      {/* ══════════════ Modal Appel Privé */}
+      {/* ══════════════ Modal Appel Privé — identique à l'original */}
       {privateCall && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div style={{ background: '#0f172a', color: 'white', borderRadius: 16, width: 560, maxWidth: '95vw', boxShadow: '0 24px 60px rgba(0,0,0,.7)', border: '1px solid rgba(255,255,255,.1)' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 15, fontWeight: 700 }}><i className="fas fa-phone" style={{ marginRight: 8, color: '#10b981' }} />Appel privé — {privateCall.name}</div>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,.45)' }}>{privateStatus}</span>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, padding: 18 }}>
-              <div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,.4)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.06em' }}>Étudiant</div>
-                <div style={{ background: '#000', borderRadius: 10, aspectRatio: '4/3', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <video id="private-student-video" autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <audio id="private-student-audio" autoPlay />
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.3)' }}>
-                    <i className="fas fa-user" style={{ fontSize: 36 }} />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,.4)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.06em' }}>Moi</div>
-                <div style={{ background: '#000', borderRadius: 10, aspectRatio: '4/3', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <video id="private-my-preview" autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  {!privateCamOn && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.3)' }}><i className="fas fa-video-slash" style={{ fontSize: 36 }} /></div>}
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', padding: '0 18px 20px' }}>
-              <button onClick={togglePrivateCam}
-                style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: 9, cursor: 'pointer', fontWeight: 700, fontSize: 13, background: privateCamOn ? 'rgba(37,99,235,.5)' : 'rgba(37,99,235,.15)', color: '#93c5fd', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <i className={`fas ${privateCamOn ? 'fa-video' : 'fa-video-slash'}`} />
-                {privateCamOn ? 'Caméra on' : 'Activer caméra'}
-              </button>
-              <button onClick={togglePrivateMic}
-                style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: 9, cursor: 'pointer', fontWeight: 700, fontSize: 13, background: privateMicOn ? 'rgba(16,185,129,.5)' : 'rgba(16,185,129,.15)', color: '#6ee7b7', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <i className={`fas ${privateMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`} />
-                {privateMicOn ? 'Micro on' : 'Activer micro'}
-              </button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 9600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#1e293b', borderRadius: 16, overflow: 'hidden', width: 520, maxWidth: '95vw', boxShadow: '0 24px 60px rgba(0,0,0,.5)', border: '1px solid #334155' }}>
+            {/* Header bleu */}
+            <div style={{ background: '#3b82f6', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <i className="fas fa-phone" style={{ color: 'white' }} />
+              <span style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>
+                Appel privé — {privateCall.name}
+              </span>
               <button onClick={endPrivateCall}
-                style={{ padding: '10px 20px', border: 'none', borderRadius: 9, cursor: 'pointer', fontWeight: 700, fontSize: 13, background: 'rgba(239,68,68,.7)', color: 'white', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <i className="fas fa-phone-slash" /> Raccrocher
+                style={{ marginLeft: 'auto', background: 'rgba(239,68,68,.85)', color: 'white', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                <i className="fas fa-phone-slash" /> Terminer
               </button>
+            </div>
+            {/* Corps : vidéo étudiant | contrôles prof */}
+            <div style={{ display: 'flex', height: 260 }}>
+              {/* Vidéo étudiant */}
+              <div style={{ flex: 1, background: '#0f172a', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <video id="private-student-video" autoPlay playsInline
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <audio id="private-student-audio" autoPlay style={{ display: 'none' }} />
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, color: 'rgba(255,255,255,.25)', pointerEvents: 'none' }}>
+                  <i className="fas fa-user" style={{ fontSize: 40 }} />
+                  <span style={{ fontSize: 10, letterSpacing: '.06em', textTransform: 'uppercase' }}>Étudiant</span>
+                </div>
+              </div>
+              {/* Contrôles professeur */}
+              <div style={{ width: 170, background: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, borderLeft: '1px solid #334155', padding: 12 }}>
+                <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Ma prévisualisation</div>
+                <div style={{ width: 140, height: 90, borderRadius: 8, background: '#1e293b', overflow: 'hidden', border: '1px solid #334155', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <video id="private-my-preview" autoPlay playsInline muted
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  {!privateCamOn && <i className="fas fa-video-slash" style={{ position: 'absolute', color: 'rgba(255,255,255,.25)', fontSize: 20 }} />}
+                </div>
+                <button onClick={togglePrivateCam}
+                  style={{ width: 140, background: privateCamOn ? 'rgba(37,99,235,.5)' : 'rgba(37,99,235,.2)', color: privateCamOn ? '#bfdbfe' : '#93c5fd', border: `1px solid ${privateCamOn ? 'rgba(37,99,235,.6)' : 'rgba(37,99,235,.3)'}`, borderRadius: 8, padding: 7, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                  <i className={`fas ${privateCamOn ? 'fa-video' : 'fa-video-slash'}`} /> {privateCamOn ? 'Caméra on' : 'Caméra'}
+                </button>
+                <button onClick={togglePrivateMic}
+                  style={{ width: 140, background: privateMicOn ? 'rgba(16,185,129,.5)' : 'rgba(16,185,129,.2)', color: privateMicOn ? '#a7f3d0' : '#6ee7b7', border: `1px solid ${privateMicOn ? 'rgba(16,185,129,.6)' : 'rgba(16,185,129,.3)'}`, borderRadius: 8, padding: 7, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                  <i className={`fas ${privateMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`} /> {privateMicOn ? 'Micro on' : 'Micro'}
+                </button>
+                <div style={{ fontSize: 10, color: '#64748b', textAlign: 'center', marginTop: 4 }}>{privateStatus}</div>
+              </div>
             </div>
           </div>
         </div>
