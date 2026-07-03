@@ -741,9 +741,11 @@ export default function ProctorMonitorPage() {
         .mon-filter { padding:6px 14px;border:2px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.7);border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s; }
         .mon-filter:hover,.mon-filter.active { border-color:#3b82f6;background:#3b82f6;color:white; }
         .mon-tbl { width:100%;border-collapse:collapse; }
-        .mon-tbl th { font-size:11px;text-transform:uppercase;color:rgba(255,255,255,.35);padding:8px 14px;text-align:left;border-bottom:1px solid rgba(255,255,255,.06);font-weight:600;letter-spacing:.06em; }
+        .mon-tbl thead { background:transparent !important;position:static !important; }
+        .mon-tbl th { font-size:11px;text-transform:uppercase;color:rgba(255,255,255,.35);padding:8px 14px;text-align:left;border-bottom:1px solid rgba(255,255,255,.06);font-weight:600;letter-spacing:.06em;background:transparent !important; }
         .mon-tbl td { padding:10px 14px;font-size:12px;color:rgba(255,255,255,.75);border-bottom:1px solid rgba(255,255,255,.04); }
         .mon-tbl tr:last-child td { border-bottom:none; }
+        .mon-tbl tr:hover { background:none !important; }
         .mon-tbl tr:hover td { background:rgba(255,255,255,.03); }
         .mon-act { display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:5px;font-size:10px;cursor:pointer;border:none;font-weight:600;transition:opacity .15s; }
         .mon-act:hover { opacity:.8; }
