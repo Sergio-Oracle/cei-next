@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import api from '@/lib/api'
+import { useNotificationPoll } from '@/hooks/useNotificationPoll'
 
 const roleLabel: Record<string, string> = {
   admin: 'Administrateur',
@@ -73,6 +74,7 @@ export default function Header() {
     return () => window.removeEventListener('cei:themechange', onThemeChange)
   }, [])
 
+  // Fetch initial du compteur + profil
   useEffect(() => {
     if (!user) return
     api.get<{ unread_count?: number }>('/api/notifications')
@@ -85,6 +87,13 @@ export default function Header() {
       })
       .catch(() => {})
   }, [user])
+
+  // Long-polling Redis : incrémente le badge dès qu'un événement arrive
+  const handleNotifEvent = useCallback(() => {
+    setUnreadCount(c => c + 1)
+  }, [])
+
+  useNotificationPoll(!!user, handleNotifEvent)
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
