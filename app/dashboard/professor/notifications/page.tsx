@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 
 interface Incident {
-  id: number
+  id: number | string
   event_type: string
   exam_title: string
   student_name: string
-  severity: 'high' | 'medium' | 'low'
+  severity: 'high' | 'medium' | 'low' | 'info'
   timestamp: string
+  snapshot_data?: string | null
+  details?: string
 }
 
 interface IncidentsResponse {
@@ -18,7 +20,7 @@ interface IncidentsResponse {
 }
 
 const EVENT_LABELS: Record<string, string> = {
-  tab_switch:              'Changement d\'onglet',
+  tab_switch:              "Changement d'onglet",
   window_blur:             'Changement de fenêtre',
   copy_attempt:            'Tentative de copie',
   paste_attempt:           'Tentative de collage',
@@ -26,28 +28,61 @@ const EVENT_LABELS: Record<string, string> = {
   devtools_attempt:        'Console développeur ouverte',
   face_absent:             'Visage absent',
   no_face_detected:        'Visage non détecté',
+  no_face:                 'Visage non détecté',
   multiple_faces:          'Plusieurs visages détectés',
   face_reference_captured: 'Photo de référence capturée',
-  screen_share_stopped:    'Partage d\'écran arrêté',
+  mismatch_detected:       'Visage non reconnu',
+  screen_share_stopped:    "Partage d'écran arrêté",
+  screen_share_started:    "Partage d'écran démarré",
   student_message:         'Message étudiant',
+  teacher_message:         "Message de l'enseignant",
+  teacher_warning:         "Avertissement de l'enseignant",
   fullscreen_exit:         'Plein écran quitté',
   fullscreen_enter:        'Plein écran activé',
   warning_issued:          'Avertissement émis',
+  proctor_note:            'Note du surveillant',
+  'proctor note':          'Note du surveillant',
+  proctor_ban:             'Exclusion par le surveillant',
+  teacher_ban:             "Exclusion par l'enseignant",
+  extra_time:              'Temps supplémentaire accordé',
+  teacher_private_call:    'Appel privé (enseignant)',
+  'teacher private call':  'Appel privé (enseignant)',
+  private_call:            'Appel privé',
+  teacher_end_call:        "Fin d'appel",
+  'teacher end call':      "Fin d'appel",
+  unban:                   'Débannissement',
+  ec_assignment:           "Affectation d'EC",
+  face_ok:                 'Visage détecté',
+  fullscreen_on:           'Plein écran activé',
+  exam_started:            'Examen démarré',
+  exam_submitted:          'Examen soumis',
+  auto_submitted:          'Soumission automatique',
+}
+
+function getLabel(event_type: string): string {
+  return EVENT_LABELS[event_type] || EVENT_LABELS[event_type.toLowerCase()] || event_type.replace(/_/g, ' ')
 }
 
 function timeAgo(dateStr: string): string {
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-  if (diff < 60)   return 'À l\'instant'
-  if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} minute${Math.floor(diff / 60) > 1 ? 's' : ''}`
+  if (diff < 60)    return "À l'instant"
+  if (diff < 3600)  return `Il y a ${Math.floor(diff / 60)} minute${Math.floor(diff / 60) > 1 ? 's' : ''}`
   if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)} heure${Math.floor(diff / 3600) > 1 ? 's' : ''}`
   return `Il y a ${Math.floor(diff / 86400)} jour${Math.floor(diff / 86400) > 1 ? 's' : ''}`
 }
 
+const SEV_CFG = {
+  high:   { label: 'Haute',   color: '#dc2626', bg: '#fee2e2', icon: 'fa-circle-exclamation' },
+  medium: { label: 'Moyenne', color: '#f59e0b', bg: '#fef3c7', icon: 'fa-circle-info' },
+  low:    { label: 'Basse',   color: '#10b981', bg: '#d1fae5', icon: 'fa-circle-check' },
+  info:   { label: 'Info',    color: '#3b82f6', bg: '#dbeafe', icon: 'fa-circle-info' },
+}
+
 export default function ProfessorNotificationsPage() {
-  const [incidents, setIncidents] = useState<Incident[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [filterSeverity, setFilterSeverity] = useState<'all' | 'high' | 'medium'>('all')
+  const [incidents,      setIncidents]      = useState<Incident[]>([])
+  const [loading,        setLoading]        = useState(true)
+  const [filterSeverity, setFilterSeverity] = useState<'all' | 'high' | 'medium' | 'info'>('all')
+  const [lightboxSrc,    setLightboxSrc]    = useState<string | null>(null)
 
   useEffect(() => { load() }, [])
 
@@ -56,26 +91,26 @@ export default function ProfessorNotificationsPage() {
     try {
       const res = await api.get<IncidentsResponse>('/api/professor/recent_incidents')
       setIncidents(res.incidents ?? [])
-      setUnreadCount(res.unread_count ?? 0)
     } catch { setIncidents([]) }
     finally { setLoading(false) }
   }
 
-  const visible = incidents.filter(inc => {
-    if (filterSeverity === 'all') return true
-    return inc.severity === filterSeverity
-  })
+  const visible = incidents.filter(inc => filterSeverity === 'all' || inc.severity === filterSeverity)
 
   const highCount   = incidents.filter(i => i.severity === 'high').length
   const mediumCount = incidents.filter(i => i.severity === 'medium').length
+  const infoCount   = incidents.filter(i => i.severity === 'info').length
+  const hasSnapshots = visible.some(i => i.snapshot_data)
 
   return (
     <div style={{ padding: '28px 32px' }}>
+
       {/* En-tête */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <i className="fas fa-bell" style={{ color: '#2563eb' }} />Notifications d'Incidents
+            <i className="fas fa-bell" style={{ color: '#2563eb' }} />
+            Notifications d'Incidents
           </h1>
           <p style={{ color: '#64748b', margin: 0, fontSize: 14 }}>Incidents détectés lors de vos examens dans les dernières 24h</p>
         </div>
@@ -84,15 +119,15 @@ export default function ProfessorNotificationsPage() {
         </button>
       </div>
 
-      {/* Stats */}
+      {/* Cartes stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
-          { icon: 'fa-triangle-exclamation', label: 'Total incidents', value: incidents.length, color: '#2563eb', bg: '#dbeafe' },
-          { icon: 'fa-circle-exclamation',   label: 'Haute sévérité',  value: highCount,        color: '#dc2626', bg: '#fee2e2' },
-          { icon: 'fa-circle-info',          label: 'Sévérité moyenne',value: mediumCount,       color: '#f59e0b', bg: '#fef3c7' },
+          { icon: 'fa-triangle-exclamation', label: 'Total incidents',  value: incidents.length, color: '#2563eb', bg: '#dbeafe' },
+          { icon: 'fa-circle-exclamation',   label: 'Haute sévérité',   value: highCount,        color: '#dc2626', bg: '#fee2e2' },
+          { icon: 'fa-circle-info',          label: 'Sévérité moyenne', value: mediumCount,      color: '#f59e0b', bg: '#fef3c7' },
         ].map(({ icon, label, value, color, bg }) => (
           <div key={label} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: 18, display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <i className={`fas ${icon}`} style={{ color, fontSize: 20 }} />
             </div>
             <div>
@@ -103,22 +138,31 @@ export default function ProfessorNotificationsPage() {
         ))}
       </div>
 
-      {/* Filtres sévérité */}
+      {/* Filtres */}
       <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 18px', marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginRight: 4 }}>Filtrer :</span>
-        {([['all','Tous','#0f172a','white'],['high','Haute','#dc2626','#fee2e2'],['medium','Moyenne','#f59e0b','#fef3c7']] as const).map(([val, label, activeColor, activeBg]) => (
-          <button key={val} onClick={() => setFilterSeverity(val as any)}
-            style={{ padding: '6px 14px', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 12,
-              background: filterSeverity === val ? (val === 'all' ? '#0f172a' : activeBg) : '#f1f5f9',
-              color:      filterSeverity === val ? (val === 'all' ? 'white' : activeColor) : '#475569' }}>
-            {label}
-            {val !== 'all' && (
-              <span style={{ marginLeft: 6, background: filterSeverity === val ? activeColor : '#e2e8f0', color: filterSeverity === val ? 'white' : '#64748b', borderRadius: 99, padding: '1px 7px', fontSize: 11 }}>
-                {val === 'high' ? highCount : mediumCount}
-              </span>
-            )}
-          </button>
-        ))}
+        {([
+          ['all',    'Tous',    '#0f172a', 'white',   '#f1f5f9'],
+          ['high',   'Haute',   '#dc2626', '#fee2e2', '#f1f5f9'],
+          ['medium', 'Moyenne', '#f59e0b', '#fef3c7', '#f1f5f9'],
+          ['info',   'Info',    '#3b82f6', '#dbeafe', '#f1f5f9'],
+        ] as const).map(([val, label, activeColor, activeBg]) => {
+          const count = val === 'high' ? highCount : val === 'medium' ? mediumCount : val === 'info' ? infoCount : null
+          const isActive = filterSeverity === val
+          return (
+            <button key={val} onClick={() => setFilterSeverity(val as any)}
+              style={{ padding: '6px 14px', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 12,
+                background: isActive ? (val === 'all' ? '#0f172a' : activeBg) : '#f1f5f9',
+                color:      isActive ? (val === 'all' ? 'white'   : activeColor) : '#475569' }}>
+              {label}
+              {count !== null && (
+                <span style={{ marginLeft: 6, background: isActive ? activeColor : '#e2e8f0', color: isActive ? 'white' : '#64748b', borderRadius: 99, padding: '1px 7px', fontSize: 11 }}>
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {/* Tableau */}
@@ -134,7 +178,7 @@ export default function ProfessorNotificationsPage() {
               <>
                 <i className="fas fa-check-circle" style={{ fontSize: 44, color: '#10b981', display: 'block', marginBottom: 14 }} />
                 <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: 16, color: '#059669' }}>Aucun incident détecté</p>
-                <p style={{ margin: 0, fontSize: 13 }}>Tout va bien ! Aucune anomalie dans les dernières 24h.</p>
+                <p style={{ margin: 0, fontSize: 13 }}>Tout va bien — aucune anomalie dans les dernières 24h.</p>
               </>
             ) : (
               <>
@@ -144,48 +188,89 @@ export default function ProfessorNotificationsPage() {
             )}
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f8fafc' }}>
-                {['Quand','Examen','Étudiant','Type d\'incident','Sévérité'].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, borderBottom: '1px solid #e2e8f0' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((inc, i) => {
-                const isHigh   = inc.severity === 'high'
-                const label    = EVENT_LABELS[inc.event_type] || inc.event_type
-                const sevColor = isHigh ? '#dc2626' : '#f59e0b'
-                const sevBg    = isHigh ? '#fee2e2' : '#fef3c7'
-                return (
-                  <tr key={inc.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f0f9ff' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? 'white' : '#fafafa' }}>
-                    <td style={{ padding: '13px 16px', fontSize: 13, color: '#64748b', whiteSpace: 'nowrap' }}>
-                      <i className="fas fa-clock" style={{ marginRight: 6 }} />
-                      {timeAgo(inc.timestamp)}
-                    </td>
-                    <td style={{ padding: '13px 16px', fontWeight: 600, color: '#0f172a', fontSize: 14 }}>
-                      <i className="fas fa-laptop-code" style={{ color: '#2563eb', marginRight: 7 }} />
-                      {inc.exam_title}
-                    </td>
-                    <td style={{ padding: '13px 16px', color: '#334155', fontSize: 14 }}>
-                      <i className="fas fa-user" style={{ color: '#94a3b8', marginRight: 7 }} />
-                      {inc.student_name}
-                    </td>
-                    <td style={{ padding: '13px 16px', fontSize: 14, color: '#334155' }}>{label}</td>
-                    <td style={{ padding: '13px 16px' }}>
-                      <span style={{ background: sevBg, color: sevColor, borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                        <i className={`fas ${isHigh ? 'fa-circle-exclamation' : 'fa-circle-info'}`} style={{ fontSize: 11 }} />
-                        {isHigh ? 'Haute' : 'Moyenne'}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc' }}>
+                  {['Quand', 'Examen', 'Étudiant', 'Type d\'incident', ...(hasSnapshots ? ['Capture'] : []), 'Sévérité'].map(h => (
+                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((inc, idx) => {
+                  const sev = SEV_CFG[inc.severity] ?? SEV_CFG.medium
+                  const label = getLabel(inc.event_type)
+                  const snap = inc.snapshot_data
+                  const isInfo = inc.severity === 'info'
+                  return (
+                    <tr key={String(inc.id)} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f0f9ff' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = idx % 2 === 0 ? 'white' : '#fafafa' }}>
+
+                      {/* Quand */}
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#64748b', whiteSpace: 'nowrap' }}>
+                        <i className="fas fa-clock" style={{ marginRight: 6 }} />
+                        {timeAgo(inc.timestamp)}
+                      </td>
+
+                      {/* Examen */}
+                      <td style={{ padding: '12px 16px', fontWeight: 600, color: '#0f172a', fontSize: 13 }}>
+                        {inc.exam_title ? (
+                          <><i className="fas fa-laptop-code" style={{ color: '#2563eb', marginRight: 7 }} />{inc.exam_title}</>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontSize: 12 }}>—</span>
+                        )}
+                      </td>
+
+                      {/* Étudiant */}
+                      <td style={{ padding: '12px 16px', color: '#334155', fontSize: 13 }}>
+                        {inc.student_name ? (
+                          <><i className="fas fa-user" style={{ color: '#94a3b8', marginRight: 7 }} />{inc.student_name}</>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontSize: 12 }}>—</span>
+                        )}
+                      </td>
+
+                      {/* Type d'incident */}
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#334155' }}>
+                        {isInfo && inc.details ? (
+                          <span title={inc.details}>{label} <span style={{ color: '#94a3b8', fontSize: 11 }}>— {inc.details}</span></span>
+                        ) : label}
+                      </td>
+
+                      {/* Capture caméra (colonne conditionnelle) */}
+                      {hasSnapshots && (
+                        <td style={{ padding: '8px 16px' }}>
+                          {snap ? (
+                            <button onClick={() => setLightboxSrc(snap.startsWith('data:') ? snap : `data:image/jpeg;base64,${snap}`)}
+                              style={{ background: 'none', border: 'none', padding: 0, cursor: 'zoom-in', lineHeight: 0 }}
+                              title="Voir la capture">
+                              <img
+                                src={snap.startsWith('data:') ? snap : `data:image/jpeg;base64,${snap}`}
+                                alt="Capture"
+                                style={{ width: 56, height: 42, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0', display: 'block' }}
+                              />
+                            </button>
+                          ) : (
+                            <span style={{ color: '#cbd5e1', fontSize: 18 }}><i className="fas fa-image" /></span>
+                          )}
+                        </td>
+                      )}
+
+                      {/* Sévérité */}
+                      <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                        <span style={{ background: sev.bg, color: sev.color, borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          <i className={`fas ${sev.icon}`} style={{ fontSize: 11 }} />
+                          {sev.label}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {!loading && visible.length > 0 && (
@@ -198,6 +283,20 @@ export default function ProfessorNotificationsPage() {
           </div>
         )}
       </div>
+
+      {/* Lightbox snapshot */}
+      {lightboxSrc && (
+        <div onClick={() => setLightboxSrc(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}>
+          <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+            <img src={lightboxSrc} alt="Capture caméra" style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 10, objectFit: 'contain', boxShadow: '0 20px 60px rgba(0,0,0,.6)' }} />
+            <button onClick={() => setLightboxSrc(null)}
+              style={{ position: 'absolute', top: -14, right: -14, width: 30, height: 30, borderRadius: '50%', background: '#ef4444', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fas fa-times" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

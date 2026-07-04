@@ -22,6 +22,7 @@ interface Student {
   ban_reason:        string | null
   duration_minutes:  number | null
   extra_minutes:     number | null
+  proctor_id:        number | null
   proctor_name:      string | null
   livekit_identity:  string
   has_pre_sig:       boolean
@@ -31,9 +32,11 @@ interface Student {
 }
 
 interface Proctor {
-  id: number; name: string; email?: string
-  online?: boolean; student_count?: number
-  proctor_identity?: string
+  proctor_id: number
+  proctor_name: string
+  proctor_email?: string
+  proctor_identity: string
+  student_count?: number
 }
 
 interface ProctorData {
@@ -167,11 +170,13 @@ export default function ProctorMonitorPage() {
   const roomRef         = useRef<any>(null)
   const videoTracksRef  = useRef<Map<string, any>>(new Map())
   const screenTracksRef = useRef<Map<string, any>>(new Map())
+  const [proctorStatus, setProctorStatus] = useState<Map<string, {online:boolean;camOn:boolean;micOn:boolean}>>(new Map())
   const myLocalCamRef   = useRef<any>(null)
   const myLocalMicRef   = useRef<any>(null)
 
   const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null)
   const agentPoll = useRef<ReturnType<typeof setInterval> | null>(null)
+  const dataRef   = useRef<ProctorData | null>(null)
 
   /* ── Chargement données ─────────────────────────────────────────────────── */
 
@@ -179,7 +184,7 @@ export default function ProctorMonitorPage() {
     if (bg) setRefreshing(true)
     try {
       const res = await api.get<ProctorData>(`/api/online_exams/${id}/active_proctoring`)
-      setData(res)
+      setData(res); dataRef.current = res
       /* ré-attacher les tracks déjà reçus */
       setTimeout(() => {
         res.attempts?.forEach(s => {
@@ -206,7 +211,14 @@ export default function ProctorMonitorPage() {
     try {
       const since = lastMsgTsRef.current ? `?since=${encodeURIComponent(lastMsgTsRef.current)}` : ''
       const res = await api.get<any>(`/api/online_exams/${id}/student_messages${since}`)
-      const newMsgs: any[] = res.messages || []
+      let newMsgs: any[] = res.messages || []
+      // Filtrage frontend : ne garder que les messages des étudiants du groupe courant
+      // (le backend filtre déjà pour les surveillants, mais on double-vérifie)
+      const myAttemptIds = new Set((dataRef.current?.attempts || []).map((s: Student) => s.attempt_id))
+      const myRole = dataRef.current?.my_role
+      if (myRole === 'surveillant' && myAttemptIds.size > 0) {
+        newMsgs = newMsgs.filter((m: any) => myAttemptIds.has(m.attempt_id))
+      }
       if (newMsgs.length > 0) {
         lastMsgTsRef.current = newMsgs[0].timestamp
         setStudentMsgs(prev => [...newMsgs, ...prev].slice(0, 100))
@@ -218,12 +230,26 @@ export default function ProctorMonitorPage() {
   const fetchAgentAlerts = useCallback(async () => {
     try {
       const data = await api.get<any>('/api/agent/alerts')
-      setAgentAlerts(data.alerts || [])
-      setAlertBadge(data.total_unread || 0)
+      const alerts: any[] = data.alerts || []
+      const count: number = data.total_unread || 0
+      setAgentAlerts(alerts)
+      setAlertBadge(count)
+      // Notifications navigateur pour les alertes URGENT
+      if (typeof window !== 'undefined' && Notification.permission === 'granted') {
+        alerts.filter((a: any) => a.level === 'URGENT').forEach((a: any) => {
+          new Notification('URGENT — CEI Surveillance', {
+            body: `${a.student_name} — Risque ${a.risk_score}/100`,
+          })
+        })
+      }
     } catch {}
   }, []) // eslint-disable-line
 
   useEffect(() => {
+    // Demander permission notifications navigateur (comme l'original)
+    if (typeof window !== 'undefined' && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
     loadData()
     loadAgent()
     fetchAgentAlerts()
@@ -272,6 +298,18 @@ export default function ProctorMonitorPage() {
 
       room.on(LK.RoomEvent.TrackSubscribed, (track: any, pub: any, participant: any) => {
         const identity = participant.identity
+        if (identity.startsWith('proctor-') || identity.startsWith('teacher-')) {
+          setProctorStatus(prev => {
+            const next = new Map(prev)
+            const st = next.get(identity) || { online: true, camOn: false, micOn: false }
+            if (track.kind === 'video') st.camOn = true
+            if (track.kind === 'audio') st.micOn = true
+            st.online = true
+            next.set(identity, st)
+            return next
+          })
+          return
+        }
         if (!identity.startsWith('student-')) return
         const isScreen = pub.source === LK.Track.Source.ScreenShare || pub.trackName === 'screen'
         if (track.kind === 'video') {
@@ -292,6 +330,17 @@ export default function ProctorMonitorPage() {
 
       room.on(LK.RoomEvent.TrackUnsubscribed, (track: any, pub: any, participant: any) => {
         const identity = participant.identity
+        if (identity.startsWith('proctor-') || identity.startsWith('teacher-')) {
+          setProctorStatus(prev => {
+            const next = new Map(prev)
+            const st = next.get(identity) || { online: true, camOn: false, micOn: false }
+            if (track.kind === 'video') st.camOn = false
+            if (track.kind === 'audio') st.micOn = false
+            next.set(identity, st)
+            return next
+          })
+          return
+        }
         const isScreen = pub.source === LK.Track.Source?.ScreenShare || pub.trackName === 'screen'
         if (track.kind === 'video') {
           if (isScreen) {
@@ -309,6 +358,24 @@ export default function ProctorMonitorPage() {
 
       room.on(LK.RoomEvent.ParticipantConnected, (participant: any) => {
         const ident = participant.identity
+        if (ident.startsWith('proctor-') || ident.startsWith('teacher-')) {
+          setProctorStatus(prev => {
+            const next = new Map(prev)
+            const st = next.get(ident) || { online: false, camOn: false, micOn: false }
+            st.online = true
+            next.set(ident, st)
+            return next
+          })
+          // Toast connexion surveillant (comme l'original)
+          setData(prev => {
+            if (prev && ident.startsWith('proctor-')) {
+              const p = prev.proctors.find((p: Proctor) => p.proctor_identity === ident)
+              if (p) success(`Surveillant ${p.proctor_name} connecté`)
+            }
+            return prev
+          })
+          return
+        }
         if (ident.startsWith('student-')) {
           setLiveSet(prev => new Set(prev).add(ident))
         }
@@ -316,6 +383,22 @@ export default function ProctorMonitorPage() {
 
       room.on(LK.RoomEvent.ParticipantDisconnected, (participant: any) => {
         const ident = participant.identity
+        if (ident.startsWith('proctor-') || ident.startsWith('teacher-')) {
+          setProctorStatus(prev => {
+            const next = new Map(prev)
+            next.set(ident, { online: false, camOn: false, micOn: false })
+            return next
+          })
+          // Toast déconnexion surveillant (comme l'original)
+          setData(prev => {
+            if (prev && ident.startsWith('proctor-')) {
+              const p = prev.proctors.find((p: Proctor) => p.proctor_identity === ident)
+              if (p) toastErr(`Surveillant ${p.proctor_name} déconnecté`)
+            }
+            return prev
+          })
+          return
+        }
         if (ident.startsWith('student-')) {
           setLiveSet(prev => { const n = new Set(prev); n.delete(ident); return n })
           videoTracksRef.current.delete(ident)
@@ -330,8 +413,19 @@ export default function ProctorMonitorPage() {
 
       /* participants déjà présents au moment de la connexion */
       const alreadyLive: string[] = []
+      const initProctorStatus = new Map<string, {online:boolean;camOn:boolean;micOn:boolean}>()
       room.remoteParticipants.forEach((p: any) => {
         const ident = p.identity
+        if (ident.startsWith('proctor-') || ident.startsWith('teacher-')) {
+          const st = { online: true, camOn: false, micOn: false }
+          p.trackPublications.forEach((pub: any) => {
+            if (!pub.track) return
+            if (pub.track.kind === 'video') st.camOn = true
+            if (pub.track.kind === 'audio') st.micOn = true
+          })
+          initProctorStatus.set(ident, st)
+          return
+        }
         if (ident.startsWith('student-')) alreadyLive.push(ident)
         p.trackPublications.forEach((pub: any) => {
           if (!pub.track || pub.kind !== 'video') return
@@ -351,6 +445,14 @@ export default function ProctorMonitorPage() {
           }
         })
       })
+      // Fusionner (pas remplacer) pour éviter la condition de course avec TrackSubscribed
+      if (initProctorStatus.size > 0) {
+        setProctorStatus(prev => {
+          const next = new Map(prev)
+          initProctorStatus.forEach((st, id) => next.set(id, st))
+          return next
+        })
+      }
       if (alreadyLive.length > 0) {
         setLiveSet(new Set(alreadyLive))
       }
@@ -627,10 +729,22 @@ export default function ProctorMonitorPage() {
       pr.on(LK.RoomEvent.TrackSubscribed, (track: any) => {
         if (track.kind === 'video') {
           const el = document.getElementById('private-student-video') as HTMLVideoElement | null
-          if (el) track.attach(el)
+          if (el) {
+            track.attach(el)
+            const ph = document.getElementById('private-student-placeholder')
+            if (ph) ph.style.display = 'none'
+          }
         } else if (track.kind === 'audio') {
           const el = document.getElementById('private-student-audio') as HTMLAudioElement | null
           if (el) track.attach(el)
+        }
+      })
+      pr.on(LK.RoomEvent.TrackUnsubscribed, (track: any) => {
+        if (track.kind === 'video') {
+          const el = document.getElementById('private-student-video') as HTMLVideoElement | null
+          if (el) track.detach(el)
+          const ph = document.getElementById('private-student-placeholder')
+          if (ph) ph.style.display = 'flex'
         }
       })
       pr.on(LK.RoomEvent.ParticipantConnected, () => {
@@ -640,6 +754,19 @@ export default function ProctorMonitorPage() {
       pr.on(LK.RoomEvent.Disconnected, () => setPrivateStatus('Déconnecté'))
       await pr.connect(tok.ws_url, tok.token)
       setPrivateStatus(`En attente de ${name}…`)
+      // Scan des participants déjà présents
+      pr.remoteParticipants.forEach((p: any) => {
+        p.trackPublications.forEach((pub: any) => {
+          if (!pub.track) return
+          if (pub.track.kind === 'video') {
+            const el = document.getElementById('private-student-video') as HTMLVideoElement | null
+            if (el) { pub.track.attach(el); const ph = document.getElementById('private-student-placeholder'); if (ph) ph.style.display = 'none' }
+          } else if (pub.track.kind === 'audio') {
+            const el = document.getElementById('private-student-audio') as HTMLAudioElement | null
+            if (el) pub.track.attach(el)
+          }
+        })
+      })
       // micro automatique
       const micTrack = await LK.createLocalAudioTrack()
       await pr.localParticipant.publishTrack(micTrack)
@@ -769,130 +896,190 @@ export default function ProctorMonitorPage() {
       `}</style>
 
       {/* ══════════════════════════════════════════════════════ HEADER */}
-      <div style={{ background: '#1a2744', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 200, boxShadow: '0 2px 12px rgba(0,0,0,.4)', flexWrap: 'wrap', gap: 10, borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+      <div style={{ background: '#1e3a8a', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 200, boxShadow: '0 2px 12px rgba(0,0,0,.4)', flexWrap: 'wrap', gap: 8 }}>
 
-        {/* Gauche : titre + rôle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, background: 'rgba(37,99,235,.25)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className={`fas ${isSurveillant ? 'fa-user-shield' : 'fa-chalkboard-teacher'}`} style={{ fontSize: 16 }} />
+        {/* Gauche : icône + titre */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,.15)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <i className={`fas ${isSurveillant ? 'fa-user-shield' : 'fa-chalkboard-teacher'}`} style={{ fontSize: 18 }} />
           </div>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.2 }}>{examTitle}</div>
-            <div style={{ fontSize: 10, opacity: .6, marginTop: 2 }}>
-              {isSurveillant ? 'Surveillant — Mon groupe' : 'Enseignant — Vue globale'} &middot; {examStatus}
+            <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.2 }}>{examTitle}</div>
+            <div style={{ fontSize: 11, opacity: .8, marginTop: 2 }}>
+              {isSurveillant ? `Vue surveillance — Mon groupe · Statut: ${examStatus}` : `Vue pédagogique enseignant · Statut: ${examStatus}`}
             </div>
           </div>
         </div>
 
-        {/* Centre : pills stats */}
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-          <Pill label="LIVE" dot="#10b981" />
-          <Pill label={`${inProgress.length} actifs`} icon="fa-users" />
-          {highRisk.length > 0 && <Pill label={`${highRisk.length} risque élevé`} icon="fa-exclamation-triangle" color="rgba(239,68,68,.25)" />}
-          {banned.length > 0 && <Pill label={`${banned.length} exclus`} icon="fa-ban" color="rgba(239,68,68,.2)" />}
-          {!isSurveillant && completed.length > 0 && <Pill label={`${completed.length} terminés`} icon="fa-check-circle" color="rgba(16,185,129,.2)" />}
-          {!isSurveillant && avgScore != null && <Pill label={`Moy. ${avgScore.toFixed(1)}/20`} icon="fa-star" color="rgba(59,130,246,.25)" />}
-          {(msgsCount > 0 || studentMsgs.length > 0) && (
-            <button onClick={() => { setStudentMsgsModal(true); setNewMsgCount(0) }} style={{ background: newMsgCount > 0 ? 'rgba(37,99,235,.6)' : 'rgba(255,255,255,.12)', border: 'none', cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>
-              <i className="fas fa-comments" />
-              {studentMsgs.length > 0 ? studentMsgs.length : msgsCount} message(s)
-              {newMsgCount > 0 && <span style={{ background: '#ef4444', borderRadius: '50%', width: 16, height: 16, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{newMsgCount}</span>}
-            </button>
+        {/* Centre : pills stats — identiques à l'original */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'center' }}>
+          {/* LIVE */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(255,255,255,.15)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', animation: 'pulse 2s infinite', display: 'inline-block', flexShrink: 0 }} />
+            LIVE
+          </div>
+          {/* Rôle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(99,102,241,.4)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+            <i className="fas fa-user-shield" />
+            {isSurveillant ? 'Surveillant' : 'Enseignant'}
+          </div>
+          {/* Actifs */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(255,255,255,.15)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+            <i className="fas fa-users" />
+            {inProgress.length} actifs
+          </div>
+          {/* Risque élevé — toujours visible */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(239,68,68,.3)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+            <i className="fas fa-exclamation-triangle" />
+            {highRisk.length} risque élevé
+          </div>
+          {/* Bannis — toujours visible */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(239,68,68,.2)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+            <i className="fas fa-ban" />
+            {banned.length} bannis
+          </div>
+          {/* Total étudiants */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(255,255,255,.15)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+            <i className="fas fa-users" />
+            {students.length} étud.
+          </div>
+          {/* Messages — toujours visible, cliquable */}
+          <button onClick={() => { setStudentMsgsModal(true); setNewMsgCount(0) }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: newMsgCount > 0 ? 'rgba(37,99,235,.6)' : 'rgba(37,99,235,.3)', borderRadius: 20, fontSize: 12, fontWeight: 600, border: 'none', color: 'white', cursor: 'pointer' }}>
+            <i className="fas fa-comment-dots" />
+            {Math.max(msgsCount, studentMsgs.length)} message(s)
+            {newMsgCount > 0 && <span style={{ background: '#ef4444', borderRadius: '50%', width: 16, height: 16, fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{newMsgCount}</span>}
+          </button>
+          {/* Terminés (enseignant seulement) — toujours visible */}
+          {!isSurveillant && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(16,185,129,.3)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+              <i className="fas fa-check-circle" />
+              {completed.length} terminés
+            </div>
+          )}
+          {/* Note moy. (enseignant seulement) — toujours visible */}
+          {!isSurveillant && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(59,130,246,.3)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+              <i className="fas fa-star" />
+              Note moy. {avgScore != null ? `${avgScore.toFixed(1)}/20` : '—'}
+            </div>
           )}
         </div>
 
-        {/* Droite : boutons action (labels différents selon rôle) */}
-        <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Cloche alertes agent (entre pills et boutons) */}
+        <div style={{ position: 'relative', marginRight: 4 }}>
+          <button className="hdr-btn" onClick={() => setAgentPanel(p => !p)}
+            style={{ background: alertBadge > 0 ? 'rgba(239,68,68,.3)' : 'rgba(255,255,255,.2)', color: 'white', padding: '7px 14px', position: 'relative' }}>
+            <i className="fas fa-bell" />
+            {alertBadge > 0 && (
+              <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: 'white', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 700, lineHeight: '18px', textAlign: 'center', display: 'block' }}>
+                {alertBadge > 99 ? '99+' : alertBadge}
+              </span>
+            )}
+          </button>
+          {agentPanel && (
+            <div style={{ position: 'absolute', top: 44, right: 0, width: 380, maxHeight: 480, overflowY: 'auto', background: '#1e293b', borderRadius: 12, border: '1px solid #334155', boxShadow: '0 8px 32px rgba(0,0,0,.5)', zIndex: 9999 }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 700, fontSize: 14 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: 6 }}>
+                    <rect x="4" y="7" width="16" height="11" rx="2"/><circle cx="9" cy="12" r="1.5" fill="#60a5fa" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="#60a5fa" stroke="none"/>
+                    <line x1="12" y1="7" x2="12" y2="4"/><circle cx="12" cy="3" r="1" fill="#38bdf8" stroke="none"/>
+                  </svg>
+                  Alertes Agent IA
+                </span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {agentAlerts.length > 0 && (
+                    <button onClick={() => { agentAlerts.forEach(a => markAlertRead(a.attempt_id)) }}
+                      style={{ background: 'none', border: '1px solid #475569', color: '#94a3b8', padding: '3px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>
+                      Tout marquer lu
+                    </button>
+                  )}
+                  <button onClick={() => setAgentPanel(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.4)', cursor: 'pointer', fontSize: 16 }}>
+                    <i className="fas fa-times" />
+                  </button>
+                </div>
+              </div>
+              {agentAlerts.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
+                  <i className="fas fa-shield-check" style={{ fontSize: 24, display: 'block', marginBottom: 8 }} />Aucune alerte active
+                </div>
+              ) : agentAlerts.map((a: any, i: number) => {
+                const col = a.level === 'URGENT' ? '#ef4444' : '#f59e0b'
+                const ts  = a.timestamp ? new Date(a.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''
+                return (
+                  <div key={i} style={{ padding: '12px 16px', borderBottom: '1px solid #1e293b' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ background: col, color: '#fff', padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 700 }}>{a.level}</span>
+                        <strong style={{ fontSize: 13, color: '#f1f5f9' }}>{a.student_name}</strong>
+                      </div>
+                      <span style={{ fontSize: 11, color: '#64748b' }}>{ts}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>
+                      Risque <strong style={{ color: col }}>{a.risk_score}/100</strong>
+                      &nbsp;&middot;&nbsp; Sans visage {a.no_face || 0}&times;
+                      &nbsp;&middot;&nbsp; Multi-visage {a.multi_face || 0}&times;
+                      &nbsp;&middot;&nbsp; Tab switch {a.tab_switches || 0}&times;
+                    </div>
+                    {a.ai_note && (
+                      <div style={{ fontSize: 11, color: '#7dd3fc', background: '#0c1929', padding: '6px 10px', borderRadius: 6, marginBottom: 8, borderLeft: '3px solid #2563eb' }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: 4 }}>
+                          <rect x="4" y="7" width="16" height="11" rx="2"/><circle cx="9" cy="12" r="1.5" fill="#7dd3fc" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="#7dd3fc" stroke="none"/>
+                          <line x1="12" y1="7" x2="12" y2="4"/><circle cx="12" cy="3" r="1" fill="#38bdf8" stroke="none"/>
+                        </svg>
+                        {a.ai_note}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                      <button onClick={() => { setAgentPanel(false); setMsgModal({ attemptId: a.attempt_id, name: a.student_name, type: 'warning' }); setMsgText('') }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#f59e0b', color: '#fff', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                        <i className="fas fa-exclamation-triangle" /> Avertir
+                      </button>
+                      <button onClick={() => { setAgentPanel(false); startPrivateCall(a.attempt_id, a.student_name) }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#2563eb', color: '#fff', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                        <i className="fas fa-phone" /> Appel privé
+                      </button>
+                      <button onClick={() => { setAgentPanel(false); setBanModal({ attemptId: a.attempt_id, name: a.student_name }); setBanReason('') }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#dc2626', color: '#fff', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                        <i className="fas fa-ban" /> Exclure
+                      </button>
+                      <button onClick={() => markAlertRead(a.attempt_id)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#1e293b', color: '#94a3b8', border: '1px solid #334155', padding: '5px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>
+                        <i className="fas fa-check" /> Lu
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Droite : boutons action */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
           <button className="hdr-btn" onClick={toggleCam}
-            style={{ background: camOn ? '#10b981' : 'rgba(255,255,255,.12)', color: 'white' }}>
+            style={{ background: camOn ? '#10b981' : 'rgba(255,255,255,.2)', color: 'white' }}>
             <i className={`fas ${camOn ? 'fa-video' : 'fa-video-slash'}`} />
             {isSurveillant ? (camOn ? 'Arrêter caméra' : 'Diffuser caméra') : (camOn ? 'Couper caméra' : 'Caméra')}
           </button>
           <button className="hdr-btn" onClick={toggleMic}
-            style={{ background: micOn ? '#3b82f6' : 'rgba(255,255,255,.12)', color: 'white' }}>
+            style={{ background: micOn ? '#3b82f6' : 'rgba(255,255,255,.2)', color: 'white' }}>
             <i className={`fas ${micOn ? 'fa-microphone' : 'fa-microphone-slash'}`} />
             {isSurveillant ? (micOn ? 'Arrêter micro' : 'Diffuser micro') : (micOn ? 'Couper micro' : 'Micro')}
           </button>
-          <button className="hdr-btn" onClick={toggleGroupRec}
-            style={{ background: recording ? '#ef4444' : 'rgba(255,255,255,.12)', color: 'white' }}>
-            <span style={{ width: 7, height: 7, background: recording ? 'white' : '#ef4444', borderRadius: '50%', display: 'inline-block', animation: recording ? 'pulse 1s infinite' : 'none' }} />
-            {recording ? 'Arrêter REC' : (isSurveillant ? 'REC Groupe' : 'REC Salle')}
-          </button>
           <button className="hdr-btn" onClick={openRecordings}
-            style={{ background: 'rgba(255,255,255,.1)', color: 'white' }}>
+            style={{ background: 'rgba(255,255,255,.2)', color: 'white' }}>
             <i className="fas fa-film" /> Enregistrements
           </button>
-          {/* Cloche alertes agent */}
-          <div style={{ position: 'relative' }}>
-            <button className="hdr-btn" onClick={() => setAgentPanel(p => !p)}
-              style={{ background: alertBadge > 0 ? 'rgba(239,68,68,.25)' : 'rgba(255,255,255,.1)', color: 'white', position: 'relative' }}>
-              <i className="fas fa-bell" />
-              {alertBadge > 0 && (
-                <span style={{ position: 'absolute', top: -6, right: -6, background: '#ef4444', color: 'white', borderRadius: '50%', width: 18, height: 18, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {alertBadge > 99 ? '99+' : alertBadge}
-                </span>
-              )}
-            </button>
-            {agentPanel && (
-              <div style={{ position: 'absolute', top: 44, right: 0, width: 360, maxHeight: 480, overflowY: 'auto', background: '#1e293b', borderRadius: 12, border: '1px solid rgba(255,255,255,.12)', boxShadow: '0 20px 50px rgba(0,0,0,.6)', zIndex: 9999 }}
-                onClick={e => e.stopPropagation()}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 13, fontWeight: 700 }}><i className="fas fa-robot" style={{ marginRight: 6, color: '#60a5fa' }} />Alertes Agent IA</span>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {agentAlerts.length > 0 && <button onClick={() => { agentAlerts.forEach(a => markAlertRead(a.attempt_id)) }} style={{ fontSize: 10, background: 'rgba(255,255,255,.08)', border: 'none', color: 'rgba(255,255,255,.6)', borderRadius: 5, padding: '3px 8px', cursor: 'pointer' }}>Tout lu</button>}
-                    <button onClick={() => setAgentPanel(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.4)', cursor: 'pointer' }}><i className="fas fa-times" /></button>
-                  </div>
-                </div>
-                {agentAlerts.length === 0 ? (
-                  <div style={{ padding: '30px 20px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
-                    <i className="fas fa-shield-check" style={{ fontSize: 24, display: 'block', marginBottom: 8, color: '#10b981' }} />Aucune alerte active
-                  </div>
-                ) : agentAlerts.map((a: any, i: number) => {
-                  const col = a.level === 'URGENT' ? '#ef4444' : '#f59e0b'
-                  const ts  = a.timestamp ? new Date(a.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''
-                  return (
-                    <div key={i} style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                          <span style={{ background: col, color: '#fff', padding: '1px 7px', borderRadius: 8, fontSize: 10, fontWeight: 700 }}>{a.level}</span>
-                          <strong style={{ fontSize: 13, color: '#f1f5f9' }}>{a.student_name}</strong>
-                        </div>
-                        <span style={{ fontSize: 10, color: '#64748b' }}>{ts}</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6 }}>
-                        Risque <strong style={{ color: col }}>{a.risk_score}/100</strong> &middot; Sans visage {a.no_face || 0}× &middot; Tab {a.tab_switches || 0}×
-                      </div>
-                      {a.ai_note && <div style={{ fontSize: 11, color: '#7dd3fc', background: '#0c1929', padding: '5px 9px', borderRadius: 5, marginBottom: 6, borderLeft: '3px solid #2563eb' }}>{a.ai_note}</div>}
-                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                        <button onClick={() => { setAgentPanel(false); setMsgModal({ attemptId: a.attempt_id, name: a.student_name, type: 'warning' }); setMsgText('') }}
-                          style={{ fontSize: 10, background: '#f59e0b', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
-                          <i className="fas fa-exclamation-triangle" /> Avertir
-                        </button>
-                        <button onClick={() => { setAgentPanel(false); startPrivateCall(a.attempt_id, a.student_name) }}
-                          style={{ fontSize: 10, background: '#2563eb', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
-                          <i className="fas fa-phone" /> Appel
-                        </button>
-                        <button onClick={() => { setAgentPanel(false); setBanModal({ attemptId: a.attempt_id, name: a.student_name }); setBanReason('') }}
-                          style={{ fontSize: 10, background: '#dc2626', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
-                          <i className="fas fa-ban" /> Exclure
-                        </button>
-                        <button onClick={() => markAlertRead(a.attempt_id)}
-                          style={{ fontSize: 10, background: 'rgba(255,255,255,.08)', color: '#94a3b8', border: '1px solid rgba(255,255,255,.1)', padding: '4px 8px', borderRadius: 5, cursor: 'pointer' }}>
-                          <i className="fas fa-check" /> Lu
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-          <button className="hdr-btn" onClick={() => loadData(true)}
-            style={{ background: 'rgba(255,255,255,.1)', color: 'white' }}>
-            {refreshing ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-sync-alt" />}
+          {/* REC Groupe (surveillant) ou REC Salle (enseignant) */}
+          <button className="hdr-btn" onClick={toggleGroupRec}
+            style={{ background: recording ? '#ef4444' : 'rgba(239,68,68,.15)', color: recording ? 'white' : '#ef4444', border: recording ? 'none' : '1px solid rgba(239,68,68,.4)', fontSize: 12 }}>
+            <i className={`fas ${recording ? 'fa-stop-circle' : 'fa-circle'}`} style={{ fontSize: recording ? 12 : 9, color: recording ? 'white' : '#ef4444' }} />
+            {recording ? 'Arrêter REC' : (isSurveillant ? 'REC Groupe' : 'REC Salle')}
           </button>
           <button className="hdr-btn" onClick={() => router.back()}
-            style={{ background: 'rgba(255,255,255,.1)', color: 'white' }}>
+            style={{ background: 'rgba(255,255,255,.2)', color: 'white' }}>
             <i className="fas fa-arrow-left" /> Retour
           </button>
         </div>
@@ -906,18 +1093,72 @@ export default function ProctorMonitorPage() {
 
         {/* Surveillants connectés (prof uniquement) */}
         {!isSurveillant && proctors.length > 0 && (
-          <div style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,.07)', marginBottom: 16 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.35)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-              <i className="fas fa-user-tie" style={{ marginRight: 5 }} />Surveillants connectés
+          <div style={{ padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,.07)', marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.4)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8, marginTop: 6 }}>
+              <i className="fas fa-user-tie" style={{ marginRight: 5 }} />Surveillants humains connectés
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {proctors.map(p => (
-                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 12px', background: 'rgba(255,255,255,.05)', borderRadius: 8, border: '1px solid rgba(255,255,255,.08)', fontSize: 12 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: p.online ? '#10b981' : '#475569', display: 'inline-block' }} />
-                  {p.name}
-                  {p.student_count != null && <span style={{ fontSize: 10, color: 'rgba(255,255,255,.35)' }}>({p.student_count} étud.)</span>}
-                </div>
-              ))}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {proctors.map(p => {
+                const st = proctorStatus.get(p.proctor_identity) || { online: false, camOn: false, micOn: false }
+                const diffuse = st.camOn || st.micOn
+                const groupStudents = (data?.attempts || []).filter(s => s.proctor_id === p.proctor_id)
+                return (
+                  <div key={p.proctor_id} style={{
+                    background: 'rgba(255,255,255,.05)',
+                    border: `1px solid ${st.online ? 'rgba(16,185,129,.3)' : 'rgba(255,255,255,.08)'}`,
+                    borderRadius: 10,
+                    padding: '10px 14px',
+                    minWidth: 200,
+                    maxWidth: 280,
+                  }}>
+                    {/* Ligne titre */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: st.online ? '#10b981' : '#475569', display: 'inline-block', flexShrink: 0 }} />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.9)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {p.proctor_name}
+                      </span>
+                      {diffuse && (
+                        <span style={{ fontSize: 9, fontWeight: 800, color: '#ef4444', background: 'rgba(239,68,68,.15)', border: '1px solid rgba(239,68,68,.4)', borderRadius: 4, padding: '1px 5px', letterSpacing: '.05em' }}>
+                          DIFFUSE
+                        </span>
+                      )}
+                    </div>
+                    {/* Icônes cam/mic + count */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: groupStudents.length > 0 ? 8 : 0 }}>
+                      <i className={`fas fa-video`} style={{ fontSize: 11, color: st.camOn ? '#10b981' : 'rgba(255,255,255,.25)' }} />
+                      <i className={`fas fa-microphone`} style={{ fontSize: 11, color: st.micOn ? '#10b981' : 'rgba(255,255,255,.25)' }} />
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', marginLeft: 'auto' }}>
+                        {groupStudents.length} étud.
+                      </span>
+                    </div>
+                    {/* Chips étudiants */}
+                    {groupStudents.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        {groupStudents.slice(0, 8).map(s => {
+                          const parts = s.student_name.trim().split(' ')
+                          const shortName = parts.length >= 2
+                            ? `${parts[0]} ${parts[parts.length - 1][0]}.`
+                            : s.student_name
+                          return (
+                            <span key={s.attempt_id} style={{
+                              fontSize: 10,
+                              color: s.status === 'banned' ? '#f87171' : s.status === 'submitted' ? '#34d399' : 'rgba(255,255,255,.6)',
+                              background: 'rgba(255,255,255,.06)',
+                              borderRadius: 4,
+                              padding: '2px 6px',
+                            }}>
+                              {shortName}
+                            </span>
+                          )
+                        })}
+                        {groupStudents.length > 8 && (
+                          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', padding: '2px 4px' }}>+{groupStudents.length - 8}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
@@ -1268,16 +1509,24 @@ export default function ProctorMonitorPage() {
                   <i className="fas fa-comments" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />Aucun message reçu
                 </div>
               ) : studentMsgs.map((m: any, i: number) => (
-                <div key={i} style={{ background: 'rgba(37,99,235,.1)', borderLeft: '3px solid #3b82f6', borderRadius: 6, padding: '10px 14px', marginBottom: 10 }}>
+                <div key={i} style={{ background: 'rgba(37,99,235,.12)', borderLeft: '3px solid #3b82f6', borderRadius: 4, padding: '10px 12px', marginBottom: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                     <strong style={{ color: '#93c5fd', fontSize: 13 }}><i className="fas fa-user-graduate" style={{ marginRight: 5 }} />{m.student_name}</strong>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,.4)' }}>{m.timestamp ? new Date(m.timestamp).toLocaleTimeString('fr-FR') : ''}</span>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{m.timestamp ? new Date(m.timestamp).toLocaleTimeString('fr-FR') : ''}</span>
                   </div>
-                  <div style={{ fontSize: 13, color: 'white', marginBottom: 8 }}>{m.message}</div>
-                  <button onClick={() => { setStudentMsgsModal(false); setMsgModal({ attemptId: m.attempt_id, name: m.student_name, type: 'message' }); setMsgText('') }}
-                    style={{ fontSize: 11, background: 'rgba(37,99,235,.3)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
-                    <i className="fas fa-reply" /> Répondre
-                  </button>
+                  <div style={{ fontSize: 13, color: 'white', marginBottom: 6 }}>{m.message}</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <button onClick={() => { setStudentMsgsModal(false); setMsgModal({ attemptId: m.attempt_id, name: m.student_name, type: 'message' }); setMsgText('') }}
+                      style={{ fontSize: 11, background: 'rgba(37,99,235,.3)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
+                      <i className="fas fa-reply" /> Répondre
+                    </button>
+                    {m.message && m.message.includes('[DEMANDE_APPEL]') && (
+                      <button onClick={() => { setStudentMsgsModal(false); startPrivateCall(m.attempt_id, m.student_name) }}
+                        style={{ fontSize: 11, background: 'rgba(16,185,129,.4)', color: '#a7f3d0', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
+                        <i className="fas fa-phone" /> Rejoindre l'appel
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1335,9 +1584,34 @@ export default function ProctorMonitorPage() {
                   /* ── ONGLET VIDÉOS ─────────────────────────────────── */
                   <div style={{ overflowY: 'auto', flex: 1, padding: 18 }}>
                     {!videoRecs || (videoRecs.videos || []).length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '50px 20px', color: 'rgba(255,255,255,.4)' }}>
-                        <i className="fas fa-video-slash" style={{ fontSize: 40, display: 'block', marginBottom: 14 }} />
-                        {videoRecs?.error || 'Aucun enregistrement vidéo disponible'}
+                      <div style={{ textAlign: 'center', padding: '30px 20px', color: 'rgba(255,255,255,.5)' }}>
+                        <i className="fas fa-video-slash" style={{ fontSize: 36, display: 'block', marginBottom: 14, opacity: .4 }} />
+                        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, color: 'rgba(255,255,255,.7)' }}>
+                          {videoRecs?.error || 'Aucun enregistrement vidéo pour cet examen'}
+                        </div>
+                        <div style={{ fontSize: 12, lineHeight: 1.8, maxWidth: 420, margin: '0 auto', color: 'rgba(255,255,255,.45)' }}>
+                          L'enregistrement ne fonctionne que <strong style={{ color: 'rgba(255,255,255,.7)' }}>pendant que l'examen est en cours</strong> et que les étudiants sont connectés à la salle LiveKit.
+                        </div>
+                        <div style={{ marginTop: 20, background: 'rgba(245,158,11,.08)', border: '1px solid rgba(245,158,11,.25)', borderRadius: 10, padding: '14px 16px', textAlign: 'left', maxWidth: 420, margin: '20px auto 0' }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', marginBottom: 10, letterSpacing: '.5px' }}>
+                            <i className="fas fa-info-circle" /> COMMENT ENREGISTRER
+                          </div>
+                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', lineHeight: 1.8 }}>
+                            1. Ouvrez ce tableau de bord <strong style={{ color: 'rgba(255,255,255,.8)' }}>pendant l'examen</strong><br />
+                            2. Cliquez sur <span style={{ background: 'rgba(239,68,68,.3)', color: '#fca5a5', padding: '1px 7px', borderRadius: 4, fontWeight: 700 }}>REC Salle</span> (en-tête) pour enregistrer toute la salle<br />
+                            3. Cliquez sur <span style={{ background: 'rgba(239,68,68,.5)', color: '#fca5a5', padding: '1px 7px', borderRadius: 4, fontWeight: 700 }}>STOP Salle</span> avant la fin de l'examen<br />
+                            4. Revenez ici — la vidéo apparaîtra automatiquement
+                          </div>
+                        </div>
+                        <button onClick={() => { setRecModal(false); toggleGroupRec() }}
+                          style={{ marginTop: 20, background: 'rgba(239,68,68,.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,.4)', padding: '10px 20px', fontSize: 13, borderRadius: 8, cursor: 'pointer' }}>
+                          <i className="fas fa-circle" style={{ marginRight: 7 }} />Démarrer l'enregistrement maintenant
+                        </button>
+                        {(videoRecs?.attempts_total || 0) > 0 && (
+                          <div style={{ marginTop: 14, fontSize: 11, color: 'rgba(255,255,255,.25)' }}>
+                            {videoRecs.attempts_total} étudiant(s) ont participé à cet examen.
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <>
@@ -1345,13 +1619,18 @@ export default function ProctorMonitorPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
                           <div style={{ fontSize: 13, color: 'rgba(255,255,255,.5)' }}>
                             <i className="fas fa-film" style={{ marginRight: 5, color: '#60a5fa' }} />
-                            <strong style={{ color: 'rgba(255,255,255,.8)' }}>{(videoRecs.videos || []).length}</strong> enregistrement(s) sur{' '}
-                            <strong style={{ color: 'rgba(255,255,255,.8)' }}>{videoRecs.attempts_total || videoRecs.recorded_count || (videoRecs.videos || []).length}</strong> étudiant(s)
+                            <strong style={{ color: 'rgba(255,255,255,.8)' }}>{videoRecs.recorded_count || (videoRecs.videos || []).length}</strong> enregistrement(s) sur{' '}
+                            <strong style={{ color: 'rgba(255,255,255,.8)' }}>{videoRecs.attempts_total || (videoRecs.videos || []).length}</strong> étudiant(s)
                           </div>
                           <button onClick={loadVideoRecs} style={{ padding: '6px 12px', background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.12)', color: 'rgba(255,255,255,.7)', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
                             <i className="fas fa-sync-alt" style={{ marginRight: 5 }} />Actualiser
                           </button>
                         </div>
+                        {videoRecs.error && (
+                          <div style={{ color: '#f59e0b', background: 'rgba(245,158,11,.1)', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 12 }}>
+                            <i className="fas fa-exclamation-triangle" style={{ marginRight: 6 }} />{videoRecs.error}
+                          </div>
+                        )}
 
                         {(videoRecs.videos || []).map((v: any, i: number) => {
                           const rt   = REC_TYPE[v.rec_type] || REC_TYPE['individuel']
@@ -1503,55 +1782,53 @@ export default function ProctorMonitorPage() {
         )
       })()}
 
-      {/* ══════════════ Modal Appel Privé — identique à l'original */}
-      {privateCall && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 9600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#1e293b', borderRadius: 16, overflow: 'hidden', width: 520, maxWidth: '95vw', boxShadow: '0 24px 60px rgba(0,0,0,.5)', border: '1px solid #334155' }}>
-            {/* Header bleu */}
-            <div style={{ background: '#3b82f6', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <i className="fas fa-phone" style={{ color: 'white' }} />
-              <span style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>
-                Appel privé — {privateCall.name}
-              </span>
-              <button onClick={endPrivateCall}
-                style={{ marginLeft: 'auto', background: 'rgba(239,68,68,.85)', color: 'white', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                <i className="fas fa-phone-slash" /> Terminer
-              </button>
+      {/* ══════════════ Modal Appel Privé — toujours dans le DOM pour que le ref video existe */}
+      <div style={{ display: privateCall ? 'flex' : 'none', position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 9600, alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: '#1e293b', borderRadius: 16, overflow: 'hidden', width: 520, maxWidth: '95vw', boxShadow: '0 24px 60px rgba(0,0,0,.5)', border: '1px solid #334155' }}>
+          {/* Header bleu */}
+          <div style={{ background: '#3b82f6', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <i className="fas fa-phone" style={{ color: 'white' }} />
+            <span style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>
+              Appel privé — {privateCall?.name}
+            </span>
+            <button onClick={endPrivateCall}
+              style={{ marginLeft: 'auto', background: 'rgba(239,68,68,.85)', color: 'white', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+              <i className="fas fa-phone-slash" /> Terminer
+            </button>
+          </div>
+          {/* Corps : vidéo étudiant | contrôles prof */}
+          <div style={{ display: 'flex', height: 260 }}>
+            {/* Vidéo étudiant — toujours présent pour que track.attach() fonctionne */}
+            <div style={{ flex: 1, background: '#0f172a', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <video id="private-student-video" autoPlay playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              <audio id="private-student-audio" autoPlay style={{ display: 'none' }} />
+              <div id="private-student-placeholder" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, color: 'rgba(255,255,255,.25)', pointerEvents: 'none' }}>
+                <i className="fas fa-user" style={{ fontSize: 40 }} />
+                <span style={{ fontSize: 10, letterSpacing: '.06em', textTransform: 'uppercase' }}>Étudiant</span>
+              </div>
             </div>
-            {/* Corps : vidéo étudiant | contrôles prof */}
-            <div style={{ display: 'flex', height: 260 }}>
-              {/* Vidéo étudiant */}
-              <div style={{ flex: 1, background: '#0f172a', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <video id="private-student-video" autoPlay playsInline
+            {/* Contrôles professeur */}
+            <div style={{ width: 170, background: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, borderLeft: '1px solid #334155', padding: 12 }}>
+              <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Ma prévisualisation</div>
+              <div style={{ width: 140, height: 90, borderRadius: 8, background: '#1e293b', overflow: 'hidden', border: '1px solid #334155', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <video id="private-my-preview" autoPlay playsInline muted
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                <audio id="private-student-audio" autoPlay style={{ display: 'none' }} />
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, color: 'rgba(255,255,255,.25)', pointerEvents: 'none' }}>
-                  <i className="fas fa-user" style={{ fontSize: 40 }} />
-                  <span style={{ fontSize: 10, letterSpacing: '.06em', textTransform: 'uppercase' }}>Étudiant</span>
-                </div>
+                {!privateCamOn && <i className="fas fa-video-slash" style={{ position: 'absolute', color: 'rgba(255,255,255,.25)', fontSize: 20 }} />}
               </div>
-              {/* Contrôles professeur */}
-              <div style={{ width: 170, background: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, borderLeft: '1px solid #334155', padding: 12 }}>
-                <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Ma prévisualisation</div>
-                <div style={{ width: 140, height: 90, borderRadius: 8, background: '#1e293b', overflow: 'hidden', border: '1px solid #334155', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <video id="private-my-preview" autoPlay playsInline muted
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                  {!privateCamOn && <i className="fas fa-video-slash" style={{ position: 'absolute', color: 'rgba(255,255,255,.25)', fontSize: 20 }} />}
-                </div>
-                <button onClick={togglePrivateCam}
-                  style={{ width: 140, background: privateCamOn ? 'rgba(37,99,235,.5)' : 'rgba(37,99,235,.2)', color: privateCamOn ? '#bfdbfe' : '#93c5fd', border: `1px solid ${privateCamOn ? 'rgba(37,99,235,.6)' : 'rgba(37,99,235,.3)'}`, borderRadius: 8, padding: 7, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
-                  <i className={`fas ${privateCamOn ? 'fa-video' : 'fa-video-slash'}`} /> {privateCamOn ? 'Caméra on' : 'Caméra'}
-                </button>
-                <button onClick={togglePrivateMic}
-                  style={{ width: 140, background: privateMicOn ? 'rgba(16,185,129,.5)' : 'rgba(16,185,129,.2)', color: privateMicOn ? '#a7f3d0' : '#6ee7b7', border: `1px solid ${privateMicOn ? 'rgba(16,185,129,.6)' : 'rgba(16,185,129,.3)'}`, borderRadius: 8, padding: 7, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
-                  <i className={`fas ${privateMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`} /> {privateMicOn ? 'Micro on' : 'Micro'}
-                </button>
-                <div style={{ fontSize: 10, color: '#64748b', textAlign: 'center', marginTop: 4 }}>{privateStatus}</div>
-              </div>
+              <button onClick={togglePrivateCam}
+                style={{ width: 140, background: privateCamOn ? 'rgba(37,99,235,.5)' : 'rgba(37,99,235,.2)', color: privateCamOn ? '#bfdbfe' : '#93c5fd', border: `1px solid ${privateCamOn ? 'rgba(37,99,235,.6)' : 'rgba(37,99,235,.3)'}`, borderRadius: 8, padding: 7, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                <i className={`fas ${privateCamOn ? 'fa-video' : 'fa-video-slash'}`} /> {privateCamOn ? 'Caméra on' : 'Caméra'}
+              </button>
+              <button onClick={togglePrivateMic}
+                style={{ width: 140, background: privateMicOn ? 'rgba(16,185,129,.5)' : 'rgba(16,185,129,.2)', color: privateMicOn ? '#a7f3d0' : '#6ee7b7', border: `1px solid ${privateMicOn ? 'rgba(16,185,129,.6)' : 'rgba(16,185,129,.3)'}`, borderRadius: 8, padding: 7, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                <i className={`fas ${privateMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`} /> {privateMicOn ? 'Micro on' : 'Micro'}
+              </button>
+              <div style={{ fontSize: 10, color: '#64748b', textAlign: 'center', marginTop: 4 }}>{privateStatus}</div>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Logs panel */}
       {logsPanel && (

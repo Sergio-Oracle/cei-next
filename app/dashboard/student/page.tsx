@@ -5,7 +5,7 @@ import Link from 'next/link'
 import api from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
-import type { StudentPaper } from '@/types'
+import type { StudentPaper, OnlineExam } from '@/types'
 
 interface OnlineResult {
   attempt_id: number
@@ -57,21 +57,25 @@ async function downloadPDF(paperId: number) {
   } catch {}
 }
 
+const LOCALE_OPTS: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Dakar' }
+
 export default function StudentDashboard() {
   const { user } = useAuth()
   const { error } = useToast()
-  const [papers, setPapers] = useState<StudentPaper[]>([])
-  const [online, setOnline] = useState<OnlineResult[]>([])
-  const [loading, setLoading] = useState(true)
+  const [papers,      setPapers]      = useState<StudentPaper[]>([])
+  const [online,      setOnline]      = useState<OnlineResult[]>([])
+  const [activeExams, setActiveExams] = useState<OnlineExam[]>([])
+  const [loading,     setLoading]     = useState(true)
 
   useEffect(() => { load() }, []) // eslint-disable-line
 
   async function load() {
     setLoading(true)
     try {
-      const [rPapers, rOnline] = await Promise.allSettled([
+      const [rPapers, rOnline, rExams] = await Promise.allSettled([
         api.get<StudentPaper[]>('/api/student/papers'),
         api.get<OnlineResult[]>('/api/student/online_results'),
+        api.get<OnlineExam[]>('/api/online_exams'),
       ])
       if (rPapers.status === 'fulfilled') {
         const v = rPapers.value
@@ -80,6 +84,19 @@ export default function StudentDashboard() {
       if (rOnline.status === 'fulfilled') {
         const v = rOnline.value
         setOnline(Array.isArray(v) ? v : (v as any).results ?? [])
+      }
+      if (rExams.status === 'fulfilled') {
+        const v = rExams.value
+        const list: OnlineExam[] = Array.isArray(v) ? v : (v as any).exams ?? []
+        const now = Date.now()
+        // Garder les examens actifs (dans la fenêtre de temps) avec attempt en cours ou composable
+        const active = list.filter(e => {
+          if (e.status !== 'active' && e.status !== 'scheduled') return false
+          const start = new Date(e.start_time).getTime()
+          const end   = new Date(e.end_time).getTime()
+          return now >= start && now <= end
+        })
+        setActiveExams(active)
       }
     } catch { error('Erreur de chargement') }
     finally { setLoading(false) }
@@ -122,6 +139,32 @@ export default function StudentDashboard() {
         </div>
       ) : (
         <>
+          {/* ── Alerte légère : examen(s) actif(s) ─────────────────────────── */}
+          {activeExams.length > 0 && (
+            <Link href="/dashboard/student/exams" style={{ textDecoration: 'none', display: 'block', marginBottom: 20 }}>
+              <div style={{ background: '#ecfdf5', border: '1.5px solid #6ee7b7', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', transition: 'box-shadow .15s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 14px rgba(16,185,129,.18)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981', display: 'inline-block', animation: 'pulse 1.5s infinite', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontWeight: 700, color: '#065f46', fontSize: 13 }}>
+                    {activeExams.length > 1
+                      ? `${activeExams.length} examens ouverts en ce moment`
+                      : `Examen ouvert : ${activeExams[0].title}`}
+                  </span>
+                  {activeExams.length === 1 && (
+                    <span style={{ fontSize: 12, color: '#047857', marginLeft: 8 }}>
+                      — ferme le {new Date(activeExams[0].end_time).toLocaleString('fr-FR', LOCALE_OPTS)}
+                    </span>
+                  )}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                  Accéder <i className="fas fa-arrow-right" />
+                </span>
+              </div>
+            </Link>
+          )}
+
           {/* ── Tuiles stats ────────────────────────────────────────────────── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginBottom: 28 }}>
             <StatTile icon="fa-file" label="Évaluations" value={totalCount} color="#0f172a" />

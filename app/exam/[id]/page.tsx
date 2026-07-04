@@ -118,7 +118,7 @@ export default function ExamPage() {
   const [camOn,        setCamOn]        = useState(false)
   const [micOn,        setMicOn]        = useState(false)
   const [screenOn,     setScreenOn]     = useState(false)
-  const [faceStatus,   setFaceStatus]   = useState<'init'|'ok'>('init')
+  const [faceStatus,   setFaceStatus]   = useState<'init'|'ok'|'warn'|'bad'>('init')
   const [warnText,     setWarnText]     = useState('')
   const [showWarnModal,setShowWarnModal]= useState(false)
   const [msgModalText, setMsgModalText] = useState('')
@@ -138,6 +138,7 @@ export default function ExamPage() {
   const [permBusy,     setPermBusy]     = useState(false)
 
   const timerRef        = useRef<ReturnType<typeof setInterval>|null>(null)
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout>|null>(null)
   const saveRef         = useRef<ReturnType<typeof setInterval>|null>(null)
   const msgPollRef      = useRef<ReturnType<typeof setInterval>|null>(null)
   const snapshotRef     = useRef<ReturnType<typeof setInterval>|null>(null)
@@ -164,6 +165,12 @@ export default function ExamPage() {
   const sigMeta         = useRef({strokes:0,pathLength:0,startTime:0,endTime:0})
   const drawing         = useRef(false)
   const lastPos         = useRef([0,0])
+  const faceIntervalRef = useRef<ReturnType<typeof setInterval>|null>(null)
+  const lastFaceAlertRef= useRef<{no_face:number;multiple:number;mismatch:number}>({no_face:0,multiple:0,mismatch:0})
+  const consNoFaceRef   = useRef(0)
+  const consMultiRef    = useRef(0)
+  const consMismatchRef = useRef(0)
+  const refDescRef      = useRef<Float32Array|null>(null)
 
   /* ── Chargement ───────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -198,7 +205,7 @@ export default function ExamPage() {
 
   /* ── Nettoyage ────────────────────────────────────────────────────────── */
   useEffect(() => () => {
-    ;[timerRef,saveRef,msgPollRef,snapshotRef,extraPollRef].forEach(r => { if (r.current) clearInterval(r.current) })
+    ;[timerRef,saveRef,msgPollRef,snapshotRef,extraPollRef,faceIntervalRef].forEach(r => { if (r.current) clearInterval(r.current) })
     camStream.current?.getTracks().forEach(t => t.stop())
     screenStream.current?.getTracks().forEach(t => t.stop())
     if (lkRoomRef.current) { try { lkRoomRef.current.disconnect() } catch {} }
@@ -367,7 +374,7 @@ export default function ExamPage() {
     extraPollRef.current= setInterval(()=>pollExtraTime(attempt.id),30000)
     initLiveKit(attempt.id)
     setPhase('exam')
-    setTimeout(()=>setFaceStatus('ok'),3000)
+    setTimeout(()=>initFaceDetection(attempt.id),500)
   }
 
   /* ── LiveKit ──────────────────────────────────────────────────────────── */
@@ -404,12 +411,41 @@ export default function ExamPage() {
           else if(track.kind==='audio'&&teacherAudioRef.current){track.attach(teacherAudioRef.current)}
         }
       })
-      room.on(LK.RoomEvent.TrackUnsubscribed,(_t:any,_p:any,p:any)=>{
-        if(p.identity.startsWith('teacher-')) setTeacherActive(false)
-        if(p.identity.startsWith('proctor-')||p.identity.startsWith('surveillant-'))
-          setTimeout(()=>{if(!proctorVideoRef.current?.srcObject)setProctorActive(false)},300)
+      room.on(LK.RoomEvent.TrackUnsubscribed,(t:any,_p:any,p:any)=>{
+        const pid=p.identity
+        if(pid.startsWith('teacher-')){
+          if(t.kind==='video'){
+            try{if(teacherVideoRef.current)t.detach(teacherVideoRef.current)}catch{}
+            setTeacherActive(false)
+          } else if(t.kind==='audio'){
+            try{if(teacherAudioRef.current)t.detach(teacherAudioRef.current)}catch{}
+          }
+        }
+        if(pid.startsWith('proctor-')||pid.startsWith('surveillant-')){
+          if(t.kind==='video'){
+            try{if(proctorVideoRef.current)t.detach(proctorVideoRef.current)}catch{}
+            // Masquer overlay si plus aucun srcObject
+            setTimeout(()=>{if(!proctorVideoRef.current?.srcObject)setProctorActive(false)},300)
+          } else if(t.kind==='audio'){
+            try{if(proctorAudioRef.current)t.detach(proctorAudioRef.current)}catch{}
+          }
+        }
       })
       await room.connect(tok.ws_url,tok.token)
+      /* Ré-attacher les tracks déjà publiés par le prof/surveillant (cas où ils étaient déjà connectés) */
+      room.remoteParticipants.forEach((participant:any)=>{
+        const pid=participant.identity
+        participant.trackPublications.forEach((pub:any)=>{
+          if(!pub.track) return
+          if(pid.startsWith('proctor-')||pid.startsWith('surveillant-')){
+            if(pub.kind==='video'&&proctorVideoRef.current){pub.track.attach(proctorVideoRef.current);setProctorActive(true)}
+            else if(pub.kind==='audio'&&proctorAudioRef.current){pub.track.attach(proctorAudioRef.current);setProctorActive(true)}
+          } else if(pid.startsWith('teacher-')){
+            if(pub.kind==='video'&&teacherVideoRef.current){pub.track.attach(teacherVideoRef.current);setTeacherActive(true)}
+            else if(pub.kind==='audio'&&teacherAudioRef.current){pub.track.attach(teacherAudioRef.current)}
+          }
+        })
+      })
       /* Re-attacher la caméra locale après connect seulement si nécessaire */
       if(videoRef.current&&camStream.current&&videoRef.current.srcObject!==camStream.current)
         videoRef.current.srcObject=camStream.current
@@ -435,7 +471,7 @@ export default function ExamPage() {
 
   function triggerBan() {
     sessionEndedRef.current=true; setShowBanModal(true)
-    ;[timerRef,saveRef,msgPollRef,snapshotRef,extraPollRef].forEach(r=>{if(r.current)clearInterval(r.current)})
+    ;[timerRef,saveRef,msgPollRef,snapshotRef,extraPollRef,faceIntervalRef].forEach(r=>{if(r.current)clearInterval(r.current)})
     if(lkRoomRef.current){try{lkRoomRef.current.disconnect()}catch{}}
   }
 
@@ -549,16 +585,146 @@ export default function ExamPage() {
     }
   }
 
-  async function captureSnapshot(eventType:string,aId:number) {
+  async function captureSnapshot(eventType:string,aId:number,faceDetected=true,facesCount=1,confidenceScore:number|null=null,minCooldown=30_000) {
     if(sessionEndedRef.current) return
-    const now=Date.now(); if(now-lastSnapRef.current<30_000) return
+    const now=Date.now(); if(now-lastSnapRef.current<minCooldown) return
     const vid=videoRef.current; if(!vid||vid.readyState<2||vid.videoWidth===0) return
     try {
       lastSnapRef.current=now
       const c=document.createElement('canvas'); c.width=320; c.height=240
       c.getContext('2d')!.drawImage(vid,0,0,320,240)
-      await api.post(`/api/exam_attempts/${aId}/camera_snapshot`,{event_type:eventType,image_data:c.toDataURL('image/jpeg',0.55),face_detected:true,faces_count:1,confidence_score:null})
+      await api.post(`/api/exam_attempts/${aId}/camera_snapshot`,{event_type:eventType,image_data:c.toDataURL('image/jpeg',0.55),face_detected:faceDetected,faces_count:facesCount,confidence_score:confidenceScore})
     } catch {}
+  }
+
+  function initFaceDetection(aId:number) {
+    const FACEAPI_MODEL_URL='/models/faceapi'
+    const ALERT_COOLDOWN=30_000
+    const CONSEC_ALERT=3
+    const RECAPTURE_AFTER=5
+    const RECOG_THRESHOLD=0.55
+    let refCapturing=false
+    let consGood=0
+
+    async function captureReference() {
+      const fa=(window as any).faceapi; if(!fa||refCapturing) return
+      const vid=videoRef.current; if(!vid||vid.readyState<2) return
+      refCapturing=true; refDescRef.current=null; const captured:Float32Array[]=[]
+      setFaceStatus('warn')
+      const opts=new fa.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.55})
+      for(let i=0;i<3;i++){
+        if(i>0) await new Promise(r=>setTimeout(r,1500))
+        try{
+          const det=await fa.detectSingleFace(vid,opts).withFaceLandmarks().withFaceDescriptor()
+          if(det){captured.push(det.descriptor)}
+          else{refCapturing=false;setTimeout(captureReference,4000);return}
+        }catch{refCapturing=false;setTimeout(captureReference,4000);return}
+      }
+      if(captured.length===3){
+        const size=captured[0].length; const avg=new Float32Array(size)
+        for(const d of captured) for(let j=0;j<size;j++) avg[j]+=d[j]/3
+        refDescRef.current=avg
+        consNoFaceRef.current=0; consMismatchRef.current=0; consGood=0
+        const c=document.createElement('canvas'); c.width=320; c.height=240
+        const v=videoRef.current; if(v){c.getContext('2d')!.drawImage(v,0,0,320,240)}
+        const imgB64=c.toDataURL('image/jpeg',0.7).split(',')[1]
+        const curAId=attemptRef.current||aId
+        try{await api.post(`/api/exam_attempts/${curAId}/camera_snapshot`,{event_type:'face_reference_captured',image_data:'data:image/jpeg;base64,'+imgB64,face_detected:true,faces_count:1,confidence_score:null})}catch{}
+        try{await logProctoring(curAId,'face_reference_captured','Référence faciale capturée (3 frames)')}catch{}
+        setFaceStatus('ok')
+      }
+      refCapturing=false
+    }
+
+    async function faceDetectionTick() {
+      const fa=(window as any).faceapi; if(!fa||refCapturing) return
+      const vid=videoRef.current; if(!vid||vid.readyState<2||vid.videoWidth===0) return
+      if(sessionEndedRef.current){if(faceIntervalRef.current)clearInterval(faceIntervalRef.current);return}
+      const curAId=attemptRef.current||aId; const now=Date.now()
+      const opts=new fa.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.45})
+      try{
+        const dets=refDescRef.current
+          ?await fa.detectAllFaces(vid,opts).withFaceLandmarks().withFaceDescriptors()
+          :await fa.detectAllFaces(vid,opts)
+        const count=dets.length
+        if(count===0){
+          consNoFaceRef.current++; consMismatchRef.current=0; consMultiRef.current=0; consGood=0
+          if(consNoFaceRef.current>=CONSEC_ALERT){
+            setFaceStatus('bad')
+            if(now-lastFaceAlertRef.current.no_face>ALERT_COOLDOWN){
+              lastFaceAlertRef.current.no_face=now
+              warning('Aucun visage détecté — repositionnez-vous face à la caméra')
+              logProctoring(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
+              captureSnapshot('no_face_detected',curAId,false,0,null,5_000)
+            }
+          } else setFaceStatus('warn')
+        } else if(count>1){
+          consMultiRef.current++; consNoFaceRef.current=0; consMismatchRef.current=0; consGood=0
+          if(consMultiRef.current>=CONSEC_ALERT){
+            setFaceStatus('bad')
+            if(now-lastFaceAlertRef.current.multiple>ALERT_COOLDOWN){
+              lastFaceAlertRef.current.multiple=now
+              warning(`${count} visages détectés — éloignez toute autre personne`)
+              logProctoring(curAId,'multiple_faces',`${count} visages`).catch(()=>{})
+              captureSnapshot('multiple_faces',curAId,true,count,null,5_000)
+            }
+          } else setFaceStatus('warn')
+        } else {
+          consNoFaceRef.current=0; consMultiRef.current=0
+          if(refDescRef.current&&(dets[0] as any).descriptor){
+            const dist=fa.euclideanDistance((dets[0] as any).descriptor,refDescRef.current)
+            if(dist<=RECOG_THRESHOLD){
+              consMismatchRef.current=0; consGood++
+              setFaceStatus('ok')
+              if(consGood%10===0&&dist<0.4){
+                const alpha=0.1; const upd=new Float32Array(refDescRef.current.length)
+                for(let i=0;i<upd.length;i++) upd[i]=(1-alpha)*refDescRef.current[i]+alpha*(dets[0] as any).descriptor[i]
+                refDescRef.current=upd
+              }
+            } else {
+              consMismatchRef.current++; consGood=0
+              if(consMismatchRef.current>=CONSEC_ALERT){
+                if(consMismatchRef.current===RECAPTURE_AFTER){
+                  refCapturing=false; captureReference()
+                } else if(consMismatchRef.current>RECAPTURE_AFTER){
+                  setFaceStatus('warn')
+                  if(now-lastFaceAlertRef.current.mismatch>ALERT_COOLDOWN){
+                    lastFaceAlertRef.current.mismatch=now
+                    logProctoring(curAId,'face_mismatch',`distance=${dist.toFixed(3)}`).catch(()=>{})
+                    captureSnapshot('face_mismatch',curAId,true,1,1-dist,5_000)
+                  }
+                } else setFaceStatus('warn')
+              } else setFaceStatus('warn')
+            }
+          } else { setFaceStatus('ok'); consGood++ }
+        }
+      }catch{}
+    }
+
+    function loadAndStart() {
+      const fa=(window as any).faceapi
+      if(!fa){setTimeout(loadAndStart,500);return}
+      fa.nets.tinyFaceDetector.loadFromUri(FACEAPI_MODEL_URL)
+        .then(()=>fa.nets.faceLandmark68Net.loadFromUri(FACEAPI_MODEL_URL))
+        .then(()=>fa.nets.faceRecognitionNet.loadFromUri(FACEAPI_MODEL_URL))
+        .then(()=>{
+          setFaceStatus('warn')
+          setTimeout(captureReference,3000)
+          if(faceIntervalRef.current) clearInterval(faceIntervalRef.current)
+          faceIntervalRef.current=setInterval(faceDetectionTick,5000)
+        })
+        .catch(()=>{ setFaceStatus('ok') }) // dégradé: pas de modèles → indicateur OK simple
+    }
+
+    // Charger face-api.js si pas encore chargé
+    if((window as any).faceapi){
+      loadAndStart()
+    } else {
+      const s=document.createElement('script')
+      s.src='https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js'
+      s.crossOrigin='anonymous'; s.onload=loadAndStart; s.onerror=()=>setFaceStatus('ok')
+      document.head.appendChild(s)
+    }
   }
 
   async function pollExtraTime(aId:number) {
@@ -784,17 +950,18 @@ export default function ExamPage() {
           <div style={{margin:'0 12px 8px',borderRadius:8,overflow:'hidden',background:'#000',boxShadow:'0 2px 8px rgba(0,0,0,.12)',position:'relative',aspectRatio:'4/3'}}>
             <video ref={el=>{videoRef.current=el;if(el&&camStream.current&&el.srcObject!==camStream.current)el.srcObject=camStream.current}}
               autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',display:'block',transform:'scaleX(-1)'}}/>
-            <div style={{position:'absolute',top:6,right:6,padding:'3px 7px',background:faceStatus==='ok'?'rgba(16,185,129,.9)':'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',borderRadius:4,color:'white',fontSize:9,fontWeight:600,display:'flex',alignItems:'center',gap:4}}>
-              {faceStatus==='init'?<><i className="fas fa-sync fa-spin"/>Init…</>:<><i className="fas fa-user-check"/>Visage OK</>}
+            <div style={{position:'absolute',top:6,right:6,padding:'3px 7px',background:faceStatus==='ok'?'rgba(16,185,129,.9)':faceStatus==='warn'?'rgba(245,158,11,.9)':faceStatus==='bad'?'rgba(239,68,68,.9)':'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',borderRadius:4,color:'white',fontSize:9,fontWeight:600,display:'flex',alignItems:'center',gap:4}}>
+              {faceStatus==='init'&&<><i className="fas fa-sync fa-spin"/>Init…</>}
+              {faceStatus==='ok'&&<><i className="fas fa-user-check"/>Visage OK</>}
+              {faceStatus==='warn'&&<><i className="fas fa-eye-slash"/>Repositionnez…</>}
+              {faceStatus==='bad'&&<><i className="fas fa-times"/>Visage absent</>}
             </div>
           </div>
-          {/* Vidéo enseignant */}
-          {teacherActive&&(
-            <div style={{margin:'0 12px 8px',borderRadius:8,overflow:'hidden',background:'#000',border:'2px solid #f59e0b',position:'relative'}}>
-              <div style={{position:'absolute',top:4,left:6,zIndex:10,fontSize:9,fontWeight:700,color:'#f59e0b',background:'rgba(0,0,0,.7)',padding:'2px 6px',borderRadius:4}}><i className="fas fa-chalkboard-teacher"/> Enseignant</div>
-              <video ref={teacherVideoRef} autoPlay playsInline style={{width:'100%',display:'block',aspectRatio:'4/3',objectFit:'cover'}}/>
-            </div>
-          )}
+          {/* Vidéo enseignant — toujours dans le DOM pour que le ref soit disponible */}
+          <div style={{display:teacherActive?'block':'none',margin:'0 12px 8px',borderRadius:8,overflow:'hidden',background:'#000',border:'2px solid #f59e0b',position:'relative'}}>
+            <div style={{position:'absolute',top:4,left:6,zIndex:10,fontSize:9,fontWeight:700,color:'#f59e0b',background:'rgba(0,0,0,.7)',padding:'2px 6px',borderRadius:4}}><i className="fas fa-chalkboard-teacher"/> Enseignant</div>
+            <video ref={teacherVideoRef} autoPlay playsInline style={{width:'100%',display:'block',aspectRatio:'4/3',objectFit:'cover'}}/>
+          </div>
           <audio ref={teacherAudioRef} autoPlay style={{display:'none'}}/>
           {/* Périphériques */}
           <div style={{padding:'8px 12px',borderBottom:'1px solid #e2e8f0'}}>
@@ -952,7 +1119,12 @@ export default function ExamPage() {
                           })}
                         </div>
                       </div>
-                      {p1Blocks[qcmIdx]&&<PQ block={p1Blocks[qcmIdx]} answers={answers} setAnswers={setAnswers}/>}
+                      {p1Blocks[qcmIdx]&&<PQ block={p1Blocks[qcmIdx]} answers={answers} setAnswers={setAnswers} onAnswer={()=>{
+                        if(advanceTimerRef.current)clearTimeout(advanceTimerRef.current)
+                        if(qcmIdx<p1Blocks.length-1){
+                          advanceTimerRef.current=setTimeout(()=>{advanceTimerRef.current=null;setQcmIdx(q=>q+1)},450)
+                        }
+                      }}/>}
                     </div>
                   )}
                   {/* Partie 2 */}
@@ -994,18 +1166,16 @@ export default function ExamPage() {
           </div>
         </div>
 
-        {/* Overlay surveillant */}
-        {proctorActive&&(
-          <div style={{position:'fixed',bottom:24,left:296,zIndex:9000,background:'rgba(10,16,32,.92)',border:'2px solid #3b82f6',borderRadius:12,overflow:'hidden',width:220,boxShadow:'0 8px 32px rgba(0,0,0,.6)'}}>
-            <video ref={proctorVideoRef} autoPlay playsInline style={{width:'100%',display:'block',maxHeight:124,objectFit:'cover',background:'#0a1020'}}/>
-            <audio ref={proctorAudioRef} autoPlay style={{display:'none'}}/>
-            <div style={{padding:'6px 10px',display:'flex',alignItems:'center',gap:6,background:'rgba(37,99,235,.25)'}}>
-              <span style={{display:'inline-block',width:7,height:7,background:'#ef4444',borderRadius:'50%',animation:'pulse 1s infinite'}}/>
-              <span style={{color:'#bfdbfe',fontSize:12,fontWeight:600}}><i className="fas fa-user-shield" style={{marginRight:4}}/>Votre surveillant</span>
-              <button onClick={()=>setProctorActive(false)} style={{marginLeft:'auto',background:'none',border:'none',color:'rgba(255,255,255,.5)',fontSize:14,cursor:'pointer'}}>✕</button>
-            </div>
+        {/* Overlay surveillant — toujours dans le DOM pour que le ref soit disponible */}
+        <div style={{display:proctorActive?'block':'none',position:'fixed',bottom:24,left:296,zIndex:9000,background:'rgba(10,16,32,.92)',border:'2px solid #3b82f6',borderRadius:12,overflow:'hidden',width:220,boxShadow:'0 8px 32px rgba(0,0,0,.6)'}}>
+          <video ref={proctorVideoRef} autoPlay playsInline style={{width:'100%',display:'block',maxHeight:124,objectFit:'cover',background:'#0a1020'}}/>
+          <audio ref={proctorAudioRef} autoPlay style={{display:'none'}}/>
+          <div style={{padding:'6px 10px',display:'flex',alignItems:'center',gap:6,background:'rgba(37,99,235,.25)'}}>
+            <span style={{display:'inline-block',width:7,height:7,background:'#ef4444',borderRadius:'50%',animation:'pulse 1s infinite'}}/>
+            <span style={{color:'#bfdbfe',fontSize:12,fontWeight:600}}><i className="fas fa-user-shield" style={{marginRight:4}}/>Votre surveillant</span>
+            <button onClick={()=>setProctorActive(false)} style={{marginLeft:'auto',background:'none',border:'none',color:'rgba(255,255,255,.5)',fontSize:14,cursor:'pointer'}}>✕</button>
           </div>
-        )}
+        </div>
 
         {/* Modal appel privé entrant */}
         {showPrivateCallModal&&(
@@ -1156,7 +1326,7 @@ function SQ({q,idx,answers,setAnswers}:{q:Question;idx:number;answers:Record<str
 }
 
 /* Question parsée (contenu brut) */
-function PQ({block,answers,setAnswers}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>}) {
+function PQ({block,answers,setAnswers,onAnswer}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:()=>void}) {
   const isOpen=block.type==='open'||block.type==='subopen'
   const key=`pq_${block.num}`
   const answered=block.type==='subopen'?block.choices?.some(c=>(answers[`${key}_${c.letter}`]??'').trim()!==''):(answers[key]??'').trim()!==''
@@ -1175,7 +1345,7 @@ function PQ({block,answers,setAnswers}:{block:ParsedBlock;answers:Record<string,
       {block.type==='vf'&&(
         <div style={{display:'flex',gap:12}}>
           {['Vrai','Faux'].map(opt=>{const sel=answers[key]===opt;const col=opt==='Vrai'?'#10b981':'#ef4444';return(
-            <label key={opt} onClick={()=>setAnswers(p=>({...p,[key]:opt}))} style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',flex:1,justifyContent:'center',transition:'all .18s'}}>
+            <label key={opt} onClick={()=>{setAnswers(p=>({...p,[key]:opt}));onAnswer?.()}} style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',flex:1,justifyContent:'center',transition:'all .18s'}}>
               <span style={{width:32,height:32,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:14,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{opt[0]}</span>
               <span style={{fontSize:15,color:'#1e293b'}}>{opt}</span>{sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:18}}/>}
             </label>
@@ -1188,7 +1358,7 @@ function PQ({block,answers,setAnswers}:{block:ParsedBlock;answers:Record<string,
             const colors={A:'#3b82f6',B:'#10b981',C:'#f59e0b',D:'#ef4444',E:'#0891b2',F:'#f97316'} as Record<string,string>
             const col=colors[c.letter]||'#3b82f6';const sel=answers[key]===c.letter
             return(
-              <label key={ci} onClick={()=>setAnswers(p=>({...p,[key]:c.letter}))} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',transition:'all .18s',userSelect:'none'}}>
+              <label key={ci} onClick={()=>{setAnswers(p=>({...p,[key]:c.letter}));onAnswer?.()}} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',transition:'all .18s',userSelect:'none'}}>
                 <span style={{width:32,height:32,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:14,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{c.letter}</span>
                 <span style={{fontSize:15,color:'#1e293b',flex:1,lineHeight:1.5}}>{c.text}</span>
                 {sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:18,flexShrink:0}}/>}
