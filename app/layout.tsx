@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 // globals.css is loaded per-route (dashboard/login/exam/proctor) — NOT on the public landing page
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ToastProvider } from '@/contexts/ToastContext'
+import OfflineBanner from '@/components/shared/OfflineBanner'
 
 export const metadata: Metadata = {
   title: 'CEI — Centre d\'Examen Intelligent',
@@ -12,6 +13,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#1e3a8a" />
+        <link rel="manifest" href="/manifest.json" />
         <link rel="stylesheet" href="/fontawesome/all.min.css" />
         {/* Google Translate — masquer l'UI, garder la traduction */}
         <style dangerouslySetInnerHTML={{__html:`
@@ -32,6 +36,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }
         `}} />
         <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer />
+        {/* Enregistrement du service worker pour PWA / offline */}
+        <script dangerouslySetInnerHTML={{__html:`
+          if('serviceWorker' in navigator){
+            window.addEventListener('load',function(){
+              navigator.serviceWorker.register('/sw.js',{scope:'/'})
+                .catch(function(){});
+            });
+          }
+        `}} />
       </head>
       <body>
         <div id="google_translate_element" style={{display:'none'}} />
@@ -40,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </ToastProvider>
         </AuthProvider>
+        <OfflineBanner />
       </body>
     </html>
   )

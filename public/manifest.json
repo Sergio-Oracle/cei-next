@@ -1,0 +1,21 @@
+{
+  "name": "CEI — Centre d'Examen Intelligent",
+  "short_name": "CEI",
+  "description": "Plateforme d'examens en ligne surveillés — UNCHK VisioPLUS",
+  "start_url": "/login",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e3a8a",
+  "orientation": "any",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "prefer_related_applications": false
+}
