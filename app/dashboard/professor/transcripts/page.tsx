@@ -30,7 +30,7 @@ function gpaColor(v: number | null) { return v == null ? '#64748b' : v >= 10 ? '
 /* Télécharge un blob depuis l'API authentifiée et déclenche le download navigateur */
 async function downloadBlob(path: string, filename: string) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-  const res = await fetch((process.env.NEXT_PUBLIC_API_URL || 'http://62.171.190.6:8100') + path, {
+  const res = await fetch((process.env.NEXT_PUBLIC_API_URL || 'https://dev-cei.ddns.net') + path, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     credentials: 'include',
   })

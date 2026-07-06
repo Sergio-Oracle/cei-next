@@ -81,7 +81,7 @@ export default function GuideEtudiant() {
           <div className="section-header"><div className="section-icon"><i className="fas fa-sign-in-alt" /></div><h2>1. Se connecter à la plateforme</h2></div>
           <div className="section-body">
             <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Accéder à l&apos;application</h4><p>Rendez-vous sur <strong>cei.ec2lt.sn</strong> et cliquez sur <strong>Commencer Maintenant</strong>, ou allez directement sur <strong>cei.ec2lt.sn/app</strong>.</p></div></div>
+              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Accéder à l&apos;application</h4><p>Rendez-vous sur <strong>dev-cei.ddns.net</strong> et cliquez sur <strong>Commencer Maintenant</strong>, ou allez directement sur <strong>dev-cei.ddns.net</strong>.</p></div></div>
               <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Saisir vos identifiants</h4><p>Entrez votre <strong>adresse email institutionnelle</strong> et votre <strong>mot de passe</strong> fournis par l&apos;administration. Si vous n&apos;avez pas de compte, contactez votre administration.</p></div></div>
             </div>
             <div className="tip"><i className="fas fa-lightbulb" /> Votre session reste active pendant 30 jours. Déconnectez-vous toujours sur un ordinateur partagé.</div>

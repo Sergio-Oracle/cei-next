@@ -102,7 +102,7 @@ export default function GuideSurveillant() {
           <div className="section-body">
             <div className="steps">
               <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Recevoir vos identifiants</h4><p>Un administrateur crée votre compte avec le rôle <strong>Surveillant</strong>. Vous recevez un email contenant votre adresse email et votre mot de passe temporaire.</p></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Se connecter sur la plateforme</h4><p>Rendez-vous sur <strong>cei.ec2lt.sn/app</strong> (ou l&apos;adresse communiquée par votre établissement). Entrez votre email et votre mot de passe, puis cliquez sur <strong>Connexion</strong>.</p></div></div>
+              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Se connecter sur la plateforme</h4><p>Rendez-vous sur <strong>dev-cei.ddns.net</strong> (ou l&apos;adresse communiquée par votre établissement). Entrez votre email et votre mot de passe, puis cliquez sur <strong>Connexion</strong>.</p></div></div>
               <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Interface dédiée au surveillant</h4><p>Après connexion, vous accédez directement à votre <strong>Tableau de Bord Surveillant</strong>. Il n&apos;y a qu&apos;un seul onglet disponible : <em>Mes Examens</em>. Vous ne pouvez pas accéder aux autres fonctionnalités de la plateforme (correction, notes, etc.).</p><div className="info"><i className="fas fa-info-circle" /> Votre interface est intentionnellement épurée. Seuls les outils de surveillance vous sont accessibles.</div></div></div>
             </div>
           </div>
