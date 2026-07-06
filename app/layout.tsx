@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import OfflineBanner from '@/components/shared/OfflineBanner'
+import InstallPwaBanner from '@/components/shared/InstallPwaBanner'
 
 export const metadata: Metadata = {
   title: 'CEI — Centre d\'Examen Intelligent',
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </ToastProvider>
         </AuthProvider>
         <OfflineBanner />
+        <InstallPwaBanner />
       </body>
     </html>
   )
