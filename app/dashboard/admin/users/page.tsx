@@ -232,6 +232,7 @@ export default function AdminUsersPage() {
         <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
           <i className="fas fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 13 }} />
           <input type="text" placeholder="Rechercher un utilisateur…" value={search} onChange={e => setSearch(e.target.value)}
+            autoComplete="off" name="cei-admin-users-search" data-lpignore="true" data-1p-ignore
             style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }} />
         </div>
         {activeFilter && (
