@@ -495,9 +495,9 @@ export default function LandingPage() {
               ].map((s, i) => (
                 <div key={i} className="step-card step-card--blue">
                   {s.img ? (
-                    <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 14, border: '1px solid var(--gray-200)', aspectRatio: '16/10' }}>
+                    <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 14, border: '1px solid var(--gray-200)', aspectRatio: '16/10', background: 'var(--gray-100)' }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+                      <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                   ) : (
                     <div className="step-icon-wrap" style={{ background: s.bg }}>
@@ -527,9 +527,9 @@ export default function LandingPage() {
               ].map((s, i) => (
                 <div key={i} className="step-card step-card--green">
                   {s.img ? (
-                    <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 14, border: '1px solid var(--gray-200)', aspectRatio: '16/10' }}>
+                    <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 14, border: '1px solid var(--gray-200)', aspectRatio: '16/10', background: 'var(--gray-100)' }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+                      <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                   ) : (
                     <div className="step-icon-wrap" style={{ background: s.bg }}>
