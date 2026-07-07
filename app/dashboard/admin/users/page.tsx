@@ -100,7 +100,7 @@ export default function AdminUsersPage() {
     try {
       const payload: any = { email: form.email, full_name: form.full_name, role: form.role }
       if (form.password) payload.password = form.password
-      if (form.niveau) payload.niveau = form.niveau
+      payload.niveau = form.role === 'student' ? (form.niveau || null) : null
       if (editing) {
         await api.put(`/api/admin/users/${editing.id}`, payload)
         success('Utilisateur modifié')
@@ -345,21 +345,26 @@ export default function AdminUsersPage() {
             <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
               placeholder="prenom.nom@unchk.sn" style={inp} />
           </Fg>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: form.role === 'student' ? '1fr 1fr' : '1fr', gap: 14 }}>
             <Fg label="Rôle">
-              <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value as UserRole }))} style={inp}>
+              <select value={form.role} onChange={e => {
+                const role = e.target.value as UserRole
+                setForm(p => ({ ...p, role, niveau: role === 'student' ? p.niveau : '' }))
+              }} style={inp}>
                 <option value="student">Étudiant</option>
                 <option value="professor">Professeur</option>
                 <option value="surveillant">Surveillant</option>
                 <option value="admin">Administrateur</option>
               </select>
             </Fg>
-            <Fg label="Niveau">
-              <select value={form.niveau} onChange={e => setForm(p => ({ ...p, niveau: e.target.value }))} style={inp}>
-                <option value="">— Aucun —</option>
-                {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
-            </Fg>
+            {form.role === 'student' && (
+              <Fg label="Niveau">
+                <select value={form.niveau} onChange={e => setForm(p => ({ ...p, niveau: e.target.value }))} style={inp}>
+                  <option value="">— Aucun —</option>
+                  {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </Fg>
+            )}
           </div>
           <Fg label={`Mot de passe${modal === 'edit' ? ' (vide = inchangé)' : ' *'}`}>
             <input type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
