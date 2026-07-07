@@ -339,30 +339,22 @@ export default function LandingPage() {
             { img: '/screenshots/capture-4.jpeg', badge: '3', title: 'Obtenez des sujets prêts à l\'emploi', desc: "L'IA résume le cours analysé, en extrait les thèmes clés, puis propose plusieurs sujets complets avec points clés et durée estimée — à utiliser en un clic." },
             { img: '/screenshots/capture-2.jpeg', badge: '4', title: 'Ou créez un sujet manuellement', desc: "Uploadez directement un fichier de sujet existant, ou assemblez un examen depuis la banque de questions réutilisables — au choix du professeur." },
           ].map((row, i) => (
-            <div key={i} style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))',
-              gap: 48,
-              alignItems: 'center',
-              marginBottom: i < 3 ? 80 : 0,
-            }}>
-              <div style={{ order: i % 2 === 0 ? 1 : 2 }}>
-                <div className="mock-browser" style={{ boxShadow: 'var(--shadow-lg)' }}>
-                  <div className="browser-header">
-                    <div className="browser-dot dot-red" />
-                    <div className="browser-dot dot-yellow" />
-                    <div className="browser-dot dot-green" />
-                  </div>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={row.img} alt={row.title} style={{ display: 'block', width: '100%', height: 'auto' }} />
-                </div>
-              </div>
-              <div style={{ order: i % 2 === 0 ? 2 : 1 }}>
+            <div key={i} style={{ marginBottom: i < 3 ? 88 : 0 }}>
+              <div style={{ textAlign: 'center', maxWidth: 620, margin: '0 auto 32px' }}>
                 <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', background: 'var(--primary)', color: 'white', fontWeight: 800, fontSize: 15, marginBottom: 18 }}>
                   {row.badge}
                 </div>
-                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 12, lineHeight: 1.3 }}>{row.title}</h3>
-                <p style={{ color: 'var(--gray-500)', fontSize: '1rem', lineHeight: 1.75 }}>{row.desc}</p>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 12, lineHeight: 1.3 }}>{row.title}</h3>
+                <p style={{ color: 'var(--gray-500)', fontSize: '1.02rem', lineHeight: 1.75 }}>{row.desc}</p>
+              </div>
+              <div className="mock-browser" style={{ boxShadow: 'var(--shadow-xl)', maxWidth: 1140, margin: '0 auto' }}>
+                <div className="browser-header">
+                  <div className="browser-dot dot-red" />
+                  <div className="browser-dot dot-yellow" />
+                  <div className="browser-dot dot-green" />
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={row.img} alt={row.title} style={{ display: 'block', width: '100%', height: 'auto' }} />
               </div>
             </div>
           ))}
