@@ -13,6 +13,7 @@ const PUBLIC_PREFIXES = [
   '/_next/',
   '/fontawesome/',
   '/static/',
+  '/screenshots/',  // captures d'écran produit sur la page d'accueil publique
   '/favicon',
   '/manifest.json',
   '/sw.js',
@@ -42,6 +43,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon|fontawesome|sw\\.js|manifest\\.json).*)',
+    '/((?!_next/static|_next/image|favicon|fontawesome|screenshots|sw\\.js|manifest\\.json).*)',
   ],
 }

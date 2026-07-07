@@ -324,6 +324,51 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Aperçu produit ── */}
+      <section id="apercu" style={{ background: 'var(--gray-50)', padding: '100px 0' }}>
+        <div className="container">
+          <div style={{ textAlign: 'center', maxWidth: 700, margin: '0 auto 72px' }}>
+            <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 16 }}>Aperçu de la plateforme</span>
+            <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 16, lineHeight: 1.25 }}>Le CEI en action</h2>
+            <p style={{ color: 'var(--gray-500)', fontSize: '1.05rem', lineHeight: 1.7 }}>De l&apos;upload du cours à la génération du sujet, chaque étape est pensée pour faire gagner du temps à l&apos;enseignant.</p>
+          </div>
+
+          {[
+            { img: '/screenshots/capture-1.jpeg', badge: '1', title: 'Uploadez votre support de cours', desc: "Glissez un PDF, un DOCX ou un fichier texte — jusqu'à 50 Mo. L'IA s'appuie directement sur le contenu réel du cours, pas sur un résumé." },
+            { img: '/screenshots/capture-3.jpeg', badge: '2', title: 'Configurez la génération selon vos besoins', desc: "Niveau de difficulté, promotion visée, types de questions (QCM, ouvertes, Vrai/Faux) et niveaux taxonomiques de Bloom à cibler — tout est paramétrable avant génération." },
+            { img: '/screenshots/capture-4.jpeg', badge: '3', title: 'Obtenez des sujets prêts à l\'emploi', desc: "L'IA résume le cours analysé, en extrait les thèmes clés, puis propose plusieurs sujets complets avec points clés et durée estimée — à utiliser en un clic." },
+            { img: '/screenshots/capture-2.jpeg', badge: '4', title: 'Ou créez un sujet manuellement', desc: "Uploadez directement un fichier de sujet existant, ou assemblez un examen depuis la banque de questions réutilisables — au choix du professeur." },
+          ].map((row, i) => (
+            <div key={i} style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))',
+              gap: 48,
+              alignItems: 'center',
+              marginBottom: i < 3 ? 80 : 0,
+            }}>
+              <div style={{ order: i % 2 === 0 ? 1 : 2 }}>
+                <div className="mock-browser" style={{ boxShadow: 'var(--shadow-lg)' }}>
+                  <div className="browser-header">
+                    <div className="browser-dot dot-red" />
+                    <div className="browser-dot dot-yellow" />
+                    <div className="browser-dot dot-green" />
+                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={row.img} alt={row.title} style={{ display: 'block', width: '100%', height: 'auto' }} />
+                </div>
+              </div>
+              <div style={{ order: i % 2 === 0 ? 2 : 1 }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', background: 'var(--primary)', color: 'white', fontWeight: 800, fontSize: 15, marginBottom: 18 }}>
+                  {row.badge}
+                </div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 12, lineHeight: 1.3 }}>{row.title}</h3>
+                <p style={{ color: 'var(--gray-500)', fontSize: '1rem', lineHeight: 1.75 }}>{row.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ── Stats ── */}
       <section className="stats">
         <div className="stats-grid">
