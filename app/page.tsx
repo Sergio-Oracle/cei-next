@@ -342,6 +342,14 @@ export default function LandingPage() {
               { img: '/screenshots/capture-5.png', badge: '5', title: 'Configurez la sécurité de l\'examen', desc: "Seuils de bannissement, surveillants assignés, correction IA automatique — tout se règle avant publication." },
               { img: '/screenshots/capture-6.png', badge: '6', title: 'Suivez vos examens en un coup d\'œil', desc: "Statuts en temps réel et actions rapides : Activer, Surveiller, Éditer, Rallonger." },
               { img: '/screenshots/capture-7.png', badge: '7', title: 'Basculez en surveillance active', desc: "Une fois lancé, accédez directement au suivi live et à la clôture de l'examen." },
+              { img: '/screenshots/capture-8.png', badge: '8', title: 'L\'étudiant retrouve son examen', desc: "Dès l'activation, le bouton Composer apparaît sur le tableau de bord étudiant avec les créneaux et paramètres de sécurité affichés." },
+              { img: '/screenshots/capture-11.png', badge: '9', title: 'Signature de l\'engagement anti-fraude', desc: "Avant de démarrer, l'étudiant lit les conditions de surveillance et signe une attestation sur l'honneur — archivée avec sa copie." },
+              { img: '/screenshots/capture-12.png', badge: '10', title: 'Autorisation caméra, micro et écran', desc: "Les trois accès sont vérifiés un par un avant de pouvoir commencer — rien n'est laissé au hasard." },
+              { img: '/screenshots/capture-13.png', badge: '11', title: 'Partage d\'écran complet obligatoire', desc: "Le navigateur impose le choix explicite \"Tout l'écran\" — le partage de fenêtre ou d'onglet seul est refusé par la plateforme." },
+              { img: '/screenshots/capture-14.png', badge: '12', title: 'Composition sous surveillance IA en temps réel', desc: "Caméra, micro et écran actifs, score de risque visible, messagerie directe avec l'enseignant — tout est réuni dans une seule interface." },
+              { img: '/screenshots/capture-9.png', badge: '13', title: 'Le surveillant suit tous ses examens', desc: "Nombre d'étudiants à surveiller, examens en cours et accès direct à la surveillance en un clic." },
+              { img: '/screenshots/capture-10.png', badge: '14', title: 'Détail par étudiant, statut en direct', desc: "Liste complète des étudiants assignés avec leur statut de composition et leur score de risque, mis à jour en continu." },
+              { img: '/screenshots/capture-15.png', badge: '15', title: 'Supervision vidéo en direct', desc: "Flux caméra, alertes, appel et bannissement en un clic — l'agent IA autonome tourne en parallèle du surveillant humain." },
             ].map((card, i) => (
               <div key={i}>
                 <div className="mock-browser" style={{ boxShadow: 'var(--shadow-xl)' }}>
