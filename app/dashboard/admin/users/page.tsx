@@ -489,10 +489,10 @@ export default function AdminUsersPage() {
                   <i className="fas fa-check-circle" style={{ marginRight: 5 }} />
                   {importResult.created || 0} utilisateur(s) créé(s)
                 </strong>
-                {(importResult.emails_sent ?? 0) > 0 && (
+                {(importResult.emails_queued ?? 0) > 0 && (
                   <div style={{ marginTop: 4, color: '#166534' }}>
                     <i className="fas fa-envelope" style={{ marginRight: 4 }} />
-                    {importResult.emails_sent} email(s) de notification envoyé(s)
+                    {importResult.emails_queued} email(s) de notification en cours d&apos;envoi
                   </div>
                 )}
                 {importResult.users?.length > 0 && (
