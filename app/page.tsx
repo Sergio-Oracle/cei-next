@@ -358,6 +358,33 @@ export default function LandingPage() {
               </div>
             </div>
           ))}
+
+          {/* ── Sous-section : gestion des examens (côte à côte) ── */}
+          <div style={{ textAlign: 'center', maxWidth: 620, margin: '96px auto 40px' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 12, lineHeight: 1.3 }}>Gérez vos examens de bout en bout</h3>
+            <p style={{ color: 'var(--gray-500)', fontSize: '1.02rem', lineHeight: 1.75 }}>Création, planification et surveillance en direct — tout depuis un tableau de bord unique.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 28 }}>
+            {[
+              { img: '/screenshots/capture-5.png', title: 'Configurez la sécurité de l\'examen', desc: "Seuils de bannissement, surveillants assignés, correction IA automatique — tout se règle avant publication." },
+              { img: '/screenshots/capture-6.png', title: 'Suivez vos examens en un coup d\'œil', desc: "Statuts en temps réel et actions rapides : Activer, Surveiller, Éditer, Rallonger." },
+              { img: '/screenshots/capture-7.png', title: 'Basculez en surveillance active', desc: "Une fois lancé, accédez directement au suivi live et à la clôture de l'examen." },
+            ].map((card, i) => (
+              <div key={i}>
+                <div className="mock-browser" style={{ boxShadow: 'var(--shadow-lg)', marginBottom: 18 }}>
+                  <div className="browser-header">
+                    <div className="browser-dot dot-red" />
+                    <div className="browser-dot dot-yellow" />
+                    <div className="browser-dot dot-green" />
+                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={card.img} alt={card.title} style={{ display: 'block', width: '100%', height: 'auto' }} />
+                </div>
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: 8 }}>{card.title}</h4>
+                <p style={{ color: 'var(--gray-500)', fontSize: '.92rem', lineHeight: 1.65 }}>{card.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
