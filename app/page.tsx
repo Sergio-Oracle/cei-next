@@ -438,11 +438,11 @@ export default function LandingPage() {
 
       {/* ── Comment ça marche (examen en ligne) ── */}
       <section id="comment-ca-marche" className="online-exams">
-        <div className="container">
+        <div className="container" style={{ maxWidth: 1440 }}>
           <h2>Ce qui se passe pendant un examen en ligne</h2>
           <p className="section-subtitle">Chaque session est surveillée en temps réel — caméra, écran partagé, comportement — de la connexion à la correction automatique.</p>
 
-          <div className="exams-showcase">
+          <div className="exams-showcase" style={{ gridTemplateColumns: '.85fr 1.15fr' }}>
             <div className="exams-features">
               {[
                 { svg: <><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>, title: 'Caméra activée automatiquement', desc: "Dès le lancement, la caméra s'active et le flux vidéo HD est transmis en direct au panneau de surveillance de l'enseignant." },
