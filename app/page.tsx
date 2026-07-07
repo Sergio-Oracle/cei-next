@@ -333,45 +333,18 @@ export default function LandingPage() {
             <p style={{ color: 'var(--gray-500)', fontSize: '1.05rem', lineHeight: 1.7 }}>De l&apos;upload du cours à la génération du sujet, chaque étape est pensée pour faire gagner du temps à l&apos;enseignant.</p>
           </div>
 
-          {[
-            { img: '/screenshots/capture-1.jpeg', badge: '1', title: 'Uploadez votre support de cours', desc: "Glissez un PDF, un DOCX ou un fichier texte — jusqu'à 50 Mo. L'IA s'appuie directement sur le contenu réel du cours, pas sur un résumé." },
-            { img: '/screenshots/capture-3.jpeg', badge: '2', title: 'Configurez la génération selon vos besoins', desc: "Niveau de difficulté, promotion visée, types de questions (QCM, ouvertes, Vrai/Faux) et niveaux taxonomiques de Bloom à cibler — tout est paramétrable avant génération." },
-            { img: '/screenshots/capture-4.jpeg', badge: '3', title: 'Obtenez des sujets prêts à l\'emploi', desc: "L'IA résume le cours analysé, en extrait les thèmes clés, puis propose plusieurs sujets complets avec points clés et durée estimée — à utiliser en un clic." },
-            { img: '/screenshots/capture-2.jpeg', badge: '4', title: 'Ou créez un sujet manuellement', desc: "Uploadez directement un fichier de sujet existant, ou assemblez un examen depuis la banque de questions réutilisables — au choix du professeur." },
-          ].map((row, i) => (
-            <div key={i} style={{ marginBottom: i < 3 ? 88 : 0 }}>
-              <div style={{ textAlign: 'center', maxWidth: 620, margin: '0 auto 32px' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', background: 'var(--primary)', color: 'white', fontWeight: 800, fontSize: 15, marginBottom: 18 }}>
-                  {row.badge}
-                </div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 12, lineHeight: 1.3 }}>{row.title}</h3>
-                <p style={{ color: 'var(--gray-500)', fontSize: '1.02rem', lineHeight: 1.75 }}>{row.desc}</p>
-              </div>
-              <div className="mock-browser" style={{ boxShadow: 'var(--shadow-xl)', maxWidth: 1140, margin: '0 auto' }}>
-                <div className="browser-header">
-                  <div className="browser-dot dot-red" />
-                  <div className="browser-dot dot-yellow" />
-                  <div className="browser-dot dot-green" />
-                </div>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={row.img} alt={row.title} style={{ display: 'block', width: '100%', height: 'auto' }} />
-              </div>
-            </div>
-          ))}
-
-          {/* ── Sous-section : gestion des examens (côte à côte) ── */}
-          <div style={{ textAlign: 'center', maxWidth: 620, margin: '96px auto 40px' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 12, lineHeight: 1.3 }}>Gérez vos examens de bout en bout</h3>
-            <p style={{ color: 'var(--gray-500)', fontSize: '1.02rem', lineHeight: 1.75 }}>Création, planification et surveillance en direct — tout depuis un tableau de bord unique.</p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 28 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(460px,1fr))', gap: 44 }}>
             {[
-              { img: '/screenshots/capture-5.png', title: 'Configurez la sécurité de l\'examen', desc: "Seuils de bannissement, surveillants assignés, correction IA automatique — tout se règle avant publication." },
-              { img: '/screenshots/capture-6.png', title: 'Suivez vos examens en un coup d\'œil', desc: "Statuts en temps réel et actions rapides : Activer, Surveiller, Éditer, Rallonger." },
-              { img: '/screenshots/capture-7.png', title: 'Basculez en surveillance active', desc: "Une fois lancé, accédez directement au suivi live et à la clôture de l'examen." },
+              { img: '/screenshots/capture-1.jpeg', badge: '1', title: 'Uploadez votre support de cours', desc: "Glissez un PDF, un DOCX ou un fichier texte — jusqu'à 50 Mo. L'IA s'appuie directement sur le contenu réel du cours, pas sur un résumé." },
+              { img: '/screenshots/capture-3.jpeg', badge: '2', title: 'Configurez la génération selon vos besoins', desc: "Niveau de difficulté, promotion visée, types de questions et niveaux taxonomiques de Bloom à cibler — tout est paramétrable avant génération." },
+              { img: '/screenshots/capture-4.jpeg', badge: '3', title: 'Obtenez des sujets prêts à l\'emploi', desc: "L'IA résume le cours analysé, en extrait les thèmes clés, puis propose plusieurs sujets complets avec points clés et durée estimée." },
+              { img: '/screenshots/capture-2.jpeg', badge: '4', title: 'Ou créez un sujet manuellement', desc: "Uploadez directement un fichier de sujet existant, ou assemblez un examen depuis la banque de questions réutilisables." },
+              { img: '/screenshots/capture-5.png', badge: '5', title: 'Configurez la sécurité de l\'examen', desc: "Seuils de bannissement, surveillants assignés, correction IA automatique — tout se règle avant publication." },
+              { img: '/screenshots/capture-6.png', badge: '6', title: 'Suivez vos examens en un coup d\'œil', desc: "Statuts en temps réel et actions rapides : Activer, Surveiller, Éditer, Rallonger." },
+              { img: '/screenshots/capture-7.png', badge: '7', title: 'Basculez en surveillance active', desc: "Une fois lancé, accédez directement au suivi live et à la clôture de l'examen." },
             ].map((card, i) => (
               <div key={i}>
-                <div className="mock-browser" style={{ boxShadow: 'var(--shadow-lg)', marginBottom: 18 }}>
+                <div className="mock-browser" style={{ boxShadow: 'var(--shadow-xl)' }}>
                   <div className="browser-header">
                     <div className="browser-dot dot-red" />
                     <div className="browser-dot dot-yellow" />
@@ -380,8 +353,15 @@ export default function LandingPage() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={card.img} alt={card.title} style={{ display: 'block', width: '100%', height: 'auto' }} />
                 </div>
-                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: 8 }}>{card.title}</h4>
-                <p style={{ color: 'var(--gray-500)', fontSize: '.92rem', lineHeight: 1.65 }}>{card.desc}</p>
+                <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginTop: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, minWidth: 30, borderRadius: '50%', background: 'var(--primary)', color: 'white', fontWeight: 800, fontSize: 13 }}>
+                    {card.badge}
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 6, lineHeight: 1.3 }}>{card.title}</h3>
+                    <p style={{ color: 'var(--gray-500)', fontSize: '.95rem', lineHeight: 1.65 }}>{card.desc}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
