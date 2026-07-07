@@ -462,7 +462,7 @@ export default function LandingPage() {
               ))}
             </div>
 
-            {/* Mock browser */}
+            {/* Capture réelle de l'interface de composition surveillée */}
             <div className="exams-visual">
               <div className="mock-browser">
                 <div className="browser-header">
@@ -471,56 +471,8 @@ export default function LandingPage() {
                   <div className="browser-dot dot-green" />
                   <span style={{ fontSize: 10, color: 'var(--gray-400)', marginLeft: 10, fontFamily: 'monospace' }}>examen-surveillé · session active</span>
                 </div>
-                <div style={{ display: 'flex', height: 310, overflow: 'hidden' }}>
-                  {/* Panneau surveillance */}
-                  <div style={{ width: 112, minWidth: 112, background: '#1e293b', padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 9 }}>
-                    <div style={{ fontSize: 8, fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '.06em' }}>Surveillance</div>
-                    <div style={{ aspectRatio: '4/3', background: '#0f172a', borderRadius: 5, border: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                      <div style={{ position: 'absolute', bottom: 3, right: 3, width: 7, height: 7, background: '#10b981', borderRadius: '50%' }} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {[['Caméra', 'On'], ['Micro', 'On'], ['Écran', 'On']].map(([label, val]) => (
-                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#94a3b8' }}>
-                          <span>{label}</span><span style={{ color: '#10b981', fontWeight: 700 }}>{val}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ background: '#0f172a', borderRadius: 5, padding: 7 }}>
-                      <div style={{ fontSize: 8, color: '#64748b', marginBottom: 4, fontWeight: 600 }}>Risque</div>
-                      <div style={{ height: 4, background: '#1e293b', borderRadius: 2, overflow: 'hidden' }}>
-                        <div style={{ width: '9%', height: '100%', background: '#10b981', borderRadius: 2 }} />
-                      </div>
-                      <div style={{ fontSize: 9, color: '#10b981', textAlign: 'right', marginTop: 3, fontWeight: 700 }}>9 / 100</div>
-                    </div>
-                    <div style={{ fontSize: 8, color: '#64748b', textAlign: 'center', marginTop: 'auto', padding: '5px 0', borderTop: '1px solid #334155' }}>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle' }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                      {' '}Aucune alerte
-                    </div>
-                  </div>
-                  {/* Panneau examen */}
-                  <div style={{ flex: 1, background: '#f8fafc', padding: 12, display: 'flex', flexDirection: 'column', gap: 9, overflow: 'hidden' }}>
-                    <div style={{ background: 'linear-gradient(135deg,#2563eb,#1e40af)', color: 'white', padding: '9px 13px', borderRadius: 7, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700 }}>Algorithmique — Examen Final</span>
-                      <span style={{ fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        01:38:42
-                      </span>
-                    </div>
-                    <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 7, padding: 9, flexShrink: 0 }}>
-                      <div style={{ fontSize: 8, fontWeight: 700, color: '#3b82f6', marginBottom: 4 }}>Question 1 · 4 pts</div>
-                      <div style={{ fontSize: 9, color: '#334155', lineHeight: 1.5 }}>Expliquez la complexité O(n log n) et citez un algorithme de tri qui l&apos;atteint en justifiant.</div>
-                    </div>
-                    <div style={{ flex: 1, background: 'white', border: '1px solid #e2e8f0', borderRadius: 7, padding: 9, fontSize: 9, color: '#475569', lineHeight: 1.5, overflow: 'hidden' }}>
-                      Le tri fusion (Merge Sort) atteint O(n log n) car il divise le tableau en deux moitiés récursives…
-                    </div>
-                    <div style={{ fontSize: 8, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                      <span style={{ color: '#10b981', fontWeight: 600 }}>Surveillance active</span>
-                      &nbsp;·&nbsp; Sauvegardé il y a 22 s
-                    </div>
-                  </div>
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/screenshots/capture-14.png" alt="Interface de composition sous surveillance IA en temps réel" style={{ display: 'block', width: '100%', height: 'auto' }} />
               </div>
             </div>
           </div>
@@ -536,15 +488,22 @@ export default function LandingPage() {
             </div>
             <div className="steps-grid" id="steps-prof">
               {[
-                { svg: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: "Créer l'examen", desc: "Configurez le titre, la durée, les plages horaires et rédigez le sujet — ou générez-le avec l'IA." },
-                { svg: <><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: "Activer l'examen", desc: "Activez l'examen à l'heure prévue. Les étudiants inscrits voient immédiatement le bouton Composer." },
-                { svg: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: 'Surveiller en direct', desc: "Le dashboard affiche la grille vidéo de tous les étudiants, leurs scores de risque et les alertes automatiques." },
-                { svg: <><path d="M12 2a2 2 0 012 2v1h4a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V6a1 1 0 011-1h4V4a2 2 0 012-2z"/><path d="M9 17h6"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: "Corriger avec l'IA", desc: "Après soumission, l'IA corrige chaque copie selon le barème. Validez, ajustez si besoin, puis publiez les notes." },
+                { img: '/screenshots/capture-5.png', svg: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: "Créer l'examen", desc: "Configurez le titre, la durée, les plages horaires et rédigez le sujet — ou générez-le avec l'IA." },
+                { img: '/screenshots/capture-6.png', svg: <><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: "Activer l'examen", desc: "Activez l'examen à l'heure prévue. Les étudiants inscrits voient immédiatement le bouton Composer." },
+                { img: '/screenshots/capture-15.png', svg: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: 'Surveiller en direct', desc: "Le dashboard affiche la grille vidéo de tous les étudiants, leurs scores de risque et les alertes automatiques." },
+                { img: null, svg: <><path d="M12 2a2 2 0 012 2v1h4a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V6a1 1 0 011-1h4V4a2 2 0 012-2z"/><path d="M9 17h6"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: "Corriger avec l'IA", desc: "Après soumission, l'IA corrige chaque copie selon le barème. Validez, ajustez si besoin, puis publiez les notes." },
               ].map((s, i) => (
                 <div key={i} className="step-card step-card--blue">
-                  <div className="step-icon-wrap" style={{ background: s.bg }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={s.stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{s.svg}</svg>
-                  </div>
+                  {s.img ? (
+                    <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 14, border: '1px solid var(--gray-200)', aspectRatio: '16/10' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+                    </div>
+                  ) : (
+                    <div className="step-icon-wrap" style={{ background: s.bg }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={s.stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{s.svg}</svg>
+                    </div>
+                  )}
                   <div className="step-badge" style={{ background: s.color }}>Étape {i + 1}</div>
                   <h4 className="step-title">{s.title}</h4>
                   <p className="step-desc">{s.desc}</p>
@@ -561,15 +520,22 @@ export default function LandingPage() {
             </div>
             <div className="steps-grid" id="steps-student">
               {[
-                { svg: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: "Voir l'examen disponible", desc: "L'examen apparaît dans votre tableau de bord avec le bouton Composer ou un compte à rebours jusqu'à l'ouverture." },
-                { svg: <><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: 'Autoriser la surveillance', desc: "Autorisez caméra, micro et partage d'écran dans votre navigateur. La plateforme active tout automatiquement au lancement." },
-                { svg: <><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: 'Composer', desc: "Lisez le sujet et rédigez vos réponses. Sauvegarde automatique toutes les 30 s. Posez vos questions via la messagerie intégrée." },
-                { svg: <><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: 'Soumettre & consulter', desc: "Soumettez avant l'expiration. Consultez ensuite votre note, le feedback IA par question et votre relevé de notes officiel." },
+                { img: '/screenshots/capture-8.png', svg: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: "Voir l'examen disponible", desc: "L'examen apparaît dans votre tableau de bord avec le bouton Composer ou un compte à rebours jusqu'à l'ouverture." },
+                { img: '/screenshots/capture-12.png', svg: <><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: 'Autoriser la surveillance', desc: "Autorisez caméra, micro et partage d'écran dans votre navigateur. La plateforme active tout automatiquement au lancement." },
+                { img: '/screenshots/capture-14.png', svg: <><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: 'Composer', desc: "Lisez le sujet et rédigez vos réponses. Sauvegarde automatique toutes les 30 s. Posez vos questions via la messagerie intégrée." },
+                { img: null, svg: <><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: 'Soumettre & consulter', desc: "Soumettez avant l'expiration. Consultez ensuite votre note, le feedback IA par question et votre relevé de notes officiel." },
               ].map((s, i) => (
                 <div key={i} className="step-card step-card--green">
-                  <div className="step-icon-wrap" style={{ background: s.bg }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={s.stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{s.svg}</svg>
-                  </div>
+                  {s.img ? (
+                    <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 14, border: '1px solid var(--gray-200)', aspectRatio: '16/10' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+                    </div>
+                  ) : (
+                    <div className="step-icon-wrap" style={{ background: s.bg }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={s.stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{s.svg}</svg>
+                    </div>
+                  )}
                   <div className="step-badge" style={{ background: s.color }}>Étape {i + 1}</div>
                   <h4 className="step-title">{s.title}</h4>
                   <p className="step-desc">{s.desc}</p>
