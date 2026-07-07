@@ -326,14 +326,14 @@ export default function LandingPage() {
 
       {/* ── Aperçu produit ── */}
       <section id="apercu" style={{ background: 'var(--gray-50)', padding: '100px 0' }}>
-        <div className="container">
+        <div className="container" style={{ maxWidth: 1440 }}>
           <div style={{ textAlign: 'center', maxWidth: 700, margin: '0 auto 72px' }}>
             <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 16 }}>Aperçu de la plateforme</span>
             <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 16, lineHeight: 1.25 }}>Le CEI en action</h2>
             <p style={{ color: 'var(--gray-500)', fontSize: '1.05rem', lineHeight: 1.7 }}>De l&apos;upload du cours à la génération du sujet, chaque étape est pensée pour faire gagner du temps à l&apos;enseignant.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(460px,1fr))', gap: 44 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(560px,1fr))', gap: 44 }}>
             {[
               { img: '/screenshots/capture-1.jpeg', badge: '1', title: 'Uploadez votre support de cours', desc: "Glissez un PDF, un DOCX ou un fichier texte — jusqu'à 50 Mo. L'IA s'appuie directement sur le contenu réel du cours, pas sur un résumé." },
               { img: '/screenshots/capture-3.jpeg', badge: '2', title: 'Configurez la génération selon vos besoins', desc: "Niveau de difficulté, promotion visée, types de questions et niveaux taxonomiques de Bloom à cibler — tout est paramétrable avant génération." },
