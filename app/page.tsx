@@ -97,63 +97,79 @@ export default function LandingPage() {
     }
   }, [])
 
-  /* Animations + count-up — exactement comme landing.html original */
+  /* Animations scroll (anime.js) + count-up */
   useEffect(() => {
-    /* ── Scroll-reveal (même approche que l'original : JS ajoute .reveal puis observe) ── */
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.remove('l-hidden')
-          e.target.classList.add('l-visible')
-          io.unobserve(e.target)
-        }
-      })
-    }, { threshold: 0.12 })
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const disconnectFns: Array<() => void> = []
 
-    /* Sélectionner les mêmes éléments que l'original */
-    document.querySelectorAll(
-      '.feature-card, .exam-feature-item, .security-card, .stat-item, [data-reveal]'
-    ).forEach(el => {
-      el.classList.add('l-hidden')
-      io.observe(el)
-    })
-
-    /* ── Step grids (Enseignant / Étudiant) ── */
-    function observeStepGrid(gridId: string) {
-      const grid = document.getElementById(gridId)
-      if (!grid) return
-      const cards = grid.querySelectorAll('.step-card')
-      const io2 = new IntersectionObserver((entries) => {
+    /* Groupe : tous les enfants d'un conteneur apparaissent en cascade ensemble */
+    function revealGroup(container: Element | null, staggerMs = 90, extra?: (items: Element[]) => void) {
+      if (!container || reduceMotion) return
+      const items = Array.from(container.children)
+      if (!items.length) return
+      const io = new IntersectionObserver((entries) => {
         if (!entries[0].isIntersecting) return
-        io2.disconnect()
-        grid.classList.add('anim-done')
-        cards.forEach(card => {
-          card.classList.add('step-card-js')
-          requestAnimationFrame(() => card.classList.add('step-visible'))
+        io.disconnect()
+        animate(items, {
+          opacity: [0, 1],
+          translateY: [28, 0],
+          duration: 650,
+          ease: 'outExpo',
+          delay: stagger(staggerMs),
         })
-      }, { threshold: 0.15 })
-      io2.observe(grid)
+        extra?.(items)
+      }, { threshold: 0.12 })
+      io.observe(container)
+      disconnectFns.push(() => io.disconnect())
     }
-    observeStepGrid('steps-prof')
-    observeStepGrid('steps-student')
 
-    /* ── Count-up animé ── */
+    /* Élément isolé (pas dans un groupe en grille) */
+    function revealOne(el: Element | null) {
+      if (!el || reduceMotion) return
+      const io = new IntersectionObserver((entries) => {
+        if (!entries[0].isIntersecting) return
+        io.disconnect()
+        animate(el, { opacity: [0, 1], translateY: [24, 0], duration: 600, ease: 'outExpo' })
+      }, { threshold: 0.12 })
+      io.observe(el)
+      disconnectFns.push(() => io.disconnect())
+    }
+
+    revealGroup(document.getElementById('mission-grid-1'))
+    revealGroup(document.getElementById('mission-grid-2'))
+    revealGroup(document.querySelector('.features-grid'), 60)
+    revealGroup(document.querySelector('.security-grid'), 70)
+    revealGroup(document.querySelector('.exams-features'), 80)
+    revealGroup(document.getElementById('testimonials-grid'), 100)
+    revealGroup(document.getElementById('steps-prof'), 120, () => {
+      document.getElementById('steps-prof')?.classList.add('anim-done')
+    })
+    revealGroup(document.getElementById('steps-student'), 120, () => {
+      document.getElementById('steps-student')?.classList.add('anim-done')
+    })
+    document.querySelectorAll('.process-label[data-reveal]').forEach(el => revealOne(el))
+
+    /* ── Stats : reveal + count-up déclenchés ensemble ── */
     const STATS: Record<string, number> = {
       'stat-students': 1480, 'stat-exams': 320,
       'stat-attempts': 4750, 'stat-corrections': 3920,
     }
-    const statsSection = document.querySelector('.stats')
-    if (statsSection) {
-      const observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-          observer.disconnect()
-          Object.entries(STATS).forEach(([id, val]) => {
-            const el = document.getElementById(id)
-            if (el) animateCount(el, val, 1600)
-          })
+    const statsGrid = document.querySelector('.stats-grid')
+    if (statsGrid) {
+      const items = Array.from(statsGrid.children)
+      const statsIo = new IntersectionObserver((entries) => {
+        if (!entries[0].isIntersecting) return
+        statsIo.disconnect()
+        if (!reduceMotion) {
+          animate(items, { opacity: [0, 1], translateY: [28, 0], duration: 650, ease: 'outExpo', delay: stagger(90) })
         }
+        Object.entries(STATS).forEach(([id, val]) => {
+          const el = document.getElementById(id)
+          if (el) animateCount(el, val, 1600)
+        })
       }, { threshold: 0.3 })
-      observer.observe(statsSection)
+      statsIo.observe(statsGrid)
+      disconnectFns.push(() => statsIo.disconnect())
     }
 
     /* ── Close lang menu on outside click ── */
@@ -164,7 +180,7 @@ export default function LandingPage() {
     document.addEventListener('click', closeMenu)
 
     return () => {
-      io.disconnect()
+      disconnectFns.forEach(fn => fn())
       document.removeEventListener('click', closeMenu)
     }
   }, [])
@@ -172,9 +188,10 @@ export default function LandingPage() {
   function goTo(id: string) {
     const el = document.getElementById(id)
     if (!el) return
-    /* Forcer l'état visible avant de calculer la position (l-hidden a un transform) */
-    el.classList.remove('l-hidden')
-    el.classList.add('l-visible')
+    /* Forcer l'état visible avant de calculer la position, au cas où le
+       reveal au scroll de son groupe ne se serait pas encore déclenché */
+    ;(el as HTMLElement).style.opacity = '1'
+    ;(el as HTMLElement).style.transform = 'none'
     requestAnimationFrame(() => {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' })
       /* Flash de mise en évidence pour indiquer la carte exacte */
@@ -270,22 +287,22 @@ export default function LandingPage() {
             <p style={{ color: 'var(--gray-500)', fontSize: '1.05rem', lineHeight: 1.7 }}>Au Sénégal, les enseignants font face à des promotions surchargées, des délais de correction serrés et des fraudes difficiles à contrôler — surtout en présentiel. Le CEI est né pour répondre à ces défis concrets avec une solution entièrement numérique, accessible depuis n&apos;importe quel navigateur.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 28, marginBottom: 72 }}>
-            <div data-reveal="1" style={{ border: '1px solid var(--gray-200)', borderRadius: 16, padding: 32, background: 'var(--gray-50)' }}>
+          <div id="mission-grid-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 28, marginBottom: 72 }}>
+            <div style={{ border: '1px solid var(--gray-200)', borderRadius: 16, padding: 32, background: 'var(--gray-50)' }}>
               <div style={{ width: 48, height: 48, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
               </div>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: 10 }}>Objectif</h3>
               <p style={{ color: 'var(--gray-500)', fontSize: '.93rem', lineHeight: 1.7 }}>Numériser l&apos;intégralité du cycle d&apos;examen — de la création du sujet à la publication des relevés de notes — en éliminant les tâches manuelles répétitives et en garantissant l&apos;intégrité académique à chaque étape.</p>
             </div>
-            <div data-reveal="1" style={{ border: '1px solid var(--gray-200)', borderRadius: 16, padding: 32, background: 'var(--gray-50)' }}>
+            <div style={{ border: '1px solid var(--gray-200)', borderRadius: 16, padding: 32, background: 'var(--gray-50)' }}>
               <div style={{ width: 48, height: 48, borderRadius: 12, background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
               </div>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: 10 }}>Public visé</h3>
               <p style={{ color: 'var(--gray-500)', fontSize: '.93rem', lineHeight: 1.7 }}>Universités, grandes écoles, centres de formation professionnelle et instituts techniques au Sénégal et en Afrique de l&apos;Ouest. La plateforme s&apos;adresse aux établissements publics comme privés souhaitant moderniser leur système d&apos;évaluation.</p>
             </div>
-            <div data-reveal="1" style={{ border: '1px solid var(--gray-200)', borderRadius: 16, padding: 32, background: 'var(--gray-50)' }}>
+            <div style={{ border: '1px solid var(--gray-200)', borderRadius: 16, padding: 32, background: 'var(--gray-50)' }}>
               <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               </div>
@@ -294,14 +311,14 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 20 }}>
+          <div id="mission-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 20 }}>
             {[
               { bg: '#eff6ff', stroke: '#2563eb', path: <polyline points="20 6 9 17 4 12"/>, title: 'Gain de temps > 90 %', desc: "La correction IA génère un feedback détaillé par copie en quelques secondes, avec note calculée automatiquement selon le barème défini." },
               { bg: '#ecfdf5', stroke: '#059669', path: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></>, title: 'Anti-triche avancé', desc: "Surveillance caméra + écran + détection faciale + reconnaissance d'identité en temps réel. Chaque incident est logué et horodaté avec preuve." },
               { bg: '#fef3c7', stroke: '#d97706', path: <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></>, title: 'Relevés officiels PDF', desc: "Génération automatique des relevés semestriels avec calcul de la moyenne pondérée, crédits, GPA — conformes aux exigences académiques." },
               { bg: '#f0fdf4', stroke: '#16a34a', path: <><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></>, title: '100 % navigateur', desc: "Aucune installation requise. La plateforme fonctionne sur tout navigateur moderne — adapté aux contextes où les équipements sont limités." },
             ].map((item, i) => (
-              <div key={i} data-reveal="1" style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: 20, borderRadius: 12, border: '1px solid var(--gray-200)', background: 'white' }}>
+              <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: 20, borderRadius: 12, border: '1px solid var(--gray-200)', background: 'white' }}>
                 <div style={{ width: 36, height: 36, minWidth: 36, borderRadius: 8, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={item.stroke} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">{item.path}</svg>
                 </div>
@@ -560,13 +577,13 @@ export default function LandingPage() {
             <h2 style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 14, lineHeight: 1.25 }}>Ce qu&apos;en disent les professionnels</h2>
             <p style={{ color: 'var(--gray-500)', fontSize: '.97rem', lineHeight: 1.7 }}>Enseignants, ingénieurs et responsables académiques partagent leur expérience avec la plateforme.</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 24 }}>
+          <div id="testimonials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 24 }}>
             {[
               { initial: 'S', color: 'linear-gradient(135deg,#2563eb,#1e40af)', quote: "Le CEI répond directement aux besoins des universités africaines qui se digitalisent. La surveillance en temps réel et la correction automatique permettent d'offrir une expérience d'examen à distance digne de ce nom, sans compromis sur la rigueur académique. C'est exactement ce qu'il faut pour des établissements comme l'UVS qui gèrent des milliers d'étudiants dispersés sur tout le territoire.", name: 'Professeur Samuel OUYA', role: 'Recteur — Université Virtuelle du Sénégal (UVS), Dakar' },
               { initial: 'S', color: 'linear-gradient(135deg,#0f766e,#0d9488)', quote: "En tant qu'ingénieur spécialisé en cybersécurité, ce qui m'a convaincu c'est l'architecture de surveillance : détection faciale, partage d'écran obligatoire, logs horodatés à chaque action. Le niveau de traçabilité est comparable à ce qu'on retrouve dans les certifications professionnelles. Le CEI apporte une vraie réponse technique au problème de fraude dans nos filières.", name: 'Serge BOUNGUELE', role: 'Ingénieur Télécoms Réseaux (Cybersécurité/DevOps) — RTN' },
               { initial: 'N', color: 'linear-gradient(135deg,#2563eb,#1e40af)', quote: "Enseigner à l'EC2LT c'est gérer des étudiants qui jonglent entre travail et formation. La correction IA du CEI m'a libéré un temps considérable — ce qui prenait 3 jours se fait maintenant en une heure. Les étudiants reçoivent un feedback précis question par question, ce qui améliore leur compréhension. Un outil indispensable pour l'enseignement des filières techniques à distance.", name: 'Nasry AHAMADI', role: 'Télécoms Réseaux (Cybersécurité/DevOps) — Enseignant EC2LT' },
             ].map((item, i) => (
-              <div key={i} data-reveal="1" style={{ background: 'white', borderRadius: 16, padding: 32, border: '1px solid var(--gray-200)', boxShadow: '0 4px 16px rgba(0,0,0,.06)', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div key={i} style={{ background: 'white', borderRadius: 16, padding: 32, border: '1px solid var(--gray-200)', boxShadow: '0 4px 16px rgba(0,0,0,.06)', display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div style={{ display: 'flex', gap: 4 }}>
                   {[0,1,2,3,4].map(j => <svg key={j} width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>)}
                 </div>

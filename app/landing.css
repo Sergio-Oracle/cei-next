@@ -819,80 +819,16 @@ section h2 {
 
 /* ============================================================================
    ANIMATIONS
+   Le reveal au scroll (cartes, étapes, stats) est piloté par anime.js
+   (app/page.tsx) — animation directement sur le style inline, plus de
+   classes CSS .l-hidden/.l-visible/.step-card-js ici.
    ============================================================================ */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.feature-card,
-.exam-feature-item,
-.security-card,
-.stat-item {
-    animation: fadeIn 0.6s ease-out backwards;
-}
-
-.feature-card:nth-child(1) { animation-delay: 0.1s; }
-.feature-card:nth-child(2) { animation-delay: 0.2s; }
-.feature-card:nth-child(3) { animation-delay: 0.3s; }
-.feature-card:nth-child(4) { animation-delay: 0.4s; }
-.feature-card:nth-child(5) { animation-delay: 0.5s; }
-.feature-card:nth-child(6) { animation-delay: 0.6s; }
-/* ── Animations JS-initiées (ajoutées par JavaScript, non par CSS) ── */
-.l-hidden {
-    opacity: 0 !important;
-    transform: translateY(32px) !important;
-    transition: opacity .6s cubic-bezier(.4,0,.2,1), transform .6s cubic-bezier(.4,0,.2,1) !important;
-}
-.l-hidden:nth-child(2) { transition-delay: .1s !important; }
-.l-hidden:nth-child(3) { transition-delay: .2s !important; }
-.l-hidden:nth-child(4) { transition-delay: .3s !important; }
-.l-hidden:nth-child(5) { transition-delay: .4s !important; }
-.l-hidden:nth-child(6) { transition-delay: .5s !important; }
-
-.l-visible {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-    transition: opacity .6s cubic-bezier(.4,0,.2,1), transform .6s cubic-bezier(.4,0,.2,1) !important;
-}
-
-/* ── Step cards (hidden/visible via JS) ── */
-.step-card-js {
-    opacity: 0 !important;
-    transform: translateY(36px) scale(.97) !important;
-    transition: opacity .5s cubic-bezier(.4,0,.2,1), transform .5s cubic-bezier(.4,0,.2,1), box-shadow .25s, border-color .25s !important;
-}
-.step-card-js.step-visible {
-    opacity: 1 !important;
-    transform: translateY(0) scale(1) !important;
-}
-.step-card-js:nth-child(1) { transition-delay: 0s !important; }
-.step-card-js:nth-child(2) { transition-delay: .13s !important; }
-.step-card-js:nth-child(3) { transition-delay: .26s !important; }
-.step-card-js:nth-child(4) { transition-delay: .39s !important; }
 
 /* ── Stat counter ── */
 .stat-num {
     font-size: 52px;
     font-weight: 800;
     letter-spacing: -1px;
-}
-
-/* ── Step badge animation ── */
-.step-badge-js {
-    transform: scale(0.6) !important;
-    opacity: 0 !important;
-    transition: transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s !important;
-}
-.step-visible .step-badge-js {
-    transform: scale(1) !important;
-    opacity: 1 !important;
 }
 
 /* ── Lang switcher ── */
