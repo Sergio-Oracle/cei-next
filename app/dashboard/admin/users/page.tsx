@@ -347,15 +347,24 @@ export default function AdminUsersPage() {
           </Fg>
           <div style={{ display: 'grid', gridTemplateColumns: form.role === 'student' ? '1fr 1fr' : '1fr', gap: 14 }}>
             <Fg label="Rôle">
-              <select value={form.role} onChange={e => {
-                const role = e.target.value as UserRole
-                setForm(p => ({ ...p, role, niveau: role === 'student' ? p.niveau : '' }))
-              }} style={inp}>
-                <option value="student">Étudiant</option>
-                <option value="professor">Professeur</option>
-                <option value="surveillant">Surveillant</option>
-                <option value="admin">Administrateur</option>
-              </select>
+              {modal === 'create' ? (
+                // Rôle déjà déterminé par le bouton cliqué (Étudiant/Professeur/Surveillant) — non modifiable.
+                // Un utilisateur "Administrateur" ne se crée pas via ce chemin (aucun bouton dédié).
+                <div style={{ ...inp, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--background)', color: 'var(--text-muted)' }}>
+                  <i className={`fas ${ROLE_META[form.role]?.icon}`} style={{ color: ROLE_META[form.role]?.color }} />
+                  {ROLE_META[form.role]?.label}
+                </div>
+              ) : (
+                <select value={form.role} onChange={e => {
+                  const role = e.target.value as UserRole
+                  setForm(p => ({ ...p, role, niveau: role === 'student' ? p.niveau : '' }))
+                }} style={inp}>
+                  <option value="student">Étudiant</option>
+                  <option value="professor">Professeur</option>
+                  <option value="surveillant">Surveillant</option>
+                  <option value="admin">Administrateur</option>
+                </select>
+              )}
             </Fg>
             {form.role === 'student' && (
               <Fg label="Niveau">
