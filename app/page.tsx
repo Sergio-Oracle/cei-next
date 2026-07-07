@@ -3,6 +3,7 @@
 import './landing.css'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { animate, createTimeline, stagger } from 'animejs'
 
 /* ── i18n ───────────────────────────────────────────────────────────── */
 const LD: Record<string, Record<string, string>> = {
@@ -32,17 +33,16 @@ const LD: Record<string, Record<string, string>> = {
   },
 }
 
-/* ── Count-up ──────────────────────────────────────────────────────── */
+/* ── Count-up (anime.js) ───────────────────────────────────────────── */
 function animateCount(el: HTMLElement, target: number, duration: number) {
-  const start = performance.now()
-  const step = (now: number) => {
-    const p = Math.min((now - start) / duration, 1)
-    const ease = p === 1 ? 1 : 1 - Math.pow(2, -10 * p)
-    el.textContent = Math.floor(ease * target).toLocaleString('fr-FR')
-    if (p < 1) requestAnimationFrame(step)
-    else el.textContent = target.toLocaleString('fr-FR')
-  }
-  requestAnimationFrame(step)
+  const counter = { val: 0 }
+  animate(counter, {
+    val: target,
+    duration,
+    ease: 'outExpo',
+    onUpdate: () => { el.textContent = Math.floor(counter.val).toLocaleString('fr-FR') },
+    onComplete: () => { el.textContent = target.toLocaleString('fr-FR') },
+  })
 }
 
 /* ── Component ─────────────────────────────────────────────────────── */
@@ -50,6 +50,28 @@ export default function LandingPage() {
   const [lang, setLang] = useState<'fr' | 'en' | 'wo'>('fr')
   const [menuOpen, setMenuOpen] = useState(false)
   const t = LD[lang]
+  const heroRef = useRef<HTMLElement>(null)
+
+  /* Animation d'entrée du hero (anime.js) — respecte prefers-reduced-motion */
+  useEffect(() => {
+    const root = heroRef.current
+    if (!root) return
+
+    const icon     = root.querySelector('.hero-icon')
+    const title    = root.querySelector('h1')
+    const subtitle = root.querySelector('p')
+    const buttons  = root.querySelectorAll('.cta-buttons > *')
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const tl = createTimeline({ defaults: { ease: 'outExpo' } })
+    if (icon)            tl.add(icon,     { opacity: [0, 1], scale: [0.6, 1], duration: 700 })
+    if (title)           tl.add(title,    { opacity: [0, 1], translateY: [24, 0], duration: 700 }, '-=450')
+    if (subtitle)        tl.add(subtitle, { opacity: [0, 1], translateY: [18, 0], duration: 600 }, '-=450')
+    if (buttons.length)  tl.add(buttons,  { opacity: [0, 1], translateY: [14, 0], duration: 500, delay: stagger(90) }, '-=350')
+
+    return () => { tl.revert() }
+  }, [])
 
   /* Restore lang from localStorage + sync cookie + déclencher GT si besoin */
   useEffect(() => {
@@ -219,7 +241,7 @@ export default function LandingPage() {
       </div>
 
       {/* ── Hero ── */}
-      <section className="hero">
+      <section className="hero" ref={heroRef}>
         <div className="hero-content">
           <div className="hero-icon">
             <i className="fas fa-graduation-cap" />
