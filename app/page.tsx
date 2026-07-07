@@ -3,7 +3,9 @@
 import './landing.css'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { animate, createTimeline, stagger } from 'animejs'
+import { animate } from 'animejs/animation'
+import { createTimeline } from 'animejs/timeline'
+import { stagger } from 'animejs/utils'
 
 /* ── i18n ───────────────────────────────────────────────────────────── */
 const LD: Record<string, Record<string, string>> = {
