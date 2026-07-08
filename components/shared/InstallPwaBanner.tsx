@@ -1,11 +1,21 @@
 'use client'
 
+import { useEffect } from 'react'
 import { usePwaInstall } from '@/hooks/usePwaInstall'
 
 export default function InstallPwaBanner() {
   const { canInstall, showIosInstructions, promptInstall, dismiss } = usePwaInstall()
+  const visible = canInstall || showIosInstructions
 
-  if (!canInstall && !showIosInstructions) return null
+  /* Signale la présence de la bannière au reste de la page (ex: sélecteur de
+     langue de la landing, aussi en position fixed en haut) pour éviter tout
+     chevauchement avec d'autres éléments fixes. */
+  useEffect(() => {
+    document.body.classList.toggle('pwa-banner-visible', visible)
+    return () => { document.body.classList.remove('pwa-banner-visible') }
+  }, [visible])
+
+  if (!visible) return null
 
   return (
     <div style={{
@@ -19,6 +29,7 @@ export default function InstallPwaBanner() {
       boxShadow:      '0 2px 8px rgba(0,0,0,0.08)',
       padding:        '10px 16px',
       display:        'flex',
+      flexWrap:       'wrap',
       alignItems:     'center',
       gap:            '12px',
       fontSize:       '13.5px',

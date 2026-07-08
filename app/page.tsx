@@ -247,7 +247,7 @@ export default function LandingPage() {
             <p style={{ color: 'var(--gray-500)', fontSize: '1.05rem', lineHeight: 1.7 }}>Au Sénégal, les enseignants font face à des promotions surchargées, des délais de correction serrés et des fraudes difficiles à contrôler — surtout en présentiel. Le CEI est né pour répondre à ces défis concrets avec une solution entièrement numérique, accessible depuis n&apos;importe quel navigateur.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 28, marginBottom: 72 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(280px, 100%), 1fr))', gap: 28, marginBottom: 72 }}>
             <div data-reveal="1" style={{ border: '1px solid var(--gray-200)', borderRadius: 16, padding: 32, background: 'var(--gray-50)' }}>
               <div style={{ width: 48, height: 48, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
@@ -271,7 +271,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px, 100%), 1fr))', gap: 20 }}>
             {[
               { bg: '#eff6ff', stroke: '#2563eb', path: <polyline points="20 6 9 17 4 12"/>, title: 'Gain de temps > 90 %', desc: "La correction IA génère un feedback détaillé par copie en quelques secondes, avec note calculée automatiquement selon le barème défini." },
               { bg: '#ecfdf5', stroke: '#059669', path: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></>, title: 'Anti-triche avancé', desc: "Surveillance caméra + écran + détection faciale + reconnaissance d'identité en temps réel. Chaque incident est logué et horodaté avec preuve." },
@@ -373,7 +373,7 @@ export default function LandingPage() {
           ].map((group, g) => (
             <div key={g} style={{ marginBottom: g < 3 ? 80 : 0 }}>
               <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 32, paddingBottom: 12, borderBottom: '2px solid var(--gray-200)' }}>{group.heading}</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(560px,1fr))', gap: 44 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(560px, 100%), 1fr))', gap: 44 }}>
                 {group.items.map((card, i) => (
                   <div key={i}>
                     <div className="mock-browser" style={{ boxShadow: 'var(--shadow-xl)' }}>
@@ -614,7 +614,7 @@ export default function LandingPage() {
             <h2 style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 14, lineHeight: 1.25 }}>Ce qu&apos;en disent les professionnels</h2>
             <p style={{ color: 'var(--gray-500)', fontSize: '.97rem', lineHeight: 1.7 }}>Enseignants, ingénieurs et responsables académiques partagent leur expérience avec la plateforme.</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(300px, 100%), 1fr))', gap: 24 }}>
             {[
               { initial: 'S', color: 'linear-gradient(135deg,#2563eb,#1e40af)', quote: "Le CEI répond directement aux besoins des universités africaines qui se digitalisent. La surveillance en temps réel et la correction automatique permettent d'offrir une expérience d'examen à distance digne de ce nom, sans compromis sur la rigueur académique. C'est exactement ce qu'il faut pour des établissements comme l'UVS qui gèrent des milliers d'étudiants dispersés sur tout le territoire.", name: 'Professeur Samuel OUYA', role: 'Recteur — Université Virtuelle du Sénégal (UVS), Dakar' },
               { initial: 'S', color: 'linear-gradient(135deg,#0f766e,#0d9488)', quote: "En tant qu'ingénieur spécialisé en cybersécurité, ce qui m'a convaincu c'est l'architecture de surveillance : détection faciale, partage d'écran obligatoire, logs horodatés à chaque action. Le niveau de traçabilité est comparable à ce qu'on retrouve dans les certifications professionnelles. Le CEI apporte une vraie réponse technique au problème de fraude dans nos filières.", name: 'Serge BOUNGUELE', role: 'Ingénieur Télécoms Réseaux (Cybersécurité/DevOps) — RTN' },
