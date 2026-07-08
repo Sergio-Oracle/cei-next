@@ -239,7 +239,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Mission ── */}
-      <section id="mission" style={{ background: 'white', padding: '80px 0' }}>
+      <section id="mission" className="py-80" style={{ background: 'white' }}>
         <div className="container">
           <div style={{ textAlign: 'center', maxWidth: 760, margin: '0 auto 64px' }}>
             <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 16 }}>Notre mission</span>
@@ -326,7 +326,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Aperçu produit ── */}
-      <section id="apercu" style={{ background: 'var(--gray-50)', padding: '100px 0' }}>
+      <section id="apercu" className="py-100" style={{ background: 'var(--gray-50)' }}>
         <div className="container" style={{ maxWidth: 1440 }}>
           <div style={{ textAlign: 'center', maxWidth: 700, margin: '0 auto 72px' }}>
             <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 16 }}>Aperçu de la plateforme</span>
@@ -338,36 +338,36 @@ export default function LandingPage() {
             {
               heading: 'Génération de sujets par IA — côté enseignant',
               items: [
-                { img: '/screenshots/capture-1.jpeg', badge: '1', title: 'Uploadez votre support de cours', desc: "Glissez un PDF, un DOCX ou un fichier texte — jusqu'à 50 Mo. L'IA s'appuie directement sur le contenu réel du cours, pas sur un résumé." },
-                { img: '/screenshots/capture-3.jpeg', badge: '2', title: 'Configurez la génération selon vos besoins', desc: "Niveau de difficulté, promotion visée, types de questions et niveaux taxonomiques de Bloom à cibler — tout est paramétrable avant génération." },
-                { img: '/screenshots/capture-4.jpeg', badge: '3', title: 'Obtenez des sujets prêts à l\'emploi', desc: "L'IA résume le cours analysé, en extrait les thèmes clés, puis propose plusieurs sujets complets avec points clés et durée estimée." },
-                { img: '/screenshots/capture-2.jpeg', badge: '4', title: 'Ou créez un sujet manuellement', desc: "Uploadez directement un fichier de sujet existant, ou assemblez un examen depuis la banque de questions réutilisables." },
+                { img: '/screenshots/capture-1.jpg', badge: '1', title: 'Uploadez votre support de cours', desc: "Glissez un PDF, un DOCX ou un fichier texte — jusqu'à 50 Mo. L'IA s'appuie directement sur le contenu réel du cours, pas sur un résumé." },
+                { img: '/screenshots/capture-3.jpg', badge: '2', title: 'Configurez la génération selon vos besoins', desc: "Niveau de difficulté, promotion visée, types de questions et niveaux taxonomiques de Bloom à cibler — tout est paramétrable avant génération." },
+                { img: '/screenshots/capture-4.jpg', badge: '3', title: 'Obtenez des sujets prêts à l\'emploi', desc: "L'IA résume le cours analysé, en extrait les thèmes clés, puis propose plusieurs sujets complets avec points clés et durée estimée." },
+                { img: '/screenshots/capture-2.jpg', badge: '4', title: 'Ou créez un sujet manuellement', desc: "Uploadez directement un fichier de sujet existant, ou assemblez un examen depuis la banque de questions réutilisables." },
               ],
             },
             {
               heading: 'Création et gestion des examens — côté enseignant',
               items: [
-                { img: '/screenshots/capture-5.png', badge: '5', title: 'Configurez la sécurité de l\'examen', desc: "Seuils de bannissement, surveillants assignés, correction IA automatique — tout se règle avant publication." },
-                { img: '/screenshots/capture-6.png', badge: '6', title: 'Suivez vos examens en un coup d\'œil', desc: "Statuts en temps réel et actions rapides : Activer, Surveiller, Éditer, Rallonger." },
-                { img: '/screenshots/capture-7.png', badge: '7', title: 'Basculez en surveillance active', desc: "Une fois lancé, accédez directement au suivi live et à la clôture de l'examen." },
+                { img: '/screenshots/capture-5.jpg', badge: '5', title: 'Configurez la sécurité de l\'examen', desc: "Seuils de bannissement, surveillants assignés, correction IA automatique — tout se règle avant publication." },
+                { img: '/screenshots/capture-6.jpg', badge: '6', title: 'Suivez vos examens en un coup d\'œil', desc: "Statuts en temps réel et actions rapides : Activer, Surveiller, Éditer, Rallonger." },
+                { img: '/screenshots/capture-7.jpg', badge: '7', title: 'Basculez en surveillance active', desc: "Une fois lancé, accédez directement au suivi live et à la clôture de l'examen." },
               ],
             },
             {
               heading: 'Pendant l\'examen — côté étudiant',
               items: [
-                { img: '/screenshots/capture-8.png', badge: '8', title: 'L\'étudiant retrouve son examen', desc: "Dès l'activation, le bouton Composer apparaît sur le tableau de bord étudiant avec les créneaux et paramètres de sécurité affichés." },
-                { img: '/screenshots/capture-11.png', badge: '9', title: 'Signature de l\'engagement anti-fraude', desc: "Avant de démarrer, l'étudiant lit les conditions de surveillance et signe une attestation sur l'honneur — archivée avec sa copie." },
-                { img: '/screenshots/capture-12.png', badge: '10', title: 'Autorisation caméra, micro et écran', desc: "Les trois accès sont vérifiés un par un avant de pouvoir commencer — rien n'est laissé au hasard." },
-                { img: '/screenshots/capture-13.png', badge: '11', title: 'Partage d\'écran complet obligatoire', desc: "Le navigateur impose le choix explicite \"Tout l'écran\" — le partage de fenêtre ou d'onglet seul est refusé par la plateforme." },
-                { img: '/screenshots/capture-14.png', badge: '12', title: 'Composition sous surveillance IA en temps réel', desc: "Caméra, micro et écran actifs, score de risque visible, messagerie directe avec l'enseignant — tout est réuni dans une seule interface." },
+                { img: '/screenshots/capture-8.jpg', badge: '8', title: 'L\'étudiant retrouve son examen', desc: "Dès l'activation, le bouton Composer apparaît sur le tableau de bord étudiant avec les créneaux et paramètres de sécurité affichés." },
+                { img: '/screenshots/capture-11.jpg', badge: '9', title: 'Signature de l\'engagement anti-fraude', desc: "Avant de démarrer, l'étudiant lit les conditions de surveillance et signe une attestation sur l'honneur — archivée avec sa copie." },
+                { img: '/screenshots/capture-12.jpg', badge: '10', title: 'Autorisation caméra, micro et écran', desc: "Les trois accès sont vérifiés un par un avant de pouvoir commencer — rien n'est laissé au hasard." },
+                { img: '/screenshots/capture-13.jpg', badge: '11', title: 'Partage d\'écran complet obligatoire', desc: "Le navigateur impose le choix explicite \"Tout l'écran\" — le partage de fenêtre ou d'onglet seul est refusé par la plateforme." },
+                { img: '/screenshots/capture-14.jpg', badge: '12', title: 'Composition sous surveillance IA en temps réel', desc: "Caméra, micro et écran actifs, score de risque visible, messagerie directe avec l'enseignant — tout est réuni dans une seule interface." },
               ],
             },
             {
               heading: 'Le tableau de bord dédié au surveillant',
               items: [
-                { img: '/screenshots/capture-9.png', badge: '13', title: 'Un tableau de bord qui lui est propre', desc: "Le surveillant a sa propre interface, distincte de celle du professeur : nombre d'étudiants qui lui sont assignés, examens en cours, accès direct à sa surveillance." },
-                { img: '/screenshots/capture-10.png', badge: '14', title: 'Détail des étudiants de son groupe', desc: "Liste des étudiants qui lui sont attribués (pas l'ensemble de la promotion), avec statut de composition et score de risque en direct." },
-                { img: '/screenshots/capture-15.png', badge: '15', title: 'Supervision vidéo de son groupe', desc: "Flux caméra, alertes, appel et bannissement — limités aux étudiants qui lui ont été attribués par le professeur. Le professeur, lui, voit tous les surveillants et tous les groupes depuis sa propre vue d'ensemble." },
+                { img: '/screenshots/capture-9.jpg', badge: '13', title: 'Un tableau de bord qui lui est propre', desc: "Le surveillant a sa propre interface, distincte de celle du professeur : nombre d'étudiants qui lui sont assignés, examens en cours, accès direct à sa surveillance." },
+                { img: '/screenshots/capture-10.jpg', badge: '14', title: 'Détail des étudiants de son groupe', desc: "Liste des étudiants qui lui sont attribués (pas l'ensemble de la promotion), avec statut de composition et score de risque en direct." },
+                { img: '/screenshots/capture-15.jpg', badge: '15', title: 'Supervision vidéo de son groupe', desc: "Flux caméra, alertes, appel et bannissement — limités aux étudiants qui lui ont été attribués par le professeur. Le professeur, lui, voit tous les surveillants et tous les groupes depuis sa propre vue d'ensemble." },
               ],
             },
           ].map((group, g) => (
@@ -383,7 +383,7 @@ export default function LandingPage() {
                         <div className="browser-dot dot-green" />
                       </div>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={card.img} alt={card.title} style={{ display: 'block', width: '100%', height: 'auto' }} />
+                      <img src={card.img} alt={card.title} loading="lazy" decoding="async" style={{ display: 'block', width: '100%', height: 'auto' }} />
                     </div>
                     <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginTop: 20 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, minWidth: 30, borderRadius: '50%', background: 'var(--primary)', color: 'white', fontWeight: 800, fontSize: 13 }}>
@@ -468,7 +468,7 @@ export default function LandingPage() {
           <h2>Ce qui se passe pendant un examen en ligne</h2>
           <p className="section-subtitle">Chaque session est surveillée en temps réel — caméra, écran partagé, comportement — de la connexion à la correction automatique.</p>
 
-          <div className="exams-showcase" style={{ gridTemplateColumns: '.85fr 1.15fr' }}>
+          <div className="exams-showcase">
             <div className="exams-features">
               {[
                 { svg: <><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>, title: 'Caméra activée automatiquement', desc: "Dès le lancement, la caméra s'active et le flux vidéo HD est transmis en direct au panneau de surveillance de l'enseignant." },
@@ -498,7 +498,7 @@ export default function LandingPage() {
                   <span style={{ fontSize: 10, color: 'var(--gray-400)', marginLeft: 10, fontFamily: 'monospace' }}>examen-surveillé · session active</span>
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/screenshots/capture-14.png" alt="Interface de composition sous surveillance IA en temps réel" style={{ display: 'block', width: '100%', height: 'auto' }} />
+                <img src="/screenshots/capture-14.jpg" alt="Interface de composition sous surveillance IA en temps réel" loading="lazy" decoding="async" style={{ display: 'block', width: '100%', height: 'auto' }} />
               </div>
             </div>
           </div>
@@ -514,8 +514,8 @@ export default function LandingPage() {
             </div>
             <div className="steps-grid" id="steps-prof">
               {[
-                { img: '/screenshots/capture-5.png', svg: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: "Créer l'examen", desc: "Configurez le titre, la durée, les plages horaires et rédigez le sujet — ou générez-le avec l'IA." },
-                { img: '/screenshots/capture-6.png', svg: <><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: "Activer l'examen", desc: "Activez l'examen à l'heure prévue. Les étudiants inscrits voient immédiatement le bouton Composer." },
+                { img: '/screenshots/capture-5.jpg', svg: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: "Créer l'examen", desc: "Configurez le titre, la durée, les plages horaires et rédigez le sujet — ou générez-le avec l'IA." },
+                { img: '/screenshots/capture-6.jpg', svg: <><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: "Activer l'examen", desc: "Activez l'examen à l'heure prévue. Les étudiants inscrits voient immédiatement le bouton Composer." },
                 { img: null, svg: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: 'Surveiller en direct', desc: "Le dashboard affiche la grille vidéo de tous les étudiants (tous groupes de surveillants confondus), leurs scores de risque et les alertes automatiques." },
                 { img: null, svg: <><path d="M12 2a2 2 0 012 2v1h4a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V6a1 1 0 011-1h4V4a2 2 0 012-2z"/><path d="M9 17h6"/></>, bg: '#eff6ff', stroke: '#2563eb', color: 'var(--primary-dark)', title: "Corriger avec l'IA", desc: "Après soumission, l'IA corrige chaque copie selon le barème. Validez, ajustez si besoin, puis publiez les notes." },
               ].map((s, i) => (
@@ -523,7 +523,7 @@ export default function LandingPage() {
                   {s.img ? (
                     <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 14, border: '1px solid var(--gray-200)', aspectRatio: '16/10', background: 'var(--gray-100)' }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      <img src={s.img} alt={s.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                   ) : (
                     <div className="step-icon-wrap" style={{ background: s.bg }}>
@@ -546,16 +546,16 @@ export default function LandingPage() {
             </div>
             <div className="steps-grid" id="steps-student">
               {[
-                { img: '/screenshots/capture-8.png', svg: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: "Voir l'examen disponible", desc: "L'examen apparaît dans votre tableau de bord avec le bouton Composer ou un compte à rebours jusqu'à l'ouverture." },
-                { img: '/screenshots/capture-12.png', svg: <><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: 'Autoriser la surveillance', desc: "Autorisez caméra, micro et partage d'écran dans votre navigateur. La plateforme active tout automatiquement au lancement." },
-                { img: '/screenshots/capture-14.png', svg: <><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: 'Composer', desc: "Lisez le sujet et rédigez vos réponses. Sauvegarde automatique toutes les 30 s. Posez vos questions via la messagerie intégrée." },
+                { img: '/screenshots/capture-8.jpg', svg: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: "Voir l'examen disponible", desc: "L'examen apparaît dans votre tableau de bord avec le bouton Composer ou un compte à rebours jusqu'à l'ouverture." },
+                { img: '/screenshots/capture-12.jpg', svg: <><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: 'Autoriser la surveillance', desc: "Autorisez caméra, micro et partage d'écran dans votre navigateur. La plateforme active tout automatiquement au lancement." },
+                { img: '/screenshots/capture-14.jpg', svg: <><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: 'Composer', desc: "Lisez le sujet et rédigez vos réponses. Sauvegarde automatique toutes les 30 s. Posez vos questions via la messagerie intégrée." },
                 { img: null, svg: <><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>, bg: '#ecfdf5', stroke: '#059669', color: 'var(--success-dark)', title: 'Soumettre & consulter', desc: "Soumettez avant l'expiration. Consultez ensuite votre note, le feedback IA par question et votre relevé de notes officiel." },
               ].map((s, i) => (
                 <div key={i} className="step-card step-card--green">
                   {s.img ? (
                     <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 14, border: '1px solid var(--gray-200)', aspectRatio: '16/10', background: 'var(--gray-100)' }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      <img src={s.img} alt={s.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                   ) : (
                     <div className="step-icon-wrap" style={{ background: s.bg }}>
@@ -581,15 +581,15 @@ export default function LandingPage() {
             </p>
             <div className="steps-grid" id="steps-surveillant">
               {[
-                { img: '/screenshots/capture-9.png', svg: <><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></>, bg: '#fffbeb', stroke: '#d97706', color: '#d97706', title: 'Son propre tableau de bord', desc: "Nombre d'étudiants attribués, examens en cours, accès direct à sa surveillance — une interface distincte de celle du professeur." },
-                { img: '/screenshots/capture-10.png', svg: <><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></>, bg: '#fffbeb', stroke: '#d97706', color: '#d97706', title: 'Le détail de son groupe', desc: "Seuls les étudiants qui lui ont été attribués par le professeur apparaissent, avec statut et score de risque en direct." },
-                { img: '/screenshots/capture-15.png', svg: <><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>, bg: '#fffbeb', stroke: '#d97706', color: '#d97706', title: 'Supervision vidéo de son groupe', desc: "Flux caméra, alertes et actions (message, appel, bannissement) limités à son groupe — le professeur seul voit l'ensemble des surveillants et de la promotion." },
+                { img: '/screenshots/capture-9.jpg', svg: <><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></>, bg: '#fffbeb', stroke: '#d97706', color: '#d97706', title: 'Son propre tableau de bord', desc: "Nombre d'étudiants attribués, examens en cours, accès direct à sa surveillance — une interface distincte de celle du professeur." },
+                { img: '/screenshots/capture-10.jpg', svg: <><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></>, bg: '#fffbeb', stroke: '#d97706', color: '#d97706', title: 'Le détail de son groupe', desc: "Seuls les étudiants qui lui ont été attribués par le professeur apparaissent, avec statut et score de risque en direct." },
+                { img: '/screenshots/capture-15.jpg', svg: <><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>, bg: '#fffbeb', stroke: '#d97706', color: '#d97706', title: 'Supervision vidéo de son groupe', desc: "Flux caméra, alertes et actions (message, appel, bannissement) limités à son groupe — le professeur seul voit l'ensemble des surveillants et de la promotion." },
               ].map((s, i) => (
                 <div key={i} className="step-card" style={{ borderColor: 'var(--gray-200)' }}>
                   {s.img ? (
                     <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 14, border: '1px solid var(--gray-200)', aspectRatio: '16/10', background: 'var(--gray-100)' }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      <img src={s.img} alt={s.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                   ) : (
                     <div className="step-icon-wrap" style={{ background: s.bg }}>
@@ -607,7 +607,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Témoignages ── */}
-      <section id="temoignages" style={{ background: 'var(--gray-50)', padding: '80px 0' }}>
+      <section id="temoignages" className="py-80" style={{ background: 'var(--gray-50)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto 56px' }}>
             <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 16 }}>Ils utilisent le CEI</span>

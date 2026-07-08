@@ -220,6 +220,9 @@ section {
     padding: 100px 20px;
 }
 
+.py-80 { padding: 80px 20px; }
+.py-100 { padding: 100px 20px; }
+
 section h2 {
     text-align: center;
     font-size: 48px;
@@ -368,7 +371,7 @@ section h2 {
 
 .exams-showcase {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: .85fr 1.15fr;
     gap: 60px;
     align-items: center;
     margin-top: 60px;
@@ -767,7 +770,15 @@ section h2 {
     section {
         padding: 60px 20px;
     }
-    
+
+    .py-80, .py-100 {
+        padding: 48px 20px;
+    }
+
+    .exams-visual {
+        padding: 16px;
+    }
+
     .feature-card {
         padding: 30px;
     }
