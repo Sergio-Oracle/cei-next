@@ -14,6 +14,7 @@ const PUBLIC_PREFIXES = [
   '/fontawesome/',
   '/static/',
   '/screenshots/',  // captures d'écran produit sur la page d'accueil publique
+  '/icons/',        // icônes PWA (manifest.json) — doivent rester accessibles sans authentification
   '/favicon',
   '/manifest.json',
   '/sw.js',
@@ -43,6 +44,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon|fontawesome|screenshots|sw\\.js|manifest\\.json).*)',
+    '/((?!_next/static|_next/image|favicon|fontawesome|screenshots|icons|sw\\.js|manifest\\.json).*)',
   ],
 }

@@ -67,8 +67,20 @@ export function usePwaInstall() {
   const promptInstall = useCallback(async () => {
     if (!deferredEvent) return
     await deferredEvent.prompt()
-    await deferredEvent.userChoice
+    // La boîte de dialogue native (Accepter/Annuler) est affichée par le
+    // navigateur lui-même — on doit respecter la réponse réelle de
+    // l'utilisateur, pas juste supposer qu'il a accepté.
+    const { outcome } = await deferredEvent.userChoice
     setDeferredEvent(null)
+    if (outcome === 'dismissed') {
+      // Refus explicite dans la boîte de dialogue du navigateur — mémorisé
+      // au même titre qu'un clic sur le bouton "×" de la bannière.
+      localStorage.setItem(DISMISS_KEY, String(Date.now()))
+      setDismissed(true)
+    } else {
+      // 'accepted' — appinstalled se déclenchera séparément et nettoiera déjà la clé.
+      localStorage.removeItem(DISMISS_KEY)
+    }
   }, [deferredEvent])
 
   const dismiss = useCallback(() => {
