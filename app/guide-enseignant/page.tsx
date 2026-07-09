@@ -41,6 +41,7 @@ export default function GuideEnseignant() {
         .feature-item i { color:#2563eb; font-size:18px; margin-bottom:10px; display:block; }
         .feature-item h5 { font-size:13px; font-weight:700; color:#0f172a; margin-bottom:6px; }
         .feature-item p { font-size:12px; color:#64748b; line-height:1.5; }
+        .guide-img { display:block; width:100%; max-width:720px; margin:18px auto 6px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,.08); }
         footer.doc-footer { background:#1e293b; color:rgba(255,255,255,.7); text-align:center; padding:32px; font-size:13px; }
         footer.doc-footer a { color:#60a5fa; text-decoration:none; font-weight:600; }
         @media(max-width:640px) { .hero-doc h1 { font-size:1.8rem; } .content-wrap { padding:24px 16px 60px; } }
@@ -101,6 +102,7 @@ export default function GuideEnseignant() {
                     <li><strong>Génération IA</strong> : choisissez un EC (Élément Constitutif) et cliquez sur &quot;Générer des Suggestions d&apos;Examen avec IA&quot;. Sélectionnez une suggestion pour générer un examen complet avec questions numérotées et points.</li>
                   </ul>
                   <div className="tip"><i className="fas fa-lightbulb" /> Après création, un aperçu du sujet ET du barème généré s&apos;affiche pour validation avant utilisation.</div>
+                  <img className="guide-img" src="/screenshots/capture-4.jpg" alt="Suggestions de sujets générées par l'IA, avec bouton Utiliser ce Sujet" />
                 </div>
               </div>
               <div className="step">
@@ -133,6 +135,7 @@ export default function GuideEnseignant() {
                     <li>Durée (en minutes)</li>
                     <li>Instructions optionnelles</li>
                   </ul>
+                  <img className="guide-img" src="/screenshots/capture-5.jpg" alt="Formulaire de création d'un examen en ligne avec paramètres de sécurité" />
                 </div>
               </div>
               <div className="step">
@@ -167,6 +170,7 @@ export default function GuideEnseignant() {
                   <h4>Passer de &quot;Planifié&quot; à &quot;En cours&quot;</h4>
                   <p>Sur la carte de l&apos;examen, cliquez sur le bouton <strong>Activer</strong>. Le statut passe à <span style={{color:'#059669',fontWeight:700}}>En cours</span>. Les étudiants peuvent maintenant composer pendant la plage horaire définie.</p>
                   <div className="info"><i className="fas fa-info-circle" /> Si un étudiant clique sur &quot;Composer&quot; avant l&apos;heure, il voit une alerte avec la date et l&apos;heure exactes de début.</div>
+                  <img className="guide-img" src="/screenshots/capture-6.jpg" alt="Carte d'examen planifié avec le bouton Activer" />
                 </div>
               </div>
               <div className="step">
@@ -188,6 +192,7 @@ export default function GuideEnseignant() {
           </div>
           <div className="section-body">
             <p style={{color:'#475569',marginBottom:20}}>Le dashboard affiche une grille de toutes les tentatives actives avec vidéo en direct de chaque étudiant.</p>
+            <img className="guide-img" src="/screenshots/capture-15.jpg" alt="Dashboard de surveillance en temps réel avec flux vidéo et actions par étudiant" />
             <div className="feature-grid">
               <div className="feature-item"><i className="fas fa-video" /><h5>Flux caméra HD</h5><p>Vidéo en direct de chaque étudiant (caméra + détection faciale IA)</p></div>
               <div className="feature-item"><i className="fas fa-desktop" /><h5>Partage d&apos;écran</h5><p>Bouton <span style={{color:'#3b82f6',fontWeight:700}}>Voir écran</span> quand l&apos;étudiant partage son écran — seul l&apos;écran complet est accepté</p></div>
