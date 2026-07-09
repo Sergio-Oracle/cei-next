@@ -1,10 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 import type { Reclamation, ReclamationStatus } from '@/types'
+
+const AI_STEPS = [
+  { at: 0,  label: 'Lecture de la réclamation et du barème…' },
+  { at: 8,  label: 'Comparaison avec la correction originale…' },
+  { at: 20, label: "Analyse par l'IA en cours (peut basculer entre plusieurs modèles)…" },
+  { at: 45, label: 'Rédaction de la décision et de la nouvelle note…' },
+]
+
+function fmtElapsed(s: number) {
+  const m = Math.floor(s / 60), r = s % 60
+  return `${m}:${String(r).padStart(2, '0')}`
+}
 
 function StatusBadge({ status }: { status: ReclamationStatus }) {
   const map: Record<ReclamationStatus, { label: string; cls: string }> = {
@@ -27,8 +39,12 @@ export default function ProfessorReclamationsPage() {
   const [response, setResponse] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [actioning, setActioning] = useState<number | null>(null)
+  const [aiModal, setAiModal] = useState<{ id: number; studentName: string } | null>(null)
+  const [aiElapsed, setAiElapsed] = useState(0)
+  const aiTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => { load() }, [])
+  useEffect(() => () => { if (aiTimerRef.current) clearInterval(aiTimerRef.current) }, [])
 
   async function load() {
     setLoading(true)
@@ -52,14 +68,21 @@ export default function ProfessorReclamationsPage() {
     finally { setSubmitting(false) }
   }
 
-  async function analyzeAI(id: number) {
+  async function analyzeAI(id: number, studentName: string) {
     setActioning(id)
+    setAiElapsed(0)
+    setAiModal({ id, studentName })
+    aiTimerRef.current = setInterval(() => setAiElapsed(s => s + 1), 1000)
     try {
       await api.aiPost(`/api/reclamations/${id}/process_ia`)
-      success('Analyse IA lancée')
+      success('Analyse IA terminée')
       load()
     } catch (e: any) { error(e.message || 'Erreur') }
-    finally { setActioning(null) }
+    finally {
+      setActioning(null)
+      setAiModal(null)
+      if (aiTimerRef.current) { clearInterval(aiTimerRef.current); aiTimerRef.current = null }
+    }
   }
 
   async function applyProposal(id: number) {
@@ -113,7 +136,7 @@ export default function ProfessorReclamationsPage() {
                     <div style={{ display: 'flex', gap: 4 }}>
                       <button className="btn btn-sm btn-primary" onClick={() => { setSelected(r); setResponse(r.response ?? '') }}><i className="fa-solid fa-reply" /></button>
                       {(r.status === 'pending' || r.status === 'in_review') && (
-                        <button className="btn btn-sm btn-info" onClick={() => analyzeAI(r.id)} disabled={actioning === r.id}>
+                        <button className="btn btn-sm btn-info" onClick={() => analyzeAI(r.id, r.student_name ?? `Étudiant #${r.student_id}`)} disabled={actioning === r.id}>
                           {actioning === r.id ? <i className="fa-solid fa-spinner spin" /> : <i className="fa-solid fa-wand-magic-sparkles" />}
                         </button>
                       )}
@@ -156,6 +179,32 @@ export default function ProfessorReclamationsPage() {
             <button className="btn btn-primary" onClick={handleRespond} disabled={submitting}>
               {submitting ? <><i className="fa-solid fa-spinner spin" /> Envoi...</> : <><i className="fa-solid fa-reply" /> Répondre</>}
             </button>
+          </div>
+        </Modal>
+      )}
+
+      {aiModal && (
+        <Modal title="Analyse IA en cours" onClose={() => setAiModal(null)} maxWidth={440}>
+          <div style={{ textAlign: 'center', padding: '8px 4px 4px' }}>
+            <div style={{ position: 'relative', width: 64, height: 64, margin: '0 auto 16px' }}>
+              <i className="fa-solid fa-robot" style={{ fontSize: 30, position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--info)' }} />
+              <svg width="64" height="64" style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx="32" cy="32" r="28" fill="none" stroke="var(--border)" strokeWidth="4" />
+                <circle cx="32" cy="32" r="28" fill="none" stroke="var(--info)" strokeWidth="4"
+                  strokeDasharray={2 * Math.PI * 28} strokeDashoffset={2 * Math.PI * 28 * (1 - Math.min(aiElapsed, 180) / 180)}
+                  strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s linear' }} />
+              </svg>
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtElapsed(aiElapsed)}</div>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 16px' }}>
+              Réclamation de <strong>{aiModal.studentName}</strong>
+            </p>
+            <p style={{ fontSize: 14, minHeight: 20 }}>
+              {[...AI_STEPS].reverse().find(s => aiElapsed >= s.at)?.label}
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12 }}>
+              Peut prendre jusqu'à 3 minutes selon la charge du modèle IA — vous pouvez fermer cette fenêtre, l'analyse continue en arrière-plan.
+            </p>
           </div>
         </Modal>
       )}
