@@ -31,6 +31,7 @@ interface FaceRefData {
   student_name: string
   exam_title: string
   image_data: string | null
+  image_url?: string | null
   has_photo: boolean
 }
 
@@ -309,9 +310,9 @@ export default function ProfessorSecurityPage() {
                 <i className="fas fa-times" />
               </button>
             </div>
-            {facePhoto.has_photo && facePhoto.image_data ? (
+            {facePhoto.has_photo && (facePhoto.image_data || facePhoto.image_url) ? (
               <img
-                src={facePhoto.image_data.startsWith('data:') ? facePhoto.image_data : `data:image/jpeg;base64,${facePhoto.image_data}`}
+                src={facePhoto.image_url || (facePhoto.image_data!.startsWith('data:') ? facePhoto.image_data! : `data:image/jpeg;base64,${facePhoto.image_data}`)}
                 alt="Photo de référence"
                 style={{ width: '100%', borderRadius: 8, display: 'block', border: '1px solid #e2e8f0' }}
               />

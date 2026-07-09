@@ -1746,15 +1746,15 @@ export default function ProctorMonitorPage() {
                             </div>
 
                             {/* Grille snapshots */}
-                            {(curSnap.snapshots || []).filter((s: any) => s.image_data).length === 0 ? (
+                            {(curSnap.snapshots || []).filter((s: any) => s.image_data || s.image_url).length === 0 ? (
                               <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,.4)' }}>
                                 <i className="fas fa-camera-slash" style={{ fontSize: 28, display: 'block', marginBottom: 8 }} />
                                 Aucun snapshot disponible
                               </div>
                             ) : (
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
-                                {(curSnap.snapshots || []).filter((s: any) => s.image_data).map((snap: any, j: number) => {
-                                  const src = snap.image_data.startsWith('data:') ? snap.image_data : `data:image/jpeg;base64,${snap.image_data}`
+                                {(curSnap.snapshots || []).filter((s: any) => s.image_data || s.image_url).map((snap: any, j: number) => {
+                                  const src = snap.image_url || (snap.image_data.startsWith('data:') ? snap.image_data : `data:image/jpeg;base64,${snap.image_data}`)
                                   const ts  = snap.timestamp ? new Date(snap.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''
                                   const et  = snap.event_type ? snap.event_type.replace(/_/g, ' ') : ''
                                   return (
