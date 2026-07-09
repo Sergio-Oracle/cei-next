@@ -37,10 +37,13 @@ export default function ProfessorReclamationsPage() {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Reclamation | null>(null)
   const [response, setResponse] = useState('')
+  const [respondStatus, setRespondStatus] = useState('')
+  const [newScore, setNewScore] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [actioning, setActioning] = useState<number | null>(null)
   const [aiModal, setAiModal] = useState<{ id: number; studentName: string } | null>(null)
   const [aiElapsed, setAiElapsed] = useState(0)
+  const [aiResult, setAiResult] = useState<Reclamation | null>(null)
   const aiTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => { load() }, [])
@@ -50,19 +53,32 @@ export default function ProfessorReclamationsPage() {
     setLoading(true)
     try {
       const res = await api.get<Reclamation[]>('/api/reclamations')
-      setReclamations(Array.isArray(res) ? res : (res as any).reclamations ?? [])
-    } catch { error('Erreur de chargement') }
+      const list = Array.isArray(res) ? res : (res as any).reclamations ?? []
+      setReclamations(list)
+      return list
+    } catch { error('Erreur de chargement'); return [] }
     finally { setLoading(false) }
   }
 
+  function openRespond(r: Reclamation) {
+    setSelected(r)
+    setResponse(r.response ?? r.ia_proposed_reason ?? '')
+    setRespondStatus(r.ia_proposed_status === 'resolved' ? 'resolved' : r.ia_proposed_status === 'rejected' ? 'rejected' : '')
+    setNewScore(r.ia_proposed_score != null ? String(r.ia_proposed_score) : '')
+  }
+
   async function handleRespond() {
-    if (!selected || !response.trim()) { error('La réponse est requise'); return }
+    if (!selected) return
+    if (!respondStatus) { error('Veuillez choisir une décision (accepter ou rejeter)'); return }
+    if (!response.trim()) { error('La réponse est requise'); return }
     setSubmitting(true)
     try {
-      await api.put(`/api/reclamations/${selected.id}`, { response, status: 'resolved' })
+      const body: any = { response, status: respondStatus }
+      if (respondStatus === 'resolved' && newScore.trim() !== '') body.new_score = parseFloat(newScore)
+      await api.put(`/api/reclamations/${selected.id}`, body)
       success('Réponse envoyée')
       setSelected(null)
-      setResponse('')
+      setResponse(''); setRespondStatus(''); setNewScore('')
       load()
     } catch (e: any) { error(e.message || 'Erreur') }
     finally { setSubmitting(false) }
@@ -75,35 +91,16 @@ export default function ProfessorReclamationsPage() {
     aiTimerRef.current = setInterval(() => setAiElapsed(s => s + 1), 1000)
     try {
       await api.aiPost(`/api/reclamations/${id}/process_ia`)
+      const list = await load()
+      const updated = list.find((r: Reclamation) => r.id === id)
+      setAiModal(null)
+      if (updated) setAiResult(updated)
       success('Analyse IA terminée')
-      load()
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: any) { error(e.message || 'Erreur'); setAiModal(null) }
     finally {
       setActioning(null)
-      setAiModal(null)
       if (aiTimerRef.current) { clearInterval(aiTimerRef.current); aiTimerRef.current = null }
     }
-  }
-
-  async function applyProposal(id: number) {
-    if (!confirm('Appliquer la proposition IA ?')) return
-    setActioning(id)
-    try {
-      await api.post(`/api/reclamations/${id}/apply_proposal`)
-      success('Appliqué')
-      load()
-    } catch (e: any) { error(e.message || 'Erreur') }
-    finally { setActioning(null) }
-  }
-
-  async function rejectProposal(id: number) {
-    setActioning(id)
-    try {
-      await api.post(`/api/reclamations/${id}/reject_proposal`)
-      success('Proposition rejetée')
-      load()
-    } catch (e: any) { error(e.message || 'Erreur') }
-    finally { setActioning(null) }
   }
 
   return (
@@ -126,30 +123,33 @@ export default function ProfessorReclamationsPage() {
                 <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40 }}><i className="fa-solid fa-spinner spin" /></td></tr>
               ) : reclamations.length === 0 ? (
                 <tr><td colSpan={5} className="empty-message">Aucune réclamation</td></tr>
-              ) : reclamations.map(r => (
+              ) : reclamations.map(r => {
+                const hasProposal = !!r.ia_proposed_status && r.status === 'pending'
+                return (
                 <tr key={r.id}>
-                  <td>{r.student_name ?? `Étudiant #${r.student_id}`}</td>
+                  <td>
+                    {r.student_name ?? `Étudiant #${r.student_id}`}
+                    {hasProposal && (
+                      <div style={{ fontSize: 11, color: 'var(--warning)', fontWeight: 600, marginTop: 2 }}>
+                        <i className="fa-solid fa-lightbulb" /> Proposition IA disponible
+                      </div>
+                    )}
+                  </td>
                   <td>{r.subject_title ?? '—'}</td>
                   <td><StatusBadge status={r.status} /></td>
                   <td>{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 4 }}>
-                      <button className="btn btn-sm btn-primary" onClick={() => { setSelected(r); setResponse(r.response ?? '') }}><i className="fa-solid fa-reply" /></button>
+                      <button className="btn btn-sm btn-primary" onClick={() => openRespond(r)} title="Répondre"><i className="fa-solid fa-reply" /></button>
                       {(r.status === 'pending' || r.status === 'in_review') && (
-                        <button className="btn btn-sm btn-info" onClick={() => analyzeAI(r.id, r.student_name ?? `Étudiant #${r.student_id}`)} disabled={actioning === r.id}>
+                        <button className="btn btn-sm btn-info" onClick={() => analyzeAI(r.id, r.student_name ?? `Étudiant #${r.student_id}`)} disabled={actioning === r.id} title="Analyser avec IA">
                           {actioning === r.id ? <i className="fa-solid fa-spinner spin" /> : <i className="fa-solid fa-wand-magic-sparkles" />}
                         </button>
-                      )}
-                      {r.status === 'proposal_pending' && (
-                        <>
-                          <button className="btn btn-sm btn-success" onClick={() => applyProposal(r.id)} disabled={actioning === r.id}><i className="fa-solid fa-check" /></button>
-                          <button className="btn btn-sm btn-danger" onClick={() => rejectProposal(r.id)} disabled={actioning === r.id}><i className="fa-solid fa-xmark" /></button>
-                        </>
                       )}
                     </div>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
@@ -164,14 +164,32 @@ export default function ProfessorReclamationsPage() {
             <label>Contenu</label>
             <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize: 14, whiteSpace: 'pre-wrap' }}>{selected.reason}</div>
           </div>
-          {selected.ia_proposed_score != null && (
-            <div className="alert alert-info">
-              <i className="fa-solid fa-robot" /> <strong>Proposition IA :</strong> Score {selected.ia_proposed_score}{selected.ia_proposed_grade && ` (${selected.ia_proposed_grade})`}
+          {selected.ia_proposed_status && (
+            <div className="alert alert-warning">
+              <i className="fa-solid fa-robot" /> <strong>Proposition IA :</strong>{' '}
+              {selected.ia_proposed_status === 'resolved' ? '✅ Accepter' : '❌ Rejeter'}
+              {selected.ia_proposed_score != null && ` — Note proposée : ${selected.ia_proposed_score}/20`}
               {selected.ia_proposed_reason && <div style={{ marginTop: 4, fontSize: 13 }}>{selected.ia_proposed_reason}</div>}
+              <div style={{ marginTop: 6, fontSize: 12, opacity: .8 }}>Pré-remplie ci-dessous — modifiez-la si vous n'êtes pas d'accord.</div>
             </div>
           )}
           <div className="form-group">
-            <label>Réponse</label>
+            <label>Décision *</label>
+            <select className="form-control" value={respondStatus} onChange={e => setRespondStatus(e.target.value)}>
+              <option value="">-- Choisir --</option>
+              <option value="resolved">✅ Accepter la réclamation</option>
+              <option value="rejected">❌ Rejeter la réclamation</option>
+            </select>
+          </div>
+          {respondStatus === 'resolved' && (
+            <div className="form-group">
+              <label>Nouvelle note (sur 20)</label>
+              {selected.attempt_score != null && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Note actuelle : {selected.attempt_score}/20</div>}
+              <input className="form-control" type="number" min={0} max={20} step={0.5} value={newScore} onChange={e => setNewScore(e.target.value)} />
+            </div>
+          )}
+          <div className="form-group">
+            <label>Réponse *</label>
             <textarea className="form-control" rows={4} value={response} onChange={e => setResponse(e.target.value)} />
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
@@ -205,6 +223,42 @@ export default function ProfessorReclamationsPage() {
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12 }}>
               Peut prendre jusqu'à 3 minutes selon la charge du modèle IA — vous pouvez fermer cette fenêtre, l'analyse continue en arrière-plan.
             </p>
+          </div>
+        </Modal>
+      )}
+
+      {aiResult && (
+        <Modal title="Résultat de l'analyse IA" onClose={() => setAiResult(null)} maxWidth={520}>
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <div style={{
+              fontSize: 20, fontWeight: 700, padding: '10px 16px', borderRadius: 8, display: 'inline-block',
+              background: aiResult.ia_proposed_status === 'resolved' ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)',
+              color: aiResult.ia_proposed_status === 'resolved' ? '#10b981' : '#ef4444',
+            }}>
+              {aiResult.ia_proposed_status === 'resolved' ? '✅ Accepter la réclamation' : '❌ Rejeter la réclamation'}
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Justification de l'IA</label>
+            <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize: 14, whiteSpace: 'pre-wrap', maxHeight: 220, overflowY: 'auto' }}>
+              {aiResult.ia_proposed_reason || 'Aucune justification fournie'}
+            </div>
+          </div>
+          {aiResult.ia_proposed_status === 'resolved' && aiResult.ia_proposed_score != null && (
+            <div className="alert alert-info" style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 13 }}>Note proposée</div>
+              <div style={{ fontSize: 26, fontWeight: 700 }}>{aiResult.ia_proposed_score}/20</div>
+              {aiResult.attempt_score != null && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Note actuelle : {aiResult.attempt_score}/20</div>}
+            </div>
+          )}
+          <div className="alert alert-warning" style={{ fontSize: 13 }}>
+            <i className="fa-solid fa-triangle-exclamation" /> Cette proposition est une aide à la décision — vous devez la valider (ou la corriger) via "Répondre".
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+            <button className="btn btn-secondary" onClick={() => setAiResult(null)}>Fermer</button>
+            <button className="btn btn-primary" onClick={() => { openRespond(aiResult); setAiResult(null) }}>
+              <i className="fa-solid fa-reply" /> Répondre maintenant
+            </button>
           </div>
         </Modal>
       )}
