@@ -9,7 +9,7 @@ import type { Reclamation, ReclamationStatus } from '@/types'
 const AI_STEPS = [
   { at: 0,  label: 'Lecture de la réclamation et du barème…' },
   { at: 8,  label: 'Comparaison avec la correction originale…' },
-  { at: 20, label: "Analyse par l'IA en cours (peut basculer entre plusieurs modèles)…" },
+  { at: 20, label: "Analyse en cours…" },
   { at: 45, label: 'Rédaction de la décision et de la nouvelle note…' },
 ]
 
@@ -227,41 +227,56 @@ export default function ProfessorReclamationsPage() {
         </Modal>
       )}
 
-      {aiResult && (
+      {aiResult && (() => {
+        const accepted = aiResult.ia_proposed_status === 'resolved'
+        const tint = accepted ? '#10b981' : '#ef4444'
+        return (
         <Modal title="Résultat de l'analyse IA" onClose={() => setAiResult(null)} maxWidth={520}>
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <div style={{
-              fontSize: 20, fontWeight: 700, padding: '10px 16px', borderRadius: 8, display: 'inline-block',
-              background: aiResult.ia_proposed_status === 'resolved' ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)',
-              color: aiResult.ia_proposed_status === 'resolved' ? '#10b981' : '#ef4444',
+              width: 56, height: 56, borderRadius: '50%', margin: '0 auto 12px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: accepted ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)',
             }}>
-              {aiResult.ia_proposed_status === 'resolved' ? '✅ Accepter la réclamation' : '❌ Rejeter la réclamation'}
+              <i className={`fa-solid ${accepted ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ fontSize: 28, color: tint }} />
             </div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: tint }}>
+              {accepted ? 'Réclamation à accepter' : 'Réclamation à rejeter'}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Proposition de l'IA — {aiResult.student_name ?? `Étudiant #${aiResult.student_id}`}</div>
           </div>
-          <div className="form-group">
-            <label>Justification de l'IA</label>
-            <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize: 14, whiteSpace: 'pre-wrap', maxHeight: 220, overflowY: 'auto' }}>
+
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
+              <i className="fa-solid fa-comment-dots" style={{ marginRight: 6 }} />Justification
+            </div>
+            <div style={{ padding: 14, background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 220, overflowY: 'auto' }}>
               {aiResult.ia_proposed_reason || 'Aucune justification fournie'}
             </div>
           </div>
-          {aiResult.ia_proposed_status === 'resolved' && aiResult.ia_proposed_score != null && (
-            <div className="alert alert-info" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 13 }}>Note proposée</div>
-              <div style={{ fontSize: 26, fontWeight: 700 }}>{aiResult.ia_proposed_score}/20</div>
+
+          {accepted && aiResult.ia_proposed_score != null && (
+            <div style={{ textAlign: 'center', padding: '14px 16px', background: 'rgba(16,185,129,.08)', border: '1px solid rgba(16,185,129,.25)', borderRadius: 'var(--radius)', marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Note proposée</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: tint, margin: '2px 0' }}>{aiResult.ia_proposed_score}/20</div>
               {aiResult.attempt_score != null && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Note actuelle : {aiResult.attempt_score}/20</div>}
             </div>
           )}
-          <div className="alert alert-warning" style={{ fontSize: 13 }}>
-            <i className="fa-solid fa-triangle-exclamation" /> Cette proposition est une aide à la décision — vous devez la valider (ou la corriger) via "Répondre".
+
+          <div className="alert alert-warning" style={{ fontSize: 13, marginBottom: 0 }}>
+            <i className="fa-solid fa-triangle-exclamation" />
+            <span>Cette proposition est une aide à la décision — vous devez la valider ou la corriger via « Répondre ».</span>
           </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
             <button className="btn btn-secondary" onClick={() => setAiResult(null)}>Fermer</button>
             <button className="btn btn-primary" onClick={() => { openRespond(aiResult); setAiResult(null) }}>
               <i className="fa-solid fa-reply" /> Répondre maintenant
             </button>
           </div>
         </Modal>
-      )}
+        )
+      })()}
     </div>
   )
 }
