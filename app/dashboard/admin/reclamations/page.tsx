@@ -129,7 +129,7 @@ export default function AdminReclamationsPage() {
               ) : reclamations.map(r => (
                 <tr key={r.id}>
                   <td>{r.student_name ?? `Étudiant #${r.student_id}`}</td>
-                  <td>{r.subject ?? '—'}</td>
+                  <td>{r.subject_title ?? '—'}</td>
                   <td><StatusBadge status={r.status} /></td>
                   <td>{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
                   <td>
@@ -165,22 +165,22 @@ export default function AdminReclamationsPage() {
         <Modal title={`Réclamation #${selected.id}`} onClose={() => setSelected(null)} maxWidth={700}>
           <div style={{ marginBottom: 16 }}>
             <strong>Étudiant :</strong> {selected.student_name}<br />
-            <strong>Sujet :</strong> {selected.subject}<br />
+            <strong>Sujet :</strong> {selected.subject_title}<br />
             <strong>Statut :</strong> <StatusBadge status={selected.status} />
           </div>
 
           <div className="form-group">
             <label>Contenu de la réclamation</label>
             <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize: 14, whiteSpace: 'pre-wrap' }}>
-              {selected.content}
+              {selected.reason}
             </div>
           </div>
 
-          {selected.ai_proposed_score != null && (
+          {selected.ia_proposed_score != null && (
             <div className="alert alert-info">
               <strong><i className="fa-solid fa-robot" /> Proposition IA :</strong><br />
-              Score proposé : <strong>{selected.ai_proposed_score}</strong>{selected.ai_proposed_grade && ` (${selected.ai_proposed_grade})`}<br />
-              {selected.ai_proposed_reason && <span style={{ fontSize: 13 }}>{selected.ai_proposed_reason}</span>}
+              Score proposé : <strong>{selected.ia_proposed_score}</strong>{selected.ia_proposed_grade && ` (${selected.ia_proposed_grade})`}<br />
+              {selected.ia_proposed_reason && <span style={{ fontSize: 13 }}>{selected.ia_proposed_reason}</span>}
             </div>
           )}
 

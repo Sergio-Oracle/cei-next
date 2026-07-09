@@ -106,7 +106,7 @@ export default function ProfessorReclamationsPage() {
               ) : reclamations.map(r => (
                 <tr key={r.id}>
                   <td>{r.student_name ?? `Étudiant #${r.student_id}`}</td>
-                  <td>{r.subject ?? '—'}</td>
+                  <td>{r.subject_title ?? '—'}</td>
                   <td><StatusBadge status={r.status} /></td>
                   <td>{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
                   <td>
@@ -135,16 +135,16 @@ export default function ProfessorReclamationsPage() {
       {selected && (
         <Modal title={`Réclamation #${selected.id}`} onClose={() => setSelected(null)} maxWidth={700}>
           <div style={{ marginBottom: 12 }}>
-            <strong>Étudiant :</strong> {selected.student_name} &nbsp;|&nbsp; <strong>Sujet :</strong> {selected.subject} &nbsp;|&nbsp; <StatusBadge status={selected.status} />
+            <strong>Étudiant :</strong> {selected.student_name} &nbsp;|&nbsp; <strong>Sujet :</strong> {selected.subject_title} &nbsp;|&nbsp; <StatusBadge status={selected.status} />
           </div>
           <div className="form-group">
             <label>Contenu</label>
-            <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize: 14, whiteSpace: 'pre-wrap' }}>{selected.content}</div>
+            <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize: 14, whiteSpace: 'pre-wrap' }}>{selected.reason}</div>
           </div>
-          {selected.ai_proposed_score != null && (
+          {selected.ia_proposed_score != null && (
             <div className="alert alert-info">
-              <i className="fa-solid fa-robot" /> <strong>Proposition IA :</strong> Score {selected.ai_proposed_score}{selected.ai_proposed_grade && ` (${selected.ai_proposed_grade})`}
-              {selected.ai_proposed_reason && <div style={{ marginTop: 4, fontSize: 13 }}>{selected.ai_proposed_reason}</div>}
+              <i className="fa-solid fa-robot" /> <strong>Proposition IA :</strong> Score {selected.ia_proposed_score}{selected.ia_proposed_grade && ` (${selected.ia_proposed_grade})`}
+              {selected.ia_proposed_reason && <div style={{ marginTop: 4, fontSize: 13 }}>{selected.ia_proposed_reason}</div>}
             </div>
           )}
           <div className="form-group">

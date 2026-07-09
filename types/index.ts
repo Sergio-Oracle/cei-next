@@ -167,18 +167,24 @@ export interface Reclamation {
   id: number
   paper_id?: number
   attempt_id?: number
+  type?: string
   student_id: number
   student_name?: string
-  subject?: string
-  content: string
+  subject_title?: string
+  exam_title?: string
+  attempt_score?: number
+  attempt_feedback?: string
+  reason: string
   status: ReclamationStatus
   response?: string
-  ai_decision?: string
-  ai_proposed_score?: number
-  ai_proposed_grade?: string
-  ai_proposed_reason?: string
-  ai_processed_at?: string
+  ia_decision?: string
+  ia_proposed_status?: string
+  ia_proposed_score?: number
+  ia_proposed_grade?: string
+  ia_proposed_reason?: string
+  ia_processed_at?: string
   responded_by_id?: number
+  responder_name?: string
   created_at: string
   updated_at?: string
 }
