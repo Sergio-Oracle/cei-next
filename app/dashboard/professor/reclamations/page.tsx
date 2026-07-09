@@ -55,7 +55,7 @@ export default function ProfessorReclamationsPage() {
   async function analyzeAI(id: number) {
     setActioning(id)
     try {
-      await api.post(`/api/reclamations/${id}/process_ia`)
+      await api.aiPost(`/api/reclamations/${id}/process_ia`)
       success('Analyse IA lancée')
       load()
     } catch (e: any) { error(e.message || 'Erreur') }
