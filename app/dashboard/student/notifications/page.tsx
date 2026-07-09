@@ -34,6 +34,7 @@ export default function StudentNotificationsPage() {
       await api.put('/api/notifications/mark-read', {})
       success('Toutes les notifications marquées comme lues')
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+      window.dispatchEvent(new CustomEvent('cei:notifications-read'))
     } catch (e: any) { error(e.message || 'Erreur') }
   }
 

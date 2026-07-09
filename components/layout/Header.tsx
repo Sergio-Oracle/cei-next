@@ -95,6 +95,16 @@ export default function Header() {
 
   useNotificationPoll(!!user, handleNotifEvent)
 
+  // Remise à zéro immédiate du badge quand l'utilisateur marque tout comme lu
+  // depuis la page de notifications (sinon le badge reste figé jusqu'au reload).
+  useEffect(() => {
+    function onNotificationsRead() {
+      setUnreadCount(0)
+    }
+    window.addEventListener('cei:notifications-read', onNotificationsRead)
+    return () => window.removeEventListener('cei:notifications-read', onNotificationsRead)
+  }, [])
+
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false)
