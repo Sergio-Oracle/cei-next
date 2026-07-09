@@ -155,6 +155,7 @@ export default function ExamPage() {
   const teacherAudioRef     = useRef<HTMLAudioElement|null>(null)
   const privateRoomRef      = useRef<any>(null)
   const privateMicTrackRef  = useRef<any>(null)
+  const privateCamTrackRef  = useRef<any>(null)
   const privateTeacherVidRef= useRef<HTMLVideoElement|null>(null)
   const privateTeacherAudRef= useRef<HTMLAudioElement|null>(null)
   const lastMsgTsRef    = useRef<string|null>(null)
@@ -545,6 +546,15 @@ export default function ExamPage() {
         privateMicTrackRef.current = micTrack
         setPrivateMicOn(true)
       } catch {}
+      /* Publier la caméra (clonée depuis le flux de surveillance déjà actif, comme pour la room générale) */
+      try {
+        const camTracks = camStream.current?.getVideoTracks()
+        if(camTracks?.length) {
+          const vt = new LK.LocalVideoTrack(camTracks[0].clone(), undefined, false)
+          await pr.localParticipant.publishTrack(vt, { simulcast:true, videoEncoding:{ maxBitrate:300_000, maxFramerate:15 } })
+          privateCamTrackRef.current = vt
+        }
+      } catch {}
       setAlerts(a=>[{type:'private_call',msg:"Appel privé avec le surveillant en cours",at:new Date().toLocaleTimeString('fr-FR')},...a])
     } catch(e:any) {
       setPrivateCallActive(false)
@@ -556,6 +566,10 @@ export default function ExamPage() {
     if(privateMicTrackRef.current) {
       try { await privateRoomRef.current?.localParticipant.unpublishTrack(privateMicTrackRef.current) } catch {}
       privateMicTrackRef.current.stop(); privateMicTrackRef.current = null
+    }
+    if(privateCamTrackRef.current) {
+      try { await privateRoomRef.current?.localParticipant.unpublishTrack(privateCamTrackRef.current) } catch {}
+      privateCamTrackRef.current.stop(); privateCamTrackRef.current = null
     }
     if(privateRoomRef.current) {
       try { await privateRoomRef.current.disconnect() } catch {}
