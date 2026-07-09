@@ -5,7 +5,7 @@
  * Extracted from create-subject/page.tsx to keep the page thin.
  */
 import { useRef, useState } from 'react'
-import api from '@/lib/api'
+import api, { AI_TIMEOUT_MS } from '@/lib/api'
 
 export interface CreatedSubject {
   id: number
@@ -82,7 +82,7 @@ export function useSubjectUpload(
       fd.append('file', file)
 
       const res = await api.upload<{ success: boolean; subject: CreatedSubject }>(
-        '/api/subjects/upload', fd,
+        '/api/subjects/upload', fd, 'POST', { timeoutMs: AI_TIMEOUT_MS },
       )
       setPhase(4)
       await new Promise(r => setTimeout(r, 600))

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import api from '@/lib/api'
+import api, { AI_TIMEOUT_MS } from '@/lib/api'
 
 interface Subject {
   id: number
@@ -133,7 +133,7 @@ export default function ProfessorPapersPage() {
       fd.append('subject_id', batchSubjectId)
       fd.append('auto_extract', batchAutoExtract ? '1' : '0')
       for (let i = 0; i < batchFiles.length; i++) fd.append('files', batchFiles[i])
-      const res = await api.upload<{ success: boolean; corrected?: number; errors?: number; results?: BatchResultItem[]; error_details?: string[]; error?: string }>('/api/papers/upload-batch', fd)
+      const res = await api.upload<{ success: boolean; corrected?: number; errors?: number; results?: BatchResultItem[]; error_details?: string[]; error?: string }>('/api/papers/upload-batch', fd, 'POST', { timeoutMs: AI_TIMEOUT_MS })
       if (res.success) {
         setBatchResult({ corrected: res.corrected ?? 0, errors: res.errors ?? 0, results: res.results, error_details: res.error_details })
         setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)

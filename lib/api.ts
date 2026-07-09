@@ -9,7 +9,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dev-cei.ddns.net'
 
 const DEFAULT_TIMEOUT_MS = 30_000   // 30 s pour les routes normales
-const AI_TIMEOUT_MS      = 180_000  // 3 min pour les routes IA
+export const AI_TIMEOUT_MS = 180_000  // 3 min pour les routes IA
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getToken(): string | null {
@@ -158,8 +158,8 @@ export const api = {
   post:   <T = any>(path: string, data?: any)                                  => _request<T>('POST', path, data),
   put:    <T = any>(path: string, data?: any)                                  => _request<T>('PUT', path, data),
   delete: <T = any>(path: string)                                              => _request<T>('DELETE', path),
-  upload: <T = any>(path: string, fd: FormData, method = 'POST')              =>
-    _request<T>(method, path, fd, { formData: true }),
+  upload: <T = any>(path: string, fd: FormData, method = 'POST', opts?: { timeoutMs?: number }) =>
+    _request<T>(method, path, fd, { formData: true, timeoutMs: opts?.timeoutMs }),
   blob:   (path: string)                                                       =>
     _request<Blob>('GET', path, undefined, { blob: true }),
   aiPost: <T = any>(path: string, data?: any)                                  =>
