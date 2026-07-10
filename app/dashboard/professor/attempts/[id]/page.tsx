@@ -52,6 +52,14 @@ const INCIDENT_LABELS: Record<string, string> = {
   suspicious_audio:        'Audio suspect',
   unban:                   'Débannissement',
   auto_submitted:          'Soumission automatique',
+  student_message:         "Message de l'étudiant",
+  teacher_message:         "Message de l'enseignant",
+  teacher_warning:         'Avertissement envoyé',
+  teacher_private_call:    'Appel privé lancé',
+  teacher_end_call:        'Appel privé terminé',
+  teacher_ban:             "Exclusion par l'enseignant",
+  proctor_ban:             'Exclusion par le surveillant',
+  unknown:                 'Événement non catégorisé',
 }
 
 function getMention(score: number) {
@@ -341,19 +349,13 @@ export default function AttemptDetailPage() {
           <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>Réponse de l'étudiant</span>
         </div>
         <div style={{ padding: '18px 20px' }}>
-          {displayAnswer ? (
-            displayAnswer.trim() === '' ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize: 13, padding: '8px 0' }}>
-                <i className="fas fa-inbox" />L'étudiant n'a pas rédigé de réponse
-              </div>
-            ) : (
-              <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', fontSize: 13, color: '#334155', background: '#f8fafc', padding: 16, borderRadius: 10, maxHeight: 320, overflowY: 'auto', border: '1px solid var(--border)', margin: 0, lineHeight: 1.8 }}>
-                {displayAnswer.substring(0, 3000)}{displayAnswer.length > 3000 ? '\n\n…(réponse tronquée à 3000 caractères)' : ''}
-              </pre>
-            )
+          {displayAnswer && displayAnswer.trim() !== '' ? (
+            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', fontSize: 13, color: '#334155', background: '#f8fafc', padding: 16, borderRadius: 10, maxHeight: 320, overflowY: 'auto', border: '1px solid var(--border)', margin: 0, lineHeight: 1.8 }}>
+              {displayAnswer.substring(0, 3000)}{displayAnswer.length > 3000 ? '\n\n…(réponse tronquée à 3000 caractères)' : ''}
+            </pre>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize: 13, padding: '8px 0' }}>
-              <i className="fas fa-inbox" />Réponse non disponible
+              <i className="fas fa-inbox" />L'étudiant n'a pas rédigé de réponse
             </div>
           )}
         </div>

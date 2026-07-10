@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import Modal from '@/components/ui/Modal'
 
 interface Attempt {
   id: number
@@ -23,11 +24,29 @@ interface Exam {
   attempts: Attempt[]
 }
 
+interface CorrectionResult {
+  student_name: string
+  score: number | null
+  success: boolean
+}
+
 const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
   in_progress:    { label: 'En cours',    bg: '#fef3c7', color: '#d97706' },
   submitted:      { label: 'Soumis',      bg: '#dcfce7', color: '#15803d' },
   auto_submitted: { label: 'Auto-soumis', bg: '#dbeafe', color: '#1d4ed8' },
   banned:         { label: 'Banni',       bg: '#fee2e2', color: '#dc2626' },
+}
+
+const CORRECTION_STEPS = [
+  { at: 0,  label: "Lecture des réponses de l'étudiant…" },
+  { at: 6,  label: 'Analyse selon le barème du sujet…' },
+  { at: 15, label: 'Rédaction de la correction détaillée…' },
+  { at: 35, label: 'Calcul de la note finale…' },
+]
+
+function fmtElapsed(s: number) {
+  const m = Math.floor(s / 60), r = s % 60
+  return `${m}:${String(r).padStart(2, '0')}`
 }
 
 export default function OnlineCorrectionPage() {
@@ -38,7 +57,22 @@ export default function OnlineCorrectionPage() {
   const [correcting, setCorrecting] = useState<number | null>(null)
   const [correctingAll, setCorrectingAll] = useState<number | null>(null)
 
+  const [progress, setProgress] = useState<{ total: number; index: number; studentName: string } | null>(null)
+  const [elapsed, setElapsed] = useState(0)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [resultModal, setResultModal] = useState<{ examTitle: string; items: CorrectionResult[] } | null>(null)
+
   useEffect(() => { load() }, [])
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current) }, [])
+
+  function startTimer() {
+    setElapsed(0)
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => setElapsed(s => s + 1), 1000)
+  }
+  function stopTimer() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+  }
 
   async function load() {
     setLoading(true)
@@ -58,15 +92,17 @@ export default function OnlineCorrectionPage() {
     finally { setLoading(false) }
   }
 
-  async function correctSingle(attemptId: number) {
+  async function correctSingle(attempt: Attempt) {
     if (!confirm('Lancer la correction automatique avec IA pour cette tentative ?')) return
-    setCorrecting(attemptId)
+    setCorrecting(attempt.id)
+    setProgress({ total: 1, index: 1, studentName: attempt.student_name })
+    startTimer()
     try {
-      await api.post(`/api/exam_attempts/${attemptId}/correct`, {})
-      success('Correction lancée avec succès')
+      const res = await api.aiPost<{ success: boolean; attempt: { score: number } }>(`/api/exam_attempts/${attempt.id}/correct`, {})
+      success(`Correction terminée — ${attempt.student_name} : ${res.attempt.score}/20`)
       load()
     } catch (e: any) { error(e.message || 'Erreur de correction') }
-    finally { setCorrecting(null) }
+    finally { setCorrecting(null); setProgress(null); stopTimer() }
   }
 
   async function correctAll(examId: number) {
@@ -76,16 +112,22 @@ export default function OnlineCorrectionPage() {
     if (toCorrect.length === 0) return
     if (!confirm(`Corriger ${toCorrect.length} tentative(s) en attente pour cet examen avec l'IA ?`)) return
     setCorrectingAll(examId)
-    let done = 0, failed = 0
-    for (const attempt of toCorrect) {
+    const items: CorrectionResult[] = []
+    for (let i = 0; i < toCorrect.length; i++) {
+      const attempt = toCorrect[i]
+      setProgress({ total: toCorrect.length, index: i + 1, studentName: attempt.student_name })
+      startTimer()
       try {
-        await api.post(`/api/exam_attempts/${attempt.id}/correct`, {})
-        done++
-      } catch { failed++ }
+        const res = await api.aiPost<{ success: boolean; attempt: { score: number } }>(`/api/exam_attempts/${attempt.id}/correct`, {})
+        items.push({ student_name: attempt.student_name, score: res.attempt.score, success: true })
+      } catch {
+        items.push({ student_name: attempt.student_name, score: null, success: false })
+      }
     }
+    stopTimer()
+    setProgress(null)
     setCorrectingAll(null)
-    if (failed === 0) success(`${done} tentative(s) corrigée(s) avec succès`)
-    else error(`${done} corrigée(s), ${failed} échec(s)`)
+    setResultModal({ examTitle: exam.title, items })
     load()
   }
 
@@ -218,7 +260,7 @@ export default function OnlineCorrectionPage() {
                             {attempt.status === 'banned' ? (
                               <span style={{ background: '#fee2e2', color: '#dc2626', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700 }}>Banni</span>
                             ) : attempt.needs_correction ? (
-                              <button onClick={() => correctSingle(attempt.id)} disabled={correcting === attempt.id}
+                              <button onClick={() => correctSingle(attempt)} disabled={correcting === attempt.id}
                                 style={{ padding: '6px 12px', background: correcting === attempt.id ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: 7, fontWeight: 600, cursor: correcting === attempt.id ? 'not-allowed' : 'pointer', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                                 {correcting === attempt.id
                                   ? <><i className="fas fa-spinner fa-spin" />…</>
@@ -241,6 +283,73 @@ export default function OnlineCorrectionPage() {
           </div>
         )
       })}
+
+      {/* Modal de progression */}
+      {progress && (
+        <Modal title="Correction IA en cours" onClose={() => {}} maxWidth={440}>
+          <div style={{ textAlign: 'center', padding: '8px 4px 4px' }}>
+            <div style={{ position: 'relative', width: 64, height: 64, margin: '0 auto 16px' }}>
+              <i className="fa-solid fa-robot" style={{ fontSize: 30, position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }} />
+              <svg width="64" height="64" style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx="32" cy="32" r="28" fill="none" stroke="var(--border)" strokeWidth="4" />
+                <circle cx="32" cy="32" r="28" fill="none" stroke="#10b981" strokeWidth="4"
+                  strokeDasharray={2 * Math.PI * 28} strokeDashoffset={2 * Math.PI * 28 * (1 - Math.min(elapsed, 180) / 180)}
+                  strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s linear' }} />
+              </svg>
+            </div>
+            {progress.total > 1 && (
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#10b981', marginBottom: 4 }}>
+                Tentative {progress.index} / {progress.total}
+              </div>
+            )}
+            <div style={{ fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtElapsed(elapsed)}</div>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 16px' }}>
+              Copie de <strong>{progress.studentName}</strong>
+            </p>
+            <p style={{ fontSize: 14, minHeight: 20 }}>
+              {[...CORRECTION_STEPS].reverse().find(s => elapsed >= s.at)?.label}
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12 }}>
+              Peut prendre jusqu'à 3 minutes par copie selon la charge du modèle IA.
+            </p>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal de résultat */}
+      {resultModal && (
+        <Modal title="Correction terminée" onClose={() => setResultModal(null)} maxWidth={480}>
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%', margin: '0 auto 12px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(16,185,129,.12)',
+            }}>
+              <i className="fa-solid fa-circle-check" style={{ fontSize: 28, color: '#10b981' }} />
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{resultModal.examTitle}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+              {resultModal.items.filter(r => r.success).length} corrigée(s) avec succès
+              {resultModal.items.some(r => !r.success) && `, ${resultModal.items.filter(r => !r.success).length} échec(s)`}
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto' }}>
+            {resultModal.items.map((it, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: 'var(--background)', borderRadius: 8, fontSize: 13 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className={`fa-solid ${it.success ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ color: it.success ? '#10b981' : '#ef4444' }} />
+                  {it.student_name}
+                </span>
+                {it.success
+                  ? <strong style={{ color: (it.score ?? 0) >= 10 ? '#10b981' : '#ef4444' }}>{it.score}/20</strong>
+                  : <span style={{ color: '#ef4444', fontSize: 12 }}>Échec</span>}
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+            <button className="btn btn-primary" onClick={() => setResultModal(null)}>Fermer</button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

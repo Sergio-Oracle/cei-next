@@ -573,12 +573,20 @@ const STATUS_CLR: Record<string, string> = { submitted: '#059669', auto_submitte
 const CHOICE_CLR: Record<string, string> = { A:'#3b82f6', B:'#10b981', C:'#f59e0b', D:'#ef4444', E:'#2563eb', F:'#06b6d4', Vrai:'#10b981', Faux:'#ef4444' }
 const INCIDENT_FR: Record<string, string> = {
   tab_switch: 'Changement d\'onglet', window_blur: 'Fenêtre au second plan',
+  fullscreen_exit: 'Plein écran quitté',
   copy_attempt: 'Tentative de copie', paste_attempt: 'Tentative de collage',
-  right_click: 'Clic droit bloqué', no_face_detected: 'Visage absent',
-  face_reference_captured: 'Référence faciale capturée', warning_issued: 'Avertissement',
-  ban: 'Exclusion', unban: 'Bannissement levé', submit: 'Soumission',
-  auto_submit: 'Soumission automatique', proctor_note: 'Note surveillant',
-  extra_time: 'Temps supplémentaire', keyboard_shortcut: 'Raccourci bloqué',
+  right_click: 'Clic droit bloqué', keyboard_shortcut: 'Raccourci bloqué',
+  devtools_attempt: 'Outils développeur', devtools: 'Outils développeur',
+  no_face: 'Visage absent', no_face_detected: 'Visage non détecté', face_absent: 'Visage absent',
+  face_mismatch: 'Visage différent', multiple_faces: 'Plusieurs visages',
+  face_reference_captured: 'Photo de référence capturée', suspicious_audio: 'Audio suspect',
+  unban: 'Débannissement', auto_submitted: 'Soumission automatique', auto_submit: 'Soumission automatique',
+  submit: 'Soumission', proctor_note: 'Note surveillant', extra_time: 'Temps supplémentaire',
+  student_message: "Message de l'étudiant", teacher_message: "Message de l'enseignant",
+  teacher_warning: 'Avertissement envoyé', warning_issued: 'Avertissement envoyé',
+  teacher_private_call: 'Appel privé lancé', teacher_end_call: 'Appel privé terminé',
+  teacher_ban: "Exclusion par l'enseignant", proctor_ban: 'Exclusion par le surveillant', ban: 'Exclusion',
+  unknown: 'Événement non catégorisé',
 }
 
 function renderAnswers(rawAnswers?: string): React.ReactNode {
