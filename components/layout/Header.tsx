@@ -51,7 +51,11 @@ function changeLang(code: Lang) {
 
 interface ProfileExtra { is_active?: boolean; last_login?: string }
 
-export default function Header() {
+interface HeaderProps {
+  onToggleSidebar?: () => void
+}
+
+export default function Header({ onToggleSidebar }: HeaderProps) {
   const { user, logout } = useAuth()
   const [unreadCount, setUnreadCount]   = useState(0)
   const [langOpen, setLangOpen]         = useState(false)
@@ -147,6 +151,9 @@ export default function Header() {
 
         {/* Logo à gauche */}
         <div className="header-left">
+          <button id="sidebar-toggle" onClick={onToggleSidebar} title="Menu" aria-label="Ouvrir le menu">
+            <i className="fas fa-bars" />
+          </button>
           <i className="fas fa-graduation-cap header-icon" />
           <h1>Centre d'Examen Intelligent</h1>
         </div>

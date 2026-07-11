@@ -104,7 +104,12 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   )
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  open?: boolean
+  onClose?: () => void
+}
+
+export default function Sidebar({ open = false, onClose }: SidebarProps) {
   const { user } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
 
@@ -129,22 +134,29 @@ export default function Sidebar() {
     studentNav
 
   return (
-    <div className={`sidebar${collapsed ? ' collapsed' : ''}`}>
-      <button
-        className="sidebar-collapse-btn"
-        onClick={toggleCollapse}
-        title={collapsed ? 'Développer' : 'Réduire'}
-      >
-        <i className="fas fa-chevron-left" />
-      </button>
+    <>
+      <div
+        id="sidebar-overlay"
+        className={open ? 'visible' : ''}
+        onClick={onClose}
+      />
+      <div className={`sidebar${collapsed ? ' collapsed' : ''}${open ? ' open' : ''}`}>
+        <button
+          className="sidebar-collapse-btn"
+          onClick={toggleCollapse}
+          title={collapsed ? 'Développer' : 'Réduire'}
+        >
+          <i className="fas fa-chevron-left" />
+        </button>
 
-      <nav className="nav-tabs">
-        {navItems.map((entry, i) =>
-          isDivider(entry)
-            ? <div key={`div-${i}`} className="nav-divider">{entry.divider}</div>
-            : <NavLink key={entry.href} item={entry} collapsed={collapsed} />
-        )}
-      </nav>
-    </div>
+        <nav className="nav-tabs">
+          {navItems.map((entry, i) =>
+            isDivider(entry)
+              ? <div key={`div-${i}`} className="nav-divider">{entry.divider}</div>
+              : <NavLink key={entry.href} item={entry} collapsed={collapsed} />
+          )}
+        </nav>
+      </div>
+    </>
   )
 }
