@@ -27,7 +27,17 @@ interface ParsedBlock {
   content?: string; title?: string; num?: string; text?: string
   extraLines?: string[]; choices?: { letter: string; text: string }[]
 }
-type Phase = 'loading' | 'instructions' | 'permissions' | 'exam' | 'submitted'
+type Phase = 'loading' | 'instructions' | 'permissions' | 'exam' | 'submitted' | 'unsupported'
+
+/* Le partage d'écran complet (obligatoire pour composer) n'est pas disponible sur
+   mobile : Android Chrome n'implémente pas getDisplayMedia, et iOS Safari ne peut
+   pas fournir une capture "écran entier". Détection par capacité réelle plutôt que
+   par user-agent — si un futur navigateur mobile ajoute le support, il sera
+   automatiquement accepté. */
+function isDeviceSupported(): boolean {
+  if (typeof navigator === 'undefined') return true
+  return !!(navigator.mediaDevices && typeof (navigator.mediaDevices as any).getDisplayMedia === 'function')
+}
 type PermStatus = 'pending' | 'loading' | 'ok' | 'error'
 declare global { interface Window { LivekitClient: any } }
 
@@ -178,7 +188,8 @@ export default function ExamPage() {
     ;(async () => {
       try {
         const res = await api.get<ExamData>(`/api/online_exams/${id}/details`)
-        setExam(res); examRef.current = res; setPhase('instructions')
+        setExam(res); examRef.current = res
+        setPhase(isDeviceSupported() ? 'instructions' : 'unsupported')
       } catch (e:any) { toastErr(e.message||'Erreur chargement'); router.push('/dashboard/student') }
     })()
   }, [id]) // eslint-disable-line
@@ -802,6 +813,24 @@ export default function ExamPage() {
         <h2 style={{color:'#0f172a',marginBottom:12}}>Copie soumise !</h2>
         <p style={{color:'#64748b',marginBottom:28,lineHeight:1.6}}>Votre copie a été transmise avec succès.</p>
         <button onClick={()=>router.push('/dashboard/student')} style={{width:'100%',padding:'13px',background:'#2563eb',color:'white',border:'none',borderRadius:10,fontWeight:700,fontSize:15,cursor:'pointer'}}>
+          <i className="fas fa-home" style={{marginRight:8}}/>Retour au tableau de bord
+        </button>
+      </div>
+    </div>
+  )
+
+  if(phase==='unsupported') return(
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0f172a',padding:20}}>
+      <div style={{background:'#1e293b',border:'1px solid #334155',borderRadius:20,padding:'40px 32px',maxWidth:460,width:'100%',textAlign:'center',color:'white'}}>
+        <div style={{width:64,height:64,background:'rgba(245,158,11,.15)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:28,color:'#f59e0b'}}>
+          <i className="fas fa-desktop"/>
+        </div>
+        <h2 style={{fontSize:19,fontWeight:800,margin:'0 0 10px'}}>Ordinateur requis</h2>
+        <p style={{fontSize:13,color:'#94a3b8',lineHeight:1.7,marginBottom:24}}>
+          Cet examen exige le partage de l'écran complet pendant toute la durée de la composition, une fonctionnalité que les téléphones et tablettes ne permettent pas.
+          Merci de vous connecter depuis un <strong style={{color:'#e2e8f0'}}>ordinateur (Windows, Mac ou Linux)</strong> avec un navigateur récent (Chrome, Edge ou Firefox).
+        </p>
+        <button onClick={()=>router.push('/dashboard/student')} style={{width:'100%',padding:13,background:'#2563eb',color:'white',border:'none',borderRadius:10,fontWeight:700,fontSize:14,cursor:'pointer'}}>
           <i className="fas fa-home" style={{marginRight:8}}/>Retour au tableau de bord
         </button>
       </div>
