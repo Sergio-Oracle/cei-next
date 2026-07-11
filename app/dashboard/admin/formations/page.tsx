@@ -150,7 +150,7 @@ export default function AdminFormationsPage() {
       case 'create_ec': case 'edit_ec': return (<>
         {inp('code', 'Code *', { placeholder: 'Ex: EC111' })}
         {inp('name', 'Nom *', { placeholder: "Ex: Théorie de l'Information" })}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+        <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
           {inp('cm', 'CM (h)', { type: 'number', min: 0 })}
           {inp('td', 'TD (h)', { type: 'number', min: 0 })}
           {inp('tp', 'TP (h)', { type: 'number', min: 0 })}

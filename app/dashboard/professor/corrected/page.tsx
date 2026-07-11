@@ -101,7 +101,7 @@ export default function CorrectedPage() {
       </div>
 
       {/* Statistiques */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
           { icon: 'fa-clipboard-check', label: 'Total copies', value: stats.total, color: '#2563eb', bg: '#dbeafe' },
           { icon: 'fa-desktop',    label: 'En ligne',      value: stats.online, color: '#10b981', bg: '#d1fae5' },
@@ -154,6 +154,7 @@ export default function CorrectedPage() {
             <p style={{ margin: 0, fontSize: 13 }}>{papers.length === 0 ? 'Les copies corrigées apparaîtront ici après les examens' : 'Modifiez vos critères de recherche'}</p>
           </div>
         ) : (
+          <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc' }}>
@@ -223,6 +224,7 @@ export default function CorrectedPage() {
               })}
             </tbody>
           </table>
+          </div>
         )}
 
         {/* Footer */}

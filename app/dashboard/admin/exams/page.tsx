@@ -160,7 +160,7 @@ export default function AdminExamsPage() {
       </div>
 
       {/* ── Stats ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
         {[
           { icon: 'fa-list', label: 'Total',     value: counts.total,     color: '#64748b', bg: '#f8fafc', border: '#e2e8f0' },
           { icon: 'fa-play', label: 'En cours',  value: counts.active,    color: '#059669', bg: '#f0fdf4', border: '#bbf7d0' },

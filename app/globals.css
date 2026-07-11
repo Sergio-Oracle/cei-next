@@ -1336,8 +1336,14 @@ tbody tr:last-child td {
    RESPONSIVE
    ============================================================================ */
 @media (max-width: 768px) {
+    /* !important nécessaire : de très nombreuses pages fixent
+       gridTemplateColumns en style inline (2/3/4/5 colonnes, panneau
+       latéral 280px+1fr...) pour le rendu desktop souhaité. Sans
+       !important cette règle ne l'emportait jamais sur l'inline —
+       toutes ces grilles restaient sur plusieurs colonnes fixes et
+       débordaient sur mobile. */
     .grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
 
     .app-header,

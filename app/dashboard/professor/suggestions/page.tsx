@@ -399,7 +399,7 @@ export default function ProfessorSuggestionsPage() {
               <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Comparer les versions ({basket.length})</h3>
               <button onClick={() => setShowCompare(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:`repeat(${basket.length}, 1fr)`, gap:14, padding:20, overflowY:'auto', flex:1 }}>
+            <div className="grid" style={{ display:'grid', gridTemplateColumns:`repeat(${basket.length}, 1fr)`, gap:14, padding:20, overflowY:'auto', flex:1 }}>
               {basket.map((v, i) => (
                 <div key={i} style={{ minWidth:240 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
@@ -520,7 +520,7 @@ export default function ProfessorSuggestionsPage() {
 
       {/* FORM */}
       {step === 'form' && (
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 290px', gap:24, alignItems:'start' }}>
+        <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 290px', gap:24, alignItems:'start' }}>
           <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
             {/* Upload */}
@@ -594,7 +594,7 @@ export default function ProfessorSuggestionsPage() {
                 </div>
               </div>
               <div style={{ padding:24, display:'flex', flexDirection:'column', gap:24 }}>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
+                <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
                   <div>
                     <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
                       <i className="fas fa-signal" style={{ color:'var(--primary)', marginRight:6 }} />Niveau de difficulté

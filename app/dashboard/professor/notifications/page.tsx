@@ -120,7 +120,7 @@ export default function ProfessorNotificationsPage() {
       </div>
 
       {/* Cartes stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
           { icon: 'fa-triangle-exclamation', label: 'Total incidents',  value: incidents.length, color: '#2563eb', bg: '#dbeafe' },
           { icon: 'fa-circle-exclamation',   label: 'Haute sévérité',   value: highCount,        color: '#dc2626', bg: '#fee2e2' },

@@ -206,7 +206,7 @@ export default function AdminExamDetailPage() {
       </div>
 
       {/* Infos + Sécurité */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+      <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
         <div className="card">
           <h3 className="card-title"><i className="fas fa-clock" /> Horaires</h3>
           {[

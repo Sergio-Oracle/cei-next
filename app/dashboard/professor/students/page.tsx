@@ -125,6 +125,7 @@ export default function ProfessorStudentsPage() {
             </p>
           </div>
         ) : (
+          <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc' }}>
@@ -165,6 +166,7 @@ export default function ProfessorStudentsPage() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

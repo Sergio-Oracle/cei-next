@@ -170,7 +170,7 @@ export default function AdminQuestionsPage() {
               <input className="form-control" value={aTitle} onChange={e => setATitle(e.target.value)}
                 placeholder="Ex : Examen de Réseaux S1 2025" />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Durée (minutes)</label>
                 <input className="form-control" type="number" min={15} max={360} value={aDuration}

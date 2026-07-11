@@ -176,7 +176,7 @@ export default function ProfessorSecurityPage() {
       ) : (
         <>
           {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
+          <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
             <div className="stat-card" style={{ textAlign: 'center', borderLeft: '4px solid #ef4444' }}>
               <div style={{ fontSize: 28, fontWeight: 800, color: '#ef4444' }}>{report.banned_count || 0}</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
@@ -197,7 +197,7 @@ export default function ProfessorSecurityPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, alignItems: 'start' }}>
+          <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, alignItems: 'start' }}>
             {/* Types d'incidents */}
             <div className="card">
               <div className="card-header">

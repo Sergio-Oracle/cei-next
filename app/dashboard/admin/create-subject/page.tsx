@@ -432,7 +432,7 @@ export default function AdminCreateSubjectPage() {
               <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Comparer les versions ({basket.length})</h3>
               <button onClick={() => setShowCompare(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:`repeat(${basket.length}, 1fr)`, gap:14, padding:20, overflowY:'auto', flex:1 }}>
+            <div className="grid" style={{ display:'grid', gridTemplateColumns:`repeat(${basket.length}, 1fr)`, gap:14, padding:20, overflowY:'auto', flex:1 }}>
               {basket.map((v, i) => (
                 <div key={i} style={{ minWidth:240 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
@@ -483,7 +483,7 @@ export default function AdminCreateSubjectPage() {
 
       {/* UPLOAD MODE */}
       {mode === 'upload' && (
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:24, alignItems:'start' }}>
+        <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:24, alignItems:'start' }}>
           <div style={{ background:'var(--surface)', borderRadius:14, border:'1px solid var(--border)', borderTop:'3px solid var(--primary)', boxShadow:'var(--shadow-sm)' }}>
             <div style={{ padding:'18px 24px 14px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 }}>
               <i className="fas fa-pen-to-square" style={{ color:'var(--primary)', fontSize:15 }} />
@@ -518,7 +518,7 @@ export default function AdminCreateSubjectPage() {
               </div>
 
               {/* EC filters */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:8 }}>
+              <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:8 }}>
                 <div>
                   <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:600, color:'var(--text-muted)', marginBottom:5 }}>
                     <i className="fas fa-university" style={{ color:'var(--primary)', width:12 }} />Formation
@@ -682,6 +682,7 @@ export default function AdminCreateSubjectPage() {
             ):bankQ.length===0?(
               <div style={{ padding:56, textAlign:'center', color:'var(--text-muted)' }}><i className="fas fa-inbox" style={{ fontSize:36, display:'block', marginBottom:12 }} />Banque vide — sauvegardez des questions depuis la génération IA pour les réutiliser ici.</div>
             ):(
+              <div style={{ overflowX:'auto' }}>
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
                 <thead>
                   <tr style={{ background:'var(--background)' }}>
@@ -729,6 +730,7 @@ export default function AdminCreateSubjectPage() {
                   })}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
           <div style={{ marginTop:12, display:'flex', gap:10, flexWrap:'wrap' }}>
@@ -749,7 +751,7 @@ export default function AdminCreateSubjectPage() {
             <div style={{ padding:'20px 24px', overflowY:'auto', flex:1, display:'flex', flexDirection:'column', gap:14 }}>
               <div><label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:6 }}>Titre de l'examen *</label>
                 <input type="text" value={asmTitle} onChange={e=>setAsmTitle(e.target.value)} style={{ width:'100%', padding:'10px 12px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:14, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }} onFocus={e=>e.target.style.borderColor='var(--primary)'} onBlur={e=>e.target.style.borderColor='var(--border)'} /></div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+              <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div><label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:6 }}>Durée (min)</label><input type="number" value={asmDuration} onChange={e=>setAsmDuration(e.target.value)} min="15" max="360" style={{ width:'100%', padding:'10px 12px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:14, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }} /></div>
                 <div><label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:6 }}>Niveau</label>
                   <select value={asmLevel} onChange={e=>setAsmLevel(e.target.value)} style={{ width:'100%', padding:'10px 12px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:14, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }}>

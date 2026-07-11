@@ -95,7 +95,7 @@ export default function SurveillantDashboard() {
       </div>
 
       {/* ── Stat tiles ───────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
         <StatTile icon="fa-play-circle" label="En cours"            value={activeExams.length}  color="#10b981" />
         <StatTile icon="fa-laptop-code" label="Examens assignés"    value={exams.length}         color="#3b82f6" />
         <StatTile icon="fa-user-graduate" label="Étudiants à surveiller" value={totalStudents}  color="#3b82f6" />
@@ -169,6 +169,7 @@ export default function SurveillantDashboard() {
 
                 {/* Tableau étudiants */}
                 {exam.my_students && exam.my_students.length > 0 ? (
+                  <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ background: '#f8fafc' }}>
@@ -212,6 +213,7 @@ export default function SurveillantDashboard() {
                       })}
                     </tbody>
                   </table>
+                  </div>
                 ) : (
                   <div style={{ padding: '16px 24px', color: 'var(--text-muted)', fontSize: 14 }}>
                     <i className="fas fa-info-circle" style={{ marginRight: 8 }} />

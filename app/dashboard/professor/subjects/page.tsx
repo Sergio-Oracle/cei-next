@@ -59,7 +59,7 @@ export default function ProfessorSubjectsPage() {
       </div>
 
       {/* Raccourcis vers les pages de création */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 24 }}>
+      <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 24 }}>
         <button
           onClick={() => router.push('/dashboard/professor/create-subject')}
           style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 22px', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', transition: 'border-color .15s, box-shadow .15s' }}

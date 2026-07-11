@@ -152,7 +152,7 @@ export default function AdminSecurityPage() {
         <div className="alert alert-error">Impossible de charger le rapport de sécurité.</div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
+          <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
             {[
               { val: report.banned_count || 0, icon: 'fa-ban',                  color: '#ef4444', label: 'Étudiants bannis' },
               { val: report.high_risk?.length || 0, icon: 'fa-exclamation-triangle', color: '#f59e0b', label: 'À haut risque (score ≥ 70)' },
@@ -167,7 +167,7 @@ export default function AdminSecurityPage() {
             ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, alignItems: 'start' }}>
+          <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, alignItems: 'start' }}>
             <div className="card">
               <div className="card-header">
                 <h3 style={{ margin: 0 }}><i className="fas fa-chart-bar" /> Types d'incidents</h3>

@@ -92,7 +92,7 @@ export default function ProfessorAnalyticsPage() {
 
           {/* ── Graphiques CSS ── */}
           {(data.total_corrected ?? 0) > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+            <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               {/* Réussite / Échec — donut CSS */}
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
                 <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text)', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -143,7 +143,7 @@ export default function ProfessorAnalyticsPage() {
 
           {/* ── Top / Bottom examens ── */}
           {((data.top_exams ?? []).length > 0 || (data.bottom_exams ?? []).length > 0) && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
                 <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 7 }}>
                   <i className="fas fa-trophy" style={{ color: '#f59e0b' }} />Meilleurs examens

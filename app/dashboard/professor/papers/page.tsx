@@ -181,7 +181,7 @@ export default function ProfessorPapersPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'start' }}>
+      <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'start' }}>
         {/* Left: form panel */}
         <div>
           {/* Tabs */}
@@ -477,7 +477,7 @@ export default function ProfessorPapersPage() {
               </div>
             </div>
             <div style={{ padding: '20px 24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 24 }}>
+              <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 24 }}>
                 <div style={{ padding: 14, background: '#f8fafc', borderRadius: 10, textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 4 }}>Étudiant</div>
                   <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>{singleResult.student_name}</div>
@@ -528,7 +528,7 @@ export default function ProfessorPapersPage() {
             </div>
             <div style={{ padding: '20px 24px' }}>
               {/* Stats */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
+              <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
                 <div style={{ padding: 14, background: '#dcfce7', borderRadius: 10, textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: '#15803d', textTransform: 'uppercase', letterSpacing: .5, fontWeight: 600, marginBottom: 2 }}>Corrigées</div>
                   <div style={{ fontWeight: 800, fontSize: 26, color: '#15803d' }}>{batchResult.corrected}</div>

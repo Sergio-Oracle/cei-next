@@ -89,7 +89,7 @@ export default function AdminHistoryPage() {
       </div>
 
       {/* KPI tiles */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
+      <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
         <KpiCard icon="fa-file-circle-check" iconColor="#3b82f6" bg="#eff6ff" label="Examens terminés" value={loading ? '…' : String(exams.length)} />
         <KpiCard icon="fa-users"             iconColor="#10b981" bg="#dcfce7" label="Participations totales" value={loading ? '…' : String(totalAttempts)} />
         <KpiCard

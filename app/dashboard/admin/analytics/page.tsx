@@ -109,7 +109,7 @@ export default function AdminAnalyticsPage() {
             <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
               <i className="fas fa-users" style={{ marginRight: 6 }} />Utilisateurs de la plateforme
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+            <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
               {[
                 { icon: 'fa-users',              label: 'Total utilisateurs',  value: dash.total_users ?? 0,              color: '#2563eb', bg: '#dbeafe' },
                 { icon: 'fa-user-graduate',       label: 'Étudiants',          value: dash.total_students ?? 0,           color: '#0ea5e9', bg: '#e0f2fe' },
@@ -134,7 +134,7 @@ export default function AdminAnalyticsPage() {
             <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
               <i className="fas fa-file-alt" style={{ marginRight: 6 }} />Sujets & Corrections
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+            <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
               {[
                 { icon: 'fa-file-alt',          label: 'Sujets créés',        value: dash.total_subjects ?? 0,            color: '#0f766e', bg: '#f0fdfa' },
                 { icon: 'fa-file',              label: 'Copies totales',      value: dash.total_papers ?? 0,              color: '#0891b2', bg: '#e0f2fe' },
@@ -196,7 +196,7 @@ export default function AdminAnalyticsPage() {
 
           {/* Top & Bottom exams */}
           {((exams.top_exams ?? []).length > 0 || (exams.bottom_exams ?? []).length > 0) && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+            <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
                 <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 7 }}>
                   <i className="fas fa-trophy" style={{ color: '#f59e0b' }} />Meilleurs examens

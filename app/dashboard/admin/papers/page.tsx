@@ -99,7 +99,7 @@ export default function AdminPapersPage() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
           { icon: 'fa-clipboard-check', label: 'Total copies',   value: loading ? '…' : total,    color: '#2563eb', bg: '#dbeafe' },
           { icon: 'fa-desktop',    label: 'En ligne',        value: loading ? '…' : online,   color: '#10b981', bg: '#d1fae5' },
@@ -156,6 +156,7 @@ export default function AdminPapersPage() {
             </p>
           </div>
         ) : (
+          <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc' }}>
@@ -225,6 +226,7 @@ export default function AdminPapersPage() {
               })}
             </tbody>
           </table>
+          </div>
         )}
 
         {/* Footer */}

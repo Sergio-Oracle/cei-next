@@ -202,7 +202,7 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
         </div>
 
         {/* Graphiques 2×2 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
             <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#374151' }}>
               <i className="fas fa-chart-bar" style={{ color: '#2563eb', marginRight: 5 }} />Distribution des notes
@@ -219,7 +219,7 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
             <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#374151' }}>
               <i className="fas fa-chart-line" style={{ color: '#3b82f6', marginRight: 5 }} />Scores individuels (classement)
@@ -402,7 +402,7 @@ export default function ProfessorResultsPage() {
           {/* ── Graphiques globaux ── */}
           {hasGlobal && (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 14, padding: '18px 20px' }}>
                   <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 700, color: '#374151', display: 'flex', alignItems: 'center', gap: 7 }}>
                     <i className="fas fa-chart-bar" style={{ color: '#2563eb' }} />Distribution des notes

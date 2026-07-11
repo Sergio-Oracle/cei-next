@@ -110,12 +110,12 @@ export default function NewExamPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'start' }}>
+      <div className="grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'start' }}>
 
         {/* Colonne principale */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 24 }}>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
+          <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
             <div style={{ gridColumn: '1 / -1', marginBottom: 18 }}>
               <label style={lbl}><i className="fas fa-book" /> Sujet Associé <span style={{ color: '#ef4444' }}>*</span></label>
               <select value={form.subject_id} onChange={e => set('subject_id', e.target.value)} style={inp}>
@@ -156,7 +156,7 @@ export default function NewExamPage() {
               <span style={{ fontWeight: 700, color: '#0f172a', fontSize: 14 }}>Paramètres de Sécurité</span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
+            <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
               <div style={{ marginBottom: 16 }}>
                 <label style={{ ...lbl, fontSize: 13 }}><i className="fas fa-exchange-alt" style={{ color: '#f59e0b' }} /> Seuil — changements de fenêtre</label>
                 <input type="number" min={0} max={20} value={form.max_tab_switches} onChange={e => set('max_tab_switches', Number(e.target.value))} style={inp} />

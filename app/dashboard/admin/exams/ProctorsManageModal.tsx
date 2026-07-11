@@ -195,6 +195,7 @@ export default function ProctorsManageModal({ examId, onClose }: Props) {
                     Aucun surveillant assigné à cet examen
                   </div>
                 ) : (
+                  <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', background: 'var(--surface)', borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                     <thead><tr style={{ background: '#f8fafc' }}>
                       <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0' }}>Surveillant</th>
@@ -219,6 +220,7 @@ export default function ProctorsManageModal({ examId, onClose }: Props) {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 )}
               </div>
 
