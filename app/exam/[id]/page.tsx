@@ -941,11 +941,11 @@ export default function ExamPage() {
     }).length
 
     return(
-      <div style={{display:'flex',height:'100vh',width:'100%',overflow:'hidden',fontFamily:"-apple-system,'Segoe UI',Roboto,sans-serif"}}>
+      <div className="exam-shell" style={{display:'flex',height:'100vh',width:'100%',overflow:'hidden',fontFamily:"-apple-system,'Segoe UI',Roboto,sans-serif"}}>
         <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes agP{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}50%{box-shadow:0 0 0 5px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}`}</style>
 
         {/* ═══ PANNEAU SURVEILLANCE ═══ */}
-        <div style={{width:280,minWidth:280,background:'white',display:'flex',flexDirection:'column',borderRight:'1px solid #e2e8f0',boxShadow:'2px 0 8px rgba(0,0,0,.08)',overflowY:'auto',zIndex:100}}>
+        <div className="exam-proctor-panel" style={{width:280,minWidth:280,background:'white',display:'flex',flexDirection:'column',borderRight:'1px solid #e2e8f0',boxShadow:'2px 0 8px rgba(0,0,0,.08)',overflowY:'auto',zIndex:100}}>
           <div style={{padding:'12px 16px',background:'#2563eb',color:'white',flexShrink:0}}>
             <div style={{display:'flex',alignItems:'center',gap:8,fontSize:14,fontWeight:700,marginBottom:6}}><i className="fas fa-shield-alt"/> Surveillance</div>
             <span style={{display:'inline-flex',alignItems:'center',gap:6,padding:'3px 10px',background:'rgba(255,255,255,.2)',borderRadius:20,fontSize:10,fontWeight:600}}>
@@ -1043,7 +1043,7 @@ export default function ExamPage() {
         </div>
 
         {/* ═══ PANNEAU EXAMEN ═══ */}
-        <div style={{flex:1,background:'#f8fafc',overflowY:'auto',display:'flex',flexDirection:'column'}}>
+        <div className="exam-main-content" style={{flex:1,background:'#f8fafc',overflowY:'auto',display:'flex',flexDirection:'column'}}>
           {/* Header */}
           <div style={{background:'white',padding:'16px 24px',borderBottom:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0,boxShadow:'0 2px 4px rgba(0,0,0,.04)'}}>
             <div>

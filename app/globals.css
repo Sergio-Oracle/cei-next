@@ -1515,6 +1515,28 @@ tbody tr:last-child td {
         min-width: 120px;
     }
 
+    /* Page de composition d'examen : panneau surveillance + zone de réponse
+       empilés verticalement au lieu de côte à côte (280px fixe était injouable
+       sur un écran de téléphone — le contenu principal se retrouvait écrasé
+       dans une bande de ~90px). */
+    .exam-shell {
+        flex-direction: column !important;
+        height: auto !important;
+        min-height: 100vh;
+        overflow: visible !important;
+    }
+    .exam-proctor-panel {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-height: 45vh;
+        border-right: none !important;
+        box-shadow: none !important;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .exam-main-content {
+        min-height: 55vh;
+    }
+
     /* Button text: hide labels on very small screens */
     @media (max-width: 400px) {
         .btn-label-mobile {
