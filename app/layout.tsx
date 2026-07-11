@@ -38,12 +38,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }
         `}} />
         <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer />
-        {/* Enregistrement du service worker pour PWA / offline */}
+        {/* Enregistrement du service worker pour PWA / offline.
+            Recharge automatiquement une fois quand une nouvelle version prend le contrôle,
+            pour éviter qu'un onglet déjà ouvert continue de tourner avec du JS périmé
+            référençant des fichiers supprimés par un déploiement plus récent. */}
         <script dangerouslySetInnerHTML={{__html:`
           if('serviceWorker' in navigator){
             window.addEventListener('load',function(){
               navigator.serviceWorker.register('/sw.js',{scope:'/'})
+                .then(function(reg){ reg.update().catch(function(){}); })
                 .catch(function(){});
+              var reloaded = false;
+              navigator.serviceWorker.addEventListener('controllerchange',function(){
+                if(reloaded) return;
+                reloaded = true;
+                window.location.reload();
+              });
             });
           }
         `}} />

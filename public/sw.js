@@ -6,8 +6,13 @@
  *   - API (/api/*) : Network uniquement, jamais de cache (données auth dynamiques)
  */
 
-const STATIC_CACHE = 'cei-static-v2';
-const PAGE_CACHE   = 'cei-pages-v2';
+// __BUILD_ID__ est remplacé par le vrai build ID à chaque déploiement (voir deploy.sh) —
+// ça force l'invalidation de TOUS les caches sur chaque nouveau déploiement, pour éviter
+// qu'un client garde en cache une page HTML qui référence des fichiers JS supprimés du
+// serveur par le build suivant (écran blanc / éléments qui ne s'affichent plus).
+const BUILD_ID      = '__BUILD_ID__';
+const STATIC_CACHE = 'cei-static-' + BUILD_ID;
+const PAGE_CACHE   = 'cei-pages-' + BUILD_ID;
 const ALL_CACHES   = [STATIC_CACHE, PAGE_CACHE];
 
 // Assets à pré-cacher à l'installation
