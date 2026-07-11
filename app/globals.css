@@ -249,6 +249,14 @@ body {
     z-index: 100;
 }
 
+/* Décale l'en-tête (et le menu mobile) sous la bannière d'installation PWA
+   au lieu de se faire recouvrir par elle — hauteur mesurée dynamiquement
+   côté JS (InstallPwaBanner.tsx) car elle varie selon si le texte retombe
+   sur 2 lignes. */
+body.pwa-banner-visible .app-header {
+    top: var(--pwa-banner-height, 44px);
+}
+
 .header-content {
     max-width: 1400px;
     margin: 0 auto;
@@ -1364,6 +1372,10 @@ tbody tr:last-child td {
         box-shadow: 4px 0 20px rgba(0,0,0,.15);
         width: 230px !important;
         min-width: 230px !important;
+    }
+    body.pwa-banner-visible .sidebar {
+        top: calc(65px + var(--pwa-banner-height, 44px));
+        height: calc(100vh - 65px - var(--pwa-banner-height, 44px));
     }
     .sidebar.open {
         transform: translateX(0);

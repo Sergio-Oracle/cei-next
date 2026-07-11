@@ -1,24 +1,42 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { usePwaInstall } from '@/hooks/usePwaInstall'
 
 export default function InstallPwaBanner() {
   const { canInstall, showIosInstructions, promptInstall, dismiss } = usePwaInstall()
   const visible = canInstall || showIosInstructions
+  const ref = useRef<HTMLDivElement>(null)
 
-  /* Signale la présence de la bannière au reste de la page (ex: sélecteur de
-     langue de la landing, aussi en position fixed en haut) pour éviter tout
-     chevauchement avec d'autres éléments fixes. */
+  /* Signale la présence (+ hauteur réelle, qui varie selon si le texte
+     retombe sur 2 lignes sur petit écran) au reste de la page — le header
+     sticky et le menu mobile s'en servent pour se décaler et ne pas passer
+     dessous la bannière. */
   useEffect(() => {
     document.body.classList.toggle('pwa-banner-visible', visible)
-    return () => { document.body.classList.remove('pwa-banner-visible') }
+    if (!visible) {
+      document.documentElement.style.removeProperty('--pwa-banner-height')
+      return () => { document.body.classList.remove('pwa-banner-visible') }
+    }
+    const el = ref.current
+    if (!el) return
+    const update = () => {
+      document.documentElement.style.setProperty('--pwa-banner-height', `${el.offsetHeight}px`)
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => {
+      ro.disconnect()
+      document.body.classList.remove('pwa-banner-visible')
+      document.documentElement.style.removeProperty('--pwa-banner-height')
+    }
   }, [visible])
 
   if (!visible) return null
 
   return (
-    <div style={{
+    <div ref={ref} style={{
       position:       'fixed',
       top:            0,
       left:           0,
