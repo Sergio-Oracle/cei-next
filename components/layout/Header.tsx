@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import api from '@/lib/api'
 import { useNotificationPoll } from '@/hooks/useNotificationPoll'
+import { usePwaInstall } from '@/hooks/usePwaInstall'
+import { useToast } from '@/contexts/ToastContext'
 
 const roleLabel: Record<string, string> = {
   admin: 'Administrateur',
@@ -57,6 +59,8 @@ interface HeaderProps {
 
 export default function Header({ onToggleSidebar }: HeaderProps) {
   const { user, logout } = useAuth()
+  const { canInstallManually, showIosInstructionsManually, promptInstall } = usePwaInstall()
+  const { showToast } = useToast()
   const [unreadCount, setUnreadCount]   = useState(0)
   const [langOpen, setLangOpen]         = useState(false)
   const [userOpen, setUserOpen]         = useState(false)
@@ -160,6 +164,25 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
         {/* Contrôles à droite */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+
+          {/* Installer l'application — bouton persistant, indépendant de la bannière
+              auto-affichée : reste disponible même après avoir fermé/refusé celle-ci,
+              car une demande explicite de l'utilisateur ne doit pas être bloquée par
+              le cooldown de la suggestion spontanée. Invisible si déjà installée ou
+              si le navigateur ne supporte ni l'un ni l'autre mécanisme. */}
+          {(canInstallManually || showIosInstructionsManually) && (
+            <button
+              onClick={() => {
+                if (canInstallManually) promptInstall()
+                else showToast("Pour installer CEI : appuyez sur Partager, puis \"Sur l'écran d'accueil\".", 'info', 8000)
+              }}
+              title="Installer l'application"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 36, height: 36, borderRadius: '50%', background: 'var(--background)',
+                border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)' }}>
+              <i className="fas fa-download" style={{ fontSize: 14 }} />
+            </button>
+          )}
 
           {/* Toggle thème */}
           <button onClick={toggleTheme} title={dark ? 'Mode clair' : 'Mode sombre'}

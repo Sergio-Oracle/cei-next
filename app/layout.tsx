@@ -38,6 +38,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }
         `}} />
         <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer />
+        {/* Capture le prompt d'installation PWA le plus tôt possible (avant même
+            l'hydratation React) — pratique standard recommandée : si l'écouteur
+            n'est posé qu'une fois le composant React monté, l'événement peut
+            arriver avant et être perdu définitivement pour cette page. Le
+            hook usePwaInstall relit window.__pwaDeferredPrompt à son montage. */}
+        <script dangerouslySetInnerHTML={{__html:`
+          window.addEventListener('beforeinstallprompt', function(e){
+            e.preventDefault();
+            window.__pwaDeferredPrompt = e;
+            window.dispatchEvent(new CustomEvent('cei:pwa-prompt-ready'));
+          });
+        `}} />
         {/* Enregistrement du service worker pour PWA / offline.
             Recharge automatiquement une fois quand une nouvelle version prend le contrôle,
             pour éviter qu'un onglet déjà ouvert continue de tourner avec du JS périmé
