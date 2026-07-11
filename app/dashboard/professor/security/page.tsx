@@ -113,14 +113,15 @@ const EVT_RISK_COLOR: Record<string, string> = {
 }
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  banned:      { label: 'Banni',       color: '#ef4444' },
-  submitted:   { label: 'Soumis',      color: '#f59e0b' },
-  in_progress: { label: 'En cours',    color: '#3b82f6' },
-  'in progress':{ label: 'En cours',   color: '#3b82f6' },
-  completed:   { label: 'Terminé',     color: '#10b981' },
-  active:      { label: 'Actif',       color: '#3b82f6' },
-  pending:     { label: 'En attente',  color: '#94a3b8' },
-  draft:       { label: 'Brouillon',   color: '#64748b' },
+  banned:         { label: 'Banni',                color: '#ef4444' },
+  submitted:      { label: 'Soumis',                color: '#f59e0b' },
+  auto_submitted: { label: 'Soumis automatiquement', color: '#f59e0b' },
+  in_progress:    { label: 'En cours',              color: '#3b82f6' },
+  'in progress':  { label: 'En cours',              color: '#3b82f6' },
+  completed:      { label: 'Terminé',               color: '#10b981' },
+  active:         { label: 'Actif',                 color: '#3b82f6' },
+  pending:        { label: 'En attente',            color: '#94a3b8' },
+  draft:          { label: 'Brouillon',             color: '#64748b' },
 }
 
 function riskColor(score: number) {

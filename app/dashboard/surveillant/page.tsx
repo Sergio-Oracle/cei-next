@@ -33,6 +33,7 @@ function attemptLabel(status: string) {
     case 'in_progress':
     case 'started':     return { label: 'En cours',          color: '#f59e0b', bg: '#fffbeb' }
     case 'submitted':   return { label: 'Soumis',            color: '#10b981', bg: '#f0fdf4' }
+    case 'auto_submitted': return { label: 'Soumis automatiquement', color: '#10b981', bg: '#f0fdf4' }
     case 'graded':      return { label: 'Corrigé',           color: '#3b82f6', bg: '#eff6ff' }
     case 'banned':      return { label: 'Exclu',             color: '#ef4444', bg: '#fef2f2' }
     default:            return { label: status,               color: '#94a3b8', bg: '#f1f5f9' }
