@@ -254,7 +254,13 @@ body {
    côté JS (InstallPwaBanner.tsx) car elle varie selon si le texte retombe
    sur 2 lignes. */
 body.pwa-banner-visible .app-header {
-    top: var(--pwa-banner-height, 44px);
+    /* top seul ne suffit pas : position:sticky ne réserve pas d'espace
+       supplémentaire dans le flux normal pour ce décalage — sans margin-top,
+       l'en-tête se contente d'être peint plus bas tout en gardant son
+       empreinte de flux d'origine, ce qui fait chevaucher le contenu de
+       page qui le suit (ex: le titre "Corriger des Copies" derrière lui). */
+    top:        var(--pwa-banner-height, 44px);
+    margin-top: var(--pwa-banner-height, 44px);
 }
 
 .header-content {
