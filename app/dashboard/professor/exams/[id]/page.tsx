@@ -43,6 +43,7 @@ export default function ProfessorExamDetailPage() {
   const [grading, setGrading] = useState(false)
   const [correcting, setCorrecting] = useState<number | null>(null)
   const [downloading, setDownloading] = useState(false)
+  const [downloadingSecurity, setDownloadingSecurity] = useState(false)
   const [importingGrades, setImportingGrades] = useState(false)
   const gradesFileRef = useRef<HTMLInputElement | null>(null)
   const [extraModal, setExtraModal]   = useState<AttemptWithMeta | null>(null)
@@ -164,6 +165,19 @@ export default function ProfessorExamDetailPage() {
     } catch (e: any) { error(e.message || 'Erreur export') } finally { setDownloading(false) }
   }
 
+  async function downloadSecurityReport() {
+    setDownloadingSecurity(true)
+    try {
+      const blob = await api.blob(`/api/online_exams/${id}/security-report/pdf`)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `examen_${id}_rapport_securite.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e: any) { error(e.message || 'Erreur rapport sécurité') } finally { setDownloadingSecurity(false) }
+  }
+
   async function handleImportGrades(file: File) {
     setImportingGrades(true)
     try {
@@ -234,6 +248,12 @@ export default function ProfessorExamDetailPage() {
             {downloading
               ? <><i className="fa-solid fa-spinner spin" /> Export...</>
               : <><i className="fa-solid fa-file-csv" /> Export CSV</>}
+          </button>
+          <button className="btn btn-secondary" onClick={downloadSecurityReport} disabled={downloadingSecurity}
+            title="Rapport de sécurité agrégé (risques, incidents) pour cet examen">
+            {downloadingSecurity
+              ? <><i className="fa-solid fa-spinner spin" /> Rapport...</>
+              : <><i className="fa-solid fa-shield-halved" /> Rapport sécurité</>}
           </button>
           <input
             ref={gradesFileRef}
