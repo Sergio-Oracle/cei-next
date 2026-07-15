@@ -12,8 +12,12 @@ interface ECItem {
   id: number; code: string; name: string
   ue_code?: string; ue_id?: number; ue_name?: string
   formation_id?: number; formation_name?: string; formation_level?: string
+  pole_id?: number; pole_code?: string; pole_name?: string
 }
-interface FormationItem { id: number; code: string; name: string; level: string }
+interface FormationItem { id: number; code: string; name: string; level: string; pole_id?: number; pole_code?: string; pole_name?: string }
+
+const POLE_COLORS: Record<string, string> = { STN: '#6366f1', LSHE: '#10b981', SEJA: '#f59e0b' }
+const poleColor = (code?: string | null) => POLE_COLORS[code || ''] || '#64748b'
 interface BasketVersion { label: string; content: string; rubric: string }
 
 type Mode = 'upload' | 'bank'
@@ -42,6 +46,7 @@ export default function AdminCreateSubjectPage() {
   /* ── upload form ── */
   const [title,           setTitle]           = useState('')
   const [ecId,            setEcId]            = useState('')
+  const [filterPole,      setFilterPole]      = useState('')
   const [filterFormation, setFilterFormation] = useState('')
   const [filterLevel,     setFilterLevel]     = useState('')
   const [file,            setFile]            = useState<File | null>(null)
@@ -62,6 +67,7 @@ export default function AdminCreateSubjectPage() {
   const [bankSel,      setBankSel]      = useState<Set<number>>(new Set())
   const [bankSearch,   setBankSearch]   = useState('')
   const [bankTypeF,    setBankTypeF]    = useState('')
+  const [bankPoleF,    setBankPoleF]    = useState('')
   const [bankFormF,    setBankFormF]    = useState('')
   const [bankUeF,      setBankUeF]      = useState('')
   const [bankEcF,      setBankEcF]      = useState('')
@@ -97,21 +103,26 @@ export default function AdminCreateSubjectPage() {
   useEffect(() => { if (mode === 'bank') refreshBank() }, [mode]) // eslint-disable-line
 
   /* ── derived ── */
-  const uniqueLevels = Array.from(new Set(allEcs.map(e => e.formation_level).filter(Boolean))) as string[]
+  const uniquePoles  = Array.from(new Map(formations.filter(f=>f.pole_id).map(f=>[f.pole_id,{id:f.pole_id!,code:f.pole_code!,name:f.pole_name!}])).values())
+  const uniqueLevels = Array.from(new Set(allEcs.filter(e=>!filterPole||String(e.pole_id)===filterPole).map(e => e.formation_level).filter(Boolean))) as string[]
+  const filteredForms = formations.filter(f => !filterPole || String(f.pole_id) === filterPole)
   const filteredEcs  = allEcs.filter(ec => {
+    if (filterPole      && String(ec.pole_id)       !== filterPole)      return false
     if (filterFormation && String(ec.formation_id) !== filterFormation) return false
-    if (filterLevel     && ec.formation_level     !== filterLevel)     return false
+    if (filterLevel     && ec.formation_level      !== filterLevel)     return false
     return true
   })
 
-  const bankFormations = Array.from(new Map(bankQ.filter(q=>q.formation_id).map(q=>[q.formation_id,{id:q.formation_id!,name:q.formation_name||''}])).values())
+  const bankPoles      = Array.from(new Map(bankQ.filter(q=>q.pole_id).map(q=>[q.pole_id,{id:q.pole_id!,code:q.pole_code||'',name:q.pole_name||''}])).values())
+  const bankFormations = Array.from(new Map(bankQ.filter(q=>q.formation_id&&(!bankPoleF||String(q.pole_id)===bankPoleF)).map(q=>[q.formation_id,{id:q.formation_id!,name:q.formation_name||''}])).values())
   const bankUes        = Array.from(new Map(bankQ.filter(q=>q.ue_id&&(!bankFormF||String(q.formation_id)===bankFormF)).map(q=>[q.ue_id,{id:q.ue_id!,code:q.ue_code||'',name:q.ue_name||''}])).values())
   const bankEcs        = Array.from(new Map(bankQ.filter(q=>q.ec_id&&(!bankUeF||String(q.ue_id)===bankUeF)).map(q=>[q.ec_id,{id:q.ec_id!,code:q.ec_code||'',name:q.ec_name||''}])).values())
   const bankFiltered   = bankQ.filter(q => {
-    if (bankTypeF && q.question_type !== bankTypeF) return false
-    if (bankFormF && String(q.formation_id) !== bankFormF) return false
-    if (bankUeF   && String(q.ue_id)        !== bankUeF)   return false
-    if (bankEcF   && String(q.ec_id)        !== bankEcF)   return false
+    if (bankPoleF && String(q.pole_id)       !== bankPoleF) return false
+    if (bankTypeF && q.question_type         !== bankTypeF) return false
+    if (bankFormF && String(q.formation_id)  !== bankFormF) return false
+    if (bankUeF   && String(q.ue_id)         !== bankUeF)   return false
+    if (bankEcF   && String(q.ec_id)         !== bankEcF)   return false
     if (bankSearch) { const s = bankSearch.toLowerCase(); if (!q.title.toLowerCase().includes(s) && !(q.ec_name||'').toLowerCase().includes(s)) return false }
     return true
   })
@@ -156,7 +167,7 @@ export default function AdminCreateSubjectPage() {
     try {
       const contentLines = editContent.split('\n')
       const titleLine = contentLines.map(l=>l.replace(/^#+\s*/,'').replace(/^[\s═─━=\-_*]+$/,'').trim()).find(l=>l.length>2) || created?.title || 'Question'
-      await saveQuestion({
+      const res = await saveQuestion({
         title: titleLine.substring(0, 80),
         content: editContent,
         rubric:  editRubric,
@@ -164,7 +175,11 @@ export default function AdminCreateSubjectPage() {
         bloom_level:   bankSaveBloom || undefined,
         ec_id: bankSaveEc ? parseInt(bankSaveEc) : null,
       })
-      toastOk('Sauvegardé dans la banque de questions')
+      if (res.duplicates && res.duplicates.length > 0) {
+        toastOk(`Sauvegardé ⚠ Doublon probable détecté (${res.duplicates[0].similarity}% similaire à "${res.duplicates[0].title}")`)
+      } else {
+        toastOk('Sauvegardé dans la banque de questions')
+      }
       setShowBankModal(false)
     } catch (err: any) { toastErr(err.message || 'Erreur sauvegarde banque') }
     finally { setBankSaving(false) }
@@ -517,15 +532,24 @@ export default function AdminCreateSubjectPage() {
                 </div>
               </div>
 
-              {/* EC filters */}
-              <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:8 }}>
+              {/* EC filters — cascade Pôle → Formation → Niveau → EC */}
+              <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:8 }}>
+                <div>
+                  <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:700, color:'#6366f1', marginBottom:5 }}>
+                    <i className="fas fa-sitemap" style={{ width:12 }} />Pôle
+                  </label>
+                  <select value={filterPole} onChange={e=>{setFilterPole(e.target.value);setFilterFormation('');setFilterLevel('');setEcId('')}} style={{ width:'100%', padding:'8px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:12, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }}>
+                    <option value="">— Tous —</option>
+                    {uniquePoles.map(p=><option key={p.id} value={String(p.id)} style={{ color: poleColor(p.code) }}>{p.code} — {p.name}</option>)}
+                  </select>
+                </div>
                 <div>
                   <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:600, color:'var(--text-muted)', marginBottom:5 }}>
                     <i className="fas fa-university" style={{ color:'var(--primary)', width:12 }} />Formation
                   </label>
                   <select value={filterFormation} onChange={e=>{setFilterFormation(e.target.value);setEcId('')}} style={{ width:'100%', padding:'8px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:12, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }}>
                     <option value="">— Toutes —</option>
-                    {formations.map(f=><option key={f.id} value={String(f.id)}>{f.name}</option>)}
+                    {filteredForms.map(f=><option key={f.id} value={String(f.id)}>{f.name}</option>)}
                   </select>
                 </div>
                 <div>
@@ -636,12 +660,16 @@ export default function AdminCreateSubjectPage() {
             </button>
           </div>
 
-          {/* Filters */}
+          {/* Filters — cascade Pôle → Formation → UE → EC */}
           <div style={{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap' }}>
             <input type="text" value={bankSearch} onChange={e=>setBankSearch(e.target.value)} placeholder="Rechercher…"
-              style={{ flex:1, minWidth:160, padding:'8px 12px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none' }} />
+              style={{ flex:1, minWidth:140, padding:'8px 12px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none' }} />
             <select value={bankTypeF} onChange={e=>setBankTypeF(e.target.value)} style={{ padding:'8px 10px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:12, background:'var(--background)', color:'var(--text)', outline:'none' }}>
               <option value="">Type</option><option value="qcm">QCM</option><option value="vf">Vrai/Faux</option><option value="open">Ouvert</option><option value="subopen">Sous-questions</option>
+            </select>
+            <select value={bankPoleF} onChange={e=>{setBankPoleF(e.target.value);setBankFormF('');setBankUeF('');setBankEcF('')}} style={{ padding:'8px 10px', border:`1.5px solid ${bankPoleF?poleColor(bankPoles.find(p=>String(p.id)===bankPoleF)?.code):'var(--border)'}`, borderRadius:8, fontSize:12, background:'var(--background)', color:'var(--text)', outline:'none' }}>
+              <option value="">Pôle</option>
+              {bankPoles.map(p=><option key={p.id} value={String(p.id)}>{p.code} — {p.name}</option>)}
             </select>
             <select value={bankFormF} onChange={e=>{setBankFormF(e.target.value);setBankUeF('');setBankEcF('')}} style={{ padding:'8px 10px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:12, background:'var(--background)', color:'var(--text)', outline:'none' }}>
               <option value="">Formation</option>
@@ -655,8 +683,8 @@ export default function AdminCreateSubjectPage() {
               <option value="">EC</option>
               {bankEcs.map(ec=><option key={ec.id} value={String(ec.id)}>{ec.code} — {ec.name}</option>)}
             </select>
-            {(bankSearch||bankTypeF||bankFormF||bankUeF||bankEcF)&&(
-              <button onClick={()=>{setBankSearch('');setBankTypeF('');setBankFormF('');setBankUeF('');setBankEcF('')}} style={{ padding:'8px 12px', border:'1px solid var(--border)', borderRadius:8, fontSize:12, background:'var(--background)', color:'var(--text-muted)', cursor:'pointer' }}>
+            {(bankSearch||bankTypeF||bankPoleF||bankFormF||bankUeF||bankEcF)&&(
+              <button onClick={()=>{setBankSearch('');setBankTypeF('');setBankPoleF('');setBankFormF('');setBankUeF('');setBankEcF('')}} style={{ padding:'8px 12px', border:'1px solid var(--border)', borderRadius:8, fontSize:12, background:'var(--background)', color:'var(--text-muted)', cursor:'pointer' }}>
                 <i className="fas fa-times" />
               </button>
             )}

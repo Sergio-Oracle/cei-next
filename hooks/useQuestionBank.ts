@@ -15,9 +15,14 @@ export interface BankQuestion {
   ue_id?: number | null
   ue_code?: string | null
   ue_name?: string | null
+  semester_id?: number | null
+  semester_number?: number | null
   formation_id?: number | null
   formation_name?: string | null
   formation_level?: string | null
+  pole_id?: number | null
+  pole_code?: string | null
+  pole_name?: string | null
 }
 
 export interface SaveQuestionPayload {
@@ -29,10 +34,21 @@ export interface SaveQuestionPayload {
   ec_id?: number | null
 }
 
+export interface DuplicateWarning {
+  id: number
+  title: string
+  similarity: number
+}
+
+export interface SaveQuestionResult {
+  question: BankQuestion
+  duplicates: DuplicateWarning[]
+}
+
 export interface UseQuestionBankReturn {
   questions: BankQuestion[]
   loading: boolean
-  saveQuestion: (payload: SaveQuestionPayload) => Promise<BankQuestion>
+  saveQuestion: (payload: SaveQuestionPayload) => Promise<SaveQuestionResult>
   deleteQuestion: (id: number) => Promise<void>
   refresh: () => Promise<void>
 }
@@ -55,10 +71,10 @@ export function useQuestionBank(): UseQuestionBankReturn {
 
   useEffect(() => { refresh() }, [refresh])
 
-  async function saveQuestion(payload: SaveQuestionPayload): Promise<BankQuestion> {
-    const saved = await api.post<BankQuestion>('/api/question_bank', payload)
-    setQuestions(prev => [saved, ...prev])
-    return saved
+  async function saveQuestion(payload: SaveQuestionPayload): Promise<SaveQuestionResult> {
+    const res = await api.post<{ success: boolean; question: BankQuestion; duplicates: DuplicateWarning[] }>('/api/question_bank', payload)
+    setQuestions(prev => [res.question, ...prev])
+    return { question: res.question, duplicates: res.duplicates ?? [] }
   }
 
   async function deleteQuestion(id: number): Promise<void> {

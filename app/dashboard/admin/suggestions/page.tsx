@@ -198,7 +198,7 @@ export default function AdminSuggestionsPage() {
       const titleLine = previewContent.split('\n')
         .map(l => l.replace(/^#+\s*/, '').replace(/^[\s═─━=\-_*]+$/, '').trim())
         .find(l => l.length > 2) || previewTitle
-      await api.post('/api/question_bank', {
+      const res = await api.post<{ success: boolean; question: any; duplicates?: { id: number; title: string; similarity: number }[] }>('/api/question_bank', {
         title: titleLine.substring(0, 80),
         content: previewContent,
         rubric:  previewRubric,
@@ -206,7 +206,11 @@ export default function AdminSuggestionsPage() {
         bloom_level:   bankSaveBloom || undefined,
         ec_id: bankSaveEc ? parseInt(bankSaveEc) : null,
       })
-      success('Sauvegardé dans la banque de questions')
+      if (res.duplicates && res.duplicates.length > 0) {
+        success(`Sauvegardé ⚠ Doublon probable détecté (${res.duplicates[0].similarity}% similaire à "${res.duplicates[0].title}")`)
+      } else {
+        success('Sauvegardé dans la banque de questions')
+      }
       setShowBankModal(false)
     } catch (err: any) { toastErr(err.message || 'Erreur sauvegarde banque') }
     finally { setBankSaving(false) }

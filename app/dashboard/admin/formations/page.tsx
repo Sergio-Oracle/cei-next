@@ -5,23 +5,28 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
+interface Pole {
+  id: number; code: string; name: string; description?: string; is_active: boolean; formations_count: number
+}
 interface EC {
   id: number; code: string; name: string
   coefficient: number; cm?: number; td?: number; tp?: number; tpe?: number; vht?: number
-  is_active: boolean; assigned_professor?: string
+  cc_percentage?: number; ex_percentage?: number; is_active: boolean; assigned_professor?: string
 }
 interface UE {
-  id: number; code: string; name: string; credits: number; is_active: boolean; ecs: EC[]
+  id: number; code: string; name: string; credits: number; ue_type?: string; is_active: boolean; ecs: EC[]
 }
 interface Semester {
   id: number; number: number; name?: string; total_credits: number; is_active: boolean; ues: UE[]
 }
 interface Formation {
   id: number; code: string; name: string; level?: string; department?: string
-  description?: string; is_active: boolean; semesters: Semester[]
+  description?: string; pole_id?: number; pole_code?: string; pole_name?: string
+  is_active: boolean; semesters: Semester[]
 }
 
 type ModalKind =
+  | 'manage_poles'
   | 'create_formation' | 'edit_formation'
   | 'create_semester'  | 'edit_semester'
   | 'create_ue'        | 'edit_ue'
@@ -37,11 +42,11 @@ interface ModalState {
 }
 
 /* ── Overlay ────────────────────────────────────────────────────────────────── */
-function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+function ModalOverlay({ children, onClose, wide }: { children: React.ReactNode; onClose: () => void; wide?: boolean }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.55)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
       onClick={onClose}>
-      <div style={{ background: 'var(--surface)', borderRadius: 16, padding: 32, width: '100%', maxWidth: 560, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,.18)' }}
+      <div style={{ background: 'var(--surface)', borderRadius: 16, padding: 32, width: '100%', maxWidth: wide ? 780 : 560, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,.18)' }}
         onClick={e => e.stopPropagation()}>
         {children}
       </div>
@@ -57,10 +62,18 @@ const Btn = ({ color, onClick, children, title }: { color: string; onClick: () =
   </button>
 )
 
+const POLE_COLORS: Record<string, string> = {
+  STN:  '#6366f1',
+  LSHE: '#10b981',
+  SEJA: '#f59e0b',
+}
+function poleColor(code?: string) { return POLE_COLORS[code || ''] || '#3b82f6' }
+
 /* ═══════════════════════════════════════════════════════════════════════════ */
 export default function AdminFormationsPage() {
   const { success, error } = useToast()
   const [formations, setFormations] = useState<Formation[]>([])
+  const [poles, setPoles] = useState<Pole[]>([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState<ModalState | null>(null)
   const [form, setForm] = useState<any>({})
@@ -68,13 +81,27 @@ export default function AdminFormationsPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<any>(null)
+  // Pour la gestion inline des pôles
+  const [poleForm, setPoleForm] = useState({ code: '', name: '', description: '' })
+  const [poleSubmitting, setPoleSubmitting] = useState(false)
 
   /* ── Load all data ────────────────────────────────────────────────────────── */
+  const loadPoles = useCallback(async () => {
+    try {
+      const data = await api.get<Pole[]>('/api/poles')
+      setPoles(Array.isArray(data) ? data : [])
+    } catch { /* silent */ }
+  }, [])
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const raw = await api.get<any>('/api/formations')
-      const flist: any[] = Array.isArray(raw) ? raw : raw.formations ?? []
+      const [rawPoles, rawForms] = await Promise.all([
+        api.get<Pole[]>('/api/poles').catch(() => []),
+        api.get<any>('/api/formations'),
+      ])
+      setPoles(Array.isArray(rawPoles) ? rawPoles : [])
+      const flist: any[] = Array.isArray(rawForms) ? rawForms : rawForms.formations ?? []
       const full = await Promise.all(flist.map(async (f: any) => {
         const rawSem = await api.get<any>(`/api/formations/${f.id}/semesters`)
         const semList: any[] = Array.isArray(rawSem) ? rawSem : rawSem.semesters ?? []
@@ -97,7 +124,7 @@ export default function AdminFormationsPage() {
 
   useEffect(() => { load() }, [load])
 
-  /* ── Field helpers — called as functions, NOT as <Components /> ─────────── */
+  /* ── Field helpers ────────────────────────────────────────────────────────── */
   const inp = (key: string, label: string, opts?: { type?: string; placeholder?: string; min?: number; max?: number }) => (
     <div className="form-group" key={key}>
       <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>{label}</label>
@@ -106,6 +133,18 @@ export default function AdminFormationsPage() {
         value={form[key] ?? (opts?.type === 'number' ? 0 : '')}
         onChange={e => setForm((p: any) => ({ ...p, [key]: opts?.type === 'number' ? Number(e.target.value) : e.target.value }))}
         style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }} />
+    </div>
+  )
+
+  const sel = (key: string, label: string, options: { value: string | number; label: string }[]) => (
+    <div className="form-group" key={key}>
+      <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>{label}</label>
+      <select value={form[key] ?? ''}
+        onChange={e => setForm((p: any) => ({ ...p, [key]: e.target.value === '' ? null : (typeof options[0]?.value === 'number' ? Number(e.target.value) : e.target.value) }))}
+        style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }}>
+        <option value="">— Sélectionner —</option>
+        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
     </div>
   )
 
@@ -118,15 +157,16 @@ export default function AdminFormationsPage() {
     </div>
   )
 
-  /* ── Modal form content (called as function) ─────────────────────────────── */
+  /* ── Modal form content ───────────────────────────────────────────────────── */
   function modalBody() {
     if (!modal) return null
     switch (modal.kind) {
       case 'create_formation': case 'edit_formation': return (<>
-        {inp('code', 'Code *', { placeholder: 'Ex: M2-TELCO' })}
-        {inp('name', 'Nom *', { placeholder: 'Ex: Master 2 Télécommunications' })}
-        {inp('level', 'Niveau', { placeholder: 'Ex: Master 2, Licence 3' })}
-        {inp('department', 'Département', { placeholder: 'Ex: Génie Électrique' })}
+        {sel('pole_id', 'Pôle', poles.map(p => ({ value: p.id, label: `${p.code} — ${p.name}` })))}
+        {inp('code', 'Code *', { placeholder: 'Ex: L1-SOCIO' })}
+        {inp('name', 'Nom *', { placeholder: 'Ex: Licence Sociologie' })}
+        {inp('level', 'Niveau', { placeholder: 'Ex: Licence 1, Master 2' })}
+        {inp('department', 'Département', { placeholder: 'Ex: Sciences Humaines' })}
         <div className="form-group">
           <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Description</label>
           <textarea className="form-control" rows={3} value={form.description ?? ''}
@@ -142,21 +182,35 @@ export default function AdminFormationsPage() {
         {modal.kind === 'edit_semester' && chk('is_active', 'Semestre actif')}
       </>)
       case 'create_ue': case 'edit_ue': return (<>
-        {inp('code', 'Code *', { placeholder: 'Ex: UE11' })}
-        {inp('name', 'Nom *', { placeholder: 'Ex: Systèmes de Communication' })}
+        {inp('code', 'Code *', { placeholder: 'Ex: SOCIO111' })}
+        {inp('name', 'Nom *', { placeholder: 'Ex: Sociologie et Anthropologie' })}
         {inp('credits', 'Crédits', { type: 'number', min: 1 })}
+        {sel('ue_type', 'Type', [
+          { value: 'obligatoire', label: 'Obligatoire' },
+          { value: 'optionnel', label: 'Optionnel' },
+        ])}
         {modal.kind === 'edit_ue' && chk('is_active', 'UE active')}
       </>)
       case 'create_ec': case 'edit_ec': return (<>
-        {inp('code', 'Code *', { placeholder: 'Ex: EC111' })}
-        {inp('name', 'Nom *', { placeholder: "Ex: Théorie de l'Information" })}
-        <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+        {inp('code', 'Code *', { placeholder: 'Ex: SOCIO1111' })}
+        {inp('name', 'Nom *', { placeholder: "Ex: Introduction à la sociologie" })}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
           {inp('cm', 'CM (h)', { type: 'number', min: 0 })}
           {inp('td', 'TD (h)', { type: 'number', min: 0 })}
           {inp('tp', 'TP (h)', { type: 'number', min: 0 })}
           {inp('tpe', 'TPE (h)', { type: 'number', min: 0 })}
           {inp('vht', 'VHT (h)', { type: 'number', min: 0 })}
           {inp('coefficient', 'Coefficient', { type: 'number', min: 1 })}
+        </div>
+        <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '12px 16px', marginTop: 4 }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: '#0369a1', marginBottom: 10 }}>
+            <i className="fas fa-percentage" style={{ marginRight: 6 }} />Modalité d'évaluation
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {inp('cc_percentage', 'CC % (contrôle continu)', { type: 'number', min: 0, max: 100 })}
+            {inp('ex_percentage', 'EX % (examen final)', { type: 'number', min: 0, max: 100 })}
+          </div>
+          <p style={{ margin: 0, fontSize: 11, color: '#0284c7' }}>CC% + EX% doivent totalisé 100%</p>
         </div>
         {modal.kind === 'edit_ec' && chk('is_active', 'EC actif')}
       </>)
@@ -203,6 +257,26 @@ export default function AdminFormationsPage() {
     catch (e: any) { error(e.message || 'Erreur suppression') }
   }
 
+  /* ── Pôle creation inline ─────────────────────────────────────────────────── */
+  async function createPole() {
+    if (!poleForm.code || !poleForm.name) { error('Code et nom requis'); return }
+    setPoleSubmitting(true)
+    try {
+      await api.post('/api/admin/poles', poleForm)
+      success(`Pôle ${poleForm.code} créé`)
+      setPoleForm({ code: '', name: '', description: '' })
+      loadPoles()
+      load()
+    } catch (e: any) { error(e.message || 'Erreur') }
+    finally { setPoleSubmitting(false) }
+  }
+
+  async function deletePole(id: number, code: string) {
+    if (!confirm(`Désactiver le pôle ${code} ?`)) return
+    try { await api.delete(`/api/admin/poles/${id}`); success('Pôle désactivé'); load() }
+    catch (e: any) { error(e.message || 'Erreur') }
+  }
+
   /* ── CSV ──────────────────────────────────────────────────────────────────── */
   async function downloadCsvTemplate() {
     try {
@@ -231,8 +305,8 @@ export default function AdminFormationsPage() {
   function openCreate(kind: ModalKind, extra?: Partial<ModalState>) {
     const defaults: Record<string, any> = {
       create_semester: { number: 1, total_credits: 30 },
-      create_ue: { credits: 6 },
-      create_ec: { cm: 0, td: 0, tp: 0, tpe: 0, vht: 0, coefficient: 1 },
+      create_ue: { credits: 6, ue_type: 'obligatoire' },
+      create_ec: { cm: 0, td: 0, tp: 0, tpe: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 },
     }
     setForm(defaults[kind] ?? {})
     setModal({ kind, ...extra })
@@ -242,6 +316,16 @@ export default function AdminFormationsPage() {
     setForm({ ...item }); setModal({ kind, item })
   }
 
+  /* ── Group formations by pôle ─────────────────────────────────────────────── */
+  const formationsByPole: { pole: Pole | null; formations: Formation[] }[] = []
+  const assigned = new Set<number>()
+  for (const pole of poles) {
+    const pf = formations.filter(f => f.pole_id === pole.id)
+    if (pf.length > 0) { formationsByPole.push({ pole, formations: pf }); pf.forEach(f => assigned.add(f.id)) }
+  }
+  const unassigned = formations.filter(f => !assigned.has(f.id))
+  if (unassigned.length > 0) formationsByPole.push({ pole: null, formations: unassigned })
+
   /* ── Render ───────────────────────────────────────────────────────────────── */
   return (
     <div>
@@ -249,26 +333,67 @@ export default function AdminFormationsPage() {
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="fas fa-layer-group" style={{ color: 'var(--primary)' }} />
-          Maquette Pédagogique — Gestion Complète
+          Maquette Pédagogique — UNCHK
         </h2>
-        <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: 14 }}>Gérez les formations, semestres, UEs et ECs</p>
+        <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: 14 }}>
+          Gérez la hiérarchie : <strong>Pôle → Formation → Semestre → UE → EC</strong>
+        </p>
       </div>
 
-      {/* Info box */}
-      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: '14px 18px', marginBottom: 28, fontSize: 13 }}>
-        <strong style={{ color: '#1d4ed8' }}><i className="fas fa-circle-info" style={{ marginRight: 7 }} />Important :</strong>
-        <span style={{ color: '#1e40af' }}> Pour lier des sujets à des ECs, créez d'abord :</span>
-        <ol style={{ margin: '8px 0 0 20px', color: '#1e40af', lineHeight: 2 }}>
-          <li>Une Formation</li>
-          <li>Un Semestre <em>(bouton Semestre)</em></li>
-          <li>Une UE <em>(bouton UE)</em></li>
-          <li>Un EC <em>(bouton EC)</em></li>
-        </ol>
+      {/* ══ Section Pôles ══════════════════════════════════════════════════════ */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, marginBottom: 24, overflow: 'hidden' }}>
+        <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="fas fa-sitemap" style={{ color: '#6366f1' }} /> Pôles UNCHK
+          </h3>
+        </div>
+        <div style={{ padding: '16px 24px' }}>
+          {/* Liste des pôles */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+            {poles.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Aucun pôle créé</p>
+            ) : poles.map(p => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: poleColor(p.code) + '18', border: `1.5px solid ${poleColor(p.code)}40`, borderRadius: 12, padding: '8px 16px' }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: poleColor(p.code) }} />
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 13, color: poleColor(p.code) }}>{p.code}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.name} · {p.formations_count} formation(s)</div>
+                </div>
+                <button onClick={() => deletePole(p.id, p.code)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 2 }} title="Désactiver">
+                  <i className="fas fa-times" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Formulaire création pôle */}
+          <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 12, padding: '14px 18px' }}>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: '#475569' }}>
+              <i className="fas fa-plus" style={{ marginRight: 6 }} />Créer un nouveau pôle
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 2fr auto', gap: 10, alignItems: 'center' }}>
+              <input placeholder="Code (ex: STN)" value={poleForm.code}
+                onChange={e => setPoleForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
+                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+              <input placeholder="Nom du pôle" value={poleForm.name}
+                onChange={e => setPoleForm(p => ({ ...p, name: e.target.value }))}
+                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+              <input placeholder="Description (optionnel)" value={poleForm.description}
+                onChange={e => setPoleForm(p => ({ ...p, description: e.target.value }))}
+                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+              <button onClick={createPole} disabled={poleSubmitting || !poleForm.code || !poleForm.name}
+                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#6366f1', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, opacity: (!poleForm.code || !poleForm.name) ? .5 : 1 }}>
+                <i className={`fas ${poleSubmitting ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 5 }} />
+                Créer
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Section Formations */}
+      {/* ══ Section Formations ══════════════════════════════════════════════════ */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
-        {/* Card header */}
         <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
             <i className="fas fa-university" style={{ color: 'var(--primary)' }} /> Formations
@@ -280,12 +405,12 @@ export default function AdminFormationsPage() {
             </button>
             <button onClick={() => { setModal({ kind: 'import_csv' }); setCsvFile(null); setImportResult(null) }}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
-              <i className="fas fa-file-csv" /> Import CSV Bulk
+              <i className="fas fa-file-csv" /> Import CSV
             </button>
           </div>
         </div>
 
-        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 28 }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: 48 }}>
               <i className="fas fa-spinner fa-spin" style={{ fontSize: 32, color: 'var(--primary)' }} />
@@ -295,107 +420,132 @@ export default function AdminFormationsPage() {
               <i className="fas fa-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />
               Aucune formation créée
             </div>
-          ) : formations.map(f => (
-            /* ── Formation block ── */
-            <div key={f.id} style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
-              {/* Formation header — blue */}
-              <div style={{ background: 'linear-gradient(135deg,#3b82f6,#2563eb)', color: 'white', padding: '16px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <i className="fas fa-graduation-cap" />
-                    {f.code} — {f.name}
-                  </div>
-                  <div style={{ fontSize: 12, opacity: .82, marginTop: 3 }}>{[f.level, f.department].filter(Boolean).join(' | ')}</div>
-                  <div style={{ fontSize: 11, opacity: .68, marginTop: 2 }}>
-                    <i className="fas fa-book" style={{ marginRight: 4 }} />{f.semesters.length} semestre(s)
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Btn color="rgba(255,255,255,.2)" onClick={() => openEdit('edit_formation', f)} title="Modifier">
-                    <i className="fas fa-pen" />
-                  </Btn>
-                  <Btn color="#10b981" onClick={() => openCreate('create_semester', { formationId: f.id })}>
-                    <i className="fas fa-plus" /> Semestre
-                  </Btn>
-                  <Btn color="#ef4444" onClick={() => del(`/api/admin/formations/${f.id}`, 'Supprimer cette formation et tous ses semestres/UEs/ECs ?')} title="Supprimer">
-                    <i className="fas fa-trash" />
-                  </Btn>
-                </div>
+          ) : formationsByPole.map(({ pole, formations: pfs }, gi) => (
+            /* ── Groupe par Pôle ── */
+            <div key={gi}>
+              {/* Pôle header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <div style={{ width: 4, height: 20, borderRadius: 2, background: poleColor(pole?.code) }} />
+                <span style={{ fontWeight: 800, fontSize: 15, color: poleColor(pole?.code) }}>
+                  {pole ? `Pôle ${pole.code} — ${pole.name}` : 'Sans pôle'}
+                </span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
               </div>
 
-              {/* Semesters */}
-              <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {f.semesters.length === 0 ? (
-                  <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>
-                    <i className="fas fa-inbox" style={{ marginRight: 6 }} />Aucun semestre — cliquez "+ Semestre" pour commencer
-                  </p>
-                ) : f.semesters.map(s => (
-                  <div key={s.id} style={{ border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
-                    {/* Semester header */}
-                    <div style={{ background: '#f8fafc', padding: '11px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
-                        <i className="fas fa-calendar-alt" style={{ marginRight: 7, color: '#3b82f6' }} />
-                        Semestre {s.number}{s.name ? ` — ${s.name}` : ''}
-                        <span style={{ color: '#64748b', marginLeft: 12, fontWeight: 400, fontSize: 13 }}>
-                          <i className="fas fa-star" style={{ marginRight: 4, color: '#f59e0b' }} />{s.total_credits} crédits
-                        </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {pfs.map(f => (
+                  /* ── Formation block ── */
+                  <div key={f.id} style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
+                    {/* Formation header */}
+                    <div style={{ background: `linear-gradient(135deg,${poleColor(f.pole_code)},${poleColor(f.pole_code)}cc)`, color: 'white', padding: '16px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <i className="fas fa-graduation-cap" />
+                          {f.code} — {f.name}
+                        </div>
+                        <div style={{ fontSize: 12, opacity: .82, marginTop: 3 }}>
+                          {[f.level, f.department].filter(Boolean).join(' | ')}
+                        </div>
+                        <div style={{ fontSize: 11, opacity: .68, marginTop: 2 }}>
+                          <i className="fas fa-book" style={{ marginRight: 4 }} />{f.semesters.length} semestre(s)
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', gap: 7 }}>
-                        <Btn color="#3b82f6" onClick={() => openEdit('edit_semester', s)} title="Modifier"><i className="fas fa-pen" /></Btn>
-                        <Btn color="#10b981" onClick={() => openCreate('create_ue', { semesterId: s.id })}><i className="fas fa-plus" /> UE</Btn>
-                        <Btn color="#ef4444" onClick={() => del(`/api/admin/semesters/${s.id}`, 'Supprimer ce semestre et toutes ses UEs/ECs ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <Btn color="rgba(255,255,255,.2)" onClick={() => openEdit('edit_formation', f)} title="Modifier">
+                          <i className="fas fa-pen" />
+                        </Btn>
+                        <Btn color="#10b981" onClick={() => openCreate('create_semester', { formationId: f.id })}>
+                          <i className="fas fa-plus" /> Semestre
+                        </Btn>
+                        <Btn color="#ef4444" onClick={() => del(`/api/admin/formations/${f.id}`, 'Supprimer cette formation et tous ses semestres/UEs/ECs ?')} title="Supprimer">
+                          <i className="fas fa-trash" />
+                        </Btn>
                       </div>
                     </div>
 
-                    {/* UEs */}
-                    <div style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {s.ues.length === 0 ? (
+                    {/* Semesters */}
+                    <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      {f.semesters.length === 0 ? (
                         <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>
-                          <i className="fas fa-inbox" style={{ marginRight: 6 }} />Aucune UE
+                          <i className="fas fa-inbox" style={{ marginRight: 6 }} />Aucun semestre — cliquez &quot;+ Semestre&quot;
                         </p>
-                      ) : s.ues.map(u => (
-                        <div key={u.id} style={{ borderLeft: '4px solid #10b981', background: '#fafcff', borderRadius: '0 10px 10px 0', border: '1px solid #e2e8f0', borderLeftWidth: 4, borderLeftColor: '#10b981' }}>
-                          {/* UE header */}
-                          <div style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ fontSize: 13, color: '#0f172a' }}>
-                              <i className="fas fa-book-open" style={{ marginRight: 6, color: '#10b981' }} />
-                              <strong>{u.code}</strong> — {u.name}
-                              <span style={{ color: '#64748b', marginLeft: 10, fontSize: 12 }}>
-                                <i className="fas fa-award" style={{ marginRight: 3, color: '#f59e0b' }} />{u.credits} crédits
+                      ) : f.semesters.map(s => (
+                        <div key={s.id} style={{ border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
+                          {/* Semester header */}
+                          <div style={{ background: '#f8fafc', padding: '11px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
+                              <i className="fas fa-calendar-alt" style={{ marginRight: 7, color: '#3b82f6' }} />
+                              Semestre {s.number}{s.name ? ` — ${s.name}` : ''}
+                              <span style={{ color: '#64748b', marginLeft: 12, fontWeight: 400, fontSize: 13 }}>
+                                <i className="fas fa-star" style={{ marginRight: 4, color: '#f59e0b' }} />{s.total_credits} crédits
                               </span>
                             </div>
-                            <div style={{ display: 'flex', gap: 6 }}>
-                              <Btn color="#3b82f6" onClick={() => openEdit('edit_ue', u)} title="Modifier"><i className="fas fa-pen" /></Btn>
-                              <Btn color="#10b981" onClick={() => openCreate('create_ec', { ueId: u.id })}><i className="fas fa-plus" /> EC</Btn>
-                              <Btn color="#ef4444" onClick={() => del(`/api/admin/ues/${u.id}`, 'Supprimer cette UE et tous ses ECs ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
+                            <div style={{ display: 'flex', gap: 7 }}>
+                              <Btn color="#3b82f6" onClick={() => openEdit('edit_semester', s)} title="Modifier"><i className="fas fa-pen" /></Btn>
+                              <Btn color="#10b981" onClick={() => openCreate('create_ue', { semesterId: s.id })}><i className="fas fa-plus" /> UE</Btn>
+                              <Btn color="#ef4444" onClick={() => del(`/api/admin/semesters/${s.id}`, 'Supprimer ce semestre et toutes ses UEs/ECs ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
                             </div>
                           </div>
 
-                          {/* ECs */}
-                          {u.ecs.length > 0 && (
-                            <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                              {u.ecs.map(ec => (
-                                <div key={ec.id} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 9, padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <div>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#78350f' }}>{ec.code}</span>
-                                    <span style={{ fontSize: 13, color: '#92400e' }}> — {ec.name}</span>
-                                    <div style={{ fontSize: 11, color: '#b45309', marginTop: 2 }}>
-                                      CM: {ec.cm || 0}h | TD: {ec.td || 0}h | TP: {ec.tp || 0}h | Coef: {ec.coefficient}
-                                      {ec.assigned_professor && (
-                                        <span style={{ color: '#059669', marginLeft: 10 }}>
-                                          <i className="fas fa-user-tie" style={{ marginRight: 3 }} />{ec.assigned_professor}
-                                        </span>
-                                      )}
-                                    </div>
+                          {/* UEs */}
+                          <div style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {s.ues.length === 0 ? (
+                              <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Aucune UE</p>
+                            ) : s.ues.map(u => (
+                              <div key={u.id} style={{ borderLeft: '4px solid #10b981', background: '#fafcff', borderRadius: '0 10px 10px 0', border: '1px solid #e2e8f0', borderLeftWidth: 4, borderLeftColor: '#10b981' }}>
+                                <div style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div style={{ fontSize: 13, color: '#0f172a' }}>
+                                    <i className="fas fa-book-open" style={{ marginRight: 6, color: '#10b981' }} />
+                                    <strong>{u.code}</strong> — {u.name}
+                                    <span style={{ color: '#64748b', marginLeft: 10, fontSize: 12 }}>
+                                      <i className="fas fa-award" style={{ marginRight: 3, color: '#f59e0b' }} />{u.credits} crédits
+                                    </span>
+                                    {u.ue_type && (
+                                      <span style={{
+                                        marginLeft: 8, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 12,
+                                        background: u.ue_type === 'obligatoire' ? '#dbeafe' : '#fef9c3',
+                                        color: u.ue_type === 'obligatoire' ? '#1d4ed8' : '#a16207'
+                                      }}>
+                                        {u.ue_type === 'obligatoire' ? 'Obligatoire' : 'Optionnel'}
+                                      </span>
+                                    )}
                                   </div>
-                                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                                    <Btn color="#3b82f6" onClick={() => openEdit('edit_ec', ec)} title="Modifier"><i className="fas fa-pen" /></Btn>
-                                    <Btn color="#ef4444" onClick={() => del(`/api/admin/ecs/${ec.id}`, 'Supprimer cet EC ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
+                                  <div style={{ display: 'flex', gap: 6 }}>
+                                    <Btn color="#3b82f6" onClick={() => openEdit('edit_ue', u)} title="Modifier"><i className="fas fa-pen" /></Btn>
+                                    <Btn color="#10b981" onClick={() => openCreate('create_ec', { ueId: u.id })}><i className="fas fa-plus" /> EC</Btn>
+                                    <Btn color="#ef4444" onClick={() => del(`/api/admin/ues/${u.id}`, 'Supprimer cette UE et tous ses ECs ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          )}
+
+                                {/* ECs */}
+                                {u.ecs.length > 0 && (
+                                  <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                                    {u.ecs.map(ec => (
+                                      <div key={ec.id} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 9, padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                          <span style={{ fontSize: 13, fontWeight: 700, color: '#78350f' }}>{ec.code}</span>
+                                          <span style={{ fontSize: 13, color: '#92400e' }}> — {ec.name}</span>
+                                          <div style={{ fontSize: 11, color: '#b45309', marginTop: 3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                            <span>Coef: {ec.coefficient}</span>
+                                            {(ec.cm || 0) > 0 && <span>CM: {ec.cm}h</span>}
+                                            {(ec.td || 0) > 0 && <span>TD: {ec.td}h</span>}
+                                            {(ec.tp || 0) > 0 && <span>TP: {ec.tp}h</span>}
+                                            <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '1px 7px', borderRadius: 8, fontWeight: 700 }}>
+                                              CC:{ec.cc_percentage ?? 40}% / EX:{ec.ex_percentage ?? 60}%
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                          <Btn color="#3b82f6" onClick={() => openEdit('edit_ec', ec)} title="Modifier"><i className="fas fa-pen" /></Btn>
+                                          <Btn color="#ef4444" onClick={() => del(`/api/admin/ecs/${ec.id}`, 'Supprimer cet EC ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -408,7 +558,7 @@ export default function AdminFormationsPage() {
       </div>
 
       {/* ══ Modal Formulaire ══════════════════════════════════════════════════ */}
-      {modal && modal.kind !== 'import_csv' && (
+      {modal && !['import_csv', 'manage_poles'].includes(modal.kind) && (
         <ModalOverlay onClose={() => setModal(null)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22, paddingBottom: 18, borderBottom: '1px solid var(--border)' }}>
             <div style={{ width: 42, height: 42, borderRadius: 11, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -449,7 +599,7 @@ export default function AdminFormationsPage() {
             <ol style={{ margin: '8px 0 0 18px', color: '#1e40af', lineHeight: 1.9 }}>
               <li>Téléchargez le template CSV</li>
               <li>Remplissez ligne par ligne : formations, semestres, UEs, ECs</li>
-              <li>Respectez l'ordre hiérarchique</li>
+              <li>Respectez l&apos;ordre hiérarchique</li>
               <li>Uploadez le fichier</li>
             </ol>
           </div>

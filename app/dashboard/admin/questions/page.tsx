@@ -11,13 +11,17 @@ interface Question {
   rubric?: string
   question_type: string
   bloom_level?: string
-  ec_id?: number
-  ec_name?: string
+  ec_id?: number;  ec_code?: string;  ec_name?: string
+  ue_id?: number;  ue_code?: string;  ue_name?: string
+  semester_id?: number; semester_number?: number
+  formation_id?: number; formation_name?: string; formation_level?: string
+  pole_id?: number; pole_code?: string; pole_name?: string
   created_by?: string
   created_at?: string
 }
 
-interface EC { id: number; name: string }
+interface ECOpt { id: number; name: string; code?: string }
+interface DupPair { q1: { id: number; title: string }; q2: { id: number; title: string }; similarity: number }
 
 const TYPE_LABEL: Record<string, string> = {
   open:    'Ouvert',
@@ -32,22 +36,38 @@ const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
   subopen: { bg: '#fff7ed', color: '#c2410c' },
 }
 
+const POLE_COLORS: Record<string, string> = { STN: '#6366f1', LSHE: '#10b981', SEJA: '#f59e0b' }
+const poleColor = (code?: string | null) => POLE_COLORS[code || ''] || '#64748b'
+
+const selStyle = { padding: '8px 11px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 12, background: 'var(--background)', color: 'var(--text)', outline: 'none', width: '100%' }
+
 export default function AdminQuestionsPage() {
   const { success, error: toastErr } = useToast()
   const router = useRouter()
 
-  const [questions, setQuestions]   = useState<Question[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [selected, setSelected]     = useState<Set<number>>(new Set())
-  const [preview, setPreview]       = useState<Question | null>(null)
+  const [questions,  setQuestions]  = useState<Question[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [selected,   setSelected]   = useState<Set<number>>(new Set())
+  const [preview,    setPreview]    = useState<Question | null>(null)
+  const [dupPairs,   setDupPairs]   = useState<DupPair[] | null>(null)
+  const [dupLoading, setDupLoading] = useState(false)
   const [assembleModal, setAssembleModal] = useState(false)
-  const [ecs, setEcs]               = useState<EC[]>([])
+  const [ecs, setEcs] = useState<ECOpt[]>([])
 
-  // Formulaire assemblage
-  const [aTitle, setATitle]     = useState('Examen Assemblé')
+  // Cascade filters
+  const [filterPole,   setFilterPole]   = useState('')
+  const [filterForm,   setFilterForm]   = useState('')
+  const [filterSem,    setFilterSem]    = useState('')
+  const [filterUe,     setFilterUe]     = useState('')
+  const [filterEc,     setFilterEc]     = useState('')
+  const [filterType,   setFilterType]   = useState('')
+  const [filterSearch, setFilterSearch] = useState('')
+
+  // Assemblage
+  const [aTitle,    setATitle]    = useState('Examen Assemblé')
   const [aDuration, setADuration] = useState(60)
-  const [aLevel, setALevel]     = useState('Licence 3')
-  const [aEcId, setAEcId]       = useState('')
+  const [aLevel,    setALevel]    = useState('Licence 3')
+  const [aEcId,     setAEcId]     = useState('')
   const [assembling, setAssembling] = useState(false)
 
   function load() {
@@ -64,17 +84,20 @@ export default function AdminQuestionsPage() {
   }, [])
 
   function toggle(id: number) {
-    setSelected(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
+    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   }
+  function selectAll()  { setSelected(new Set(filtered.map(q => q.id))) }
+  function clearAll()   { setSelected(new Set()) }
 
-  function selectAll() {
-    setSelected(new Set(questions.map(q => q.id)))
+  async function checkDuplicates() {
+    setDupLoading(true)
+    try {
+      const res = await api.get<{ duplicates: DupPair[]; count: number }>('/api/question_bank/duplicates')
+      setDupPairs(res.duplicates ?? [])
+      if ((res.count ?? 0) === 0) success('Aucun doublon détecté dans la banque')
+    } catch { toastErr('Erreur lors de la vérification des doublons') }
+    finally { setDupLoading(false) }
   }
-  function clearAll() { setSelected(new Set()) }
 
   async function deleteQ(id: number) {
     if (!confirm('Supprimer cette question de la banque ?')) return
@@ -105,13 +128,54 @@ export default function AdminQuestionsPage() {
       setTimeout(() => router.push('/dashboard/admin/subjects'), 1200)
     } catch (e: any) {
       toastErr(e.message || 'Erreur lors de la création du sujet')
-    } finally {
-      setAssembling(false)
-    }
+    } finally { setAssembling(false) }
   }
 
-  const typeSt = (t: string) => TYPE_STYLE[t] ?? TYPE_STYLE.open
+  /* ── Cascade options derived from questions list ────────────────────────── */
+  const availPoles = Array.from(new Map(
+    questions.filter(q => q.pole_id).map(q => [q.pole_id, { id: q.pole_id!, code: q.pole_code!, name: q.pole_name! }])
+  ).values())
+
+  const availForms = Array.from(new Map(
+    questions.filter(q => q.formation_id && (!filterPole || String(q.pole_id) === filterPole))
+      .map(q => [q.formation_id, { id: q.formation_id!, name: q.formation_name! }])
+  ).values())
+
+  const availSems = Array.from(new Map(
+    questions.filter(q => q.semester_id && (!filterForm || String(q.formation_id) === filterForm))
+      .map(q => [q.semester_id, { id: q.semester_id!, number: q.semester_number! }])
+  ).values()).sort((a, b) => a.number - b.number)
+
+  const availUes = Array.from(new Map(
+    questions.filter(q => q.ue_id && (!filterSem || String(q.semester_id) === filterSem))
+      .map(q => [q.ue_id, { id: q.ue_id!, code: q.ue_code!, name: q.ue_name! }])
+  ).values())
+
+  const availEcs = Array.from(new Map(
+    questions.filter(q => q.ec_id && (!filterUe || String(q.ue_id) === filterUe))
+      .map(q => [q.ec_id, { id: q.ec_id!, code: q.ec_code!, name: q.ec_name! }])
+  ).values())
+
+  /* ── Filtered questions ─────────────────────────────────────────────────── */
+  const filtered = questions.filter(q => {
+    if (filterPole   && String(q.pole_id)       !== filterPole)   return false
+    if (filterForm   && String(q.formation_id)  !== filterForm)   return false
+    if (filterSem    && String(q.semester_id)   !== filterSem)    return false
+    if (filterUe     && String(q.ue_id)         !== filterUe)     return false
+    if (filterEc     && String(q.ec_id)         !== filterEc)     return false
+    if (filterType   && q.question_type         !== filterType)   return false
+    if (filterSearch && !`${q.title} ${q.content}`.toLowerCase().includes(filterSearch.toLowerCase())) return false
+    return true
+  })
+
+  const hasFilter = filterPole || filterForm || filterSem || filterUe || filterEc || filterType || filterSearch
+
+  const typeSt    = (t: string) => TYPE_STYLE[t] ?? TYPE_STYLE.open
   const typeLabel = (t: string) => TYPE_LABEL[t] ?? t ?? 'Ouvert'
+
+  function resetFilters() {
+    setFilterPole(''); setFilterForm(''); setFilterSem(''); setFilterUe(''); setFilterEc(''); setFilterType(''); setFilterSearch('')
+  }
 
   /* ── PREVIEW MODAL ─────────────────────────────────────── */
   if (preview) return (
@@ -119,30 +183,33 @@ export default function AdminQuestionsPage() {
       <div className="card" style={{ width: '100%', maxWidth: 600, maxHeight: '85vh', overflowY: 'auto', padding: 28 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, gap: 12 }}>
           <h3 style={{ margin: 0, fontSize: 17 }}>{preview.title}</h3>
-          <button className="btn btn-secondary btn-sm" onClick={() => setPreview(null)}>
-            <i className="fas fa-times" />
-          </button>
+          <button className="btn btn-secondary btn-sm" onClick={() => setPreview(null)}><i className="fas fa-times" /></button>
         </div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
           <span style={{ ...typeSt(preview.question_type), padding: '2px 10px', borderRadius: 99, fontSize: 12, fontWeight: 700 }}>
             {typeLabel(preview.question_type)}
           </span>
           {preview.bloom_level && <span className="status-badge secondary" style={{ fontSize: 12 }}>{preview.bloom_level}</span>}
-          {preview.ec_name && <span className="status-badge secondary" style={{ fontSize: 12 }}><i className="fas fa-book" /> {preview.ec_name}</span>}
+          {preview.pole_code && (
+            <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: poleColor(preview.pole_code) + '20', color: poleColor(preview.pole_code) }}>
+              Pôle {preview.pole_code}
+            </span>
+          )}
+          {preview.formation_name && <span className="status-badge secondary" style={{ fontSize: 11 }}>{preview.formation_name}</span>}
+          {preview.ue_code && <span className="status-badge secondary" style={{ fontSize: 11 }}>UE {preview.ue_code}</span>}
+          {preview.ec_name && <span className="status-badge secondary" style={{ fontSize: 11 }}><i className="fas fa-book" /> {preview.ec_name}</span>}
         </div>
         <pre style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 8, padding: 14, fontSize: 13, whiteSpace: 'pre-wrap', lineHeight: 1.7, maxHeight: 280, overflowY: 'auto' }}>
           {preview.content}
         </pre>
-        {preview.rubric && (
-          <>
-            <h4 style={{ margin: '16px 0 8px', fontSize: 14 }}>
-              <i className="fas fa-clipboard-list" style={{ color: '#10b981', marginRight: 6 }} />Barème
-            </h4>
-            <pre style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 14, fontSize: 12, whiteSpace: 'pre-wrap', lineHeight: 1.7, maxHeight: 200, overflowY: 'auto' }}>
-              {preview.rubric}
-            </pre>
-          </>
-        )}
+        {preview.rubric && (<>
+          <h4 style={{ margin: '16px 0 8px', fontSize: 14 }}>
+            <i className="fas fa-clipboard-list" style={{ color: '#10b981', marginRight: 6 }} />Barème
+          </h4>
+          <pre style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 14, fontSize: 12, whiteSpace: 'pre-wrap', lineHeight: 1.7, maxHeight: 200, overflowY: 'auto' }}>
+            {preview.rubric}
+          </pre>
+        </>)}
         <div style={{ textAlign: 'right', marginTop: 16 }}>
           <button className="btn btn-secondary" onClick={() => setPreview(null)}>Fermer</button>
         </div>
@@ -163,24 +230,20 @@ export default function AdminQuestionsPage() {
             <i className="fas fa-layer-group" style={{ color: '#2563eb', marginRight: 8 }} />
             Créer un sujet à partir de {selected.size} question{selected.size > 1 ? 's' : ''}
           </h3>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Titre de l'examen *</label>
-              <input className="form-control" value={aTitle} onChange={e => setATitle(e.target.value)}
-                placeholder="Ex : Examen de Réseaux S1 2025" />
+              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Titre de l&apos;examen *</label>
+              <input className="form-control" value={aTitle} onChange={e => setATitle(e.target.value)} placeholder="Ex : Examen de Réseaux S1 2025" />
             </div>
-            <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Durée (minutes)</label>
-                <input className="form-control" type="number" min={15} max={360} value={aDuration}
-                  onChange={e => setADuration(Number(e.target.value))} />
+                <input className="form-control" type="number" min={15} max={360} value={aDuration} onChange={e => setADuration(Number(e.target.value))} />
               </div>
               <div>
                 <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Niveau</label>
                 <select className="form-control" value={aLevel} onChange={e => setALevel(e.target.value)}>
-                  {['Licence 1','Licence 2','Licence 3','Master 1','Master 2','Doctorat'].map(l =>
-                    <option key={l}>{l}</option>)}
+                  {['Licence 1','Licence 2','Licence 3','Master 1','Master 2','Doctorat'].map(l => <option key={l}>{l}</option>)}
                 </select>
               </div>
             </div>
@@ -188,30 +251,22 @@ export default function AdminQuestionsPage() {
               <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Élément Constitutif (EC)</label>
               <select className="form-control" value={aEcId} onChange={e => setAEcId(e.target.value)}>
                 <option value="">— Aucun EC spécifique —</option>
-                {(uniqueEcIds.length ? uniqueEcIds : ecs).map(e =>
-                  <option key={e.id} value={e.id}>{e.name}</option>)}
+                {(uniqueEcIds.length ? uniqueEcIds : ecs).map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
             </div>
-
-            {/* Aperçu questions sélectionnées */}
             <div style={{ background: 'var(--background)', borderRadius: 8, padding: 12, maxHeight: 160, overflowY: 'auto' }}>
-              <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Questions sélectionnées :
-              </p>
+              <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Questions sélectionnées :</p>
               {selQuestions.map((q, i) => {
                 const st = typeSt(q.question_type)
                 return (
                   <div key={q.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderBottom: '1px solid var(--border)' }}>
-                    <span style={{ ...st, fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 99, flexShrink: 0 }}>
-                      {typeLabel(q.question_type)}
-                    </span>
+                    <span style={{ ...st, fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 99, flexShrink: 0 }}>{typeLabel(q.question_type)}</span>
                     <span style={{ fontSize: 13 }}>{i + 1}. {q.title}</span>
                   </div>
                 )
               })}
             </div>
           </div>
-
           <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
             <button className="btn btn-secondary" onClick={() => setAssembleModal(false)}>Annuler</button>
             <button className="btn btn-primary" onClick={assemble} disabled={assembling}>
@@ -236,23 +291,151 @@ export default function AdminQuestionsPage() {
             Banque de Questions
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
-            {questions.length} question(s) — cochez pour sélectionner et assembler un sujet
+            {filtered.length} / {questions.length} question(s) — cochez pour assembler un sujet
           </p>
         </div>
-        {questions.length > 0 && (
-          <button className="btn btn-secondary" onClick={selectAll}>
-            <i className="fas fa-check-square" /> Tout sélectionner
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={checkDuplicates} disabled={dupLoading || questions.length === 0}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', border: '1.5px solid #f59e0b', background: dupPairs && dupPairs.length > 0 ? '#fef3c7' : '#fffbeb', color: '#92400e', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: questions.length === 0 ? 'not-allowed' : 'pointer' }}>
+            <i className={`fas ${dupLoading ? 'fa-spinner fa-spin' : 'fa-clone'}`} />
+            {dupLoading ? 'Analyse…' : dupPairs !== null ? `${dupPairs.length} doublon${dupPairs.length !== 1 ? 's' : ''}` : 'Vérifier doublons'}
           </button>
-        )}
+          {filtered.length > 0 && (
+            <button className="btn btn-secondary" onClick={selectAll}>
+              <i className="fas fa-check-square" /> Tout sélectionner ({filtered.length})
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Panneau doublons ── */}
+      {dupPairs !== null && dupPairs.length > 0 && (
+        <div style={{ background: '#fffbeb', border: '1.5px solid #fcd34d', borderRadius: 12, padding: '14px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <i className="fas fa-clone" style={{ color: '#d97706', fontSize: 16 }} />
+            <span style={{ fontWeight: 700, fontSize: 14, color: '#92400e' }}>{dupPairs.length} paire{dupPairs.length > 1 ? 's' : ''} similaires ≥95% détectée{dupPairs.length > 1 ? 's' : ''}</span>
+            <button onClick={() => setDupPairs(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#92400e', cursor: 'pointer', fontSize: 14 }}><i className="fas fa-times" /></button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {dupPairs.map((p, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#fef9c3', borderRadius: 8, border: '1px solid #fde68a', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, background: '#f59e0b', color: '#fff', borderRadius: 99, padding: '2px 8px' }}>{p.similarity}%</span>
+                <span style={{ fontSize: 13, flex: 1, color: '#78350f' }}><strong>{p.q1.title}</strong> ≈ <strong>{p.q2.title}</strong></span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button onClick={() => { const q = questions.find(q => q.id === p.q1.id); if (q) setPreview(q) }}
+                    style={{ background: '#fff', border: '1px solid #fcd34d', color: '#92400e', padding: '4px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>
+                    Voir #{p.q1.id}
+                  </button>
+                  <button onClick={() => { const q = questions.find(q => q.id === p.q2.id); if (q) setPreview(q) }}
+                    style={{ background: '#fff', border: '1px solid #fcd34d', color: '#92400e', padding: '4px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>
+                    Voir #{p.q2.id}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Sélecteur cascade Pôle → Formation → Semestre → UE → EC ── */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <i className="fas fa-filter" style={{ color: '#6366f1' }} /> Filtrer par hiérarchie académique
+          {hasFilter && (
+            <button onClick={resetFilters} style={{ background: '#fef2f2', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 11, padding: '2px 8px', borderRadius: 6, marginLeft: 4 }}>
+              <i className="fas fa-times" /> Réinitialiser
+            </button>
+          )}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+
+          {/* Pôle */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+              <i className="fas fa-sitemap" /> Pôle
+            </label>
+            <select value={filterPole} onChange={e => { setFilterPole(e.target.value); setFilterForm(''); setFilterSem(''); setFilterUe(''); setFilterEc('') }} style={selStyle}>
+              <option value="">Tous les pôles</option>
+              {availPoles.map(p => (
+                <option key={p.id} value={String(p.id)}>{p.code} — {p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Formation */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+              <i className="fas fa-university" /> Formation
+            </label>
+            <select value={filterForm} onChange={e => { setFilterForm(e.target.value); setFilterSem(''); setFilterUe(''); setFilterEc('') }} style={selStyle}>
+              <option value="">Toutes</option>
+              {availForms.map(f => <option key={f.id} value={String(f.id)}>{f.name}</option>)}
+            </select>
+          </div>
+
+          {/* Semestre */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#0891b2', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+              <i className="fas fa-calendar-alt" /> Semestre
+            </label>
+            <select value={filterSem} onChange={e => { setFilterSem(e.target.value); setFilterUe(''); setFilterEc('') }} style={selStyle}>
+              <option value="">Tous</option>
+              {availSems.map(s => <option key={s.id} value={String(s.id)}>Semestre {s.number}</option>)}
+            </select>
+          </div>
+
+          {/* UE */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+              <i className="fas fa-book-open" /> UE
+            </label>
+            <select value={filterUe} onChange={e => { setFilterUe(e.target.value); setFilterEc('') }} style={selStyle}>
+              <option value="">Toutes</option>
+              {availUes.map(u => <option key={u.id} value={String(u.id)}>{u.code} — {u.name}</option>)}
+            </select>
+          </div>
+
+          {/* EC */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+              <i className="fas fa-tag" /> EC
+            </label>
+            <select value={filterEc} onChange={e => setFilterEc(e.target.value)} style={selStyle}>
+              <option value="">Tous</option>
+              {availEcs.map(e => <option key={e.id} value={String(e.id)}>{e.code} — {e.name}</option>)}
+            </select>
+          </div>
+
+          {/* Type */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+              <i className="fas fa-list" /> Type
+            </label>
+            <select value={filterType} onChange={e => setFilterType(e.target.value)} style={selStyle}>
+              <option value="">Tous types</option>
+              {Object.entries(TYPE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+
+        </div>
+
+        {/* Recherche texte */}
+        <div style={{ marginTop: 10 }}>
+          <input
+            type="search"
+            placeholder="Rechercher dans le titre ou l'énoncé…"
+            value={filterSearch}
+            onChange={e => setFilterSearch(e.target.value)}
+            style={{ ...selStyle, width: '100%', padding: '9px 14px', fontSize: 13 }}
+          />
+        </div>
       </div>
 
       {/* Barre de sélection */}
       {selected.size > 0 && (
         <div style={{ background: '#2563eb', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           <div style={{ flex: 1 }}>
-            <span style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>
-              {selected.size} question{selected.size > 1 ? 's' : ''}
-            </span>
+            <span style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>{selected.size} question{selected.size > 1 ? 's' : ''}</span>
             <span style={{ color: '#bfdbfe', fontSize: 13, marginLeft: 8 }}>sélectionnée{selected.size > 1 ? 's' : ''}</span>
           </div>
           <button onClick={clearAll}
@@ -261,7 +444,7 @@ export default function AdminQuestionsPage() {
           </button>
           <button onClick={() => setAssembleModal(true)}
             style={{ background: '#fff', border: 'none', color: '#1d4ed8', padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 2px 8px rgba(0,0,0,.15)' }}>
-            <i className="fas fa-layer-group" /> Créer un sujet d'examen
+            <i className="fas fa-layer-group" /> Créer un sujet d&apos;examen
           </button>
         </div>
       )}
@@ -273,13 +456,20 @@ export default function AdminQuestionsPage() {
             <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, display: 'block', marginBottom: 12 }} />
             Chargement…
           </div>
-        ) : questions.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div style={{ padding: 64, textAlign: 'center' }}>
             <i className="fas fa-inbox" style={{ fontSize: 40, color: 'var(--text-muted)', display: 'block', marginBottom: 14 }} />
-            <h3 style={{ margin: '0 0 10px' }}>Banque vide</h3>
-            <p style={{ margin: 0, color: 'var(--text-muted)', maxWidth: 380, marginLeft: 'auto', marginRight: 'auto' }}>
-              Sauvegardez des questions depuis la génération IA pour les réutiliser ici et assembler des sujets d'examen.
+            <h3 style={{ margin: '0 0 10px' }}>{questions.length === 0 ? 'Banque vide' : 'Aucun résultat'}</h3>
+            <p style={{ margin: 0, color: 'var(--text-muted)', maxWidth: 380, marginInline: 'auto' }}>
+              {questions.length === 0
+                ? 'Sauvegardez des questions depuis la génération IA pour les réutiliser ici.'
+                : 'Modifiez ou réinitialisez les filtres.'}
             </p>
+            {hasFilter && (
+              <button onClick={resetFilters} className="btn btn-secondary" style={{ marginTop: 14 }}>
+                <i className="fas fa-times" /> Réinitialiser les filtres
+              </button>
+            )}
           </div>
         ) : (
           <div className="table-responsive">
@@ -290,12 +480,12 @@ export default function AdminQuestionsPage() {
                   <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Type</th>
                   <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Titre / Énoncé</th>
                   <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Bloom</th>
-                  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>EC</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Pôle / UE / EC</th>
                   <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {questions.map(q => {
+                {filtered.map(q => {
                   const st = typeSt(q.question_type)
                   const isSelected = selected.has(q.id)
                   return (
@@ -309,14 +499,23 @@ export default function AdminQuestionsPage() {
                           {typeLabel(q.question_type)}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 600, color: 'var(--text)', maxWidth: 360 }}>
+                      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 600, color: 'var(--text)', maxWidth: 320 }}>
                         {q.title}
                       </td>
                       <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
                         {q.bloom_level || '—'}
                       </td>
-                      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
-                        {q.ec_name || '—'}
+                      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {q.pole_code && (
+                            <span style={{ fontSize: 10, fontWeight: 800, padding: '1px 7px', borderRadius: 99, background: poleColor(q.pole_code) + '20', color: poleColor(q.pole_code), width: 'fit-content' }}>
+                              {q.pole_code}
+                            </span>
+                          )}
+                          {q.ue_code && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>UE {q.ue_code}</span>}
+                          {q.ec_name && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{q.ec_code} — {q.ec_name}</span>}
+                          {!q.pole_code && !q.ec_name && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>—</span>}
+                        </div>
                       </td>
                       <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
                         <div style={{ display: 'flex', gap: 6 }}>
@@ -344,11 +543,7 @@ export default function AdminQuestionsPage() {
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {Object.entries(TYPE_LABEL).map(([k, v]) => {
             const st = typeSt(k)
-            return (
-              <span key={k} style={{ ...st, fontSize: 11, padding: '2px 10px', borderRadius: 99, fontWeight: 600 }}>
-                {v}
-              </span>
-            )
+            return <span key={k} style={{ ...st, fontSize: 11, padding: '2px 10px', borderRadius: 99, fontWeight: 600 }}>{v}</span>
           })}
         </div>
       )}

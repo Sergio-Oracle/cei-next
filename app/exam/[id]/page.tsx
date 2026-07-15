@@ -41,6 +41,16 @@ function isDeviceSupported(): boolean {
 type PermStatus = 'pending' | 'loading' | 'ok' | 'error'
 declare global { interface Window { LivekitClient: any } }
 
+/* ── Fisher-Yates shuffle ─────────────────────────────────────────────────── */
+function fisherYates<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
 /* ── Parser contenu brut (porté de l'ancienne plateforme) ─────────────────── */
 function parseExamBlocks(raw: string): ParsedBlock[] {
   const VF_RE = /\bvrai\s*[\/|ou]\s*faux\b|\bV\s*[\/|]\s*F\b/i
@@ -112,9 +122,11 @@ export default function ExamPage() {
   const [exam,         setExam]         = useState<ExamData | null>(null)
   const [attempt,      setAttempt]      = useState<Attempt | null>(null)
   const [answers,      setAnswers]      = useState<Record<string, string>>({})
-  const [parsedBlocks, setParsedBlocks] = useState<ParsedBlock[]>([])
-  const [qcmIdx,       setQcmIdx]       = useState(0)
-  const [showPart2,    setShowPart2]    = useState(false)
+  const [parsedBlocks,   setParsedBlocks]   = useState<ParsedBlock[]>([])
+  const [shuffledBlocks, setShuffledBlocks] = useState<ParsedBlock[]>([])
+  const [shuffledQs,     setShuffledQs]     = useState<Question[]>([])
+  const [qcmIdx,         setQcmIdx]         = useState(0)
+  const [showPart2,      setShowPart2]      = useState(false)
   const [phase,        setPhase]        = useState<Phase>('loading')
   const [timeLeft,     setTimeLeft]     = useState(0)
   const [tabCount,     setTabCount]     = useState(0)
@@ -204,6 +216,26 @@ export default function ExamPage() {
     if (!raw) return
     setParsedBlocks(parseExamBlocks(raw))
   }, [exam])
+
+  /* ── Mélange aléatoire des questions au démarrage de l'examen ───────── */
+  useEffect(() => {
+    if (phase !== 'exam') return
+    // Parsed blocks — mélanger les QCM (ordre + choix), garder les questions ouvertes en place
+    if (parsedBlocks.length > 0) {
+      const qcmBlocks  = fisherYates(parsedBlocks.filter(b => b.type === 'qcm' || b.type === 'vf'))
+        .map(b => b.type === 'qcm' && b.choices ? { ...b, choices: fisherYates(b.choices) } : b)
+      const openBlocks = parsedBlocks.filter(b => b.type !== 'qcm' && b.type !== 'vf')
+      setShuffledBlocks([...qcmBlocks, ...openBlocks])
+    }
+    // Questions structurées — mélanger QCM séparément des ouvertes, mélanger les choix QCM
+    const qs = exam?.questions ?? []
+    if (qs.length > 0) {
+      const qcm  = fisherYates(qs.filter(q => q.question_type === 'qcm' || q.question_type === 'vf'))
+        .map(q => ({ ...q, choices: q.choices ? fisherYates(q.choices) : q.choices }))
+      const open = fisherYates(qs.filter(q => q.question_type !== 'qcm' && q.question_type !== 'vf'))
+      setShuffledQs([...qcm, ...open])
+    }
+  }, [phase]) // eslint-disable-line
 
   /* ── Attacher la caméra quand la vidéo est montée ────────────────────── */
   useEffect(() => {
@@ -956,10 +988,11 @@ export default function ExamPage() {
 
   /* ── EXAM ─────────────────────────────────────────────────────────────── */
   if(phase==='exam'&&exam) {
-    const structuredQs = exam.questions??[]
-    const p1Blocks     = parsedBlocks.filter(b=>b.type==='qcm'||b.type==='vf')
-    const p2Blocks     = parsedBlocks.filter(b=>b.type==='open'||b.type==='subopen')
-    const allQBlocks   = parsedBlocks.filter(b=>b.type!=='text'&&b.type!=='section')
+    const displayBlocks = shuffledBlocks.length > 0 ? shuffledBlocks : parsedBlocks
+    const structuredQs  = shuffledQs.length > 0 ? shuffledQs : (exam.questions??[])
+    const p1Blocks      = displayBlocks.filter(b=>b.type==='qcm'||b.type==='vf')
+    const p2Blocks      = displayBlocks.filter(b=>b.type==='open'||b.type==='subopen')
+    const allQBlocks    = displayBlocks.filter(b=>b.type!=='text'&&b.type!=='section')
     const hasParsed    = allQBlocks.length>0
     const subjectRaw   = exam.subject_content?(typeof exam.subject_content==='object'?exam.subject_content.content:exam.subject_content as string):null
 
@@ -1178,7 +1211,7 @@ export default function ExamPage() {
                         <div style={{flex:1}}><div style={{fontWeight:700,fontSize:14,color:'#065f46'}}>Partie 2 — Questions à réponses courtes / développées</div><div style={{fontSize:12,color:'#10b981'}}>{p2Blocks.length} question{p2Blocks.length>1?'s':''} • Rédigez vos réponses dans les zones ci-dessous</div></div>
                         {p1Blocks.length>0&&showPart2&&<button onClick={()=>setShowPart2(false)} style={{background:'#d1fae5',border:'none',borderRadius:8,padding:'6px 12px',fontSize:12,fontWeight:600,color:'#065f46',cursor:'pointer'}}><i className="fas fa-arrow-left"/> Retour QCM</button>}
                       </div>
-                      {parsedBlocks.map((b,i)=>{
+                      {displayBlocks.map((b,i)=>{
                         if(b.type==='section') return <div key={i} style={{margin:'18px 0 10px',padding:'10px 16px',background:'#f1f5f9',borderRadius:8,fontWeight:700,fontSize:14,color:'#334155',borderLeft:'4px solid #94a3b8'}}><i className="fas fa-layer-group" style={{color:'#64748b',marginRight:8}}/>{b.title}</div>
                         if(b.type!=='open'&&b.type!=='subopen') return null
                         return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers}/>
