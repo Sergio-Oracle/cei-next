@@ -158,6 +158,7 @@ export interface ExamAttempt {
   extra_minutes?: number
   answers_count?: number
   total_questions?: number
+  imported_grade?: boolean
 }
 
 // ── Réclamations ──────────────────────────────────────────────────────────────

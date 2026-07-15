@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
@@ -49,6 +49,8 @@ export default function AdminExamDetailPage() {
   const [banning, setBanning]           = useState(false)
   const [correctingId, setCorrectingId] = useState<number | null>(null)
   const [downloading, setDownloading]   = useState(false)
+  const [importingGrades, setImportingGrades] = useState(false)
+  const gradesFileRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => { load() }, [id])
 
@@ -152,6 +154,23 @@ export default function AdminExamDetailPage() {
     } catch (e: any) { error('PDF non disponible') }
   }
 
+  async function handleImportGrades(file: File) {
+    setImportingGrades(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await api.upload<{ created: number; updated: number; errors: string[] }>(
+        `/api/online_exams/${id}/import-grades`, fd
+      )
+      success(`Import terminé : ${res.created} note(s) créée(s), ${res.updated} mise(s) à jour${res.errors.length ? `, ${res.errors.length} erreur(s)` : ''}`)
+      if (res.errors.length) console.warn('Erreurs import notes:', res.errors)
+      await load()
+    } catch (e: any) { error(e.message || 'Erreur import') } finally {
+      setImportingGrades(false)
+      if (gradesFileRef.current) gradesFileRef.current.value = ''
+    }
+  }
+
   if (loading) return <div style={{ textAlign: 'center', padding: 60 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 32 }} /></div>
   if (!exam) return (
     <div className="card" style={{ textAlign: 'center', padding: 60 }}>
@@ -184,6 +203,17 @@ export default function AdminExamDetailPage() {
           {exam.status === 'active' && <button className="btn btn-warning" onClick={close} disabled={acting}><i className="fas fa-stop" /> Clôturer</button>}
           <button className="btn btn-secondary" onClick={downloadCsv} disabled={downloading}><i className="fas fa-file-csv" /> CSV</button>
           <button className="btn btn-secondary" onClick={downloadPdf}><i className="fas fa-file-pdf" /> PDF Bilan</button>
+          <input
+            ref={gradesFileRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            style={{ display: 'none' }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportGrades(f) }}
+          />
+          <button className="btn btn-secondary" onClick={() => gradesFileRef.current?.click()} disabled={importingGrades}
+            title="Importer des notes déjà calculées (étudiants n'ayant pas composé sur la plateforme)">
+            <i className={`fas ${importingGrades ? 'fa-spinner fa-spin' : 'fa-file-import'}`} /> {importingGrades ? 'Import...' : 'Importer notes'}
+          </button>
           <button className="btn btn-danger" onClick={del} disabled={acting}><i className="fas fa-trash" /> Supprimer</button>
           <Link href="/dashboard/admin/exams" className="btn btn-secondary"><i className="fas fa-arrow-left" /> Retour</Link>
         </div>

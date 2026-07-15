@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
@@ -43,6 +43,8 @@ export default function ProfessorExamDetailPage() {
   const [grading, setGrading] = useState(false)
   const [correcting, setCorrecting] = useState<number | null>(null)
   const [downloading, setDownloading] = useState(false)
+  const [importingGrades, setImportingGrades] = useState(false)
+  const gradesFileRef = useRef<HTMLInputElement | null>(null)
   const [extraModal, setExtraModal]   = useState<AttemptWithMeta | null>(null)
   const [extraMin, setExtraMin]       = useState(10)
   const [addingExtra, setAddingExtra] = useState(false)
@@ -162,6 +164,23 @@ export default function ProfessorExamDetailPage() {
     } catch (e: any) { error(e.message || 'Erreur export') } finally { setDownloading(false) }
   }
 
+  async function handleImportGrades(file: File) {
+    setImportingGrades(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await api.upload<{ created: number; updated: number; errors: string[] }>(
+        `/api/online_exams/${id}/import-grades`, fd
+      )
+      success(`Import terminé : ${res.created} note(s) créée(s), ${res.updated} mise(s) à jour${res.errors.length ? `, ${res.errors.length} erreur(s)` : ''}`)
+      if (res.errors.length) console.warn('Erreurs import notes:', res.errors)
+      await load()
+    } catch (e: any) { error(e.message || 'Erreur import') } finally {
+      setImportingGrades(false)
+      if (gradesFileRef.current) gradesFileRef.current.value = ''
+    }
+  }
+
   if (loading) return (
     <div style={{ textAlign: 'center', padding: 60 }}>
       <i className="fa-solid fa-spinner spin" style={{ fontSize: 32, color: 'var(--primary)' }} />
@@ -215,6 +234,19 @@ export default function ProfessorExamDetailPage() {
             {downloading
               ? <><i className="fa-solid fa-spinner spin" /> Export...</>
               : <><i className="fa-solid fa-file-csv" /> Export CSV</>}
+          </button>
+          <input
+            ref={gradesFileRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            style={{ display: 'none' }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportGrades(f) }}
+          />
+          <button className="btn btn-secondary" onClick={() => gradesFileRef.current?.click()} disabled={importingGrades}
+            title="Importer des notes déjà calculées (étudiants n'ayant pas composé sur la plateforme)">
+            {importingGrades
+              ? <><i className="fa-solid fa-spinner spin" /> Import...</>
+              : <><i className="fa-solid fa-file-import" /> Importer notes</>}
           </button>
           <Link href="/dashboard/professor/exams" className="btn btn-secondary">
             <i className="fa-solid fa-arrow-left" /> Retour
