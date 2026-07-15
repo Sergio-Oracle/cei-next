@@ -12,6 +12,7 @@ interface ExamData {
   start_time: string; end_time: string; subject_title?: string
   max_tab_switches?: number; enable_copy_paste?: boolean; enable_right_click?: boolean
   camera_required?: boolean; ban_on_devtools?: boolean; auto_correct?: boolean
+  questions_per_page?: number; randomize_questions?: boolean
   status: string; questions?: Question[]
   subject_content?: { id: number; title: string; content: string } | string | null
 }
@@ -49,6 +50,23 @@ function fisherYates<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]]
   }
   return a
+}
+
+/* ── Pagination façon Moodle : groupe N questions par page, en gardant les
+   en-têtes de section attachés à la page de la question qui les suit ──────── */
+function paginateBlocks(blocks: ParsedBlock[], perPage: number): ParsedBlock[][] {
+  if (!isFinite(perPage) || perPage <= 0 || blocks.length === 0) return blocks.length ? [blocks] : []
+  const pages: ParsedBlock[][] = []
+  let current: ParsedBlock[] = []
+  let qCount = 0
+  for (const b of blocks) {
+    const isQuestion = b.type !== 'section' && b.type !== 'text'
+    if (isQuestion && qCount === perPage) { pages.push(current); current = []; qCount = 0 }
+    current.push(b)
+    if (isQuestion) qCount++
+  }
+  if (current.length) pages.push(current)
+  return pages
 }
 
 /* ── Parser contenu brut (porté de l'ancienne plateforme) ─────────────────── */
@@ -125,7 +143,8 @@ export default function ExamPage() {
   const [parsedBlocks,   setParsedBlocks]   = useState<ParsedBlock[]>([])
   const [shuffledBlocks, setShuffledBlocks] = useState<ParsedBlock[]>([])
   const [shuffledQs,     setShuffledQs]     = useState<Question[]>([])
-  const [qcmIdx,         setQcmIdx]         = useState(0)
+  const [qcmIdx,         setQcmIdx]         = useState(0)   // page courante — Partie 1 (QCM/VF)
+  const [p2PageIdx,      setP2PageIdx]      = useState(0)   // page courante — Partie 2 (ouvertes)
   const [showPart2,      setShowPart2]      = useState(false)
   const [phase,        setPhase]        = useState<Phase>('loading')
   const [timeLeft,     setTimeLeft]     = useState(0)
@@ -160,7 +179,6 @@ export default function ExamPage() {
   const [permBusy,     setPermBusy]     = useState(false)
 
   const timerRef        = useRef<ReturnType<typeof setInterval>|null>(null)
-  const advanceTimerRef = useRef<ReturnType<typeof setTimeout>|null>(null)
   const saveRef         = useRef<ReturnType<typeof setInterval>|null>(null)
   const msgPollRef      = useRef<ReturnType<typeof setInterval>|null>(null)
   const snapshotRef     = useRef<ReturnType<typeof setInterval>|null>(null)
@@ -220,6 +238,7 @@ export default function ExamPage() {
   /* ── Mélange aléatoire des questions au démarrage de l'examen ───────── */
   useEffect(() => {
     if (phase !== 'exam') return
+    if (!exam?.randomize_questions) return // respecter le réglage professeur (désactivé par défaut)
     // Parsed blocks — mélanger les QCM (ordre + choix), garder les questions ouvertes en place
     if (parsedBlocks.length > 0) {
       const qcmBlocks  = fisherYates(parsedBlocks.filter(b => b.type === 'qcm' || b.type === 'vf'))
@@ -991,9 +1010,13 @@ export default function ExamPage() {
     const displayBlocks = shuffledBlocks.length > 0 ? shuffledBlocks : parsedBlocks
     const structuredQs  = shuffledQs.length > 0 ? shuffledQs : (exam.questions??[])
     const p1Blocks      = displayBlocks.filter(b=>b.type==='qcm'||b.type==='vf')
+    const p2Items       = displayBlocks.filter(b=>b.type==='section'||b.type==='open'||b.type==='subopen')
     const p2Blocks      = displayBlocks.filter(b=>b.type==='open'||b.type==='subopen')
     const allQBlocks    = displayBlocks.filter(b=>b.type!=='text'&&b.type!=='section')
     const hasParsed    = allQBlocks.length>0
+    const perPage      = exam.questions_per_page && exam.questions_per_page>0 ? exam.questions_per_page : Infinity
+    const p1Pages       = paginateBlocks(p1Blocks, perPage)
+    const p2Pages       = paginateBlocks(p2Items, perPage)
     const subjectRaw   = exam.subject_content?(typeof exam.subject_content==='object'?exam.subject_content.content:exam.subject_content as string):null
 
     const structAnswered = structuredQs.filter(q=>(answers[q.id.toString()]??'').trim()!=='').length
@@ -1157,65 +1180,81 @@ export default function ExamPage() {
                 </>)
               })()}
 
-              {/* CAS 2 — Blocs parsés */}
+              {/* CAS 2 — Blocs parsés, paginés façon Moodle (N questions/page, configuré par le professeur) */}
               {structuredQs.length===0&&hasParsed&&(()=>{
+                const saveNow=()=>{if(attemptRef.current)doAutoSave(attemptRef.current)}
                 return(<>
                   <ProgBar answered={parsedAnswered} total={allQBlocks.length}/>
-                  {/* Partie 1 QCM avec navigation */}
+                  {/* Partie 1 QCM/VF — pagination par groupes */}
                   {p1Blocks.length>0&&(
                     <div style={{marginBottom:p2Blocks.length?(showPart2?20:0):0}}>
-                      <SecHead icon="fa-check-square" color="#3b82f6" bg="#eff6ff" tc="#1e40af" title="Partie 1 — Questions à Choix Multiples" sub={`${p1Blocks.length} question${p1Blocks.length>1?'s':''}`}/>
-                      {/* Barre nav */}
-                      <div style={{background:'#1e293b',borderRadius:12,padding:'12px 16px',marginBottom:16}}>
-                        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-                          <button onClick={()=>setQcmIdx(i=>Math.max(0,i-1))} disabled={qcmIdx===0}
-                            style={{background:'rgba(255,255,255,.1)',border:'none',color:'#fff',borderRadius:8,padding:'8px 16px',cursor:qcmIdx===0?'not-allowed':'pointer',fontSize:13,fontWeight:600,opacity:qcmIdx===0?.4:1}}>
-                            <i className="fas fa-chevron-left"/> Préc.
-                          </button>
-                          <span style={{flex:1,textAlign:'center',fontSize:14,fontWeight:700,color:'#f1f5f9'}}>Q {qcmIdx+1} / {p1Blocks.length}</span>
-                          {qcmIdx<p1Blocks.length-1?(
-                            <button onClick={()=>setQcmIdx(i=>i+1)} style={{background:'#3b82f6',border:'none',color:'#fff',borderRadius:8,padding:'8px 16px',cursor:'pointer',fontSize:13,fontWeight:600}}>
-                              Suiv. <i className="fas fa-chevron-right"/>
+                      <SecHead icon="fa-check-square" color="#3b82f6" bg="#eff6ff" tc="#1e40af" title="Partie 1 — Questions à Choix Multiples" sub={`${p1Blocks.length} question${p1Blocks.length>1?'s':''}${isFinite(perPage)?` • ${perPage} par page`:''}`}/>
+                      {p1Pages.length>1&&(
+                        <div style={{background:'#1e293b',borderRadius:12,padding:'12px 16px',marginBottom:16}}>
+                          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                            <button onClick={()=>{setQcmIdx(i=>Math.max(0,i-1));saveNow()}} disabled={qcmIdx===0}
+                              style={{background:'rgba(255,255,255,.1)',border:'none',color:'#fff',borderRadius:8,padding:'8px 16px',cursor:qcmIdx===0?'not-allowed':'pointer',fontSize:13,fontWeight:600,opacity:qcmIdx===0?.4:1}}>
+                              <i className="fas fa-chevron-left"/> Préc.
                             </button>
-                          ):(
-                            <button onClick={()=>setShowPart2(true)} disabled={p2Blocks.length===0}
-                              style={{background:p2Blocks.length?'#10b981':'#475569',border:'none',color:'#fff',borderRadius:8,padding:'8px 16px',cursor:p2Blocks.length?'pointer':'default',fontSize:13,fontWeight:600}}>
-                              {p2Blocks.length?<><i className="fas fa-arrow-right"/> Terminer QCM</>:<><i className="fas fa-check"/> Fin</>}
-                            </button>
-                          )}
+                            <span style={{flex:1,textAlign:'center',fontSize:14,fontWeight:700,color:'#f1f5f9'}}>Page {qcmIdx+1} / {p1Pages.length}</span>
+                            {qcmIdx<p1Pages.length-1?(
+                              <button onClick={()=>{setQcmIdx(i=>i+1);saveNow()}} style={{background:'#3b82f6',border:'none',color:'#fff',borderRadius:8,padding:'8px 16px',cursor:'pointer',fontSize:13,fontWeight:600}}>
+                                Suiv. <i className="fas fa-chevron-right"/>
+                              </button>
+                            ):(
+                              <button onClick={()=>{setShowPart2(true);saveNow()}} disabled={p2Blocks.length===0}
+                                style={{background:p2Blocks.length?'#10b981':'#475569',border:'none',color:'#fff',borderRadius:8,padding:'8px 16px',cursor:p2Blocks.length?'pointer':'default',fontSize:13,fontWeight:600}}>
+                                {p2Blocks.length?<><i className="fas fa-arrow-right"/> Terminer QCM</>:<><i className="fas fa-check"/> Fin</>}
+                              </button>
+                            )}
+                          </div>
+                          {/* Pastilles — une par question, clic saute à sa page */}
+                          <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'center'}}>
+                            {p1Blocks.map((b,i)=>{
+                              const ok=(answers[`pq_${b.num}`]??'').trim()!==''
+                              const pageOf=Math.floor(i/(isFinite(perPage)?perPage:p1Blocks.length))
+                              const cur=pageOf===qcmIdx
+                              return <span key={i} onClick={()=>{setQcmIdx(pageOf);saveNow()}} title={`Q${i+1} (page ${pageOf+1})`}
+                                style={{width:24,height:24,borderRadius:'50%',background:cur?'#3b82f6':ok?'#10b981':'rgba(255,255,255,.15)',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',cursor:'pointer',border:cur?'2px solid #60a5fa':'1.5px solid rgba(255,255,255,.3)',flexShrink:0}}>
+                                {i+1}
+                              </span>
+                            })}
+                          </div>
                         </div>
-                        {/* Pastilles */}
-                        <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'center'}}>
-                          {p1Blocks.map((b,i)=>{
-                            const ok=(answers[`pq_${b.num}`]??'').trim()!==''; const cur=i===qcmIdx
-                            return <span key={i} onClick={()=>setQcmIdx(i)} title={`Q${i+1}`}
-                              style={{width:24,height:24,borderRadius:'50%',background:cur?'#3b82f6':ok?'#10b981':'rgba(255,255,255,.15)',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',cursor:'pointer',border:cur?'2px solid #60a5fa':'1.5px solid rgba(255,255,255,.3)',flexShrink:0}}>
-                              {i+1}
-                            </span>
-                          })}
-                        </div>
-                      </div>
-                      {p1Blocks[qcmIdx]&&<PQ block={p1Blocks[qcmIdx]} answers={answers} setAnswers={setAnswers} onAnswer={()=>{
-                        if(advanceTimerRef.current)clearTimeout(advanceTimerRef.current)
-                        if(qcmIdx<p1Blocks.length-1){
-                          advanceTimerRef.current=setTimeout(()=>{advanceTimerRef.current=null;setQcmIdx(q=>q+1)},450)
-                        }
-                      }}/>}
+                      )}
+                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers}/>)}
+                      {p1Pages.length<=1&&p2Blocks.length>0&&!showPart2&&(
+                        <button onClick={()=>setShowPart2(true)} style={{marginTop:8,background:'#10b981',border:'none',color:'#fff',borderRadius:8,padding:'10px 18px',cursor:'pointer',fontSize:13,fontWeight:600}}>
+                          <i className="fas fa-arrow-right"/> Passer aux questions ouvertes
+                        </button>
+                      )}
                     </div>
                   )}
-                  {/* Partie 2 */}
+                  {/* Partie 2 — questions ouvertes, pagination par groupes */}
                   {p2Blocks.length>0&&(p1Blocks.length===0||showPart2)&&(
                     <div>
                       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14,padding:'12px 16px',background:'#ecfdf5',borderRadius:10,borderLeft:'4px solid #10b981'}}>
                         <i className="fas fa-pen-alt" style={{color:'#10b981',fontSize:18}}/>
-                        <div style={{flex:1}}><div style={{fontWeight:700,fontSize:14,color:'#065f46'}}>Partie 2 — Questions à réponses courtes / développées</div><div style={{fontSize:12,color:'#10b981'}}>{p2Blocks.length} question{p2Blocks.length>1?'s':''} • Rédigez vos réponses dans les zones ci-dessous</div></div>
+                        <div style={{flex:1}}><div style={{fontWeight:700,fontSize:14,color:'#065f46'}}>Partie 2 — Questions à réponses courtes / développées</div><div style={{fontSize:12,color:'#10b981'}}>{p2Blocks.length} question{p2Blocks.length>1?'s':''}{isFinite(perPage)?` • ${perPage} par page`:''} • Rédigez vos réponses dans les zones ci-dessous</div></div>
                         {p1Blocks.length>0&&showPart2&&<button onClick={()=>setShowPart2(false)} style={{background:'#d1fae5',border:'none',borderRadius:8,padding:'6px 12px',fontSize:12,fontWeight:600,color:'#065f46',cursor:'pointer'}}><i className="fas fa-arrow-left"/> Retour QCM</button>}
                       </div>
-                      {displayBlocks.map((b,i)=>{
+                      {(p2Pages[p2PageIdx]??p2Items).map((b,i)=>{
                         if(b.type==='section') return <div key={i} style={{margin:'18px 0 10px',padding:'10px 16px',background:'#f1f5f9',borderRadius:8,fontWeight:700,fontSize:14,color:'#334155',borderLeft:'4px solid #94a3b8'}}><i className="fas fa-layer-group" style={{color:'#64748b',marginRight:8}}/>{b.title}</div>
-                        if(b.type!=='open'&&b.type!=='subopen') return null
                         return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers}/>
                       })}
+                      {p2Pages.length>1&&(
+                        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:16}}>
+                          <button onClick={()=>{setP2PageIdx(i=>Math.max(0,i-1));saveNow()}} disabled={p2PageIdx===0}
+                            style={{background:'#f1f5f9',border:'1.5px solid #e2e8f0',color:'#334155',borderRadius:8,padding:'8px 16px',cursor:p2PageIdx===0?'not-allowed':'pointer',fontSize:13,fontWeight:600,opacity:p2PageIdx===0?.5:1}}>
+                            <i className="fas fa-chevron-left"/> Préc.
+                          </button>
+                          <span style={{flex:1,textAlign:'center',fontSize:14,fontWeight:700,color:'#334155'}}>Page {p2PageIdx+1} / {p2Pages.length}</span>
+                          <button onClick={()=>{setP2PageIdx(i=>Math.min(p2Pages.length-1,i+1));saveNow()}} disabled={p2PageIdx>=p2Pages.length-1}
+                            style={{background:'#10b981',border:'none',color:'#fff',borderRadius:8,padding:'8px 16px',cursor:p2PageIdx>=p2Pages.length-1?'not-allowed':'pointer',fontSize:13,fontWeight:600,opacity:p2PageIdx>=p2Pages.length-1?.5:1}}>
+                            Suiv. <i className="fas fa-chevron-right"/>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </>)

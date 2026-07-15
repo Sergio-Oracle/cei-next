@@ -21,6 +21,7 @@ export default function NewExamPage() {
     start_time:      '',
     end_time:        '',
     max_tab_switches:  2,
+    questions_per_page: 5,
     max_no_face_count: 10,
     ban_on_devtools:   true,
     enable_copy_paste: false,
@@ -63,6 +64,7 @@ export default function NewExamPage() {
         start_time:        startTime,
         end_time:          endTime,
         max_tab_switches:  form.max_tab_switches,
+        questions_per_page: form.questions_per_page,
         max_no_face_count: form.max_no_face_count,
         ban_on_devtools:   form.ban_on_devtools,
         enable_copy_paste: form.enable_copy_paste,
@@ -137,9 +139,16 @@ export default function NewExamPage() {
             </div>
 
             {/* Instructions */}
-            <div style={{ gridColumn: '1 / -1', marginBottom: 4 }}>
+            <div style={{ gridColumn: '1 / -1', marginBottom: 18 }}>
               <label style={lbl}><i className="fas fa-align-left" /> Instructions</label>
               <textarea value={form.instructions} onChange={e => set('instructions', e.target.value)} rows={3} placeholder="Consignes pour les étudiants..." style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }} />
+            </div>
+
+            {/* Questions par page */}
+            <div style={{ marginBottom: 4 }}>
+              <label style={lbl}><i className="fas fa-book-open" /> Questions par page</label>
+              <input type="number" min={0} max={50} value={form.questions_per_page} onChange={e => set('questions_per_page', Number(e.target.value))} style={inp} />
+              <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>Évite le défilement long (0 = tout sur une page)</small>
             </div>
           </div>
 
