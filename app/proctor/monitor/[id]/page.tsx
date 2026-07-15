@@ -151,6 +151,7 @@ export default function ProctorMonitorPage() {
   const [snapRecs,    setSnapRecs]    = useState<any>(null)
   const [loadingRecs, setLoadingRecs] = useState(false)
   const [selectedSnapIdx, setSelectedSnapIdx] = useState(0)
+  const [zoomedSnapshot, setZoomedSnapshot] = useState<{src: string; ts: string; et: string} | null>(null)
 
   /* alertes agent */
   const [agentAlerts, setAgentAlerts] = useState<any[]>([])
@@ -673,7 +674,9 @@ export default function ProctorMonitorPage() {
         : `il y a ${Math.floor(agent.last_check_ago_sec / 60)}min`)
     : '—'
 
-  /* Grille "Vues en direct" : uniquement les étudiants connectés à LiveKit */
+  /* Grille "Vues en direct" : uniquement les étudiants connectés à LiveKit,
+     triés par score de risque décroissant — les étudiants à surveiller en
+     priorité apparaissent toujours en premier, sans avoir à filtrer. */
   const liveStudents = students.filter(s => {
     if (!liveSet.has(s.livekit_identity)) return false
     const q = search.toLowerCase()
@@ -685,7 +688,7 @@ export default function ProctorMonitorPage() {
       if (filter === 'banned')      return s.status === 'banned'
     }
     return true
-  })
+  }).sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0))
 
   /* ── Actions communes sur les cartes ──────────────────────────────────────── */
   function openMsg(s: Student, type: 'message' | 'warning') {
@@ -1210,6 +1213,7 @@ export default function ProctorMonitorPage() {
                         if (filter === 'high_risk') return s.risk_score >= 60
                         return true
                       })
+                      .sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0))
                       .map(s => {
                         const rc = riskCls(s.risk_score)
                         return (
@@ -1759,7 +1763,8 @@ export default function ProctorMonitorPage() {
                                   const et  = snap.event_type ? snap.event_type.replace(/_/g, ' ') : ''
                                   return (
                                     <div key={j} style={{ background: 'rgba(0,0,0,.35)', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,.09)' }}>
-                                      <img src={src} alt="snapshot" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }}
+                                      <img src={src} alt="snapshot" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block', cursor: 'zoom-in' }}
+                                        onClick={() => setZoomedSnapshot({ src, ts, et })}
                                         onError={e => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }} />
                                       <div style={{ padding: '5px 8px' }}>
                                         <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)' }}>{ts}</div>
@@ -1778,6 +1783,22 @@ export default function ProctorMonitorPage() {
                 )}
               </div>
             </div>
+
+            {/* Lightbox zoom snapshot */}
+            {zoomedSnapshot && (
+              <div onClick={() => setZoomedSnapshot(null)}
+                style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.88)', zIndex: 99999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, cursor: 'zoom-out' }}>
+                <img src={zoomedSnapshot.src} alt="snapshot agrandi"
+                  style={{ maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 8, boxShadow: '0 12px 40px rgba(0,0,0,.5)' }} />
+                <div style={{ marginTop: 14, color: 'rgba(255,255,255,.85)', fontSize: 13, display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <span>{zoomedSnapshot.ts}</span>
+                  {zoomedSnapshot.et && <span style={{ color: '#f59e0b' }}>{zoomedSnapshot.et}</span>}
+                  <button onClick={() => setZoomedSnapshot(null)} style={{ padding: '6px 14px', background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.2)', color: '#fff', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
+                    <i className="fas fa-times" /> Fermer
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )
       })()}

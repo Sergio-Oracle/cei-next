@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
@@ -42,6 +42,11 @@ function isDeviceSupported(): boolean {
 }
 type PermStatus = 'pending' | 'loading' | 'ok' | 'error'
 declare global { interface Window { LivekitClient: any } }
+
+/* Couleur neutre unique pour toute réponse sélectionnée (QCM/QCU/VF) — évite toute
+   association implicite type "vert=bonne réponse / rouge=mauvaise" pendant que
+   l'étudiant compose, qui n'a rien à voir avec la justesse réelle de son choix. */
+const SELECTED_COLOR = '#4f46e5'
 
 /* ── Fisher-Yates shuffle ─────────────────────────────────────────────────── */
 function fisherYates<T>(arr: T[]): T[] {
@@ -1502,6 +1507,14 @@ function PhotoAnswer({value,onChange,attemptId}:{value:string;onChange:(v:string
 function PQ({block,answers,setAnswers,onAnswer,attemptId}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:()=>void;attemptId?:number|null}) {
   const isOpen=block.type==='open'||block.type==='subopen'||block.type==='code'||block.type==='photo'
   const key=`pq_${block.num}`
+  // Mélange stable (par instance de bloc) des choix de droite de l'appariement,
+  // indépendamment de l'ordre des items de gauche — façon Moodle (shufflestems +
+  // choices mélangés séparément) — sinon la bonne réponse est toujours au même
+  // index que la question, trivialement devinable.
+  const shuffledRights = useMemo(
+    () => block.type==='appariement' && block.pairs ? fisherYates(block.pairs.map(p=>p.right)) : [],
+    [block]
+  )
   const answered=block.type==='subopen'?block.choices?.some(c=>(answers[`${key}_${c.letter}`]??'').trim()!==''):
     block.type==='appariement'?(block.pairs?.every((_,i)=>(answers[`${key}_${i}`]??'').trim()!=='')??false):
     (answers[key]??'').trim()!==''
@@ -1520,7 +1533,7 @@ function PQ({block,answers,setAnswers,onAnswer,attemptId}:{block:ParsedBlock;ans
       </div>
       {block.type==='vf'&&(
         <div style={{display:'flex',gap:12}}>
-          {['Vrai','Faux'].map(opt=>{const sel=answers[key]===opt;const col=opt==='Vrai'?'#10b981':'#ef4444';return(
+          {['Vrai','Faux'].map(opt=>{const sel=answers[key]===opt;const col=SELECTED_COLOR;return(
             <label key={opt} onClick={()=>{setAnswers(p=>({...p,[key]:opt}));onAnswer?.()}} style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',flex:1,justifyContent:'center',transition:'all .18s'}}>
               <span style={{width:32,height:32,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:14,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{opt[0]}</span>
               <span style={{fontSize:15,color:'#1e293b'}}>{opt}</span>{sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:18}}/>}
@@ -1531,8 +1544,7 @@ function PQ({block,answers,setAnswers,onAnswer,attemptId}:{block:ParsedBlock;ans
       {block.type==='qcm'&&block.choices&&(
         <div style={{display:'flex',flexDirection:'column',gap:10}}>
           {block.choices.map((c,ci)=>{
-            const colors={A:'#3b82f6',B:'#10b981',C:'#f59e0b',D:'#ef4444',E:'#0891b2',F:'#f97316'} as Record<string,string>
-            const col=colors[c.letter]||'#3b82f6';const sel=answers[key]===c.letter
+            const col=SELECTED_COLOR;const sel=answers[key]===c.letter
             return(
               <label key={ci} onClick={()=>{setAnswers(p=>({...p,[key]:c.letter}));onAnswer?.()}} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',transition:'all .18s',userSelect:'none'}}>
                 <span style={{width:32,height:32,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:14,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{c.letter}</span>
@@ -1547,8 +1559,7 @@ function PQ({block,answers,setAnswers,onAnswer,attemptId}:{block:ParsedBlock;ans
         <div style={{display:'flex',flexDirection:'column',gap:10}}>
           <div style={{fontSize:12,color:'#64748b',marginBottom:2}}><i className="fas fa-info-circle"/> Plusieurs réponses possibles</div>
           {block.choices.map((c,ci)=>{
-            const colors={A:'#3b82f6',B:'#10b981',C:'#f59e0b',D:'#ef4444',E:'#0891b2',F:'#f97316'} as Record<string,string>
-            const col=colors[c.letter]||'#3b82f6'
+            const col=SELECTED_COLOR
             const selLetters=(answers[key]??'').split(',').map(s=>s.trim()).filter(Boolean)
             const sel=selLetters.includes(c.letter)
             const toggle=()=>{
@@ -1576,7 +1587,7 @@ function PQ({block,answers,setAnswers,onAnswer,attemptId}:{block:ParsedBlock;ans
                 <select value={sv} onChange={e=>{setAnswers(p=>({...p,[sk]:e.target.value}));onAnswer?.()}}
                   style={{flex:1,padding:'12px 14px',border:`1.5px solid ${sv?'#10b981':'#e2e8f0'}`,borderRadius:10,fontSize:14,color:'#0f172a',background:'#fff',outline:'none'}}>
                   <option value="">— Choisir —</option>
-                  {block.pairs!.map((p2,j)=><option key={j} value={p2.right}>{p2.right}</option>)}
+                  {shuffledRights.map((r,j)=><option key={j} value={r}>{r}</option>)}
                 </select>
               </div>
             )
