@@ -75,7 +75,7 @@ export default function ProfessorSuggestionsPage() {
   const [difficulty, setDifficulty] = useState('Moyen')
   const [level,      setLevel]      = useState('Licence 3')
   const [ecId,       setEcId]       = useState('')
-  const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false })
+  const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false, qcm_multi: false, appariement: false, code: false, photo: false })
   const [bloom,  setBloom]  = useState({
     connaissance: false, comprehension: false,
     application: true,  analyse: true,
@@ -131,7 +131,7 @@ export default function ProfessorSuggestionsPage() {
     setCreating(i); setGenFull(true); setGenFullElapsed(0)
     genFullTimer.current = setInterval(() => setGenFullElapsed(x => x + 1), 1000)
     try {
-      const qMap: Record<string, string> = { qcm:'QCM', open:'Questions ouvertes', vf:'Vrai/Faux' }
+      const qMap: Record<string, string> = { qcm:'QCM', open:'Questions ouvertes', vf:'Vrai/Faux', qcm_multi:'QCM (réponses multiples)', appariement:'Appariement', code:'Maths et programmation', photo:'Photo / Scan' }
       const selectedTypes = Object.entries(qTypes).filter(([,v])=>v).map(([k])=>qMap[k])
       const suggestionWithTypes = {
         ...s,
@@ -640,8 +640,12 @@ export default function ProfessorSuggestionsPage() {
                   <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
                     {([
                       ['qcm','QCM','fa-circle-question','var(--primary)','#eff6ff','#dbeafe'],
+                      ['qcm_multi','QCM multiple','fa-square-check','#7c3aed','#f5f3ff','#ddd6fe'],
                       ['open','Questions ouvertes','fa-pen-line','#0369a1','#e0f2fe','#bae6fd'],
                       ['vf','Vrai / Faux','fa-toggle-on','#10b981','#f0fdf4','#bbf7d0'],
+                      ['appariement','Appariement','fa-link','#db2777','#fdf2f8','#fbcfe8'],
+                      ['code','Maths / Programmation','fa-code','#ea580c','#fff7ed','#fed7aa'],
+                      ['photo','Photo / Scan','fa-camera','#0891b2','#ecfeff','#a5f3fc'],
                     ] as const).map(([k,label,icon,color,bg,border]) => (
                       <button key={k} type="button" onClick={() => setQTypes(p => ({...p,[k]:!p[k]}))}
                         style={{ display:'flex', alignItems:'center', gap:9, padding:'10px 18px', border:`1.5px solid ${qTypes[k]?border:'var(--border)'}`, borderRadius:10, cursor:'pointer', background:qTypes[k]?bg:'var(--surface)', transition:'all .15s', fontWeight:qTypes[k]?700:400, fontSize:13, color:qTypes[k]?color:'var(--text)' }}>

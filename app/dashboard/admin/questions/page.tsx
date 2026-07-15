@@ -24,16 +24,24 @@ interface ECOpt { id: number; name: string; code?: string }
 interface DupPair { q1: { id: number; title: string }; q2: { id: number; title: string }; similarity: number }
 
 const TYPE_LABEL: Record<string, string> = {
-  open:    'Ouvert',
-  qcm:     'QCM',
-  vf:      'Vrai/Faux',
-  subopen: 'Semi-ouvert',
+  open:        'Ouvert',
+  qcm:         'QCU',
+  qcm_multi:   'QCM',
+  vf:          'Vrai/Faux',
+  subopen:     'Semi-ouvert',
+  appariement: 'Appariement',
+  code:        'Maths / Code',
+  photo:       'Photo',
 }
 const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
-  open:    { bg: '#f1f5f9', color: '#475569' },
-  qcm:     { bg: '#dbeafe', color: '#1d4ed8' },
-  vf:      { bg: '#dcfce7', color: '#15803d' },
-  subopen: { bg: '#fff7ed', color: '#c2410c' },
+  open:        { bg: '#f1f5f9', color: '#475569' },
+  qcm:         { bg: '#dbeafe', color: '#1d4ed8' },
+  qcm_multi:   { bg: '#ede9fe', color: '#6d28d9' },
+  vf:          { bg: '#dcfce7', color: '#15803d' },
+  subopen:     { bg: '#fff7ed', color: '#c2410c' },
+  appariement: { bg: '#fdf2f8', color: '#be185d' },
+  code:        { bg: '#fff7ed', color: '#c2410c' },
+  photo:       { bg: '#ecfeff', color: '#0e7490' },
 }
 
 const POLE_COLORS: Record<string, string> = { STN: '#6366f1', LSHE: '#10b981', SEJA: '#f59e0b' }

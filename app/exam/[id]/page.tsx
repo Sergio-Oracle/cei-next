@@ -24,9 +24,10 @@ interface Attempt {
   answers?: Record<string, string> | string
 }
 interface ParsedBlock {
-  type: 'text' | 'section' | 'qcm' | 'vf' | 'open' | 'subopen'
+  type: 'text' | 'section' | 'qcm' | 'qcm_multi' | 'vf' | 'open' | 'subopen' | 'appariement' | 'code' | 'photo'
   content?: string; title?: string; num?: string; text?: string
   extraLines?: string[]; choices?: { letter: string; text: string }[]
+  pairs?: { left: string; right: string }[]
 }
 type Phase = 'loading' | 'instructions' | 'permissions' | 'exam' | 'submitted' | 'unsupported'
 
@@ -74,7 +75,7 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
   const VF_RE = /\bvrai\s*[\/|ou]\s*faux\b|\bV\s*[\/|]\s*F\b/i
   const strip = (s: string) => s.trim().replace(/^[*_]{1,2}\s*/,'').replace(/\s*[*_]{1,2}$/,'').trim()
   const Q_RE  = /^(?:(?:Question|Q)\.?\s+)?(\d{1,2})(?!\s*\.\s*\d)(?:\s*[.:)–—-]|\.\s+|\s{2,})\s*(.+)/i
-  const TYPE_MARKER = /\[(QCM|VF|OUVERT|SUBOPEN|OUVERT[ES]*)\]/i
+  const TYPE_MARKER = /\[(QCM_MULTI|QCM|VF|OUVERT|SUBOPEN|APPARIEMENT|CODE|PHOTO|OUVERT[ES]*)\]/i
   const isQ  = (l: string) => Q_RE.test(strip(l))
   const getQ = (l: string) => {
     const m = strip(l).match(Q_RE); if (!m) return null
@@ -84,6 +85,8 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
   const C_RE = /^(?:\(?([A-Fa-f])\)?)\s*[.):\s-]\s+(.+)/
   const isC  = (l: string) => C_RE.test(strip(l)) && strip(l).length > 3
   const getC = (l: string) => { const m = strip(l).match(C_RE); return m ? { letter: m[1].toUpperCase(), text: strip(m[2]) } : null }
+  const PAIR_RE = /^(?:\(?([A-Fa-f])\)?)\s*[.):\s-]\s+(.+?)\s*(?:→|->)\s*(.+)/
+  const getPair = (l: string) => { const m = strip(l).match(PAIR_RE); return m ? { left: strip(m[2]), right: strip(m[3]) } : null }
   const isSep  = (l: string) => !l.trim() || /^[-=*─═▬]{3,}$/.test(l.trim())
   const isSect = (l: string) => /^(?:Partie|Section|Exercice|Part)\s+(?:[IVX]+|\d+)/i.test(strip(l)) && !isQ(l)
   const INSTR_RE = /^(?:Défini[rz]|Expliqu[eé][rz]?|Décri[vz]|Analys[eé][rz]?|Calcul[eé][rz]?|Rédig[eé][rz]?|Démontr[eé][rz]?|Comment[eé][rz]?|Identifi[eé][rz]?|Justifi[eé][rz]?|Compar[eé][rz]?|Présent[eé][rz]?|Discut[eé][rz]?|Montr[eé][rz]?|Propos[eé][rz]?|Cit[eé][rz]?|Donner?)/i
@@ -100,12 +103,21 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
     if (isSep(lines[i]) && !isQ(lines[i])) { i++; continue }
     if (!isQ(lines[i])) { i++; continue }
     const q = getQ(lines[i]); if (!q) { i++; continue }
+    const isPairMode = q.markerType === 'APPARIEMENT'
     i++
     const extraLines: string[] = []; const choices: { letter: string; text: string }[] = []
+    const pairs: { left: string; right: string }[] = []
     while (i < lines.length) {
-      if (isSep(lines[i])) { i++; if (choices.length >= 2) break; continue }
+      if (isSep(lines[i])) { i++; if (choices.length >= 2 || pairs.length >= 2) break; continue }
       if (isSect(lines[i]) && !isQ(lines[i])) break
       if (isQ(lines[i]) && !isC(lines[i])) break
+      if (isPairMode) {
+        const p = getPair(lines[i])
+        if (p) { pairs.push(p); i++ }
+        else if (pairs.length === 0) { extraLines.push(lines[i]); i++ }
+        else break
+        continue
+      }
       const c = getC(lines[i])
       if (c) { choices.push(c); i++ }
       else if (choices.length === 0) { extraLines.push(lines[i]); i++ }
@@ -114,8 +126,12 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
     let type: ParsedBlock['type']
     if (q.markerType) {
       if (q.markerType === 'QCM') type = 'qcm'
+      else if (q.markerType === 'QCM_MULTI') type = 'qcm_multi'
       else if (q.markerType === 'VF') type = 'vf'
       else if (q.markerType === 'SUBOPEN') type = 'subopen'
+      else if (q.markerType === 'APPARIEMENT') type = 'appariement'
+      else if (q.markerType === 'CODE') type = 'code'
+      else if (q.markerType === 'PHOTO') type = 'photo'
       else type = 'open'
     } else {
       const hasPtsChoices = choices.some(c => /\(\s*\d+\s*pts?\s*\)/i.test(c.text))
@@ -125,7 +141,7 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       else if (VF_RE.test(q.text) || VF_RE.test(extraLines.join(' '))) type = 'vf'
       else type = 'open'
     }
-    blocks.push({ type, num: q.num, text: q.text, extraLines, choices })
+    blocks.push({ type, num: q.num, text: q.text, extraLines, choices, pairs: pairs.length ? pairs : undefined })
   }
   return blocks
 }
@@ -241,9 +257,10 @@ export default function ExamPage() {
     if (!exam?.randomize_questions) return // respecter le réglage professeur (désactivé par défaut)
     // Parsed blocks — mélanger les QCM (ordre + choix), garder les questions ouvertes en place
     if (parsedBlocks.length > 0) {
-      const qcmBlocks  = fisherYates(parsedBlocks.filter(b => b.type === 'qcm' || b.type === 'vf'))
-        .map(b => b.type === 'qcm' && b.choices ? { ...b, choices: fisherYates(b.choices) } : b)
-      const openBlocks = parsedBlocks.filter(b => b.type !== 'qcm' && b.type !== 'vf')
+      const isP1 = (b: ParsedBlock) => b.type === 'qcm' || b.type === 'qcm_multi' || b.type === 'vf' || b.type === 'appariement'
+      const qcmBlocks  = fisherYates(parsedBlocks.filter(isP1))
+        .map(b => (b.type === 'qcm' || b.type === 'qcm_multi') && b.choices ? { ...b, choices: fisherYates(b.choices) } : b)
+      const openBlocks = parsedBlocks.filter(b => !isP1(b))
       setShuffledBlocks([...qcmBlocks, ...openBlocks])
     }
     // Questions structurées — mélanger QCM séparément des ouvertes, mélanger les choix QCM
@@ -1009,9 +1026,9 @@ export default function ExamPage() {
   if(phase==='exam'&&exam) {
     const displayBlocks = shuffledBlocks.length > 0 ? shuffledBlocks : parsedBlocks
     const structuredQs  = shuffledQs.length > 0 ? shuffledQs : (exam.questions??[])
-    const p1Blocks      = displayBlocks.filter(b=>b.type==='qcm'||b.type==='vf')
-    const p2Items       = displayBlocks.filter(b=>b.type==='section'||b.type==='open'||b.type==='subopen')
-    const p2Blocks      = displayBlocks.filter(b=>b.type==='open'||b.type==='subopen')
+    const p1Blocks      = displayBlocks.filter(b=>b.type==='qcm'||b.type==='qcm_multi'||b.type==='vf'||b.type==='appariement')
+    const p2Items       = displayBlocks.filter(b=>b.type==='section'||b.type==='open'||b.type==='subopen'||b.type==='code'||b.type==='photo')
+    const p2Blocks      = displayBlocks.filter(b=>b.type==='open'||b.type==='subopen'||b.type==='code'||b.type==='photo')
     const allQBlocks    = displayBlocks.filter(b=>b.type!=='text'&&b.type!=='section')
     const hasParsed    = allQBlocks.length>0
     const perPage      = exam.questions_per_page && exam.questions_per_page>0 ? exam.questions_per_page : Infinity
@@ -1022,6 +1039,7 @@ export default function ExamPage() {
     const structAnswered = structuredQs.filter(q=>(answers[q.id.toString()]??'').trim()!=='').length
     const parsedAnswered = allQBlocks.filter(b=>{
       if(b.type==='subopen') return b.choices?.some(c=>(answers[`pq_${b.num}_${c.letter}`]??'').trim()!=='')
+      if(b.type==='appariement') return b.pairs?.some((_,i)=>(answers[`pq_${b.num}_${i}`]??'').trim()!=='')
       return (answers[`pq_${b.num}`]??'').trim()!==''
     }).length
 
@@ -1211,7 +1229,7 @@ export default function ExamPage() {
                           {/* Pastilles — une par question, clic saute à sa page */}
                           <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'center'}}>
                             {p1Blocks.map((b,i)=>{
-                              const ok=(answers[`pq_${b.num}`]??'').trim()!==''
+                              const ok=b.type==='appariement'?(b.pairs?.some((_,pi)=>(answers[`pq_${b.num}_${pi}`]??'').trim()!=='')??false):(answers[`pq_${b.num}`]??'').trim()!==''
                               const pageOf=Math.floor(i/(isFinite(perPage)?perPage:p1Blocks.length))
                               const cur=pageOf===qcmIdx
                               return <span key={i} onClick={()=>{setQcmIdx(pageOf);saveNow()}} title={`Q${i+1} (page ${pageOf+1})`}
@@ -1222,7 +1240,7 @@ export default function ExamPage() {
                           </div>
                         </div>
                       )}
-                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers}/>)}
+                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current}/>)}
                       {p1Pages.length<=1&&p2Blocks.length>0&&!showPart2&&(
                         <button onClick={()=>setShowPart2(true)} style={{marginTop:8,background:'#10b981',border:'none',color:'#fff',borderRadius:8,padding:'10px 18px',cursor:'pointer',fontSize:13,fontWeight:600}}>
                           <i className="fas fa-arrow-right"/> Passer aux questions ouvertes
@@ -1240,7 +1258,7 @@ export default function ExamPage() {
                       </div>
                       {(p2Pages[p2PageIdx]??p2Items).map((b,i)=>{
                         if(b.type==='section') return <div key={i} style={{margin:'18px 0 10px',padding:'10px 16px',background:'#f1f5f9',borderRadius:8,fontWeight:700,fontSize:14,color:'#334155',borderLeft:'4px solid #94a3b8'}}><i className="fas fa-layer-group" style={{color:'#64748b',marginRight:8}}/>{b.title}</div>
-                        return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers}/>
+                        return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current}/>
                       })}
                       {p2Pages.length>1&&(
                         <div style={{display:'flex',alignItems:'center',gap:10,marginTop:16}}>
@@ -1441,10 +1459,53 @@ function SQ({q,idx,answers,setAnswers}:{q:Question;idx:number;answers:Record<str
 }
 
 /* Question parsée (contenu brut) */
-function PQ({block,answers,setAnswers,onAnswer}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:()=>void}) {
-  const isOpen=block.type==='open'||block.type==='subopen'
+/* Réponse par upload de fichier (photo/scan) — Maths et programmation manuscrits, etc. */
+function PhotoAnswer({value,onChange,attemptId}:{value:string;onChange:(v:string)=>void;attemptId?:number|null}) {
+  const [uploading,setUploading]=useState(false)
+  const [err,setErr]=useState('')
+  const fileRef=useRef<HTMLInputElement>(null)
+  async function handleFile(f:File) {
+    if(!attemptId){setErr('Tentative non initialisée');return}
+    setUploading(true);setErr('')
+    const fd=new FormData();fd.append('file',f)
+    try{
+      const res=await api.upload<{key:string}>(`/api/exam_attempts/${attemptId}/upload_answer_file`,fd)
+      onChange(res.key)
+    }catch(e:any){setErr(e.message||'Échec de l\'envoi')}
+    finally{setUploading(false)}
+  }
+  return(
+    <div>
+      {value?(
+        <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 16px',background:'#f0fdf4',border:'1.5px solid #86efac',borderRadius:10}}>
+          <i className="fas fa-check-circle" style={{color:'#10b981',fontSize:16}}/>
+          <span style={{fontSize:13,color:'#065f46',flex:1,fontWeight:600}}>Fichier envoyé</span>
+          <button onClick={()=>fileRef.current?.click()} disabled={uploading}
+            style={{padding:'6px 14px',background:'#fff',border:'1px solid #86efac',borderRadius:7,color:'#065f46',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+            {uploading?'Envoi…':'Changer'}
+          </button>
+        </div>
+      ):(
+        <button onClick={()=>fileRef.current?.click()} disabled={uploading}
+          style={{width:'100%',padding:'16px',background:'#f8fafc',border:'2px dashed #cbd5e1',borderRadius:10,color:'#475569',fontSize:14,fontWeight:600,cursor:uploading?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          <i className={`fas ${uploading?'fa-spinner fa-spin':'fa-camera'}`}/>
+          {uploading?'Envoi en cours…':'Choisir une photo ou un fichier'}
+        </button>
+      )}
+      {err&&<div style={{fontSize:12,color:'#ef4444',marginTop:6}}><i className="fas fa-exclamation-circle"/> {err}</div>}
+      <input ref={fileRef} type="file" accept="image/*,.pdf" style={{display:'none'}}
+        onChange={e=>{const f=e.target.files?.[0];if(f)handleFile(f)}}/>
+    </div>
+  )
+}
+
+function PQ({block,answers,setAnswers,onAnswer,attemptId}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:()=>void;attemptId?:number|null}) {
+  const isOpen=block.type==='open'||block.type==='subopen'||block.type==='code'||block.type==='photo'
   const key=`pq_${block.num}`
-  const answered=block.type==='subopen'?block.choices?.some(c=>(answers[`${key}_${c.letter}`]??'').trim()!==''):(answers[key]??'').trim()!==''
+  const answered=block.type==='subopen'?block.choices?.some(c=>(answers[`${key}_${c.letter}`]??'').trim()!==''):
+    block.type==='appariement'?(block.pairs?.every((_,i)=>(answers[`${key}_${i}`]??'').trim()!=='')??false):
+    (answers[key]??'').trim()!==''
+  const TYPE_LABEL:Record<string,string>={vf:'V/F',qcm:'QCU',qcm_multi:'QCM',subopen:'Structuré',appariement:'Appariement',code:'Code / Maths',photo:'Photo'}
   return(
     <div style={{border:`2px solid ${answered?'#10b981':'#e2e8f0'}`,borderRadius:16,padding:'22px 24px',background:'#fff',boxShadow:'0 2px 8px rgba(0,0,0,.05)',marginBottom:16,transition:'border-color .2s'}}>
       <div style={{display:'flex',alignItems:'flex-start',gap:12,marginBottom:16}}>
@@ -1454,7 +1515,7 @@ function PQ({block,answers,setAnswers,onAnswer}:{block:ParsedBlock;answers:Recor
           {block.extraLines&&block.extraLines.filter(l=>l.trim()).length>0&&<div style={{fontSize:14,color:'#475569',marginTop:6}}>{block.extraLines.filter(l=>l.trim()).map((l,i)=><span key={i}>{l}<br/></span>)}</div>}
         </div>
         <span style={{padding:'2px 8px',borderRadius:99,fontSize:11,fontWeight:700,flexShrink:0,background:isOpen?'#ecfdf5':'#eff6ff',color:isOpen?'#065f46':'#1e40af'}}>
-          {block.type==='vf'?'V/F':block.type==='qcm'?'QCM':block.type==='subopen'?'Structuré':'Ouvert'}
+          {TYPE_LABEL[block.type]??'Ouvert'}
         </span>
       </div>
       {block.type==='vf'&&(
@@ -1481,6 +1542,56 @@ function PQ({block,answers,setAnswers,onAnswer}:{block:ParsedBlock;answers:Recor
             )
           })}
         </div>
+      )}
+      {block.type==='qcm_multi'&&block.choices&&(
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          <div style={{fontSize:12,color:'#64748b',marginBottom:2}}><i className="fas fa-info-circle"/> Plusieurs réponses possibles</div>
+          {block.choices.map((c,ci)=>{
+            const colors={A:'#3b82f6',B:'#10b981',C:'#f59e0b',D:'#ef4444',E:'#0891b2',F:'#f97316'} as Record<string,string>
+            const col=colors[c.letter]||'#3b82f6'
+            const selLetters=(answers[key]??'').split(',').map(s=>s.trim()).filter(Boolean)
+            const sel=selLetters.includes(c.letter)
+            const toggle=()=>{
+              const next=sel?selLetters.filter(l=>l!==c.letter):[...selLetters,c.letter]
+              setAnswers(p=>({...p,[key]:next.sort().join(',')}));onAnswer?.()
+            }
+            return(
+              <label key={ci} onClick={toggle} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',transition:'all .18s',userSelect:'none'}}>
+                <span style={{width:22,height:22,borderRadius:6,border:`2px solid ${sel?col:'#cbd5e1'}`,background:sel?col:'#fff',color:'#fff',display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:13}}>{sel&&<i className="fas fa-check"/>}</span>
+                <span style={{width:28,height:28,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:13,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{c.letter}</span>
+                <span style={{fontSize:15,color:'#1e293b',flex:1,lineHeight:1.5}}>{c.text}</span>
+              </label>
+            )
+          })}
+        </div>
+      )}
+      {block.type==='appariement'&&block.pairs&&(
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          {block.pairs.map((pr,i)=>{
+            const sk=`${key}_${i}`;const sv=answers[sk]??''
+            return(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:12}}>
+                <div style={{flex:1,padding:'12px 16px',border:'1.5px solid #e2e8f0',borderRadius:10,background:'#f8fafc',fontSize:14,color:'#0f172a',fontWeight:600}}>{pr.left}</div>
+                <i className="fas fa-arrow-right" style={{color:'#94a3b8',flexShrink:0}}/>
+                <select value={sv} onChange={e=>{setAnswers(p=>({...p,[sk]:e.target.value}));onAnswer?.()}}
+                  style={{flex:1,padding:'12px 14px',border:`1.5px solid ${sv?'#10b981':'#e2e8f0'}`,borderRadius:10,fontSize:14,color:'#0f172a',background:'#fff',outline:'none'}}>
+                  <option value="">— Choisir —</option>
+                  {block.pairs!.map((p2,j)=><option key={j} value={p2.right}>{p2.right}</option>)}
+                </select>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {block.type==='code'&&(
+        <textarea value={answers[key]??''} onChange={e=>setAnswers(p=>({...p,[key]:e.target.value}))} rows={10} spellCheck={false}
+          placeholder={`Rédigez votre réponse (code / démonstration) à la question ${block.num}…`}
+          style={{width:'100%',padding:'12px 14px',border:'1.5px solid #e2e8f0',borderRadius:8,fontSize:13,fontFamily:"'Courier New',monospace",whiteSpace:'pre',resize:'vertical',color:'#0f172a',outline:'none',boxSizing:'border-box',lineHeight:1.6,background:'#0f172a08',tabSize:2}}
+          onFocus={e=>{(e.target as HTMLElement).style.borderColor='#3b82f6'}}
+          onBlur={e=>{(e.target as HTMLElement).style.borderColor=(answers[key]?.trim()?'#10b981':'#e2e8f0')}}/>
+      )}
+      {block.type==='photo'&&(
+        <PhotoAnswer value={answers[key]??''} onChange={v=>{setAnswers(p=>({...p,[key]:v}));onAnswer?.()}} attemptId={attemptId}/>
       )}
       {block.type==='open'&&(
         <textarea value={answers[key]??''} onChange={e=>setAnswers(p=>({...p,[key]:e.target.value}))} rows={6} placeholder={`Rédigez votre réponse à la question ${block.num}…`}
