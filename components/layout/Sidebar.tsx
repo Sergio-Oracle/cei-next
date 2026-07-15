@@ -24,6 +24,7 @@ const adminNav: NavEntry[] = [
   { label: 'Utilisateurs',        href: '/dashboard/admin/users',          icon: 'fa-users' },
   { label: 'Maquette',            href: '/dashboard/admin/formations',     icon: 'fa-layer-group' },
   { label: 'Affectations EC',     href: '/dashboard/admin/affectations',   icon: 'fa-link' },
+  { label: 'Groupes Surveillants',href: '/dashboard/admin/proctor-groups', icon: 'fa-user-shield' },
   { label: 'Inscriptions UE',     href: '/dashboard/admin/enrollments',    icon: 'fa-user-graduate' },
   { divider: 'Sujets & Examens' },
   { label: 'Générer Suggestions', href: '/dashboard/admin/suggestions',    icon: 'fa-magic' },
