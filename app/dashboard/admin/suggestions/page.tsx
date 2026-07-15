@@ -67,6 +67,12 @@ export default function AdminSuggestionsPage() {
   const [bankSaveEc,    setBankSaveEc]    = useState('')
   const [bankSaving,    setBankSaving]    = useState(false)
 
+  /* générer d'autres questions — point 3 des notes de tests */
+  const [showMoreModal,  setShowMoreModal]  = useState(false)
+  const [moreCount,      setMoreCount]      = useState(3)
+  const [moreType,       setMoreType]       = useState('QCM')
+  const [generatingMore, setGeneratingMore] = useState(false)
+
   const fileRef = useRef<HTMLInputElement>(null)
 
   /* form fields */
@@ -172,6 +178,28 @@ export default function AdminSuggestionsPage() {
       success('Sujet enregistré avec succès')
     } catch (e: any) { toastErr(e.message || 'Erreur enregistrement') }
     finally { setSavingSubject(false) }
+  }
+
+  /* ── Générer d'autres questions à ajouter au sujet ── */
+  async function handleGenerateMore() {
+    setGeneratingMore(true)
+    try {
+      const data = await api.post<{ success: boolean; new_content: string; count_generated: number; duplicates: { similarity: number }[] }>(
+        '/api/subjects/generate-more-questions',
+        { existing_content: previewContent, count: moreCount, question_type: moreType, title: previewTitle, student_level: level, difficulty }
+      )
+      setPreviewContent(p => `${p.trimEnd()}\n\n${data.new_content}`)
+      setShowMoreModal(false)
+      if (data.duplicates && data.duplicates.length > 0) {
+        toastErr(`${data.count_generated} question(s) ajoutée(s) — ⚠ ${data.duplicates.length} ressemble(nt) à des questions existantes (${data.duplicates[0].similarity}% similaire)`)
+      } else {
+        success(`${data.count_generated} question(s) ajoutée(s) au sujet`)
+      }
+    } catch (e: any) {
+      toastErr(e.message || 'Erreur lors de la génération des questions supplémentaires')
+    } finally {
+      setGeneratingMore(false)
+    }
   }
 
   /* ── Basket ── */
@@ -345,6 +373,9 @@ export default function AdminSuggestionsPage() {
           <button onClick={openBankModal} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bfdbfe', background:'#eff6ff', color:'var(--primary)', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer' }}>
             <i className="fas fa-database" /> Banque
           </button>
+          <button onClick={() => setShowMoreModal(true)} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #ddd6fe', background:'#f5f3ff', color:'#6d28d9', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+            <i className="fas fa-wand-magic-sparkles" /> Générer d'autres questions
+          </button>
           <button onClick={handleSaveSubject} disabled={savingSubject} className="btn btn-primary" style={{ fontSize:13, minWidth:180 }}>
             {savingSubject ? <><i className="fas fa-spinner fa-spin" style={{ marginRight:6 }} />Enregistrement…</> : <><i className="fas fa-save" style={{ marginRight:6 }} />Enregistrer ce Sujet</>}
           </button>
@@ -389,6 +420,63 @@ export default function AdminSuggestionsPage() {
                 {bankSaving ? <><i className="fas fa-spinner fa-spin" style={{ marginRight:6 }} />Sauvegarde…</> : <><i className="fas fa-database" style={{ marginRight:6 }} />Sauvegarder</>}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* GÉNÉRER D'AUTRES QUESTIONS MODAL */}
+      {showMoreModal && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
+          onClick={e => { if (e.target===e.currentTarget && !generatingMore) setShowMoreModal(false) }}>
+          <div style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:440, boxShadow:'var(--shadow-lg)', overflow:'hidden' }}>
+            <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 }}>
+              <i className="fas fa-wand-magic-sparkles" style={{ color:'#6d28d9', fontSize:16 }} />
+              <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Générer d'autres questions</h3>
+              {!generatingMore && <button onClick={() => setShowMoreModal(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>}
+            </div>
+            {generatingMore ? (
+              <div style={{ padding:'32px 22px', display:'flex', flexDirection:'column', alignItems:'center', gap:14, textAlign:'center' }}>
+                <i className="fas fa-wand-magic-sparkles fa-spin" style={{ fontSize:28, color:'#6d28d9' }} />
+                <div>
+                  <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>Génération en cours…</div>
+                  <div style={{ fontSize:12, color:'var(--text-muted)' }}>L'IA rédige {moreCount} nouvelle{moreCount>1?'s':''} question{moreCount>1?'s':''} en évitant les doublons avec le sujet existant.</div>
+                </div>
+              </div>
+            ) : (<>
+              <div style={{ padding:'18px 22px', display:'flex', flexDirection:'column', gap:14 }}>
+                <p style={{ margin:0, fontSize:13, color:'var(--text-muted)' }}>
+                  Les nouvelles questions seront <strong>ajoutées</strong> à la fin du sujet actuel (rien n'est remplacé).
+                </p>
+                <div>
+                  <label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:8 }}>
+                    <i className="fas fa-list-check" style={{ color:'#6d28d9', marginRight:6 }} />Type de question
+                  </label>
+                  <select value={moreType} onChange={e => setMoreType(e.target.value)}
+                    style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }}>
+                    <option value="QCM">QCU (choix unique)</option>
+                    <option value="QCM_MULTI">QCM (réponses multiples)</option>
+                    <option value="VF">Vrai / Faux</option>
+                    <option value="OUVERT">Question ouverte</option>
+                    <option value="APPARIEMENT">Appariement</option>
+                    <option value="CODE">Maths et programmation</option>
+                    <option value="PHOTO">Photo / Scan</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:8 }}>
+                    <i className="fas fa-hashtag" style={{ color:'#6d28d9', marginRight:6 }} />Nombre de questions
+                  </label>
+                  <input type="number" min={1} max={10} value={moreCount} onChange={e => setMoreCount(Math.max(1, Math.min(10, Number(e.target.value))))}
+                    style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }} />
+                </div>
+              </div>
+              <div style={{ padding:'14px 22px', borderTop:'1px solid var(--border)', display:'flex', gap:10, justifyContent:'flex-end' }}>
+                <button onClick={() => setShowMoreModal(false)} className="btn btn-secondary">Annuler</button>
+                <button onClick={handleGenerateMore} style={{ minWidth:150, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'9px 18px', border:'none', background:'#6d28d9', color:'#fff', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                  <i className="fas fa-wand-magic-sparkles" /> Générer
+                </button>
+              </div>
+            </>)}
           </div>
         </div>
       )}
