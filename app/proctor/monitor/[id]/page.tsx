@@ -267,7 +267,19 @@ export default function ProctorMonitorPage() {
       roomRef.current?.disconnect()
       privateRoomRef.current?.disconnect()
     }
-  }, [loadData, loadAgent]) // eslint-disable-line
+  }, []) // eslint-disable-line
+
+  /* Heartbeat périodique — tant qu'un surveillant garde cette page ouverte, le
+     backend sait qu'il est toujours en ligne. Si les heartbeats cessent, ses
+     étudiants sont automatiquement réaffectés aux autres surveillants (Notes
+     point 11 — bascule dynamique en cas de déconnexion). */
+  useEffect(() => {
+    if (data?.my_role !== 'surveillant') return
+    const send = () => { api.post(`/api/online_exams/${id}/proctor_heartbeat`, {}).catch(() => {}) }
+    send()
+    const hb = setInterval(send, 30_000)
+    return () => clearInterval(hb)
+  }, [data?.my_role, id])
 
   /* ── LiveKit ────────────────────────────────────────────────────────────── */
 
