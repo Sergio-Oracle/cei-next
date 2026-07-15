@@ -28,6 +28,7 @@ interface ParsedBlock {
   content?: string; title?: string; num?: string; text?: string
   extraLines?: string[]; choices?: { letter: string; text: string }[]
   pairs?: { left: string; right: string }[]
+  media?: { type: 'image' | 'audio'; filename: string }[]
 }
 type Phase = 'loading' | 'instructions' | 'permissions' | 'exam' | 'submitted' | 'unsupported'
 
@@ -146,7 +147,16 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       else if (VF_RE.test(q.text) || VF_RE.test(extraLines.join(' '))) type = 'vf'
       else type = 'open'
     }
-    blocks.push({ type, num: q.num, text: q.text, extraLines, choices, pairs: pairs.length ? pairs : undefined })
+    // Extraire les marqueurs [IMAGE:fichier]/[AUDIO:fichier] des lignes annexes
+    // (Notes points 2/15) — ne pas les afficher comme texte brut
+    const MEDIA_RE = /^\[(IMAGE|AUDIO):(.+)\]$/i
+    const media: { type: 'image' | 'audio'; filename: string }[] = []
+    const cleanExtraLines = extraLines.filter(l => {
+      const m = strip(l).match(MEDIA_RE)
+      if (m) { media.push({ type: m[1].toLowerCase() as 'image' | 'audio', filename: m[2].trim() }); return false }
+      return true
+    })
+    blocks.push({ type, num: q.num, text: q.text, extraLines: cleanExtraLines, choices, pairs: pairs.length ? pairs : undefined, media: media.length ? media : undefined })
   }
   return blocks
 }
@@ -162,6 +172,7 @@ export default function ExamPage() {
   const [attempt,      setAttempt]      = useState<Attempt | null>(null)
   const [answers,      setAnswers]      = useState<Record<string, string>>({})
   const [parsedBlocks,   setParsedBlocks]   = useState<ParsedBlock[]>([])
+  const [mediaMap,       setMediaMap]       = useState<Record<string, string>>({})
   const [shuffledBlocks, setShuffledBlocks] = useState<ParsedBlock[]>([])
   const [shuffledQs,     setShuffledQs]     = useState<Question[]>([])
   const [qcmIdx,         setQcmIdx]         = useState(0)   // page courante — Partie 1 (QCM/VF)
@@ -244,6 +255,15 @@ export default function ExamPage() {
       } catch (e:any) { toastErr(e.message||'Erreur chargement'); router.push('/dashboard/student') }
     })()
   }, [id]) // eslint-disable-line
+
+  /* ── Médias insérés dans le sujet (images/audio) — Notes points 2/15 ───── */
+  useEffect(() => {
+    const subjectId = exam?.subject_content && typeof exam.subject_content === 'object' ? exam.subject_content.id : null
+    if (!subjectId) return
+    api.get<{ filename: string; url: string }[]>(`/api/subjects/${subjectId}/media`)
+      .then(rows => setMediaMap(Object.fromEntries(rows.filter(r => r.url).map(r => [r.filename, r.url]))))
+      .catch(() => {})
+  }, [exam])
 
   /* ── Parser le contenu si pas de questions structurées ───────────────── */
   useEffect(() => {
@@ -1245,7 +1265,7 @@ export default function ExamPage() {
                           </div>
                         </div>
                       )}
-                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current}/>)}
+                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current} mediaMap={mediaMap}/>)}
                       {p1Pages.length<=1&&p2Blocks.length>0&&!showPart2&&(
                         <button onClick={()=>setShowPart2(true)} style={{marginTop:8,background:'#10b981',border:'none',color:'#fff',borderRadius:8,padding:'10px 18px',cursor:'pointer',fontSize:13,fontWeight:600}}>
                           <i className="fas fa-arrow-right"/> Passer aux questions ouvertes
@@ -1263,7 +1283,7 @@ export default function ExamPage() {
                       </div>
                       {(p2Pages[p2PageIdx]??p2Items).map((b,i)=>{
                         if(b.type==='section') return <div key={i} style={{margin:'18px 0 10px',padding:'10px 16px',background:'#f1f5f9',borderRadius:8,fontWeight:700,fontSize:14,color:'#334155',borderLeft:'4px solid #94a3b8'}}><i className="fas fa-layer-group" style={{color:'#64748b',marginRight:8}}/>{b.title}</div>
-                        return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current}/>
+                        return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current} mediaMap={mediaMap}/>
                       })}
                       {p2Pages.length>1&&(
                         <div style={{display:'flex',alignItems:'center',gap:10,marginTop:16}}>
@@ -1504,7 +1524,7 @@ function PhotoAnswer({value,onChange,attemptId}:{value:string;onChange:(v:string
   )
 }
 
-function PQ({block,answers,setAnswers,onAnswer,attemptId}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:()=>void;attemptId?:number|null}) {
+function PQ({block,answers,setAnswers,onAnswer,attemptId,mediaMap}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:()=>void;attemptId?:number|null;mediaMap?:Record<string,string>}) {
   const isOpen=block.type==='open'||block.type==='subopen'||block.type==='code'||block.type==='photo'
   const key=`pq_${block.num}`
   // Mélange stable (par instance de bloc) des choix de droite de l'appariement,
@@ -1531,6 +1551,19 @@ function PQ({block,answers,setAnswers,onAnswer,attemptId}:{block:ParsedBlock;ans
           {TYPE_LABEL[block.type]??'Ouvert'}
         </span>
       </div>
+      {block.media&&block.media.length>0&&(
+        <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:16}}>
+          {block.media.map((m,i)=>{
+            const url=mediaMap?.[m.filename]
+            if(!url) return null
+            return m.type==='image'?(
+              <img key={i} src={url} alt={m.filename} style={{maxWidth:'100%',maxHeight:360,borderRadius:10,border:'1px solid #e2e8f0',objectFit:'contain'}}/>
+            ):(
+              <audio key={i} src={url} controls style={{width:'100%'}}/>
+            )
+          })}
+        </div>
+      )}
       {block.type==='vf'&&(
         <div style={{display:'flex',gap:12}}>
           {['Vrai','Faux'].map(opt=>{const sel=answers[key]===opt;const col=SELECTED_COLOR;return(

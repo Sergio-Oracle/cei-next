@@ -73,6 +73,13 @@ export default function AdminSuggestionsPage() {
   const [moreType,       setMoreType]       = useState('QCM')
   const [generatingMore, setGeneratingMore] = useState(false)
 
+  /* médias (image/audio) insérés dans le sujet — Notes points 2/15 */
+  const [mediaLinkKey,  setMediaLinkKey]  = useState('')
+  const [uploadingMedia, setUploadingMedia] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const audioInputRef = useRef<HTMLInputElement>(null)
+  const previewTextareaRef = useRef<HTMLTextAreaElement>(null)
+
   const fileRef = useRef<HTMLInputElement>(null)
 
   /* form fields */
@@ -172,6 +179,7 @@ export default function AdminSuggestionsPage() {
         rubric_override: previewRubric,
         ec_id:           ecId ? Number(ecId) : null,
         metadata:        { generated_by_ai: true },
+        media_link_key:  mediaLinkKey || undefined,
       })
       setCreatedSubject(res.subject)
       setStep('created')
@@ -181,6 +189,34 @@ export default function AdminSuggestionsPage() {
   }
 
   /* ── Générer d'autres questions à ajouter au sujet ── */
+  /* ── Insérer une image/audio dans le sujet en cours de composition ── */
+  async function handleMediaUpload(file: File, mediaType: 'image' | 'audio') {
+    setUploadingMedia(true)
+    try {
+      let linkKey = mediaLinkKey
+      if (!linkKey) { linkKey = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`; setMediaLinkKey(linkKey) }
+      const fd = new FormData()
+      fd.append('media_type', mediaType)
+      fd.append('link_key', linkKey)
+      fd.append('file', file)
+      const res = await api.upload<{ success: boolean; media: { marker: string; filename: string } }>('/api/subjects/upload_media', fd)
+      const ta = previewTextareaRef.current
+      const insertion = `\n${res.media.marker}\n`
+      if (ta && document.activeElement === ta) {
+        const start = ta.selectionStart ?? previewContent.length
+        const end = ta.selectionEnd ?? previewContent.length
+        setPreviewContent(p => p.slice(0, start) + insertion + p.slice(end))
+      } else {
+        setPreviewContent(p => `${p.trimEnd()}\n${insertion}`)
+      }
+      success(`${mediaType === 'image' ? 'Image' : 'Audio'} inséré(e) : ${res.media.filename}`)
+    } catch (e: any) {
+      toastErr(e.message || 'Erreur upload média')
+    } finally {
+      setUploadingMedia(false)
+    }
+  }
+
   async function handleGenerateMore() {
     setGeneratingMore(true)
     try {
@@ -332,10 +368,25 @@ export default function AdminSuggestionsPage() {
               <i className="fas fa-robot" style={{ marginRight:4 }} />Généré par IA — modifiable
             </span>
           </div>
+          <div style={{ padding:'14px 14px 0', display:'flex', gap:8 }}>
+            <button type="button" onClick={() => imageInputRef.current?.click()} disabled={uploadingMedia}
+              style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #bfdbfe', background:'#eff6ff', color:'var(--primary)', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+              <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-image'}`} /> Insérer une image
+            </button>
+            <button type="button" onClick={() => audioInputRef.current?.click()} disabled={uploadingMedia}
+              style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #ddd6fe', background:'#f5f3ff', color:'#6d28d9', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+              <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-music'}`} /> Insérer un audio
+            </button>
+            <input ref={imageInputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image'); e.target.value = '' }} />
+            <input ref={audioInputRef} type="file" accept="audio/*" style={{ display:'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'audio'); e.target.value = '' }} />
+          </div>
           <div style={{ padding:'0 14px 14px' }}>
-            <textarea value={previewContent} onChange={e => setPreviewContent(e.target.value)} rows={14}
+            <textarea ref={previewTextareaRef} value={previewContent} onChange={e => setPreviewContent(e.target.value)} rows={14}
               style={{ width:'100%', padding:14, background:'var(--background)', borderRadius:8, fontFamily:'monospace', fontSize:13, lineHeight:1.7, border:'1px solid var(--border)', resize:'vertical', boxSizing:'border-box', outline:'none', color:'var(--text)', marginTop:14, transition:'border-color .2s' }}
               onFocus={e=>e.target.style.borderColor='var(--primary)'} onBlur={e=>e.target.style.borderColor='var(--border)'} />
+            <p style={{ margin:'6px 0 0', fontSize:11, color:'var(--text-muted)' }}>
+              <i className="fas fa-info-circle" style={{ marginRight:4 }} />Le marqueur <code>[IMAGE:...]</code>/<code>[AUDIO:...]</code> inséré s'affichera à côté de la question pendant l'examen.
+            </p>
           </div>
         </div>
 
