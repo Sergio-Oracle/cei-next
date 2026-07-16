@@ -32,6 +32,7 @@ type ModalKind =
   | 'create_ue'        | 'edit_ue'
   | 'create_ec'        | 'edit_ec'
   | 'import_csv'
+  | 'import_excel'
 
 interface ModalState {
   kind: ModalKind
@@ -81,6 +82,12 @@ export default function AdminFormationsPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<any>(null)
+
+  // Import Excel maquette (format réel école — UE/EC avec CC/EX imbriqués)
+  const [excelSemesterId, setExcelSemesterId] = useState('')
+  const [excelFile, setExcelFile] = useState<File | null>(null)
+  const [excelPreview, setExcelPreview] = useState<any>(null)
+  const [excelBusy, setExcelBusy] = useState(false)
   // Pour la gestion inline des pôles
   const [poleForm, setPoleForm] = useState({ code: '', name: '', description: '' })
   const [poleSubmitting, setPoleSubmitting] = useState(false)
@@ -301,6 +308,34 @@ export default function AdminFormationsPage() {
     finally { setImporting(false) }
   }
 
+  async function handleExcelPreview() {
+    if (!excelSemesterId) { error('Sélectionnez le semestre cible'); return }
+    if (!excelFile) { error('Sélectionnez un fichier Excel'); return }
+    setExcelBusy(true)
+    const fd = new FormData()
+    fd.append('semester_id', excelSemesterId)
+    fd.append('file', excelFile)
+    try {
+      const res = await api.upload<any>('/api/admin/maquette/import-excel-preview', fd)
+      setExcelPreview(res)
+    } catch (e: any) { error(e.message) }
+    finally { setExcelBusy(false) }
+  }
+
+  async function handleExcelConfirm() {
+    if (!excelPreview) return
+    setExcelBusy(true)
+    try {
+      const res = await api.post<any>('/api/admin/maquette/import-excel-confirm', {
+        semester_id: excelPreview.semester_id, ues: excelPreview.ues,
+      })
+      success(`Import réussi — UEs créées: ${res.created_ues}, ECs créés: ${res.created_ecs}${res.skipped_existing ? `, ${res.skipped_existing} EC(s) déjà existant(s) ignoré(s)` : ''}`)
+      setModal(null); setExcelPreview(null); setExcelFile(null); setExcelSemesterId('')
+      load()
+    } catch (e: any) { error(e.message) }
+    finally { setExcelBusy(false) }
+  }
+
   /* ── Open helpers ─────────────────────────────────────────────────────────── */
   function openCreate(kind: ModalKind, extra?: Partial<ModalState>) {
     const defaults: Record<string, any> = {
@@ -325,6 +360,10 @@ export default function AdminFormationsPage() {
   }
   const unassigned = formations.filter(f => !assigned.has(f.id))
   if (unassigned.length > 0) formationsByPole.push({ pole: null, formations: unassigned })
+
+  const allSemesters = formations.flatMap(f => f.semesters.map(s => ({
+    id: s.id, label: `${f.name} — ${s.name || `Semestre ${s.number}`}`,
+  })))
 
   /* ── Render ───────────────────────────────────────────────────────────────── */
   return (
@@ -406,6 +445,11 @@ export default function AdminFormationsPage() {
             <button onClick={() => { setModal({ kind: 'import_csv' }); setCsvFile(null); setImportResult(null) }}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
               <i className="fas fa-file-csv" /> Import CSV
+            </button>
+            <button onClick={() => { setModal({ kind: 'import_excel' }); setExcelFile(null); setExcelPreview(null); setExcelSemesterId('') }}
+              title="Importer UE/EC depuis un fichier Excel au format officiel de l'établissement (dans un semestre déjà créé)"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#7c3aed', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              <i className="fas fa-file-excel" /> Importer Excel (UE/EC)
             </button>
           </div>
         </div>
@@ -641,6 +685,99 @@ export default function AdminFormationsPage() {
               Annuler
             </button>
           </div>
+        </ModalOverlay>
+      )}
+
+      {/* ══ Modal Import Excel (format officiel école) ══════════════════════════ */}
+      {modal?.kind === 'import_excel' && (
+        <ModalOverlay onClose={() => setModal(null)} wide>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid var(--border)' }}>
+            <div style={{ width: 42, height: 42, borderRadius: 11, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fas fa-file-excel" style={{ color: '#7c3aed', fontSize: 17 }} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Importer UE/EC — Excel officiel</h3>
+              <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
+                Fichier au format réel de l&apos;établissement (colonnes Code/Nom/Crédit/Type UE puis Code/Nom/Coef EC, pourcentages CC/EX entre crochets dans le nom de l&apos;EC)
+              </p>
+            </div>
+          </div>
+
+          {!excelPreview ? (
+            <>
+              <div className="form-group" style={{ marginBottom: 16 }}>
+                <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Semestre cible *</label>
+                <select className="form-control" value={excelSemesterId} onChange={e => setExcelSemesterId(e.target.value)}>
+                  <option value="">— Sélectionner le semestre où importer —</option>
+                  {allSemesters.map(s => <option key={s.id} value={String(s.id)}>{s.label}</option>)}
+                </select>
+                {allSemesters.length === 0 && (
+                  <p style={{ fontSize: 12, color: '#b45309', marginTop: 6 }}>
+                    Créez d&apos;abord une formation et un semestre avant d&apos;importer.
+                  </p>
+                )}
+              </div>
+              <div className="form-group" style={{ marginBottom: 8 }}>
+                <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Fichier Excel (.xlsx) *</label>
+                <input type="file" accept=".xlsx,.xls" style={{ width: '100%', fontSize: 14, padding: '8px 0' }}
+                  onChange={e => setExcelFile(e.target.files?.[0] || null)} />
+              </div>
+              <div style={{ display: 'flex', gap: 10, paddingTop: 14 }}>
+                <button onClick={handleExcelPreview} disabled={excelBusy || !excelFile || !excelSemesterId}
+                  style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#7c3aed', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 700, opacity: (!excelFile || !excelSemesterId) ? .5 : 1 }}>
+                  <i className={`fas ${excelBusy ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} style={{ marginRight: 7 }} />
+                  {excelBusy ? 'Analyse…' : 'Analyser le fichier'}
+                </button>
+                <button onClick={() => setModal(null)}
+                  style={{ padding: '10px 22px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+                  Annuler
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#5b21b6' }}>
+                <strong>{excelPreview.ue_count} UE</strong> et <strong>{excelPreview.ec_count} EC</strong> détectés pour <strong>{excelPreview.semester_name}</strong> — vérifiez avant de valider.
+              </div>
+              <div style={{ maxHeight: '48vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {excelPreview.ues.map((u: any) => (
+                  <div key={u.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                    <div style={{ padding: '9px 14px', background: u.already_exists ? '#fef3c7' : '#f0fdf4', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <strong style={{ fontSize: 13 }}>{u.code}</strong>
+                      <span style={{ fontSize: 13 }}>{u.name}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{u.credits} crédits · {u.ue_type}</span>
+                      {u.already_exists && (
+                        <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: '#92400e' }}>
+                          <i className="fas fa-triangle-exclamation" /> UE déjà existante — ne sera pas recréée
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      {u.ecs.map((e: any) => (
+                        <div key={e.code} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, padding: '4px 0', color: e.already_exists ? 'var(--text-muted)' : 'var(--text)' }}>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{e.code}</span>
+                          <span style={{ flex: 1 }}>{e.name}</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Coef. {e.coefficient} · CC:{e.cc_percentage}% EX:{e.ex_percentage}%</span>
+                          {e.already_exists && <span style={{ fontSize: 11, fontWeight: 700, color: '#b45309' }}>déjà existant — ignoré</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 10, paddingTop: 16 }}>
+                <button onClick={handleExcelConfirm} disabled={excelBusy}
+                  style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+                  <i className={`fas ${excelBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 7 }} />
+                  {excelBusy ? 'Import…' : 'Confirmer l’import'}
+                </button>
+                <button onClick={() => setExcelPreview(null)}
+                  style={{ padding: '10px 22px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+                  <i className="fas fa-arrow-left" style={{ marginRight: 6 }} />Revenir
+                </button>
+              </div>
+            </>
+          )}
         </ModalOverlay>
       )}
     </div>
