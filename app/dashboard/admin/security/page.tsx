@@ -14,7 +14,10 @@ interface SecurityReport {
   event_summary: EventSummary[]
   high_risk: HighRiskAttempt[]
   banned_count: number
+  exam_id?: number | null
+  exam_title?: string | null
 }
+interface ExamOption { id: number; title: string }
 interface FaceRefData {
   student_name: string; exam_title: string
   image_data: string | null; image_url?: string | null; has_photo: boolean
@@ -116,12 +119,20 @@ export default function AdminSecurityPage() {
   const [report,    setReport]    = useState<SecurityReport | null>(null)
   const [loading,   setLoading]   = useState(true)
   const [facePhoto, setFacePhoto] = useState<(FaceRefData & { attemptId: number }) | null>(null)
+  const [exams,     setExams]     = useState<ExamOption[]>([])
+  const [examId,    setExamId]    = useState('')
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    api.get<any>('/api/online_exams').then(r => setExams(Array.isArray(r) ? r : r.exams ?? [])).catch(() => {})
+  }, [])
 
-  async function load() {
+  async function load(examFilter?: string) {
     setLoading(true)
-    try { setReport(await api.get<SecurityReport>('/api/admin/security_report')) }
+    try {
+      const qs = examFilter ? `?exam_id=${examFilter}` : ''
+      setReport(await api.get<SecurityReport>(`/api/admin/security_report${qs}`))
+    }
     catch { error('Erreur chargement rapport de sécurité') }
     finally { setLoading(false) }
   }
@@ -140,9 +151,17 @@ export default function AdminSecurityPage() {
       <div className="page-header">
         <div>
           <h2><i className="fas fa-shield-alt" style={{ marginRight: 10, color: 'var(--danger)' }} />Rapport de sécurité</h2>
-          <p>Incidents et comportements suspects lors des examens en ligne</p>
+          <p>{report?.exam_title ? <>Incidents pour l'examen <strong>{report.exam_title}</strong></> : 'Incidents et comportements suspects — tous examens confondus'}</p>
         </div>
-        <button className="btn btn-secondary" onClick={load}><i className="fas fa-rotate" /> Actualiser</button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <select className="form-control" value={examId}
+            onChange={e => { setExamId(e.target.value); load(e.target.value || undefined) }}
+            style={{ minWidth: 240 }}>
+            <option value="">— Tous les examens —</option>
+            {exams.map(x => <option key={x.id} value={String(x.id)}>{x.title}</option>)}
+          </select>
+          <button className="btn btn-secondary" onClick={() => load(examId || undefined)}><i className="fas fa-rotate" /> Actualiser</button>
+        </div>
       </div>
 
       {loading ? (
