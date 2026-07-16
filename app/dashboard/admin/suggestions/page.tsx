@@ -19,6 +19,27 @@ interface Suggestion {
 interface CreatedSubject { id: number; title: string; content: string; rubric?: string; created_at?: string }
 interface BasketVersion { label: string; content: string; rubric: string }
 
+/* Retour #8 — détecte les questions du texte généré (numéro + titre + bloc brut)
+   pour permettre de les éliminer individuellement avant validation, sans
+   nécessiter le parseur complet de types (réservé à app/exam/[id]/page.tsx). */
+function extractQuestionBlocks(content: string): { num: string; title: string; raw: string }[] {
+  const lines = content.split('\n')
+  const Q_RE = /^Question\s+(\d{1,3})\s*[—\-–:.]\s*(.+)/
+  const blocks: { num: string; title: string; raw: string }[] = []
+  let current: { num: string; title: string; lines: string[] } | null = null
+  for (const line of lines) {
+    const m = line.match(Q_RE)
+    if (m) {
+      if (current) blocks.push({ num: current.num, title: current.title, raw: current.lines.join('\n') })
+      current = { num: m[1], title: m[2].replace(/\.{3,}.*$/, '').replace(/\[[A-Z_]+\]\s*$/, '').trim(), lines: [line] }
+    } else if (current) {
+      current.lines.push(line)
+    }
+  }
+  if (current) blocks.push({ num: current.num, title: current.title, raw: current.lines.join('\n') })
+  return blocks
+}
+
 const DIFF_STYLE: Record<string, { bg: string; color: string; border: string }> = {
   'Facile':         { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
   'Moyen':          { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
@@ -59,6 +80,7 @@ export default function AdminSuggestionsPage() {
   /* basket */
   const [basket,      setBasket]      = useState<BasketVersion[]>([])
   const [showCompare, setShowCompare] = useState(false)
+  const [elimSet,     setElimSet]     = useState<Set<string>>(new Set())
 
   /* bank modal */
   const [showBankModal, setShowBankModal] = useState(false)
@@ -142,6 +164,12 @@ export default function AdminSuggestionsPage() {
 
   /* ── Use suggestion → generate full exam → show preview ── */
   async function useSuggestion(s: Suggestion, i: number) {
+    // Retour #9 — ne pas perdre un sujet déjà présent dans l'aperçu si on en génère un autre
+    if (previewContent.trim()) {
+      setBasket(p => p.some(v => v.content === previewContent)
+        ? p
+        : [...p, { label: `Version ${p.length + 1} — ${new Date().toLocaleTimeString('fr-FR')}`, content: previewContent, rubric: previewRubric }])
+    }
     setCreating(i); setGenFull(true); setGenFullElapsed(0)
     genFullTimer.current = setInterval(() => setGenFullElapsed(x => x + 1), 1000)
     try {
@@ -162,6 +190,7 @@ export default function AdminSuggestionsPage() {
       setPreviewContent(data.content || '')
       setPreviewRubric(data.rubric || '')
       setBankSaveEc(ecId)
+      setElimSet(new Set())
       setStep('preview')
       if (data.duplicates && data.duplicates.length > 0) {
         toastErr(`⚠ ${data.duplicates.length} question(s) générée(s) se ressemblent fortement entre elles (jusqu'à ${Math.max(...data.duplicates.map(d=>d.similarity))}% similaire) — vérifiez avant de valider.`)
@@ -252,6 +281,28 @@ export default function AdminSuggestionsPage() {
     success('Version ajoutée au panier')
   }
   function removeFromBasket(i: number) { setBasket(p => p.filter((_, j) => j !== i)) }
+  function loadFromBasket(i: number) {
+    const v = basket[i]
+    setPreviewContent(v.content); setPreviewRubric(v.rubric)
+    setElimSet(new Set()); setStep('preview'); setShowCompare(false)
+    success(`« ${v.label} » chargée dans l'aperçu`)
+  }
+
+  /* ── Retour #8 — éliminer des questions sélectionnées de l'aperçu ── */
+  function toggleElim(num: string) {
+    setElimSet(p => { const n = new Set(p); n.has(num) ? n.delete(num) : n.add(num); return n })
+  }
+  function handleEliminateSelected() {
+    const blocks = extractQuestionBlocks(previewContent)
+    const toRemove = blocks.filter(b => elimSet.has(b.num))
+    if (toRemove.length === 0) return
+    let next = previewContent
+    for (const b of toRemove) next = next.replace(b.raw, '')
+    next = next.replace(/\n{3,}/g, '\n\n').trim()
+    setPreviewContent(next)
+    setElimSet(new Set())
+    success(`${toRemove.length} question(s) retirée(s) de l'aperçu`)
+  }
 
   function typeFromSelection(): 'qcm' | 'vf' | 'open' {
     if (qTypes.qcm) return 'qcm'
@@ -396,6 +447,32 @@ export default function AdminSuggestionsPage() {
             </p>
           </div>
         </div>
+
+        {/* Retour #8 — cocher des questions détectées pour les éliminer avant validation */}
+        {(() => {
+          const qBlocks = extractQuestionBlocks(previewContent)
+          if (qBlocks.length === 0) return null
+          return (
+            <div style={{ background:'var(--surface)', borderRadius:12, border:'1px solid var(--border)', borderLeft:'4px solid #f59e0b', overflow:'hidden', boxShadow:'var(--shadow-sm)', marginBottom:16 }}>
+              <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, background:'var(--background)' }}>
+                <i className="fas fa-list-check" style={{ color:'#f59e0b' }} />
+                <span style={{ fontWeight:600, fontSize:13 }}>Questions détectées ({qBlocks.length}) — cochez pour éliminer</span>
+                <button onClick={handleEliminateSelected} disabled={elimSet.size === 0}
+                  style={{ marginLeft:'auto', padding:'6px 14px', background:elimSet.size ? '#fee2e2' : 'var(--background)', color:elimSet.size ? '#dc2626' : 'var(--text-muted)', border:'1px solid ' + (elimSet.size ? '#fecaca' : 'var(--border)'), borderRadius:8, fontSize:12, fontWeight:700, cursor:elimSet.size ? 'pointer' : 'not-allowed' }}>
+                  <i className="fas fa-trash-alt" style={{ marginRight:6 }} />Retirer la sélection ({elimSet.size})
+                </button>
+              </div>
+              <div style={{ padding:12, display:'flex', flexDirection:'column', gap:4, maxHeight:220, overflowY:'auto' }}>
+                {qBlocks.map(b => (
+                  <label key={b.num} style={{ display:'flex', alignItems:'center', gap:9, padding:'6px 8px', borderRadius:6, cursor:'pointer', background:elimSet.has(b.num) ? '#fef2f2' : 'transparent' }}>
+                    <input type="checkbox" checked={elimSet.has(b.num)} onChange={() => toggleElim(b.num)} />
+                    <span style={{ fontSize:12.5, color:'var(--text)' }}><strong>Question {b.num}</strong> — {b.title}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
 
         <div style={{ background:'var(--surface)', borderRadius:12, border:'1px solid var(--border)', borderLeft:'4px solid #10b981', overflow:'hidden', boxShadow:'var(--shadow-sm)', marginBottom:16 }}>
           <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, background:'var(--background)' }}>
@@ -554,6 +631,10 @@ export default function AdminSuggestionsPage() {
                 <div key={i} style={{ minWidth:240 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
                     <div style={{ fontWeight:700, fontSize:13, flex:1 }}>{v.label}</div>
+                    <button onClick={() => loadFromBasket(i)} title="Charger cette version dans l'aperçu"
+                      style={{ background:'#eff6ff', border:'none', color:'var(--primary)', padding:'3px 9px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
+                      <i className="fas fa-arrow-rotate-left" /> Charger
+                    </button>
                     <button onClick={() => removeFromBasket(i)} style={{ background:'#fee2e2', border:'none', color:'#dc2626', padding:'3px 7px', borderRadius:6, fontSize:11, cursor:'pointer' }}>
                       <i className="fas fa-trash" />
                     </button>
