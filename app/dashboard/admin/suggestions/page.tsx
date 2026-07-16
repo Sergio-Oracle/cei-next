@@ -127,6 +127,20 @@ export default function AdminSuggestionsPage() {
     synthese: false,     evaluation: false,
   })
   const [questionCount, setQuestionCount] = useState(20)
+  const [suggestingCount, setSuggestingCount] = useState(false)
+
+  async function suggestQuestionCount() {
+    setSuggestingCount(true)
+    try {
+      const res = await api.post<{ suggested_count: number }>('/api/subjects/suggest-question-count', {
+        duration: 60, difficulty, student_level: level,
+        question_types: Object.entries(qTypes).filter(([, v]) => v).map(([k]) => k).join(',') || 'mixte',
+      })
+      setQuestionCount(res.suggested_count)
+      success(`Suggestion IA : ${res.suggested_count} questions (pour un examen d'~1h, difficulté ${difficulty})`)
+    } catch (e: any) { toastErr(e.message || 'Erreur de suggestion') }
+    finally { setSuggestingCount(false) }
+  }
 
   const MAX_MB = 50
 
@@ -939,8 +953,16 @@ export default function AdminSuggestionsPage() {
                     <i className="fas fa-hashtag" style={{ color:'var(--primary)', marginRight:6 }} />
                     Nombre de questions
                   </label>
-                  <input type="number" className="form-control" min={1} max={60} value={questionCount}
-                    onChange={e => setQuestionCount(Math.max(1, Math.min(60, Number(e.target.value) || 20)))} style={{ maxWidth:140 }} />
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <input type="number" className="form-control" min={1} max={60} value={questionCount}
+                      onChange={e => setQuestionCount(Math.max(1, Math.min(60, Number(e.target.value) || 20)))} style={{ maxWidth:140 }} />
+                    <button type="button" onClick={suggestQuestionCount} disabled={suggestingCount}
+                      title="Suggestion IA basée sur la difficulté et le niveau, pour un examen d'environ 1h"
+                      style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', border:'1px solid #ddd6fe', background:'#f5f3ff', color:'#6d28d9', borderRadius:8, fontSize:12, fontWeight:600, cursor:suggestingCount?'not-allowed':'pointer' }}>
+                      <i className={`fas ${suggestingCount ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`} />
+                      {suggestingCount ? 'Suggestion…' : 'Suggérer (IA)'}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:4 }}>
