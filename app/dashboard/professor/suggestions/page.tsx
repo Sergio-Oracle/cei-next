@@ -339,6 +339,18 @@ export default function ProfessorSuggestionsPage() {
     setElimSet(new Set())
     success(`${toRemove.length} question(s) retirée(s) de l'aperçu`)
   }
+  // Retour équipe DFIP — ajouter uniquement les questions cochées au panier
+  // (sans les retirer de l'aperçu courant), pour construire une sélection
+  // à comparer plus tard plutôt que de conserver le sujet en entier.
+  function addSelectionToBasket() {
+    const blocks = extractQuestionBlocks(previewContent)
+    const selected = blocks.filter(b => elimSet.has(b.num))
+    if (selected.length === 0) return
+    const content = selected.map(b => b.raw).join('\n\n')
+    setBasket(p => [...p, { label: `Sélection (${selected.length} question${selected.length > 1 ? 's' : ''}) — ${new Date().toLocaleTimeString('fr-FR')}`, content, rubric: '' }])
+    setElimSet(new Set())
+    success(`${selected.length} question(s) ajoutée(s) au panier`)
+  }
 
   function typeFromSelection(): 'qcm' | 'vf' | 'open' {
     if (qTypes.qcm) return 'qcm'
@@ -497,9 +509,13 @@ export default function ProfessorSuggestionsPage() {
             <div style={{ background:'var(--surface)', borderRadius:12, border:'1px solid var(--border)', borderLeft:'4px solid #f59e0b', overflow:'hidden', boxShadow:'var(--shadow-sm)', marginBottom:16 }}>
               <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, background:'var(--background)' }}>
                 <i className="fas fa-list-check" style={{ color:'#f59e0b' }} />
-                <span style={{ fontWeight:600, fontSize:13 }}>Questions détectées ({qBlocks.length}) — cochez pour éliminer</span>
+                <span style={{ fontWeight:600, fontSize:13 }}>Questions détectées ({qBlocks.length}) — cochez pour éliminer ou ajouter au panier</span>
+                <button onClick={addSelectionToBasket} disabled={elimSet.size === 0}
+                  style={{ marginLeft:'auto', padding:'6px 14px', background:elimSet.size ? '#f0fdf4' : 'var(--background)', color:elimSet.size ? '#15803d' : 'var(--text-muted)', border:'1px solid ' + (elimSet.size ? '#bbf7d0' : 'var(--border)'), borderRadius:8, fontSize:12, fontWeight:700, cursor:elimSet.size ? 'pointer' : 'not-allowed' }}>
+                  <i className="fas fa-basket-shopping" style={{ marginRight:6 }} />Ajouter au panier ({elimSet.size})
+                </button>
                 <button onClick={handleEliminateSelected} disabled={elimSet.size === 0}
-                  style={{ marginLeft:'auto', padding:'6px 14px', background:elimSet.size ? '#fee2e2' : 'var(--background)', color:elimSet.size ? '#dc2626' : 'var(--text-muted)', border:'1px solid ' + (elimSet.size ? '#fecaca' : 'var(--border)'), borderRadius:8, fontSize:12, fontWeight:700, cursor:elimSet.size ? 'pointer' : 'not-allowed' }}>
+                  style={{ padding:'6px 14px', background:elimSet.size ? '#fee2e2' : 'var(--background)', color:elimSet.size ? '#dc2626' : 'var(--text-muted)', border:'1px solid ' + (elimSet.size ? '#fecaca' : 'var(--border)'), borderRadius:8, fontSize:12, fontWeight:700, cursor:elimSet.size ? 'pointer' : 'not-allowed' }}>
                   <i className="fas fa-trash-alt" style={{ marginRight:6 }} />Retirer la sélection ({elimSet.size})
                 </button>
               </div>
