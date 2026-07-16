@@ -14,6 +14,10 @@ export default function ProfessorSubjectsPage() {
 
   const [previewSubject, setPreviewSubject] = useState<Subject | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [editContent, setEditContent] = useState('')
+  const [editRubric, setEditRubric] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => { reload() }, [])
 
@@ -27,6 +31,7 @@ export default function ProfessorSubjectsPage() {
   }
 
   async function openPreview(s: Subject) {
+    setEditMode(false)
     if (s.content) { setPreviewSubject(s); return }
     setPreviewLoading(true)
     try {
@@ -34,6 +39,28 @@ export default function ProfessorSubjectsPage() {
       setPreviewSubject(full)
     } catch { error('Impossible de charger le sujet') }
     finally { setPreviewLoading(false) }
+  }
+
+  function startEdit() {
+    if (!previewSubject) return
+    setEditContent(previewSubject.content || '')
+    setEditRubric(previewSubject.rubric || '')
+    setEditMode(true)
+  }
+
+  async function saveEdit() {
+    if (!previewSubject) return
+    setSaving(true)
+    try {
+      const res = await api.put<{ success: boolean; subject: Subject }>(`/api/subjects/${previewSubject.id}`, {
+        content: editContent, rubric: editRubric,
+      })
+      setPreviewSubject(res.subject)
+      setSubjects(prev => prev.map(s => s.id === res.subject.id ? res.subject : s))
+      setEditMode(false)
+      success('Sujet mis à jour')
+    } catch (e: any) { error(e.message || 'Erreur lors de la mise à jour') }
+    finally { setSaving(false) }
   }
 
   async function handleDelete(id: number) {
@@ -238,8 +265,9 @@ export default function ProfessorSubjectsPage() {
                       <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>
                         <i className="fas fa-file-lines" style={{ marginRight: 6 }} />Contenu du sujet
                       </div>
-                      <textarea readOnly value={previewSubject.content}
-                        style={{ width: '100%', minHeight: 260, padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 13, lineHeight: 1.7, fontFamily: 'monospace', background: 'var(--background)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
+                      <textarea readOnly={!editMode} value={editMode ? editContent : previewSubject.content}
+                        onChange={e => editMode && setEditContent(e.target.value)}
+                        style={{ width: '100%', minHeight: 260, padding: '12px 14px', border: `1.5px solid ${editMode ? 'var(--primary)' : 'var(--border)'}`, borderRadius: 10, fontSize: 13, lineHeight: 1.7, fontFamily: 'monospace', background: editMode ? 'var(--surface)' : 'var(--background)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
                     </div>
                   ) : (
                     <div style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
@@ -247,21 +275,41 @@ export default function ProfessorSubjectsPage() {
                       Aucun contenu textuel disponible pour ce sujet.
                     </div>
                   )}
-                  {previewSubject.rubric && (
+                  {(previewSubject.rubric || editMode) && (
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>
                         <i className="fas fa-scale-balanced" style={{ marginRight: 6 }} />Barème de notation
                       </div>
-                      <textarea readOnly value={previewSubject.rubric}
-                        style={{ width: '100%', minHeight: 200, padding: '12px 14px', border: '1.5px solid #bbf7d0', borderRadius: 10, fontSize: 13, lineHeight: 1.7, fontFamily: 'monospace', background: '#f0fdf4', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
+                      <textarea readOnly={!editMode} value={editMode ? editRubric : (previewSubject.rubric || '')}
+                        onChange={e => editMode && setEditRubric(e.target.value)}
+                        style={{ width: '100%', minHeight: 200, padding: '12px 14px', border: `1.5px solid ${editMode ? '#10b981' : '#bbf7d0'}`, borderRadius: 10, fontSize: 13, lineHeight: 1.7, fontFamily: 'monospace', background: '#f0fdf4', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
                     </div>
                   )}
                 </div>
 
-                <div style={{ padding: '12px 22px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
-                  <button onClick={() => setPreviewSubject(null)} className="btn btn-secondary">
-                    <i className="fas fa-times" style={{ marginRight: 6 }} />Fermer
-                  </button>
+                <div style={{ padding: '12px 22px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                  {editMode ? (
+                    <>
+                      <button onClick={() => setEditMode(false)} className="btn btn-secondary" disabled={saving}>
+                        Annuler
+                      </button>
+                      <button onClick={saveEdit} className="btn btn-primary" disabled={saving}>
+                        <i className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-save'}`} style={{ marginRight: 6 }} />
+                        {saving ? 'Enregistrement…' : 'Enregistrer'}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => setPreviewSubject(null)} className="btn btn-secondary">
+                        <i className="fas fa-times" style={{ marginRight: 6 }} />Fermer
+                      </button>
+                      {previewSubject.content && (
+                        <button onClick={startEdit} className="btn btn-primary">
+                          <i className="fas fa-pen-to-square" style={{ marginRight: 6 }} />Modifier
+                        </button>
+                      )}
+                    </>
+                  )}
                 </div>
               </>
             )}
