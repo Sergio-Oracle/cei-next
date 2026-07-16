@@ -5,9 +5,15 @@ import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { useSuggestionFlow } from '@/hooks/useSuggestionFlow'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 
 /* ── Types ─────────────────────────────────────────────────────── */
-interface EC { id: number; code: string; name: string; ue_code?: string }
+interface EC {
+  id: number; code: string; name: string; ue_code?: string
+  pole_id?: number; pole_code?: string; pole_name?: string
+  formation_id?: number; formation_name?: string
+}
+interface FormationItem { id: number; name: string; pole_id?: number }
 
 interface Suggestion {
   title: string; description: string; exam_type: string
@@ -61,6 +67,9 @@ export default function AdminSuggestionsPage() {
   const router = useRouter()
 
   const [ecs,  setEcs]  = useState<EC[]>([])
+  const [formations,      setFormations]      = useState<FormationItem[]>([])
+  const [filterPole,      setFilterPole]      = useState('')
+  const [filterFormation, setFilterFormation] = useState('')
   const [step, setStep] = useState<'form' | 'results' | 'preview' | 'created'>('form')
   const [dragOver,  setDragOver]  = useState(false)
   const [creating,  setCreating]  = useState<number | null>(null)
@@ -133,7 +142,18 @@ export default function AdminSuggestionsPage() {
 
   useEffect(() => {
     api.get<any>('/api/ecs').then(r => setEcs(Array.isArray(r) ? r : r.ecs ?? [])).catch(() => {})
+    api.get<any>('/api/formations').then(r => setFormations(Array.isArray(r) ? r : r.formations ?? [])).catch(() => {})
   }, [])
+
+  // Retour #3/#27 — cascade Pôle → Formation pour ne pas se retrouver avec
+  // une liste d'EC trop longue, + recherche texte sur le sélecteur EC
+  const uniquePoles = Array.from(new Map(ecs.filter(e => e.pole_id).map(e => [e.pole_id, { id: e.pole_id!, name: e.pole_name || '' }])).values())
+  const filteredForms = formations.filter(f => !filterPole || String(f.pole_id) === filterPole)
+  const filteredEcs = ecs.filter(ec => {
+    if (filterPole      && String(ec.pole_id)      !== filterPole)      return false
+    if (filterFormation && String(ec.formation_id) !== filterFormation) return false
+    return true
+  })
 
   useEffect(() => () => { if (genFullTimer.current) clearInterval(genFullTimer.current) }, [])
 
@@ -923,16 +943,38 @@ export default function AdminSuggestionsPage() {
                     onChange={e => setQuestionCount(Math.max(1, Math.min(60, Number(e.target.value) || 20)))} style={{ maxWidth:140 }} />
                 </div>
 
+                <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:4 }}>
+                  <div>
+                    <label style={{ display:'block', fontSize:12, fontWeight:700, color:'#6366f1', marginBottom:6 }}>
+                      <i className="fas fa-sitemap" style={{ marginRight:5 }} />Pôle
+                    </label>
+                    <select className="form-control" value={filterPole} onChange={e => { setFilterPole(e.target.value); setFilterFormation(''); setEcId('') }}>
+                      <option value="">— Tous —</option>
+                      {uniquePoles.map(p => <option key={p.id} value={String(p.id)}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display:'block', fontSize:12, fontWeight:600, color:'var(--text-muted)', marginBottom:6 }}>
+                      <i className="fas fa-university" style={{ color:'var(--primary)', marginRight:5 }} />Formation
+                    </label>
+                    <select className="form-control" value={filterFormation} onChange={e => { setFilterFormation(e.target.value); setEcId('') }}>
+                      <option value="">— Toutes —</option>
+                      {filteredForms.map(f => <option key={f.id} value={String(f.id)}>{f.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+
                 <div>
                   <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:8 }}>
                     <i className="fas fa-layer-group" style={{ color:'var(--primary)', marginRight:6 }} />
                     Élément Constitutif
                     <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:400, marginLeft:6, background:'var(--background)', border:'1px solid var(--border)', padding:'2px 8px', borderRadius:99 }}>optionnel</span>
                   </label>
-                  <select className="form-control" value={ecId} onChange={e => setEcId(e.target.value)}>
-                    <option value="">— Lier à un EC (optionnel) —</option>
-                    {ecs.map(ec => <option key={ec.id} value={ec.id}>{ec.ue_code} - {ec.code}: {ec.name}</option>)}
-                  </select>
+                  <SearchableSelect
+                    value={ecId} onChange={setEcId}
+                    placeholder="— Lier à un EC (optionnel) —"
+                    emptyLabel="— Lier à un EC (optionnel) —"
+                    options={filteredEcs.map(ec => ({ value: String(ec.id), label: `${ec.ue_code ? ec.ue_code + ' - ' : ''}${ec.code}: ${ec.name}` }))} />
                 </div>
               </div>
             </div>

@@ -6,6 +6,7 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { useSubjectUpload } from '@/hooks/useSubjectUpload'
 import { useQuestionBank, BankQuestion } from '@/hooks/useQuestionBank'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 
 /* ── Types ────────────────────────────────────────────────────── */
 interface ECItem {
@@ -572,12 +573,11 @@ export default function AdminCreateSubjectPage() {
                 <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:600, marginBottom:7 }}>
                   <i className="fas fa-book-open" style={{ color:'var(--primary)', width:15 }} />EC <span style={{ color:'var(--text-muted)', fontSize:11, fontWeight:400 }}>optionnel</span>
                 </label>
-                <select value={ecId} onChange={e=>setEcId(e.target.value)} disabled={!dataReady}
-                  style={{ width:'100%', padding:'11px 13px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box', transition:'border-color .2s' }}
-                  onFocus={e=>e.target.style.borderColor='var(--primary)'} onBlur={e=>e.target.style.borderColor='var(--border)'}>
-                  <option value="">{!dataReady?'Chargement…':'— Aucun (sujet indépendant) —'}</option>
-                  {filteredEcs.map(ec=><option key={ec.id} value={String(ec.id)}>{ec.ue_code?`${ec.ue_code} › `:''}{ec.code} — {ec.name}</option>)}
-                </select>
+                <SearchableSelect
+                  value={ecId} onChange={setEcId} disabled={!dataReady}
+                  placeholder={!dataReady ? 'Chargement…' : '— Aucun (sujet indépendant) —'}
+                  emptyLabel="— Aucun (sujet indépendant) —"
+                  options={filteredEcs.map(ec => ({ value: String(ec.id), label: `${ec.ue_code ? ec.ue_code + ' › ' : ''}${ec.code} — ${ec.name}` }))} />
               </div>
 
               {/* File */}
