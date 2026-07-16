@@ -52,6 +52,9 @@ export default function AdminExamDetailPage() {
   const [downloadingSecurity, setDownloadingSecurity] = useState(false)
   const [importingGrades, setImportingGrades] = useState(false)
   const gradesFileRef = useRef<HTMLInputElement | null>(null)
+  const [rescheduleModal, setRescheduleModal] = useState(false)
+  const [rescheduleForm, setRescheduleForm] = useState({ start_time: '', duration_minutes: 60 })
+  const [rescheduling, setRescheduling] = useState(false)
 
   useEffect(() => { load() }, [id])
 
@@ -78,6 +81,27 @@ export default function AdminExamDetailPage() {
     setActing(true)
     try { await api.post(`/api/online_exams/${id}/close`); success('Clôturé'); setExam(e => e && { ...e, status: 'closed' as ExamStatus }) }
     catch (e: any) { error(e.message) } finally { setActing(false) }
+  }
+
+  // Retour #6 — reprogrammation d'un examen déjà planifié, sans recréer l'examen
+  function openRescheduleModal() {
+    if (!exam) return
+    setRescheduleForm({
+      start_time: exam.start_time ? new Date(exam.start_time).toISOString().slice(0, 16) : '',
+      duration_minutes: exam.duration_minutes,
+    })
+    setRescheduleModal(true)
+  }
+  async function handleReschedule() {
+    setRescheduling(true)
+    try {
+      const res = await api.put<{ success: boolean; exam: OnlineExam }>(`/api/admin/online_exams/${id}`, {
+        start_time: rescheduleForm.start_time, duration_minutes: rescheduleForm.duration_minutes,
+      })
+      success('Examen reprogrammé')
+      setExam(e => e && res.exam ? { ...e, ...res.exam } : e)
+      setRescheduleModal(false)
+    } catch (e: any) { error(e.message) } finally { setRescheduling(false) }
   }
   async function del() {
     if (!confirm('Supprimer définitivement ?')) return
@@ -211,6 +235,7 @@ export default function AdminExamDetailPage() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {exam.status === 'active' && <Link href={`/proctor/${id}`} className="btn btn-info"><i className="fas fa-eye" /> Surveiller</Link>}
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-success" onClick={activate} disabled={acting}><i className="fas fa-play" /> Activer</button>}
+          {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-secondary" onClick={openRescheduleModal} title="Reprogrammer sans recréer l'examen"><i className="fas fa-calendar-days" /> Reprogrammer</button>}
           {exam.status === 'active' && <button className="btn btn-warning" onClick={close} disabled={acting}><i className="fas fa-stop" /> Clôturer</button>}
           <button className="btn btn-secondary" onClick={downloadCsv} disabled={downloading}><i className="fas fa-file-csv" /> CSV</button>
           <button className="btn btn-secondary" onClick={downloadPdf}><i className="fas fa-file-pdf" /> PDF Bilan</button>
@@ -384,6 +409,31 @@ export default function AdminExamDetailPage() {
               <button onClick={() => setGradeModal(null)} className="btn btn-secondary">Annuler</button>
               <button onClick={submitGrade} disabled={grading} className="btn btn-primary">
                 <i className={`fas ${grading ? 'fa-spinner fa-spin' : 'fa-save'}`} /> {grading ? 'Enregistrement…' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Reprogrammer */}
+      {rescheduleModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 28, width: 380, maxWidth: '95vw' }}>
+            <h3 style={{ marginBottom: 20 }}><i className="fas fa-calendar-days" /> Reprogrammer l'examen</h3>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Nouvelle date/heure de début</label>
+              <input type="datetime-local" className="form-control" value={rescheduleForm.start_time}
+                onChange={e => setRescheduleForm(f => ({ ...f, start_time: e.target.value }))} />
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Durée (minutes)</label>
+              <input type="number" min={5} className="form-control" value={rescheduleForm.duration_minutes}
+                onChange={e => setRescheduleForm(f => ({ ...f, duration_minutes: Math.max(5, Number(e.target.value) || 5) }))} />
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => setRescheduleModal(false)} className="btn btn-secondary">Annuler</button>
+              <button onClick={handleReschedule} disabled={rescheduling || !rescheduleForm.start_time} className="btn btn-success">
+                <i className={`fas ${rescheduling ? 'fa-spinner fa-spin' : 'fa-check'}`} /> {rescheduling ? 'Enregistrement…' : 'Reprogrammer'}
               </button>
             </div>
           </div>
