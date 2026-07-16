@@ -63,6 +63,11 @@ export default function AdminEnrollmentsPage() {
   const [setPrimaryBusy, setSetPrimaryBusy] = useState(false)
   const [view, setView] = useState<'list' | 'byFormation'>('list')
 
+  // Retour #2 — inscription groupée : sélection multi-étudiants + UE cible
+  const [bulkSel, setBulkSel] = useState<Set<number>>(new Set())
+  const [bulkUeId, setBulkUeId] = useState('')
+  const [bulkBusy, setBulkBusy] = useState(false)
+
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
@@ -195,6 +200,28 @@ export default function AdminEnrollmentsPage() {
     s.email.toLowerCase().includes(search.toLowerCase())
   )
 
+  const allUes = formations.flatMap(f => (f.semesters ?? []).flatMap(sem => (sem.ues ?? []).map(u => ({
+    id: u.id, label: `${u.code} — ${u.name} (${f.code})`,
+  }))))
+
+  function toggleBulk(id: number) {
+    setBulkSel(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
+  async function bulkEnroll() {
+    if (!bulkUeId || bulkSel.size === 0) return
+    setBulkBusy(true)
+    try {
+      const res = await api.post<{ success: boolean; enrolled: number; already_enrolled: number; errors: string[] }>(
+        '/api/admin/student_enrollments/bulk', { student_ids: Array.from(bulkSel), ue_id: Number(bulkUeId) }
+      )
+      success(`${res.enrolled} étudiant(s) inscrit(s)${res.already_enrolled ? ` (${res.already_enrolled} déjà inscrit(s))` : ''}`)
+      setBulkSel(new Set()); setBulkUeId('')
+      await loadAll()
+    } catch (e: any) { toastErr(e.message || "Erreur lors de l'inscription groupée") }
+    finally { setBulkBusy(false) }
+  }
+
   // Grouper les étudiants par formation principale
   const byFormation: { formation: Formation | null; students: Student[] }[] = []
   const noFormation: Student[] = []
@@ -268,6 +295,30 @@ export default function AdminEnrollmentsPage() {
           />
         </div>
 
+        {/* Retour #2 — barre d'action inscription groupée */}
+        {!loading && filtered.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', background: bulkSel.size ? '#eff6ff' : 'var(--background)', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <input type="checkbox"
+                checked={filtered.length > 0 && filtered.every(s => bulkSel.has(s.id))}
+                onChange={e => setBulkSel(e.target.checked ? new Set(filtered.map(s => s.id)) : new Set())} />
+              Tout sélectionner ({bulkSel.size})
+            </label>
+            {bulkSel.size > 0 && (
+              <>
+                <select value={bulkUeId} onChange={e => setBulkUeId(e.target.value)} className="form-control" style={{ maxWidth: 320, fontSize: 12, padding: '6px 10px' }}>
+                  <option value="">— Choisir l'UE cible —</option>
+                  {allUes.map(u => <option key={u.id} value={String(u.id)}>{u.label}</option>)}
+                </select>
+                <button onClick={bulkEnroll} disabled={!bulkUeId || bulkBusy} className="btn btn-sm btn-primary"
+                  style={{ opacity: !bulkUeId || bulkBusy ? .6 : 1, cursor: !bulkUeId || bulkBusy ? 'not-allowed' : 'pointer' }}>
+                  {bulkBusy ? <><i className="fas fa-spinner fa-spin" /> Inscription…</> : <><i className="fas fa-user-plus" /> Inscrire la sélection ({bulkSel.size})</>}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
         {loading ? (
           <div style={{ textAlign: 'center', padding: 60 }}>
             <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: 'var(--primary)' }} />
@@ -284,7 +335,8 @@ export default function AdminEnrollmentsPage() {
               const initials = (st.full_name || st.email || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
 
               return (
-                <div key={st.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div key={st.id} style={{ background: bulkSel.has(st.id) ? '#eff6ff' : 'var(--surface)', border: `1px solid ${bulkSel.has(st.id) ? '#bfdbfe' : 'var(--border)'}`, borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <input type="checkbox" checked={bulkSel.has(st.id)} onChange={() => toggleBulk(st.id)} style={{ flexShrink: 0 }} />
                   {/* Avatar */}
                   <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#dbeafe', color: '#1d4ed8', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {initials}
