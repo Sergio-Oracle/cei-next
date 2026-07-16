@@ -269,7 +269,13 @@ export default function AdminAffectationsPage() {
             <div style={{ overflowY: 'auto', flex: 1, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {professors.length === 0 ? (
                 <p className="empty-message">Aucun professeur disponible</p>
-              ) : professors.map(p => {
+              ) : professors.every(p => multiModal.assignedIds.includes(p.id)) ? (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, fontSize: 13, color: '#92400e' }}>
+                  <i className="fas fa-circle-info" style={{ marginTop: 2 }} />
+                  <span>Tous les professeurs disponibles sont déjà affectés à cet EC. Créez d'abord un nouveau compte professeur pour pouvoir en affecter un supplémentaire.</span>
+                </div>
+              ) : null}
+              {professors.length > 0 && professors.map(p => {
                 const isAssigned = multiModal.assignedIds.includes(p.id)
                 const isChecked = isAssigned || multiSelected.has(p.id)
                 return (
@@ -305,7 +311,8 @@ export default function AdminAffectationsPage() {
                 <i className="fas fa-times" /> Fermer
               </button>
               <button className="btn btn-primary" onClick={confirmMultiAssign}
-                disabled={multiBusy || multiSelected.size === 0}>
+                disabled={multiBusy || multiSelected.size === 0}
+                title={multiSelected.size === 0 ? 'Cochez au moins un professeur non encore affecté' : undefined}>
                 <i className={`fas ${multiBusy ? 'fa-spinner fa-spin' : 'fa-save'}`} />
                 {multiBusy ? 'Assignation…' : `Assigner (${multiSelected.size})`}
               </button>

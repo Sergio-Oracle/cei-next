@@ -101,8 +101,19 @@ export default function AdminQuestionsPage() {
     setDupLoading(true)
     try {
       const res = await api.get<{ duplicates: DupPair[]; count: number }>('/api/question_bank/duplicates')
-      setDupPairs(res.duplicates ?? [])
-      if ((res.count ?? 0) === 0) success('Aucun doublon détecté dans la banque')
+      if ((res.count ?? 0) === 0) {
+        setDupPairs([])
+        success('Aucun doublon détecté dans la banque')
+      } else {
+        // Suppression automatique : on garde la question la plus ancienne de
+        // chaque paire ≥95% similaire, la plus récente est retirée.
+        const clean = await api.post<{ deleted_count: number; deleted: { id: number; title: string }[] }>(
+          '/api/question_bank/duplicates/auto-clean'
+        )
+        setDupPairs([])
+        success(`${clean.deleted_count} doublon(s) supprimé(s) automatiquement (question la plus récente de chaque paire ≥95% similaire retirée)`)
+        await load()
+      }
     } catch { toastErr('Erreur lors de la vérification des doublons') }
     finally { setDupLoading(false) }
   }
@@ -315,35 +326,6 @@ export default function AdminQuestionsPage() {
           )}
         </div>
       </div>
-
-      {/* ── Panneau doublons ── */}
-      {dupPairs !== null && dupPairs.length > 0 && (
-        <div style={{ background: '#fffbeb', border: '1.5px solid #fcd34d', borderRadius: 12, padding: '14px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <i className="fas fa-clone" style={{ color: '#d97706', fontSize: 16 }} />
-            <span style={{ fontWeight: 700, fontSize: 14, color: '#92400e' }}>{dupPairs.length} paire{dupPairs.length > 1 ? 's' : ''} similaires ≥95% détectée{dupPairs.length > 1 ? 's' : ''}</span>
-            <button onClick={() => setDupPairs(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#92400e', cursor: 'pointer', fontSize: 14 }}><i className="fas fa-times" /></button>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {dupPairs.map((p, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#fef9c3', borderRadius: 8, border: '1px solid #fde68a', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 11, fontWeight: 800, background: '#f59e0b', color: '#fff', borderRadius: 99, padding: '2px 8px' }}>{p.similarity}%</span>
-                <span style={{ fontSize: 13, flex: 1, color: '#78350f' }}><strong>{p.q1.title}</strong> ≈ <strong>{p.q2.title}</strong></span>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={() => { const q = questions.find(q => q.id === p.q1.id); if (q) setPreview(q) }}
-                    style={{ background: '#fff', border: '1px solid #fcd34d', color: '#92400e', padding: '4px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>
-                    Voir #{p.q1.id}
-                  </button>
-                  <button onClick={() => { const q = questions.find(q => q.id === p.q2.id); if (q) setPreview(q) }}
-                    style={{ background: '#fff', border: '1px solid #fcd34d', color: '#92400e', padding: '4px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>
-                    Voir #{p.q2.id}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ── Sélecteur cascade Pôle → Formation → Semestre → UE → EC ── */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px' }}>
