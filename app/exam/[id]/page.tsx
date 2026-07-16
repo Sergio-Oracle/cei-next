@@ -31,6 +31,11 @@ interface ParsedBlock {
   media?: { type: 'image' | 'audio'; filename: string }[]
 }
 type Phase = 'loading' | 'instructions' | 'permissions' | 'exam' | 'submitted' | 'unsupported'
+interface ServerPaginated {
+  questions_per_page: number
+  p1_blocks: ParsedBlock[]; p2_items: ParsedBlock[]
+  p1_pages: ParsedBlock[][]; p2_pages: ParsedBlock[][]
+}
 
 /* Le partage d'écran complet (obligatoire pour composer) n'est pas disponible sur
    mobile : Android Chrome n'implémente pas getDisplayMedia, et iOS Safari ne peut
@@ -62,13 +67,17 @@ function fisherYates<T>(arr: T[]): T[] {
 /* ── Pagination façon Moodle : groupe N questions par page, en gardant les
    en-têtes de section attachés à la page de la question qui les suit ──────── */
 function paginateBlocks(blocks: ParsedBlock[], perPage: number): ParsedBlock[][] {
-  if (!isFinite(perPage) || perPage <= 0 || blocks.length === 0) return blocks.length ? [blocks] : []
+  if (blocks.length === 0) return []
+  if (!isFinite(perPage) || perPage <= 0) return [blocks]
   const pages: ParsedBlock[][] = []
   let current: ParsedBlock[] = []
   let qCount = 0
   for (const b of blocks) {
     const isQuestion = b.type !== 'section' && b.type !== 'text'
-    if (isQuestion && qCount === perPage) { pages.push(current); current = []; qCount = 0 }
+    // Saut de page forcé à chaque section, façon Moodle (quiz_repaginate_questions
+    // force un saut à chaque firstslot de section même si le quota n'est pas atteint)
+    if (b.type === 'section' && current.length) { pages.push(current); current = []; qCount = 0 }
+    else if (isQuestion && qCount === perPage) { pages.push(current); current = []; qCount = 0 }
     current.push(b)
     if (isQuestion) qCount++
   }
@@ -175,6 +184,10 @@ export default function ExamPage() {
   const [mediaMap,       setMediaMap]       = useState<Record<string, string>>({})
   const [shuffledBlocks, setShuffledBlocks] = useState<ParsedBlock[]>([])
   const [shuffledQs,     setShuffledQs]     = useState<Question[]>([])
+  // Pagination façon Moodle calculée côté serveur (page + ordre stables pour
+  // une même tentative, cf. quiz_slots.page) — repli sur le calcul client
+  // (parsedBlocks/shuffledBlocks + paginateBlocks) si l'appel échoue.
+  const [serverPages,    setServerPages]    = useState<ServerPaginated | null>(null)
   const [qcmIdx,         setQcmIdx]         = useState(0)   // page courante — Partie 1 (QCM/VF)
   const [p2PageIdx,      setP2PageIdx]      = useState(0)   // page courante — Partie 2 (ouvertes)
   const [showPart2,      setShowPart2]      = useState(false)
@@ -297,6 +310,16 @@ export default function ExamPage() {
       setShuffledQs([...qcm, ...open])
     }
   }, [phase]) // eslint-disable-line
+
+  /* ── Pagination façon Moodle calculée côté serveur ───────────────────── */
+  useEffect(() => {
+    if (phase !== 'exam') return
+    const attId = attemptRef.current
+    if (!attId) return
+    api.get<ServerPaginated>(`/api/exam_attempts/${attId}/paginated`)
+      .then(setServerPages)
+      .catch(() => {}) // repli silencieux sur le calcul client (parsedBlocks + paginateBlocks)
+  }, [phase])
 
   /* ── Attacher la caméra quand la vidéo est montée ────────────────────── */
   useEffect(() => {
@@ -1051,14 +1074,16 @@ export default function ExamPage() {
   if(phase==='exam'&&exam) {
     const displayBlocks = shuffledBlocks.length > 0 ? shuffledBlocks : parsedBlocks
     const structuredQs  = shuffledQs.length > 0 ? shuffledQs : (exam.questions??[])
-    const p1Blocks      = displayBlocks.filter(b=>b.type==='qcm'||b.type==='qcm_multi'||b.type==='vf'||b.type==='appariement')
-    const p2Items       = displayBlocks.filter(b=>b.type==='section'||b.type==='open'||b.type==='subopen'||b.type==='code'||b.type==='photo')
-    const p2Blocks      = displayBlocks.filter(b=>b.type==='open'||b.type==='subopen'||b.type==='code'||b.type==='photo')
-    const allQBlocks    = displayBlocks.filter(b=>b.type!=='text'&&b.type!=='section')
+    // Source de vérité : pagination calculée côté serveur façon Moodle (page/ordre
+    // stables pour la tentative) — repli sur le calcul client si l'appel a échoué.
+    const p1Blocks      = serverPages?.p1_blocks ?? displayBlocks.filter(b=>b.type==='qcm'||b.type==='qcm_multi'||b.type==='vf'||b.type==='appariement')
+    const p2Items       = serverPages?.p2_items  ?? displayBlocks.filter(b=>b.type==='section'||b.type==='open'||b.type==='subopen'||b.type==='code'||b.type==='photo')
+    const p2Blocks      = p2Items.filter(b=>b.type!=='section')
+    const allQBlocks    = [...p1Blocks, ...p2Blocks]
     const hasParsed    = allQBlocks.length>0
     const perPage      = exam.questions_per_page && exam.questions_per_page>0 ? exam.questions_per_page : Infinity
-    const p1Pages       = paginateBlocks(p1Blocks, perPage)
-    const p2Pages       = paginateBlocks(p2Items, perPage)
+    const p1Pages       = serverPages?.p1_pages ?? paginateBlocks(p1Blocks, perPage)
+    const p2Pages       = serverPages?.p2_pages ?? paginateBlocks(p2Items, perPage)
     const subjectRaw   = exam.subject_content?(typeof exam.subject_content==='object'?exam.subject_content.content:exam.subject_content as string):null
 
     const structAnswered = structuredQs.filter(q=>(answers[q.id.toString()]??'').trim()!=='').length
