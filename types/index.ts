@@ -115,6 +115,7 @@ export interface OnlineExam {
   max_no_face_count?: number
   ban_on_devtools?: boolean
   auto_correct?: boolean
+  results_published?: boolean
   proctoring_enabled?: boolean
   camera_required?: boolean
   status: ExamStatus

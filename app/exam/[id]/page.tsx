@@ -261,13 +261,30 @@ export default function ExamPage() {
 
   /* ── Chargement ───────────────────────────────────────────────────────── */
   useEffect(() => {
-    ;(async () => {
+    let cancelled = false
+    async function load(attempt = 0) {
       try {
         const res = await api.get<ExamData>(`/api/online_exams/${id}/details`)
+        if (cancelled) return
         setExam(res); examRef.current = res
         setPhase(isDeviceSupported() ? 'instructions' : 'unsupported')
-      } catch (e:any) { toastErr(e.message||'Erreur chargement'); router.push('/dashboard/student') }
-    })()
+      } catch (e: any) {
+        if (cancelled) return
+        // Retour #13 — ne pas rebondir systématiquement vers "Mes Notes" sur
+        // une erreur transitoire (ex: course avec le rafraîchissement du
+        // token juste après une actualisation) ; ne rediriger que sur un
+        // refus d'accès confirmé par le serveur, ou après un second essai.
+        const accessDenied = e.status === 403 || e.status === 404
+        if (!accessDenied && attempt === 0) {
+          setTimeout(() => { if (!cancelled) load(1) }, 1200)
+          return
+        }
+        toastErr(e.message || 'Erreur chargement')
+        router.push('/dashboard/student')
+      }
+    }
+    load()
+    return () => { cancelled = true }
   }, [id]) // eslint-disable-line
 
   /* ── Médias insérés dans le sujet (images/audio) — Notes points 2/15 ───── */

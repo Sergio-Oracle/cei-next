@@ -19,6 +19,8 @@ interface OnlineResult {
   auto_correct?: boolean
   has_reclamation?: boolean
   reclamation_status?: string
+  results_published?: boolean
+  pending_publication?: boolean
 }
 
 const REC_COLORS: Record<string, string> = { pending: '#f59e0b', accepted: '#10b981', rejected: '#ef4444' }
@@ -29,9 +31,13 @@ function fmtDate(iso?: string | null) {
   return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function ScoreBadge({ score }: { score: number | null | undefined }) {
+function ScoreBadge({ score, pendingPublication }: { score: number | null | undefined; pendingPublication?: boolean }) {
   if (score == null) {
-    return <span style={{ color: '#94a3b8', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}><i className="fas fa-clock" /> En attente</span>
+    // Retour #29 — distinguer "pas encore corrigé" de "corrigé, en attente
+    // de délibération" pour ne pas laisser croire à un retard de correction
+    return pendingPublication
+      ? <span style={{ color: '#f59e0b', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}><i className="fas fa-gavel" /> En attente de délibération</span>
+      : <span style={{ color: '#94a3b8', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}><i className="fas fa-clock" /> En attente</span>
   }
   const c = score >= 10 ? '#10b981' : '#ef4444'
   return <span style={{ fontWeight: 700, color: c, fontSize: 13 }}>{Number(score).toFixed(2)}/20</span>
@@ -248,7 +254,7 @@ export default function StudentDashboard() {
                             : <span style={{ fontSize: 11, background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 99 }}>En ligne</span>}
                         </td>
                         <td style={{ padding: '10px 14px' }}>
-                          <ScoreBadge score={o.score} />
+                          <ScoreBadge score={o.score} pendingPublication={o.pending_publication} />
                         </td>
                         <td style={{ padding: '10px 14px', fontSize: 12, color: '#64748b' }}>
                           {fmtDate(o.corrected_at)}

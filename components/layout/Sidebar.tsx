@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
@@ -113,6 +113,8 @@ interface SidebarProps {
 export default function Sidebar({ open = false, onClose }: SidebarProps) {
   const { user } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
+  const [hasOverflow, setHasOverflow] = useState(false)
+  const sidebarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem('sidebar_collapsed') === '1'
@@ -121,6 +123,19 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
     if (theme === 'dark') document.body.classList.add('theme-dark')
     else document.body.classList.remove('theme-dark')
   }, [])
+
+  // Retour #11 — indicateur "il reste des options non affichées" quand le
+  // menu déborde verticalement (remplace le défilement horizontal peu
+  // visible par un dégradé + re-calculé à chaque changement de taille)
+  useEffect(() => {
+    const el = sidebarRef.current
+    if (!el) return
+    const check = () => setHasOverflow(el.scrollHeight > el.clientHeight + 1)
+    check()
+    const ro = new ResizeObserver(check)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [collapsed])
 
   function toggleCollapse() {
     const next = !collapsed
@@ -141,7 +156,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
         className={open ? 'visible' : ''}
         onClick={onClose}
       />
-      <div className={`sidebar${collapsed ? ' collapsed' : ''}${open ? ' open' : ''}`}>
+      <div ref={sidebarRef} className={`sidebar${collapsed ? ' collapsed' : ''}${open ? ' open' : ''}${hasOverflow ? ' has-overflow' : ''}`}>
         <button
           className="sidebar-collapse-btn"
           onClick={toggleCollapse}
@@ -157,6 +172,9 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
               : <NavLink key={entry.href} item={entry} collapsed={collapsed} />
           )}
         </nav>
+        <div className="sidebar-scroll-fade">
+          <i className="fas fa-chevron-down" style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', fontSize: 11, color: '#94a3b8' }} />
+        </div>
       </div>
     </>
   )

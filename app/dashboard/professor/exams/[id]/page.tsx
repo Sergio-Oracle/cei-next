@@ -93,6 +93,18 @@ export default function ProfessorExamDetailPage() {
     } catch (e: any) { error(e.message) } finally { setActioning(false) }
   }
 
+  // Retour #29 — publication des notes aux étudiants (après délibération) ;
+  // le prof/admin voit toujours les notes, seul l'étudiant est concerné
+  async function togglePublish() {
+    if (!exam) return
+    const next = !exam.results_published
+    try {
+      await api.put(`/api/online_exams/${id}/publish-results`, { published: next })
+      success(next ? 'Notes publiées aux étudiants' : 'Publication des notes retirée')
+      setExam(e => e ? { ...e, results_published: next } : e)
+    } catch (e: any) { error(e.message) }
+  }
+
   // Retour #6 — reprogrammation d'un examen déjà planifié, sans repasser par
   // toutes les étapes de création
   function openRescheduleModal() {
@@ -284,6 +296,12 @@ export default function ProfessorExamDetailPage() {
             {downloadingSecurity
               ? <><i className="fa-solid fa-spinner spin" /> Rapport...</>
               : <><i className="fa-solid fa-shield-halved" /> Rapport sécurité</>}
+          </button>
+          <button className={exam.results_published ? 'btn btn-warning' : 'btn btn-success'} onClick={togglePublish}
+            title="Publier/masquer les notes aux étudiants (après délibération)">
+            {exam.results_published
+              ? <><i className="fa-solid fa-eye-slash" /> Dépublier les notes</>
+              : <><i className="fa-solid fa-bullhorn" /> Publier les notes</>}
           </button>
           <input
             ref={gradesFileRef}
