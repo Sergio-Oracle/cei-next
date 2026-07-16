@@ -28,7 +28,7 @@ interface ParsedBlock {
   content?: string; title?: string; num?: string; text?: string
   extraLines?: string[]; choices?: { letter: string; text: string }[]
   pairs?: { left: string; right: string }[]
-  media?: { type: 'image' | 'audio'; filename: string }[]
+  media?: { type: 'image' | 'audio' | 'video'; filename: string }[]
 }
 type Phase = 'loading' | 'instructions' | 'permissions' | 'exam' | 'submitted' | 'unsupported'
 interface ServerPaginated {
@@ -156,13 +156,14 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       else if (VF_RE.test(q.text) || VF_RE.test(extraLines.join(' '))) type = 'vf'
       else type = 'open'
     }
-    // Extraire les marqueurs [IMAGE:fichier]/[AUDIO:fichier] des lignes annexes
-    // (Notes points 2/15) — ne pas les afficher comme texte brut
-    const MEDIA_RE = /^\[(IMAGE|AUDIO):(.+)\]$/i
-    const media: { type: 'image' | 'audio'; filename: string }[] = []
+    // Extraire les marqueurs [IMAGE:fichier]/[AUDIO:fichier]/[VIDEO:fichier] des
+    // lignes annexes (Notes points 2/15, vidéo Retour #7) — ne pas les afficher
+    // comme texte brut
+    const MEDIA_RE = /^\[(IMAGE|AUDIO|VIDEO):(.+)\]$/i
+    const media: { type: 'image' | 'audio' | 'video'; filename: string }[] = []
     const cleanExtraLines = extraLines.filter(l => {
       const m = strip(l).match(MEDIA_RE)
-      if (m) { media.push({ type: m[1].toLowerCase() as 'image' | 'audio', filename: m[2].trim() }); return false }
+      if (m) { media.push({ type: m[1].toLowerCase() as 'image' | 'audio' | 'video', filename: m[2].trim() }); return false }
       return true
     })
     blocks.push({ type, num: q.num, text: q.text, extraLines: cleanExtraLines, choices, pairs: pairs.length ? pairs : undefined, media: media.length ? media : undefined })
@@ -1583,6 +1584,8 @@ function PQ({block,answers,setAnswers,onAnswer,attemptId,mediaMap}:{block:Parsed
             if(!url) return null
             return m.type==='image'?(
               <img key={i} src={url} alt={m.filename} style={{maxWidth:'100%',maxHeight:360,borderRadius:10,border:'1px solid #e2e8f0',objectFit:'contain'}}/>
+            ):m.type==='video'?(
+              <video key={i} src={url} controls style={{width:'100%',maxHeight:400,borderRadius:10,border:'1px solid #e2e8f0',background:'#000'}}/>
             ):(
               <audio key={i} src={url} controls style={{width:'100%'}}/>
             )

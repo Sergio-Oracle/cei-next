@@ -100,6 +100,7 @@ export default function ProfessorSuggestionsPage() {
   const [uploadingMedia, setUploadingMedia] = useState(false)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
   const previewTextareaRef = useRef<HTMLTextAreaElement>(null)
 
   const fileRef = useRef<HTMLInputElement>(null)
@@ -225,8 +226,8 @@ export default function ProfessorSuggestionsPage() {
   }
 
   /* ── Générer d'autres questions à ajouter au sujet ── */
-  /* ── Insérer une image/audio dans le sujet en cours de composition ── */
-  async function handleMediaUpload(file: File, mediaType: 'image' | 'audio') {
+  /* ── Insérer une image/audio/vidéo dans le sujet en cours de composition ── */
+  async function handleMediaUpload(file: File, mediaType: 'image' | 'audio' | 'video') {
     setUploadingMedia(true)
     try {
       let linkKey = mediaLinkKey
@@ -245,7 +246,8 @@ export default function ProfessorSuggestionsPage() {
       } else {
         setPreviewContent(p => `${p.trimEnd()}\n${insertion}`)
       }
-      success(`${mediaType === 'image' ? 'Image' : 'Audio'} inséré(e) : ${res.media.filename}`)
+      const mediaLabel = mediaType === 'image' ? 'Image' : mediaType === 'video' ? 'Vidéo' : 'Audio'
+      success(`${mediaLabel} inséré(e) : ${res.media.filename}`)
     } catch (e: any) {
       toastErr(e.message || 'Erreur upload média')
     } finally {
@@ -435,8 +437,13 @@ export default function ProfessorSuggestionsPage() {
               style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #ddd6fe', background:'#f5f3ff', color:'#6d28d9', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
               <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-music'}`} /> Insérer un audio
             </button>
+            <button type="button" onClick={() => videoInputRef.current?.click()} disabled={uploadingMedia}
+              style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #fed7aa', background:'#fff7ed', color:'#c2410c', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+              <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-film'}`} /> Insérer une vidéo
+            </button>
             <input ref={imageInputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image'); e.target.value = '' }} />
             <input ref={audioInputRef} type="file" accept="audio/*" style={{ display:'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'audio'); e.target.value = '' }} />
+            <input ref={videoInputRef} type="file" accept="video/*" style={{ display:'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'video'); e.target.value = '' }} />
           </div>
           <div style={{ padding:'0 14px 14px' }}>
             <textarea ref={previewTextareaRef} value={previewContent} onChange={e => setPreviewContent(e.target.value)} rows={14}
