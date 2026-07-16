@@ -94,6 +94,7 @@ export default function ProfessorSuggestionsPage() {
     application: true,  analyse: true,
     synthese: false,     evaluation: false,
   })
+  const [questionCount, setQuestionCount] = useState(20)
 
   const MAX_MB = 50
 
@@ -146,12 +147,15 @@ export default function ProfessorSuggestionsPage() {
     try {
       const qMap: Record<string, string> = { qcm:'QCM', open:'Questions ouvertes', vf:'Vrai/Faux', qcm_multi:'QCM (réponses multiples)', appariement:'Appariement', code:'Maths et programmation', photo:'Photo / Scan' }
       const selectedTypes = Object.entries(qTypes).filter(([,v])=>v).map(([k])=>qMap[k])
+      const selectedBloom = Object.entries(bloom).filter(([,v])=>v).map(([k])=>k)
       const suggestionWithTypes = {
         ...s,
         question_types: selectedTypes.join(','),
         exam_type: selectedTypes.join(',') || s.exam_type,
+        bloom_levels: selectedBloom,
+        question_count: questionCount,
       }
-      const data = await api.post<{ success: boolean; title: string; content: string; rubric: string }>(
+      const data = await api.post<{ success: boolean; title: string; content: string; rubric: string; duplicates?: { similarity: number }[] }>(
         '/api/subjects/generate-full-exam', { suggestion: suggestionWithTypes }
       )
       setPreviewTitle(data.title || s.title)
@@ -159,6 +163,9 @@ export default function ProfessorSuggestionsPage() {
       setPreviewRubric(data.rubric || '')
       setBankSaveEc(ecId)
       setStep('preview')
+      if (data.duplicates && data.duplicates.length > 0) {
+        toastErr(`⚠ ${data.duplicates.length} question(s) générée(s) se ressemblent fortement entre elles (jusqu'à ${Math.max(...data.duplicates.map(d=>d.similarity))}% similaire) — vérifiez avant de valider.`)
+      }
     } catch (e: any) { toastErr(e.message || 'Erreur génération du sujet') }
     finally {
       setCreating(null); setGenFull(false)
@@ -817,6 +824,15 @@ export default function ProfessorSuggestionsPage() {
                       )
                     })}
                   </div>
+                </div>
+
+                <div>
+                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:8 }}>
+                    <i className="fas fa-hashtag" style={{ color:'var(--primary)', marginRight:6 }} />
+                    Nombre de questions
+                  </label>
+                  <input type="number" className="form-control" min={1} max={60} value={questionCount}
+                    onChange={e => setQuestionCount(Math.max(1, Math.min(60, Number(e.target.value) || 20)))} style={{ maxWidth:140 }} />
                 </div>
 
                 <div>
