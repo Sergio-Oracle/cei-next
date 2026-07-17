@@ -104,8 +104,11 @@ export default function AdminFormationsPage() {
   const [inlinePoleForm, setInlinePoleForm] = useState({ code: '', name: '', description: '' })
   const [inlinePoleBusy, setInlinePoleBusy] = useState(false)
   // Pour la gestion inline des niveaux — rattachés à un pôle (hiérarchie
-  // Pôle → Niveau → Formation → Semestre → UE → EC)
-  const [niveauForm, setNiveauForm] = useState<{ code: string; name: string; description: string; pole_id: number | '' }>({ code: '', name: '', description: '', pole_id: '' })
+  // Pôle → Niveau → Formation → Semestre → UE → EC). L'ajout se fait
+  // directement sous la carte du pôle concerné (section fusionnée), donc pas
+  // besoin de re-sélectionner le pôle dans le formulaire : il est déjà connu.
+  const [quickNiveauPoleId, setQuickNiveauPoleId] = useState<number | null>(null)
+  const [niveauForm, setNiveauForm] = useState({ code: '', name: '', description: '' })
   const [niveauSubmitting, setNiveauSubmitting] = useState(false)
   const [inlineNiveauOpen, setInlineNiveauOpen] = useState(false)
   const [inlineNiveauForm, setInlineNiveauForm] = useState({ code: '', name: '', description: '' })
@@ -410,14 +413,14 @@ export default function AdminFormationsPage() {
   }
 
   /* ── Niveau creation inline ───────────────────────────────────────────────── */
-  async function createNiveau() {
+  async function createNiveau(poleId: number) {
     if (!niveauForm.code || !niveauForm.name) { error('Code et nom requis'); return }
-    if (!niveauForm.pole_id) { error('Pôle requis'); return }
     setNiveauSubmitting(true)
     try {
-      await api.post('/api/admin/niveaux', niveauForm)
+      await api.post('/api/admin/niveaux', { ...niveauForm, pole_id: poleId })
       success(`Niveau ${niveauForm.code} créé`)
-      setNiveauForm({ code: '', name: '', description: '', pole_id: '' })
+      setNiveauForm({ code: '', name: '', description: '' })
+      setQuickNiveauPoleId(null)
       loadNiveaux()
       load()
     } catch (e: any) { error(e.message || 'Erreur') }
@@ -520,16 +523,6 @@ export default function AdminFormationsPage() {
   const unassigned = formations.filter(f => !assigned.has(f.id))
   if (unassigned.length > 0) formationsByPole.push({ pole: null, formations: unassigned })
 
-  /* ── Group niveaux by pôle (Pôle → Niveau) ────────────────────────────────── */
-  const niveauxByPole: { pole: Pole | null; niveaux: Niveau[] }[] = []
-  const niveauAssigned = new Set<number>()
-  for (const pole of poles) {
-    const nv = niveaux.filter(n => n.pole_id === pole.id)
-    if (nv.length > 0) { niveauxByPole.push({ pole, niveaux: nv }); nv.forEach(n => niveauAssigned.add(n.id)) }
-  }
-  const niveauUnassigned = niveaux.filter(n => !niveauAssigned.has(n.id))
-  if (niveauUnassigned.length > 0) niveauxByPole.push({ pole: null, niveaux: niveauUnassigned })
-
   const allSemesters = formations.flatMap(f => f.semesters.map(s => ({
     id: s.id, label: `${f.name} — ${s.name || `Semestre ${s.number}`}`,
   })))
@@ -548,31 +541,97 @@ export default function AdminFormationsPage() {
         </p>
       </div>
 
-      {/* ══ Section Pôles ══════════════════════════════════════════════════════ */}
+      {/* ══ Section Pôles & Niveaux (fusionnée — Pôle → Niveau) ═══════════════════ */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, marginBottom: 24, overflow: 'hidden' }}>
         <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="fas fa-sitemap" style={{ color: '#2563eb' }} /> Pôles UNCHK
+            <i className="fas fa-sitemap" style={{ color: '#2563eb' }} /> Pôles &amp; Niveaux UNCHK
           </h3>
         </div>
         <div style={{ padding: '16px 24px' }}>
-          {/* Liste des pôles */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+          {/* Chaque pôle avec ses niveaux imbriqués directement dessous */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
             {poles.length === 0 ? (
               <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Aucun pôle créé</p>
-            ) : poles.map(p => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: poleColor(p.code) + '18', border: `1.5px solid ${poleColor(p.code)}40`, borderRadius: 12, padding: '8px 16px' }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: poleColor(p.code) }} />
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 13, color: poleColor(p.code) }}>{p.code}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.name} · {p.formations_count} formation(s)</div>
+            ) : poles.map(p => {
+              const pnv = niveaux.filter(n => n.pole_id === p.id)
+              return (
+                <div key={p.id} style={{ border: `1.5px solid ${poleColor(p.code)}40`, borderRadius: 12, overflow: 'hidden' }}>
+                  {/* En-tête pôle */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: poleColor(p.code) + '18', padding: '10px 16px' }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: poleColor(p.code) }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 800, fontSize: 13, color: poleColor(p.code) }}>{p.code}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.name} · {p.formations_count} formation(s) · {pnv.length} niveau(x)</div>
+                    </div>
+                    <button onClick={() => deletePole(p.id, p.code)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 2 }} title="Désactiver le pôle">
+                      <i className="fas fa-times" />
+                    </button>
+                  </div>
+                  {/* Niveaux imbriqués sous ce pôle */}
+                  <div style={{ padding: '10px 16px', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+                    {pnv.length === 0 && quickNiveauPoleId !== p.id && (
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Aucun niveau sous ce pôle</span>
+                    )}
+                    {pnv.map(n => (
+                      <div key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0d948818', border: '1.5px solid #0d948840', borderRadius: 10, padding: '6px 12px' }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#0d9488' }} />
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: 12.5, color: '#0d9488' }}>{n.code}</div>
+                          <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{n.name} · {n.formations_count} formation(s)</div>
+                        </div>
+                        <button onClick={() => deleteNiveau(n.id, n.code)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Désactiver">
+                          <i className="fas fa-times" />
+                        </button>
+                      </div>
+                    ))}
+                    {quickNiveauPoleId === p.id ? (
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <input placeholder="Code (ex: L1)" autoFocus value={niveauForm.code}
+                          onChange={e => setNiveauForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
+                          style={{ width: 90, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }} />
+                        <input placeholder="Nom (ex: Licence 1)" value={niveauForm.name}
+                          onChange={e => setNiveauForm(f => ({ ...f, name: e.target.value }))}
+                          style={{ width: 150, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }} />
+                        <button onClick={() => createNiveau(p.id)} disabled={niveauSubmitting || !niveauForm.code || !niveauForm.name}
+                          style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: '#0d9488', color: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: (!niveauForm.code || !niveauForm.name) ? .5 : 1 }}>
+                          <i className={`fas ${niveauSubmitting ? 'fa-spinner fa-spin' : 'fa-check'}`} />
+                        </button>
+                        <button onClick={() => { setQuickNiveauPoleId(null); setNiveauForm({ code: '', name: '', description: '' }) }}
+                          style={{ padding: '6px 10px', borderRadius: 7, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 12 }}>
+                          <i className="fas fa-xmark" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button onClick={() => { setQuickNiveauPoleId(p.id); setNiveauForm({ code: '', name: '', description: '' }) }}
+                        style={{ background: 'none', border: '1.5px dashed #0d948870', borderRadius: 8, padding: '6px 12px', color: '#0d9488', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                        <i className="fas fa-plus" style={{ marginRight: 5 }} />Niveau
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <button onClick={() => deletePole(p.id, p.code)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 2 }} title="Désactiver">
-                  <i className="fas fa-times" />
-                </button>
+              )
+            })}
+            {/* Niveaux orphelins (sans pôle) — cas hérité, à corriger via modification */}
+            {niveaux.some(n => !n.pole_id) && (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Sans pôle</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                  {niveaux.filter(n => !n.pole_id).map(n => (
+                    <div key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f1f5f9', border: '1.5px solid #cbd5e1', borderRadius: 10, padding: '6px 12px' }}>
+                      <div style={{ fontWeight: 800, fontSize: 12.5 }}>{n.code}</div>
+                      <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{n.name}</div>
+                      <button onClick={() => deleteNiveau(n.id, n.code)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Désactiver">
+                        <i className="fas fa-times" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+            )}
           </div>
 
           {/* Formulaire création pôle */}
@@ -593,75 +652,6 @@ export default function AdminFormationsPage() {
               <button onClick={createPole} disabled={poleSubmitting || !poleForm.code || !poleForm.name}
                 style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, opacity: (!poleForm.code || !poleForm.name) ? .5 : 1 }}>
                 <i className={`fas ${poleSubmitting ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 5 }} />
-                Créer
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ══ Section Niveaux ════════════════════════════════════════════════════ */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, marginBottom: 24, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="fas fa-layer-group" style={{ color: '#0d9488' }} /> Niveaux UNCHK
-          </h3>
-        </div>
-        <div style={{ padding: '16px 24px' }}>
-          {/* Liste des niveaux, groupés par pôle (Pôle → Niveau) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
-            {niveaux.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Aucun niveau créé</p>
-            ) : niveauxByPole.map(({ pole, niveaux: nvs }, gi) => (
-              <div key={gi}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 4, height: 16, borderRadius: 2, background: poleColor(pole?.code) }} />
-                  <span style={{ fontWeight: 700, fontSize: 12.5, color: poleColor(pole?.code) }}>
-                    {pole ? `Pôle ${pole.code} — ${pole.name}` : 'Sans pôle'}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                  {nvs.map(n => (
-                    <div key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#0d948818', border: '1.5px solid #0d948840', borderRadius: 12, padding: '8px 16px' }}>
-                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#0d9488' }} />
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: 13, color: '#0d9488' }}>{n.code}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{n.name} · {n.formations_count} formation(s)</div>
-                      </div>
-                      <button onClick={() => deleteNiveau(n.id, n.code)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 2 }} title="Désactiver">
-                        <i className="fas fa-times" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Formulaire création niveau */}
-          <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 12, padding: '14px 18px' }}>
-            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: '#475569' }}>
-              <i className="fas fa-plus" style={{ marginRight: 6 }} />Créer un nouveau niveau
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '160px 110px 1fr 1.6fr auto', gap: 10, alignItems: 'center' }}>
-              <select value={niveauForm.pole_id} onChange={e => setNiveauForm(p => ({ ...p, pole_id: e.target.value === '' ? '' : Number(e.target.value) }))}
-                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }}>
-                <option value="">— Pôle —</option>
-                {poles.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
-              </select>
-              <input placeholder="Code (ex: L1)" value={niveauForm.code}
-                onChange={e => setNiveauForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
-                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-              <input placeholder="Nom du niveau (ex: Licence 1)" value={niveauForm.name}
-                onChange={e => setNiveauForm(p => ({ ...p, name: e.target.value }))}
-                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-              <input placeholder="Description (optionnel)" value={niveauForm.description}
-                onChange={e => setNiveauForm(p => ({ ...p, description: e.target.value }))}
-                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-              <button onClick={createNiveau} disabled={niveauSubmitting || !niveauForm.code || !niveauForm.name || !niveauForm.pole_id}
-                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#0d9488', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, opacity: (!niveauForm.code || !niveauForm.name || !niveauForm.pole_id) ? .5 : 1 }}>
-                <i className={`fas ${niveauSubmitting ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 5 }} />
                 Créer
               </button>
             </div>
