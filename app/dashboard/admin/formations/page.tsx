@@ -91,6 +91,25 @@ export default function AdminFormationsPage() {
   // Pour la gestion inline des pôles
   const [poleForm, setPoleForm] = useState({ code: '', name: '', description: '' })
   const [poleSubmitting, setPoleSubmitting] = useState(false)
+  // Création d'un pôle directement depuis la modale "Créer une Formation" —
+  // évite de devoir fermer la modale pour aller créer le pôle ailleurs
+  const [inlinePoleOpen, setInlinePoleOpen] = useState(false)
+  const [inlinePoleForm, setInlinePoleForm] = useState({ code: '', name: '', description: '' })
+  const [inlinePoleBusy, setInlinePoleBusy] = useState(false)
+
+  async function createInlinePole() {
+    if (!inlinePoleForm.code || !inlinePoleForm.name) { error('Code et nom du pôle requis'); return }
+    setInlinePoleBusy(true)
+    try {
+      const res = await api.post<Pole>('/api/admin/poles', inlinePoleForm)
+      success(`Pôle ${inlinePoleForm.code} créé`)
+      await loadPoles()
+      setForm((p: any) => ({ ...p, pole_id: res.id }))
+      setInlinePoleForm({ code: '', name: '', description: '' })
+      setInlinePoleOpen(false)
+    } catch (e: any) { error(e.message || 'Erreur lors de la création du pôle') }
+    finally { setInlinePoleBusy(false) }
+  }
 
   /* ── Load all data ────────────────────────────────────────────────────────── */
   const loadPoles = useCallback(async () => {
@@ -169,7 +188,37 @@ export default function AdminFormationsPage() {
     if (!modal) return null
     switch (modal.kind) {
       case 'create_formation': case 'edit_formation': return (<>
-        {sel('pole_id', 'Pôle', poles.map(p => ({ value: p.id, label: `${p.code} — ${p.name}` })))}
+        <div className="form-group">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <label style={{ fontWeight: 600, fontSize: 13 }}>Pôle</label>
+            <button type="button" onClick={() => setInlinePoleOpen(o => !o)}
+              style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <i className={`fas ${inlinePoleOpen ? 'fa-xmark' : 'fa-plus'}`} /> {inlinePoleOpen ? 'Annuler' : 'Nouveau pôle'}
+            </button>
+          </div>
+          {inlinePoleOpen ? (
+            <div style={{ border: '1.5px dashed var(--border)', borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+              <input placeholder="Code (ex: STN)" value={inlinePoleForm.code}
+                onChange={e => setInlinePoleForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
+                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+              <input placeholder="Nom du pôle" value={inlinePoleForm.name}
+                onChange={e => setInlinePoleForm(p => ({ ...p, name: e.target.value }))}
+                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+              <button type="button" onClick={createInlinePole} disabled={inlinePoleBusy || !inlinePoleForm.code || !inlinePoleForm.name}
+                style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (!inlinePoleForm.code || !inlinePoleForm.name) ? .5 : 1 }}>
+                <i className={`fas ${inlinePoleBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 6 }} />
+                {inlinePoleBusy ? 'Création…' : 'Créer et sélectionner ce pôle'}
+              </button>
+            </div>
+          ) : (
+            <select value={form.pole_id ?? ''}
+              onChange={e => setForm((p: any) => ({ ...p, pole_id: e.target.value === '' ? null : Number(e.target.value) }))}
+              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }}>
+              <option value="">— Sélectionner —</option>
+              {poles.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
+            </select>
+          )}
+        </div>
         {inp('code', 'Code *', { placeholder: 'Ex: L1-SOCIO' })}
         {inp('name', 'Nom *', { placeholder: 'Ex: Licence Sociologie' })}
         {inp('level', 'Niveau', { placeholder: 'Ex: Licence 1, Master 2' })}
@@ -354,10 +403,12 @@ export default function AdminFormationsPage() {
     }
     setForm(defaults[kind] ?? {})
     setModal({ kind, ...extra })
+    setInlinePoleOpen(false); setInlinePoleForm({ code: '', name: '', description: '' })
   }
 
   function openEdit(kind: ModalKind, item: any) {
     setForm({ ...item }); setModal({ kind, item })
+    setInlinePoleOpen(false); setInlinePoleForm({ code: '', name: '', description: '' })
   }
 
   /* ── Group formations by pôle ─────────────────────────────────────────────── */
@@ -719,14 +770,20 @@ export default function AdminFormationsPage() {
                 <i className="fas fa-download" /> Télécharger Template Excel
               </button>
               <div className="form-group" style={{ marginBottom: 16 }}>
-                <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Semestre cible *</label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <label style={{ fontWeight: 600, fontSize: 13 }}>Semestre cible *</label>
+                  <button type="button" onClick={() => openCreate('create_formation')}
+                    style={{ background: 'none', border: 'none', color: '#0891b2', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <i className="fas fa-plus" /> Créer une formation
+                  </button>
+                </div>
                 <select className="form-control" value={excelSemesterId} onChange={e => setExcelSemesterId(e.target.value)}>
                   <option value="">— Sélectionner le semestre où importer —</option>
                   {allSemesters.map(s => <option key={s.id} value={String(s.id)}>{s.label}</option>)}
                 </select>
                 {allSemesters.length === 0 && (
                   <p style={{ fontSize: 12, color: '#b45309', marginTop: 6 }}>
-                    Créez d&apos;abord une formation et un semestre avant d&apos;importer.
+                    Aucun semestre disponible — créez d&apos;abord une formation (le pôle peut être créé dans la foulée) puis un semestre, via le bouton ci-dessus ou &quot;+ Semestre&quot; sur la formation.
                   </p>
                 )}
               </div>
