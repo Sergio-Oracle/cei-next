@@ -134,6 +134,10 @@ export default function AdminFormationsPage() {
   const [wizardForm, setWizardForm] = useState<any>({})
   const [wizardBusy, setWizardBusy] = useState(false)
   const [wizardEcCount, setWizardEcCount] = useState(0)
+  // À l'étape UE, choix entre créer une UE/EC à la main ou importer tout le
+  // semestre d'un coup via le fichier Excel officiel (même pipeline que la
+  // modale "Importer Excel (UE/EC)", juste pré-ciblé sur ce semestre).
+  const [wizardUeMode, setWizardUeMode] = useState<'manual' | 'excel'>('manual')
 
   function openWizard() {
     setWizardStep('pole')
@@ -141,6 +145,8 @@ export default function AdminFormationsPage() {
     setWizardCreatingNew(poles.length === 0)
     setWizardForm({})
     setWizardEcCount(0)
+    setWizardUeMode('manual')
+    setExcelFile(null); setExcelPreview(null); setExcelSemesterId('')
     setModal({ kind: 'wizard' })
   }
 
@@ -194,7 +200,8 @@ export default function AdminFormationsPage() {
       success('Semestre créé')
       await load()
       setWizardCtx(c => ({ ...c, semesterId: res.semester.id }))
-      setWizardStep('ue'); setWizardCreatingNew(true); setWizardForm({ credits: 6, ue_type: 'obligatoire' })
+      setExcelSemesterId(String(res.semester.id))
+      setWizardStep('ue'); setWizardCreatingNew(true); setWizardUeMode('manual'); setWizardForm({ credits: 6, ue_type: 'obligatoire' })
     } catch (e: any) { error(e.message || 'Erreur') }
     finally { setWizardBusy(false) }
   }
@@ -227,7 +234,7 @@ export default function AdminFormationsPage() {
       if (next === 'another_ec') {
         setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 })
       } else if (next === 'another_ue') {
-        setWizardStep('ue'); setWizardCreatingNew(true); setWizardForm({ credits: 6, ue_type: 'obligatoire' })
+        setWizardStep('ue'); setWizardCreatingNew(true); setWizardUeMode('manual'); setWizardForm({ credits: 6, ue_type: 'obligatoire' })
       } else {
         setModal(null)
       }
@@ -603,7 +610,7 @@ export default function AdminFormationsPage() {
         const opts = currentFormation?.semesters ?? []
         return pickOrCreate({
           existing: opts.map(s => ({ id: s.id, label: s.name || `Semestre ${s.number}` })),
-          onPick: id => { setWizardCtx(c => ({ ...c, semesterId: id })); setWizardStep('ue'); setWizardCreatingNew(true); setWizardForm({ credits: 6, ue_type: 'obligatoire' }) },
+          onPick: id => { setWizardCtx(c => ({ ...c, semesterId: id })); setExcelSemesterId(String(id)); setWizardStep('ue'); setWizardCreatingNew(true); setWizardUeMode('manual'); setWizardForm({ credits: 6, ue_type: 'obligatoire' }) },
           createFields: <>
             {wInp('number', 'Numéro *', { type: 'number', placeholder: 'Ex: 1' })}
             {wInp('name', 'Nom (optionnel)', { placeholder: 'Ex: Semestre 1' })}
@@ -618,18 +625,90 @@ export default function AdminFormationsPage() {
         const currentFormation = formations.find(f => f.id === wizardCtx.formationId)
         const currentSemester = currentFormation?.semesters.find(s => s.id === wizardCtx.semesterId)
         const opts = currentSemester?.ues ?? []
-        return pickOrCreate({
-          existing: opts.map(u => ({ id: u.id, label: `${u.code} — ${u.name}` })),
-          onPick: id => { setWizardCtx(c => ({ ...c, ueId: id })); setWizardStep('ec'); setWizardCreatingNew(true); setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 }) },
-          createFields: <>
-            {wInp('code', 'Code *', { placeholder: 'Ex: SOCIO111' })}
-            {wInp('name', 'Nom *', { placeholder: "Ex: Sociologie et Anthropologie" })}
-            {wInp('credits', 'Crédits', { type: 'number' })}
-          </>,
-          onCreateSubmit: wizardCreateUe,
-          createDisabled: !wizardForm.code || !wizardForm.name,
-          pickLabel: 'Choisir une UE existante (sous ce semestre)', createLabel: 'Créer une UE',
-        })
+        return (
+          <div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <button type="button" onClick={() => { setWizardUeMode('manual'); setExcelPreview(null); setExcelFile(null) }}
+                style={{ padding: '7px 14px', borderRadius: 8, border: wizardUeMode === 'manual' ? 'none' : '1.5px solid var(--border)', background: wizardUeMode === 'manual' ? '#db2777' : 'transparent', color: wizardUeMode === 'manual' ? 'white' : 'var(--text)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+                UE par UE (manuel)
+              </button>
+              <button type="button" onClick={() => setWizardUeMode('excel')}
+                style={{ padding: '7px 14px', borderRadius: 8, border: wizardUeMode === 'excel' ? 'none' : '1.5px solid var(--border)', background: wizardUeMode === 'excel' ? '#0891b2' : 'transparent', color: wizardUeMode === 'excel' ? 'white' : 'var(--text)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+                <i className="fas fa-file-excel" style={{ marginRight: 6 }} />Importer via Excel (toutes les UE/EC)
+              </button>
+            </div>
+
+            {wizardUeMode === 'excel' ? (
+              !excelPreview ? (
+                <div>
+                  <p style={{ fontSize: 12.5, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.6 }}>
+                    Fichier au format réel de l&apos;établissement (colonnes Code/Nom/Crédit/Type UE puis Code/Nom/Coef EC, pourcentages CC/EX entre crochets dans le nom de l&apos;EC) — importe toutes les UE et EC de ce semestre d&apos;un coup.
+                  </p>
+                  <button onClick={downloadExcelTemplate}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
+                    <i className="fas fa-download" /> Télécharger Template Excel
+                  </button>
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ fontWeight: 600, fontSize: 12.5, marginBottom: 4, display: 'block' }}>Fichier Excel (.xlsx) *</label>
+                    <input type="file" accept=".xlsx,.xls" style={{ width: '100%', fontSize: 13.5 }}
+                      onChange={e => setExcelFile(e.target.files?.[0] || null)} />
+                  </div>
+                  <button onClick={handleExcelPreview} disabled={excelBusy || !excelFile}
+                    style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#0891b2', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, opacity: !excelFile ? .5 : 1 }}>
+                    <i className={`fas ${excelBusy ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} style={{ marginRight: 7 }} />
+                    {excelBusy ? 'Analyse…' : 'Analyser le fichier'}
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ background: '#ecfeff', border: '1px solid #a5f3fc', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12.5, color: '#0e7490' }}>
+                    <strong>{excelPreview.ue_count} UE</strong> et <strong>{excelPreview.ec_count} EC</strong> détectés — vérifiez avant de valider.
+                  </div>
+                  <div style={{ maxHeight: '32vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+                    {excelPreview.ues.map((u: any) => (
+                      <div key={u.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                        <div style={{ padding: '8px 12px', background: u.already_exists ? '#fef3c7' : '#f0fdf4', fontSize: 12.5 }}>
+                          <strong>{u.code}</strong> — {u.name} <span style={{ color: 'var(--text-muted)' }}>({u.credits} crédits)</span>
+                          {u.already_exists && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: '#92400e' }}><i className="fas fa-triangle-exclamation" /> déjà existante</span>}
+                        </div>
+                        <div style={{ padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {u.ecs.map((e: any) => (
+                            <div key={e.code} style={{ fontSize: 11.5, color: e.already_exists ? 'var(--text-muted)' : 'var(--text)' }}>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{e.code}</span> — {e.name} <span style={{ color: 'var(--text-muted)' }}>(Coef.{e.coefficient}, CC:{e.cc_percentage}%/EX:{e.ex_percentage}%)</span>
+                              {e.already_exists && <span style={{ marginLeft: 6, fontWeight: 700, color: '#b45309' }}>ignoré</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={handleExcelConfirm} disabled={excelBusy}
+                      style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+                      <i className={`fas ${excelBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 7 }} />
+                      {excelBusy ? 'Import…' : "Confirmer l'import et terminer"}
+                    </button>
+                    <button onClick={() => setExcelPreview(null)}
+                      style={{ padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                      Revenir
+                    </button>
+                  </div>
+                </div>
+              )
+            ) : pickOrCreate({
+              existing: opts.map(u => ({ id: u.id, label: `${u.code} — ${u.name}` })),
+              onPick: id => { setWizardCtx(c => ({ ...c, ueId: id })); setWizardStep('ec'); setWizardCreatingNew(true); setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 }) },
+              createFields: <>
+                {wInp('code', 'Code *', { placeholder: 'Ex: SOCIO111' })}
+                {wInp('name', 'Nom *', { placeholder: "Ex: Sociologie et Anthropologie" })}
+                {wInp('credits', 'Crédits', { type: 'number' })}
+              </>,
+              onCreateSubmit: wizardCreateUe,
+              createDisabled: !wizardForm.code || !wizardForm.name,
+              pickLabel: 'Choisir une UE existante (sous ce semestre)', createLabel: 'Créer une UE',
+            })}
+          </div>
+        )
       }
       case 'ec': {
         const currentFormation = formations.find(f => f.id === wizardCtx.formationId)
