@@ -983,7 +983,7 @@ export default function AdminSuggestionsPage() {
 
                 <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:4 }}>
                   <div>
-                    <label style={{ display:'block', fontSize:12, fontWeight:700, color:'#6366f1', marginBottom:6 }}>
+                    <label style={{ display:'block', fontSize:12, fontWeight:700, color:'#2563eb', marginBottom:6 }}>
                       <i className="fas fa-sitemap" style={{ marginRight:5 }} />Pôle
                     </label>
                     <select className="form-control" value={filterPole} onChange={e => { setFilterPole(e.target.value); setFilterFormation(''); setEcId('') }}>

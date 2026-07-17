@@ -4,12 +4,12 @@ export default function GuideEtudiant() {
       <style>{`
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#f8fafc; color:#1e293b; line-height:1.7; }
-        .topbar { background:linear-gradient(135deg,#059669,#047857); color:white; padding:14px 32px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,.2); }
+        .topbar { background:#059669; color:white; padding:14px 32px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,.2); }
         .topbar-brand { font-size:17px; font-weight:700; display:flex; align-items:center; gap:10px; }
         .topbar-brand i { font-size:22px; }
         .btn-back { background:rgba(255,255,255,.15); color:white; border:1px solid rgba(255,255,255,.3); padding:8px 18px; border-radius:8px; text-decoration:none; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; transition:.2s; }
         .btn-back:hover { background:rgba(255,255,255,.25); }
-        .hero-doc { background:linear-gradient(135deg,#059669,#065f46); color:white; padding:60px 32px; text-align:center; }
+        .hero-doc { background:#059669; color:white; padding:60px 32px; text-align:center; }
         .hero-doc h1 { font-size:2.4rem; font-weight:800; margin-bottom:12px; }
         .hero-doc p { font-size:1.1rem; opacity:.9; max-width:600px; margin:0 auto; }
         .hero-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); padding:6px 16px; border-radius:99px; font-size:13px; font-weight:600; margin-bottom:20px; }
@@ -21,7 +21,7 @@ export default function GuideEtudiant() {
         .toc-list a:hover { text-decoration:underline; }
         .toc-list a i { width:18px; text-align:center; font-size:13px; color:#94a3b8; }
         .section { background:white; border-radius:16px; border:1px solid #e2e8f0; margin-bottom:32px; overflow:hidden; }
-        .section-header { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-bottom:1px solid #a7f3d0; padding:20px 28px; display:flex; align-items:center; gap:14px; }
+        .section-header { background:#ecfdf5; border-bottom:1px solid #a7f3d0; padding:20px 28px; display:flex; align-items:center; gap:14px; }
         .section-icon { width:48px; height:48px; background:#059669; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; color:white; flex-shrink:0; }
         .section-header h2 { font-size:1.15rem; font-weight:700; color:#064e3b; margin:0; }
         .section-body { padding:28px; }

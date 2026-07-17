@@ -52,7 +52,7 @@ declare global { interface Window { LivekitClient: any } }
 /* Couleur neutre unique pour toute réponse sélectionnée (QCM/QCU/VF) — évite toute
    association implicite type "vert=bonne réponse / rouge=mauvaise" pendant que
    l'étudiant compose, qui n'a rien à voir avec la justesse réelle de son choix. */
-const SELECTED_COLOR = '#4f46e5'
+const SELECTED_COLOR = '#2563eb'
 
 /* ── Fisher-Yates shuffle ─────────────────────────────────────────────────── */
 function fisherYates<T>(arr: T[]): T[] {

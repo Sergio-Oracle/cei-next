@@ -36,7 +36,7 @@ const TYPE_LABEL: Record<string, string> = {
 const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
   open:        { bg: '#f1f5f9', color: '#475569' },
   qcm:         { bg: '#dbeafe', color: '#1d4ed8' },
-  qcm_multi:   { bg: '#ede9fe', color: '#6d28d9' },
+  qcm_multi:   { bg: '#f0fdfa', color: '#0d9488' },
   vf:          { bg: '#dcfce7', color: '#15803d' },
   subopen:     { bg: '#fff7ed', color: '#c2410c' },
   appariement: { bg: '#fdf2f8', color: '#be185d' },
@@ -44,7 +44,7 @@ const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
   photo:       { bg: '#ecfeff', color: '#0e7490' },
 }
 
-const POLE_COLORS: Record<string, string> = { STN: '#6366f1', LSHE: '#10b981', SEJA: '#f59e0b' }
+const POLE_COLORS: Record<string, string> = { STN: '#2563eb', LSHE: '#10b981', SEJA: '#f59e0b' }
 const poleColor = (code?: string | null) => POLE_COLORS[code || ''] || '#64748b'
 
 const selStyle = { padding: '8px 11px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 12, background: 'var(--background)', color: 'var(--text)', outline: 'none', width: '100%' }
@@ -330,7 +330,7 @@ export default function AdminQuestionsPage() {
       {/* ── Sélecteur cascade Pôle → Formation → Semestre → UE → EC ── */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px' }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <i className="fas fa-filter" style={{ color: '#6366f1' }} /> Filtrer par hiérarchie académique
+          <i className="fas fa-filter" style={{ color: '#2563eb' }} /> Filtrer par hiérarchie académique
           {hasFilter && (
             <button onClick={resetFilters} style={{ background: '#fef2f2', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 11, padding: '2px 8px', borderRadius: 6, marginLeft: 4 }}>
               <i className="fas fa-times" /> Réinitialiser
@@ -341,7 +341,7 @@ export default function AdminQuestionsPage() {
 
           {/* Pôle */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
               <i className="fas fa-sitemap" /> Pôle
             </label>
             <select value={filterPole} onChange={e => { setFilterPole(e.target.value); setFilterForm(''); setFilterSem(''); setFilterUe(''); setFilterEc('') }} style={selStyle}>

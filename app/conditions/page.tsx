@@ -8,7 +8,7 @@ export default function Conditions() {
         .topbar-brand { font-size:17px; font-weight:700; display:flex; align-items:center; gap:10px; }
         .btn-back { background:rgba(255,255,255,.1); color:white; border:1px solid rgba(255,255,255,.2); padding:8px 18px; border-radius:8px; text-decoration:none; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; transition:.2s; }
         .btn-back:hover { background:rgba(255,255,255,.2); }
-        .hero-doc { background:linear-gradient(135deg,#1e293b,#0f172a); color:white; padding:60px 32px; text-align:center; }
+        .hero-doc { background:#1e293b; color:white; padding:60px 32px; text-align:center; }
         .hero-doc h1 { font-size:2.4rem; font-weight:800; margin-bottom:12px; }
         .hero-doc p { font-size:1rem; opacity:.7; max-width:600px; margin:0 auto; }
         .hero-meta { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); padding:6px 16px; border-radius:99px; font-size:12px; margin-bottom:20px; }

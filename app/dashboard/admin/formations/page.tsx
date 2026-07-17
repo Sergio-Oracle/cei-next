@@ -64,7 +64,7 @@ const Btn = ({ color, onClick, children, title }: { color: string; onClick: () =
 )
 
 const POLE_COLORS: Record<string, string> = {
-  STN:  '#6366f1',
+  STN:  '#2563eb',
   LSHE: '#10b981',
   SEJA: '#f59e0b',
 }
@@ -392,7 +392,7 @@ export default function AdminFormationsPage() {
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, marginBottom: 24, overflow: 'hidden' }}>
         <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="fas fa-sitemap" style={{ color: '#6366f1' }} /> Pôles UNCHK
+            <i className="fas fa-sitemap" style={{ color: '#2563eb' }} /> Pôles UNCHK
           </h3>
         </div>
         <div style={{ padding: '16px 24px' }}>
@@ -431,7 +431,7 @@ export default function AdminFormationsPage() {
                 onChange={e => setPoleForm(p => ({ ...p, description: e.target.value }))}
                 style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
               <button onClick={createPole} disabled={poleSubmitting || !poleForm.code || !poleForm.name}
-                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#6366f1', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, opacity: (!poleForm.code || !poleForm.name) ? .5 : 1 }}>
+                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, opacity: (!poleForm.code || !poleForm.name) ? .5 : 1 }}>
                 <i className={`fas ${poleSubmitting ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 5 }} />
                 Créer
               </button>
@@ -490,7 +490,7 @@ export default function AdminFormationsPage() {
                   /* ── Formation block ── */
                   <div key={f.id} style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
                     {/* Formation header */}
-                    <div style={{ background: `linear-gradient(135deg,${poleColor(f.pole_code)},${poleColor(f.pole_code)}cc)`, color: 'white', padding: '16px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: poleColor(f.pole_code), color: 'white', padding: '16px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontWeight: 800, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                           <i className="fas fa-graduation-cap" />

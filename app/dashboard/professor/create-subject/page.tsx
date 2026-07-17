@@ -17,7 +17,7 @@ interface ECItem {
 }
 interface FormationItem { id: number; code: string; name: string; level: string; pole_id?: number; pole_code?: string; pole_name?: string }
 
-const POLE_COLORS: Record<string, string> = { STN: '#6366f1', LSHE: '#10b981', SEJA: '#f59e0b' }
+const POLE_COLORS: Record<string, string> = { STN: '#2563eb', LSHE: '#10b981', SEJA: '#f59e0b' }
 const poleColor = (code?: string | null) => POLE_COLORS[code || ''] || '#64748b'
 interface BasketVersion { label: string; content: string; rubric: string }
 
@@ -26,7 +26,7 @@ type Mode = 'upload' | 'bank'
 const TYPE_LABELS: Record<string, string>  = { qcm: 'QCU', qcm_multi: 'QCM', vf: 'Vrai/Faux', open: 'Ouvert', subopen: 'Sous-questions', appariement: 'Appariement', code: 'Maths / Code', photo: 'Photo' }
 const TYPE_COLORS: Record<string, { bg: string; fg: string }> = {
   qcm:         { bg: '#dbeafe', fg: '#1d4ed8' },
-  qcm_multi:   { bg: '#ede9fe', fg: '#6d28d9' },
+  qcm_multi:   { bg: '#f0fdfa', fg: '#0d9488' },
   vf:          { bg: '#dcfce7', fg: '#15803d' },
   open:        { bg: '#fef9c3', fg: '#854d0e' },
   subopen:     { bg: '#fee2e2', fg: '#b91c1c' },
@@ -540,7 +540,7 @@ export default function ProfessorCreateSubjectPage() {
               {/* EC filters — cascade Pôle → Formation → Niveau → EC */}
               <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:8 }}>
                 <div>
-                  <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:700, color:'#6366f1', marginBottom:5 }}>
+                  <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:700, color:'#2563eb', marginBottom:5 }}>
                     <i className="fas fa-sitemap" style={{ width:12 }} />Pôle
                   </label>
                   <select value={filterPole} onChange={e=>{setFilterPole(e.target.value);setFilterFormation('');setFilterLevel('');setEcId('')}} style={{ width:'100%', padding:'8px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:12, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }}>

@@ -173,7 +173,7 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
 
       <div style={{ background: '#2563eb', padding: '16px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <p style={{ color: '#c7d2fe', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', margin: '0 0 4px' }}>
+          <p style={{ color: '#bfdbfe', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', margin: '0 0 4px' }}>
             Statistiques détaillées
           </p>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'white' }}>{subject.title}</h3>
@@ -374,7 +374,7 @@ export default function ProfessorResultsPage() {
           {/* ── Bandeau global ── */}
           {hasGlobal && (
             <div style={{ background: '#2563eb', borderRadius: 14, padding: '20px 22px' }}>
-              <p style={{ color: '#c7d2fe', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 0 14px' }}>
+              <p style={{ color: '#bfdbfe', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 0 14px' }}>
                 <i className="fas fa-globe-africa" style={{ marginRight: 6 }} />Vue d'ensemble globale
               </p>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

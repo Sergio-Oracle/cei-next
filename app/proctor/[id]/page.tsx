@@ -210,7 +210,7 @@ export default function ProctorPage() {
       `}</style>
 
       {/* ── HEADER ──────────────────────────────────────────────── */}
-      <header style={{ background: 'linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%)', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 12px rgba(0,0,0,.3)', gap: 12, flexWrap: 'wrap' }}>
+      <header style={{ background: '#2563eb', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 12px rgba(0,0,0,.3)', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,.15)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <i className="fas fa-shield-alt" style={{ fontSize: 18 }} />
@@ -541,7 +541,7 @@ function EmptyState({ filter, done, banned, search }: { filter: Filter; done: nu
 function SidePanel({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div style={{ position: 'fixed', top: 0, right: 0, width: 380, height: '100vh', background: '#1e293b', borderLeft: '1px solid rgba(255,255,255,.1)', zIndex: 500, display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 20px rgba(0,0,0,.4)' }}>
-      <div style={{ padding: 16, background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: 16, background: '#2563eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>{title}</h3>
         <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: 18 }}><i className="fas fa-times" /></button>
       </div>

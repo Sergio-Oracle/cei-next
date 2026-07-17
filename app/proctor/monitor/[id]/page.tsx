@@ -934,7 +934,7 @@ export default function ProctorMonitorPage() {
             LIVE
           </div>
           {/* Rôle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(99,102,241,.4)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(37,99,235,.4)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
             <i className="fas fa-user-shield" />
             {isSurveillant ? 'Surveillant' : 'Enseignant'}
           </div>
@@ -1300,7 +1300,7 @@ export default function ProctorMonitorPage() {
                             <br /><span style={{ color: 'rgba(255,255,255,.35)', fontSize: 10 }}>{s.student_email}</span>
                           </td>
                           <td>
-                            <span style={{ background: isAuto ? 'rgba(99,102,241,.2)' : 'rgba(16,185,129,.2)', color: isAuto ? '#c7d2fe' : '#6ee7b7', borderRadius: 4, padding: '2px 7px', fontSize: 10 }}>
+                            <span style={{ background: isAuto ? 'rgba(37,99,235,.2)' : 'rgba(16,185,129,.2)', color: isAuto ? '#bfdbfe' : '#6ee7b7', borderRadius: 4, padding: '2px 7px', fontSize: 10 }}>
                               {isAuto ? 'Auto-soumis' : 'Soumis'}
                             </span>
                           </td>
@@ -1461,7 +1461,7 @@ export default function ProctorMonitorPage() {
       {/* Note de surveillance */}
       {noteModal && (
         <Modal onClose={() => setNoteModal(null)}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: '#a5b4fc' }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: '#2dd4bf' }}>
             <i className="fas fa-sticky-note" /> Note de surveillance
           </h2>
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>Étudiant : <strong>{noteModal.name}</strong></p>
@@ -1471,7 +1471,7 @@ export default function ProctorMonitorPage() {
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={() => setNoteModal(null)} style={btnSecondary}>Annuler</button>
             <button onClick={saveNote} disabled={savingNote || !noteText.trim()}
-              style={{ ...btnPrimary, background: '#6366f1', opacity: (savingNote || !noteText.trim()) ? .5 : 1 }}>
+              style={{ ...btnPrimary, background: '#0d9488', opacity: (savingNote || !noteText.trim()) ? .5 : 1 }}>
               {savingNote ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-save" />} Enregistrer
             </button>
           </div>
@@ -1484,7 +1484,7 @@ export default function ProctorMonitorPage() {
           <div style={{ background: '#0f172a', borderRadius: 14, overflow: 'hidden', maxWidth: 1000, width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,.6)' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 700 }}>
-                <i className="fas fa-desktop" style={{ color: '#6366f1' }} />
+                <i className="fas fa-desktop" style={{ color: '#0d9488' }} />
                 Écran de {screenModal.name}
               </div>
               <button onClick={() => setScreenModal(null)} style={{ background: 'rgba(255,255,255,.1)', border: 'none', color: 'white', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
@@ -1924,9 +1924,9 @@ export default function ProctorMonitorPage() {
                   multiple_faces:         { icon: 'users',               color: '#ef4444' },
                   teacher_warning:        { icon: 'exclamation-triangle', color: '#f59e0b' },
                   teacher_message:        { icon: 'comment',             color: '#3b82f6' },
-                  student_message:        { icon: 'comment-dots',        color: '#6366f1' },
-                  proctor_note:           { icon: 'sticky-note',         color: '#a5b4fc' },
-                  'proctor note':         { icon: 'sticky-note',         color: '#a5b4fc' },
+                  student_message:        { icon: 'comment-dots',        color: '#0d9488' },
+                  proctor_note:           { icon: 'sticky-note',         color: '#db2777' },
+                  'proctor note':         { icon: 'sticky-note',         color: '#db2777' },
                   teacher_ban:            { icon: 'ban',                 color: '#ef4444' },
                   proctor_ban:            { icon: 'ban',                 color: '#ef4444' },
                   extra_time:             { icon: 'clock',               color: '#f59e0b' },
@@ -2183,7 +2183,7 @@ function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, o
                 {recActive ? <><i className="fas fa-stop-circle" /> STOP</> : <><i className="fas fa-circle" /> REC</>}
               </button>
               {screenAvail && (
-                <button className="card-act-btn" style={{ background: 'rgba(99,102,241,.15)', color: '#818cf8', borderColor: 'rgba(99,102,241,.25)' }}
+                <button className="card-act-btn" style={{ background: 'rgba(13,148,136,.15)', color: '#2dd4bf', borderColor: 'rgba(13,148,136,.25)' }}
                   onClick={onScreen} title="Voir l'écran partagé">
                   <i className="fas fa-desktop" />
                 </button>
@@ -2196,7 +2196,7 @@ function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, o
                 onClick={onExtraTime} title="Temps supplémentaire">
                 <i className="fas fa-clock" />
               </button>
-              <button className="card-act-btn" style={{ background: 'rgba(99,102,241,.12)', color: '#a5b4fc', borderColor: 'rgba(99,102,241,.2)' }}
+              <button className="card-act-btn" style={{ background: 'rgba(13,148,136,.12)', color: '#2dd4bf', borderColor: 'rgba(13,148,136,.2)' }}
                 onClick={onNote} title="Note de surveillance">
                 <i className="fas fa-sticky-note" />
               </button>

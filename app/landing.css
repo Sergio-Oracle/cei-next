@@ -76,7 +76,7 @@ body {
    HERO SECTION
    ============================================================================ */
 .hero {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: var(--primary);
     color: white;
     padding: 120px 20px 100px;
     text-align: center;
@@ -282,7 +282,7 @@ section h2 {
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    background: var(--primary);
     transform: scaleX(0);
     transition: var(--transition);
 }
@@ -300,7 +300,7 @@ section h2 {
 
 .feature-badge {
     display: inline-block;
-    background: linear-gradient(135deg, var(--success), var(--success-dark));
+    background: var(--success);
     color: white;
     padding: 6px 12px;
     border-radius: var(--radius-sm);
@@ -314,7 +314,7 @@ section h2 {
 .feature-icon {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: var(--primary);
     border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
@@ -367,7 +367,7 @@ section h2 {
    ONLINE EXAMS SECTION
    ============================================================================ */
 .online-exams {
-    background: linear-gradient(135deg, var(--gray-50) 0%, #e0e7ff 100%);
+    background: #eff6ff;
 }
 
 .exams-showcase {
@@ -456,7 +456,7 @@ section h2 {
 }
 
 .mock-exam-header {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: var(--primary);
     color: white;
     padding: 20px;
     border-radius: var(--radius);
@@ -506,7 +506,7 @@ section h2 {
    ============================================================================ */
 .stats {
     padding: 80px 20px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: var(--primary);
     color: white;
 }
 
@@ -602,7 +602,7 @@ section h2 {
    CTA SECTION
    ============================================================================ */
 .cta-section {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: var(--primary);
     color: white;
     text-align: center;
     padding: 100px 20px;
@@ -1008,8 +1008,8 @@ body.pwa-banner-visible .landing-lang-switcher {
     z-index: 0;
     transition: background 0.4s;
 }
-.steps-grid.anim-done::before { background: linear-gradient(90deg, var(--primary) 0%, var(--gray-200) 100%); }
-#steps-student.anim-done::before { background: linear-gradient(90deg, var(--success) 0%, var(--gray-200) 100%); }
+.steps-grid.anim-done::before { background: var(--primary); }
+#steps-student.anim-done::before { background: var(--success); }
 .step-card {
     background: white;
     border-radius: 14px;
