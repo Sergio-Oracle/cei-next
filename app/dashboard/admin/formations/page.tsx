@@ -92,6 +92,11 @@ export default function AdminFormationsPage() {
   const [importResult, setImportResult] = useState<any>(null)
 
   // Import Excel maquette (format réel école — UE/EC avec CC/EX imbriqués)
+  // Sélection en cascade Pôle → Niveau → Formation → Semestre (respecte la
+  // hiérarchie plutôt qu'une liste plate de tous les semestres existants)
+  const [excelPoleId, setExcelPoleId] = useState('')
+  const [excelNiveauId, setExcelNiveauId] = useState('')
+  const [excelFormationId, setExcelFormationId] = useState('')
   const [excelSemesterId, setExcelSemesterId] = useState('')
   const [excelFile, setExcelFile] = useState<File | null>(null)
   const [excelPreview, setExcelPreview] = useState<any>(null)
@@ -514,7 +519,7 @@ export default function AdminFormationsPage() {
         semester_id: excelPreview.semester_id, ues: excelPreview.ues,
       })
       success(`Import réussi — UEs créées: ${res.created_ues}, ECs créés: ${res.created_ecs}${res.skipped_existing ? `, ${res.skipped_existing} EC(s) déjà existant(s) ignoré(s)` : ''}`)
-      setModal(null); setExcelPreview(null); setExcelFile(null); setExcelSemesterId('')
+      setModal(null); setExcelPreview(null); setExcelFile(null); setExcelSemesterId(''); setExcelPoleId(''); setExcelNiveauId(''); setExcelFormationId('')
       load()
     } catch (e: any) { error(e.message) }
     finally { setExcelBusy(false) }
@@ -662,10 +667,6 @@ export default function AdminFormationsPage() {
 
   const formationsSansNiveau = formations.filter(f => !f.niveau_id)
 
-  const allSemesters = formations.flatMap(f => f.semesters.map(s => ({
-    id: s.id, label: `${f.name} — ${s.name || `Semestre ${s.number}`}`,
-  })))
-
   /* ── Render ───────────────────────────────────────────────────────────────── */
   return (
     <div>
@@ -695,7 +696,7 @@ export default function AdminFormationsPage() {
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
               <i className="fas fa-file-csv" /> Import CSV
             </button>
-            <button onClick={() => { setModal({ kind: 'import_excel' }); setExcelFile(null); setExcelPreview(null); setExcelSemesterId('') }}
+            <button onClick={() => { setModal({ kind: 'import_excel' }); setExcelFile(null); setExcelPreview(null); setExcelSemesterId(''); setExcelPoleId(''); setExcelNiveauId(''); setExcelFormationId('') }}
               title="Importer UE/EC depuis un fichier Excel au format officiel de l'établissement (dans un semestre déjà créé)"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#0891b2', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
               <i className="fas fa-file-excel" /> Importer Excel (UE/EC)
@@ -983,19 +984,39 @@ export default function AdminFormationsPage() {
               </button>
               <div className="form-group" style={{ marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <label style={{ fontWeight: 600, fontSize: 13 }}>Semestre cible *</label>
+                  <label style={{ fontWeight: 600, fontSize: 13 }}>Semestre cible * — Pôle → Niveau → Formation → Semestre</label>
                   <button type="button" onClick={() => openCreate('create_formation')}
                     style={{ background: 'none', border: 'none', color: '#0891b2', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <i className="fas fa-plus" /> Créer une formation
                   </button>
                 </div>
-                <select className="form-control" value={excelSemesterId} onChange={e => setExcelSemesterId(e.target.value)}>
-                  <option value="">— Sélectionner le semestre où importer —</option>
-                  {allSemesters.map(s => <option key={s.id} value={String(s.id)}>{s.label}</option>)}
-                </select>
-                {allSemesters.length === 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <select className="form-control" value={excelPoleId}
+                    onChange={e => { setExcelPoleId(e.target.value); setExcelNiveauId(''); setExcelFormationId(''); setExcelSemesterId('') }}>
+                    <option value="">— Pôle —</option>
+                    {poles.map(p => <option key={p.id} value={String(p.id)}>{p.code} — {p.name}</option>)}
+                  </select>
+                  <select className="form-control" value={excelNiveauId} disabled={!excelPoleId}
+                    onChange={e => { setExcelNiveauId(e.target.value); setExcelFormationId(''); setExcelSemesterId('') }}>
+                    <option value="">— Niveau —</option>
+                    {niveaux.filter(n => n.pole_id === Number(excelPoleId)).map(n => <option key={n.id} value={String(n.id)}>{n.code} — {n.name}</option>)}
+                  </select>
+                  <select className="form-control" value={excelFormationId} disabled={!excelNiveauId}
+                    onChange={e => { setExcelFormationId(e.target.value); setExcelSemesterId('') }}>
+                    <option value="">— Formation —</option>
+                    {formations.filter(f => f.niveau_id === Number(excelNiveauId)).map(f => <option key={f.id} value={String(f.id)}>{f.code} — {f.name}</option>)}
+                  </select>
+                  <select className="form-control" value={excelSemesterId} disabled={!excelFormationId}
+                    onChange={e => setExcelSemesterId(e.target.value)}>
+                    <option value="">— Semestre —</option>
+                    {(formations.find(f => f.id === Number(excelFormationId))?.semesters ?? []).map(s => (
+                      <option key={s.id} value={String(s.id)}>{s.name || `Semestre ${s.number}`}</option>
+                    ))}
+                  </select>
+                </div>
+                {poles.length === 0 && (
                   <p style={{ fontSize: 12, color: '#b45309', marginTop: 6 }}>
-                    Aucun semestre disponible — créez d&apos;abord une formation (le pôle peut être créé dans la foulée) puis un semestre, via le bouton ci-dessus ou &quot;+ Semestre&quot; sur la formation.
+                    Aucun pôle disponible — créez d&apos;abord un pôle, un niveau, une formation (bouton ci-dessus) puis un semestre.
                   </p>
                 )}
               </div>
