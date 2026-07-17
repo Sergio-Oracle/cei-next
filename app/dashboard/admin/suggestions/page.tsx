@@ -480,7 +480,7 @@ export default function AdminSuggestionsPage() {
               <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-image'}`} /> Insérer une image
             </button>
             <button type="button" onClick={() => audioInputRef.current?.click()} disabled={uploadingMedia}
-              style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #ddd6fe', background:'#f5f3ff', color:'#6d28d9', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+              style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
               <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-music'}`} /> Insérer un audio
             </button>
             <button type="button" onClick={() => videoInputRef.current?.click()} disabled={uploadingMedia}
@@ -565,7 +565,7 @@ export default function AdminSuggestionsPage() {
           <button onClick={openBankModal} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bfdbfe', background:'#eff6ff', color:'var(--primary)', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer' }}>
             <i className="fas fa-database" /> Banque
           </button>
-          <button onClick={() => setShowMoreModal(true)} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #ddd6fe', background:'#f5f3ff', color:'#6d28d9', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+          <button onClick={() => setShowMoreModal(true)} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer' }}>
             <i className="fas fa-wand-magic-sparkles" /> Générer d'autres questions
           </button>
           <button onClick={handleSaveSubject} disabled={savingSubject} className="btn btn-primary" style={{ fontSize:13, minWidth:180 }}>
@@ -622,13 +622,13 @@ export default function AdminSuggestionsPage() {
           onClick={e => { if (e.target===e.currentTarget && !generatingMore) setShowMoreModal(false) }}>
           <div style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:440, boxShadow:'var(--shadow-lg)', overflow:'hidden' }}>
             <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 }}>
-              <i className="fas fa-wand-magic-sparkles" style={{ color:'#6d28d9', fontSize:16 }} />
+              <i className="fas fa-wand-magic-sparkles" style={{ color:'#0369a1', fontSize:16 }} />
               <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Générer d'autres questions</h3>
               {!generatingMore && <button onClick={() => setShowMoreModal(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>}
             </div>
             {generatingMore ? (
               <div style={{ padding:'32px 22px', display:'flex', flexDirection:'column', alignItems:'center', gap:14, textAlign:'center' }}>
-                <i className="fas fa-wand-magic-sparkles fa-spin" style={{ fontSize:28, color:'#6d28d9' }} />
+                <i className="fas fa-wand-magic-sparkles fa-spin" style={{ fontSize:28, color:'#0369a1' }} />
                 <div>
                   <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>Génération en cours…</div>
                   <div style={{ fontSize:12, color:'var(--text-muted)' }}>L'IA rédige {moreCount} nouvelle{moreCount>1?'s':''} question{moreCount>1?'s':''} en évitant les doublons avec le sujet existant.</div>
@@ -641,7 +641,7 @@ export default function AdminSuggestionsPage() {
                 </p>
                 <div>
                   <label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:8 }}>
-                    <i className="fas fa-list-check" style={{ color:'#6d28d9', marginRight:6 }} />Type de question
+                    <i className="fas fa-list-check" style={{ color:'#0369a1', marginRight:6 }} />Type de question
                   </label>
                   <select value={moreType} onChange={e => setMoreType(e.target.value)}
                     style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }}>
@@ -656,7 +656,7 @@ export default function AdminSuggestionsPage() {
                 </div>
                 <div>
                   <label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:8 }}>
-                    <i className="fas fa-hashtag" style={{ color:'#6d28d9', marginRight:6 }} />Nombre de questions
+                    <i className="fas fa-hashtag" style={{ color:'#0369a1', marginRight:6 }} />Nombre de questions
                   </label>
                   <input type="number" min={1} max={10} value={moreCount} onChange={e => setMoreCount(Math.max(1, Math.min(10, Number(e.target.value))))}
                     style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }} />
@@ -664,7 +664,7 @@ export default function AdminSuggestionsPage() {
               </div>
               <div style={{ padding:'14px 22px', borderTop:'1px solid var(--border)', display:'flex', gap:10, justifyContent:'flex-end' }}>
                 <button onClick={() => setShowMoreModal(false)} className="btn btn-secondary">Annuler</button>
-                <button onClick={handleGenerateMore} style={{ minWidth:150, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'9px 18px', border:'none', background:'#6d28d9', color:'#fff', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                <button onClick={handleGenerateMore} style={{ minWidth:150, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'9px 18px', border:'none', background:'#0369a1', color:'#fff', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer' }}>
                   <i className="fas fa-wand-magic-sparkles" /> Générer
                 </button>
               </div>
@@ -924,7 +924,7 @@ export default function AdminSuggestionsPage() {
                   <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
                     {([
                       ['qcm','QCM','fa-circle-question','var(--primary)','#eff6ff','#dbeafe'],
-                      ['qcm_multi','QCM multiple','fa-square-check','#7c3aed','#f5f3ff','#ddd6fe'],
+                      ['qcm_multi','QCM multiple','fa-square-check','#0d9488','#f0fdfa','#99f6e4'],
                       ['open','Questions ouvertes','fa-pen-line','#0369a1','#e0f2fe','#bae6fd'],
                       ['vf','Vrai / Faux','fa-toggle-on','#10b981','#f0fdf4','#bbf7d0'],
                       ['appariement','Appariement','fa-link','#db2777','#fdf2f8','#fbcfe8'],
@@ -974,7 +974,7 @@ export default function AdminSuggestionsPage() {
                       onChange={e => setQuestionCount(Math.max(1, Math.min(60, Number(e.target.value) || 20)))} style={{ maxWidth:140 }} />
                     <button type="button" onClick={suggestQuestionCount} disabled={suggestingCount}
                       title="Suggestion IA basée sur la difficulté et le niveau, pour un examen d'environ 1h"
-                      style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', border:'1px solid #ddd6fe', background:'#f5f3ff', color:'#6d28d9', borderRadius:8, fontSize:12, fontWeight:600, cursor:suggestingCount?'not-allowed':'pointer' }}>
+                      style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:12, fontWeight:600, cursor:suggestingCount?'not-allowed':'pointer' }}>
                       <i className={`fas ${suggestingCount ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`} />
                       {suggestingCount ? 'Suggestion…' : 'Suggérer (IA)'}
                     </button>

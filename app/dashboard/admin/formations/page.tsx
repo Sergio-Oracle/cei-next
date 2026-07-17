@@ -294,6 +294,15 @@ export default function AdminFormationsPage() {
     } catch { error('Impossible de télécharger le template') }
   }
 
+  async function downloadExcelTemplate() {
+    try {
+      const blob = await api.blob('/api/admin/maquette/excel-template')
+      const url = URL.createObjectURL(blob)
+      Object.assign(document.createElement('a'), { href: url, download: `template_maquette_excel_${new Date().toISOString().split('T')[0]}.xlsx` }).click()
+      URL.revokeObjectURL(url); success('Template téléchargé')
+    } catch { error('Impossible de télécharger le template') }
+  }
+
   async function handleImportCsv() {
     if (!csvFile) { error('Sélectionnez un fichier CSV'); return }
     setImporting(true)
@@ -448,7 +457,7 @@ export default function AdminFormationsPage() {
             </button>
             <button onClick={() => { setModal({ kind: 'import_excel' }); setExcelFile(null); setExcelPreview(null); setExcelSemesterId('') }}
               title="Importer UE/EC depuis un fichier Excel au format officiel de l'établissement (dans un semestre déjà créé)"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#7c3aed', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#0891b2', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
               <i className="fas fa-file-excel" /> Importer Excel (UE/EC)
             </button>
           </div>
@@ -692,8 +701,8 @@ export default function AdminFormationsPage() {
       {modal?.kind === 'import_excel' && (
         <ModalOverlay onClose={() => setModal(null)} wide>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid var(--border)' }}>
-            <div style={{ width: 42, height: 42, borderRadius: 11, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className="fas fa-file-excel" style={{ color: '#7c3aed', fontSize: 17 }} />
+            <div style={{ width: 42, height: 42, borderRadius: 11, background: '#ecfeff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fas fa-file-excel" style={{ color: '#0891b2', fontSize: 17 }} />
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Importer UE/EC — Excel officiel</h3>
@@ -705,6 +714,10 @@ export default function AdminFormationsPage() {
 
           {!excelPreview ? (
             <>
+              <button onClick={downloadExcelTemplate}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, marginBottom: 18 }}>
+                <i className="fas fa-download" /> Télécharger Template Excel
+              </button>
               <div className="form-group" style={{ marginBottom: 16 }}>
                 <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Semestre cible *</label>
                 <select className="form-control" value={excelSemesterId} onChange={e => setExcelSemesterId(e.target.value)}>
@@ -724,7 +737,7 @@ export default function AdminFormationsPage() {
               </div>
               <div style={{ display: 'flex', gap: 10, paddingTop: 14 }}>
                 <button onClick={handleExcelPreview} disabled={excelBusy || !excelFile || !excelSemesterId}
-                  style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#7c3aed', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 700, opacity: (!excelFile || !excelSemesterId) ? .5 : 1 }}>
+                  style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#0891b2', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 700, opacity: (!excelFile || !excelSemesterId) ? .5 : 1 }}>
                   <i className={`fas ${excelBusy ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} style={{ marginRight: 7 }} />
                   {excelBusy ? 'Analyse…' : 'Analyser le fichier'}
                 </button>
@@ -736,7 +749,7 @@ export default function AdminFormationsPage() {
             </>
           ) : (
             <>
-              <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#5b21b6' }}>
+              <div style={{ background: '#ecfeff', border: '1px solid #a5f3fc', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#0e7490' }}>
                 <strong>{excelPreview.ue_count} UE</strong> et <strong>{excelPreview.ec_count} EC</strong> détectés pour <strong>{excelPreview.semester_name}</strong> — vérifiez avant de valider.
               </div>
               <div style={{ maxHeight: '48vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
