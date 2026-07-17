@@ -33,6 +33,7 @@ interface Formation {
 
 type ModalKind =
   | 'manage_poles'
+  | 'edit_pole'         | 'edit_niveau'
   | 'create_formation' | 'edit_formation'
   | 'create_semester'  | 'edit_semester'
   | 'create_ue'        | 'edit_ue'
@@ -228,6 +229,29 @@ export default function AdminFormationsPage() {
   function modalBody() {
     if (!modal) return null
     switch (modal.kind) {
+      case 'edit_pole': return (<>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Code : <strong style={{ color: 'var(--text)' }}>{modal.item?.code}</strong> (non modifiable)</div>
+        {inp('name', 'Nom *', { placeholder: 'Ex: Sciences et Technologies du Numérique' })}
+        <div className="form-group">
+          <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Description</label>
+          <textarea className="form-control" rows={3} value={form.description ?? ''}
+            onChange={e => setForm((p: any) => ({ ...p, description: e.target.value }))}
+            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box' }} />
+        </div>
+        {chk('is_active', 'Pôle actif')}
+      </>)
+      case 'edit_niveau': return (<>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Code : <strong style={{ color: 'var(--text)' }}>{modal.item?.code}</strong> (non modifiable)</div>
+        {sel('pole_id', 'Pôle *', poles.map(p => ({ value: p.id, label: `${p.code} — ${p.name}` })))}
+        {inp('name', 'Nom *', { placeholder: 'Ex: Licence 1' })}
+        <div className="form-group">
+          <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Description</label>
+          <textarea className="form-control" rows={3} value={form.description ?? ''}
+            onChange={e => setForm((p: any) => ({ ...p, description: e.target.value }))}
+            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box' }} />
+        </div>
+        {chk('is_active', 'Niveau actif')}
+      </>)
       case 'create_formation': case 'edit_formation': return (<>
         <div className="form-group">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -356,7 +380,7 @@ export default function AdminFormationsPage() {
   function modalTitle() {
     if (!modal) return ''
     const isCreate = modal.kind.startsWith('create')
-    const labels: Record<string, string> = { formation: 'une Formation', semester: 'un Semestre', ue: 'une UE', ec: 'un EC' }
+    const labels: Record<string, string> = { pole: 'un Pôle', niveau: 'un Niveau', formation: 'une Formation', semester: 'un Semestre', ue: 'une UE', ec: 'un EC' }
     const entity = modal.kind.replace('create_', '').replace('edit_', '')
     return `${isCreate ? 'Créer' : 'Modifier'} ${labels[entity] || entity}`
   }
@@ -369,6 +393,8 @@ export default function AdminFormationsPage() {
       const body = { ...form }
       let endpoint = ''; let method = 'POST'
       switch (modal.kind) {
+        case 'edit_pole':        endpoint = `/api/admin/poles/${modal.item.id}`; method = 'PUT'; break
+        case 'edit_niveau':      endpoint = `/api/admin/niveaux/${modal.item.id}`; method = 'PUT'; break
         case 'create_formation': endpoint = '/api/admin/formations'; break
         case 'edit_formation':   endpoint = `/api/admin/formations/${modal.item.id}`; method = 'PUT'; break
         case 'create_semester':  endpoint = '/api/admin/semesters'; body.formation_id = modal.formationId; break
@@ -564,6 +590,10 @@ export default function AdminFormationsPage() {
                       <div style={{ fontWeight: 800, fontSize: 13, color: poleColor(p.code) }}>{p.code}</div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.name} · {p.formations_count} formation(s) · {pnv.length} niveau(x)</div>
                     </div>
+                    <button onClick={() => openEdit('edit_pole', p)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: poleColor(p.code), fontSize: 13, padding: 2, marginRight: 4 }} title="Modifier le pôle">
+                      <i className="fas fa-pen" />
+                    </button>
                     <button onClick={() => deletePole(p.id, p.code)}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 2 }} title="Désactiver le pôle">
                       <i className="fas fa-times" />
@@ -581,6 +611,10 @@ export default function AdminFormationsPage() {
                           <div style={{ fontWeight: 800, fontSize: 12.5, color: '#0d9488' }}>{n.code}</div>
                           <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{n.name} · {n.formations_count} formation(s)</div>
                         </div>
+                        <button onClick={() => openEdit('edit_niveau', n)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize: 12, padding: 2 }} title="Modifier">
+                          <i className="fas fa-pen" />
+                        </button>
                         <button onClick={() => deleteNiveau(n.id, n.code)}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Désactiver">
                           <i className="fas fa-times" />
@@ -623,6 +657,10 @@ export default function AdminFormationsPage() {
                     <div key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f1f5f9', border: '1.5px solid #cbd5e1', borderRadius: 10, padding: '6px 12px' }}>
                       <div style={{ fontWeight: 800, fontSize: 12.5 }}>{n.code}</div>
                       <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{n.name}</div>
+                      <button onClick={() => openEdit('edit_niveau', n)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize: 12, padding: 2 }} title="Modifier">
+                        <i className="fas fa-pen" />
+                      </button>
                       <button onClick={() => deleteNiveau(n.id, n.code)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Désactiver">
                         <i className="fas fa-times" />
