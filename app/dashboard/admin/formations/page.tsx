@@ -907,7 +907,9 @@ export default function AdminFormationsPage() {
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Import Bulk Maquette</h3>
-              <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Importez formations, semestres, UEs et ECs via CSV</p>
+              <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
+                Importez toute la hiérarchie Pôle → Niveau → Formation → Semestre → UE → EC via CSV
+              </p>
             </div>
           </div>
 
@@ -915,7 +917,8 @@ export default function AdminFormationsPage() {
             <strong style={{ color: '#1d4ed8' }}>Instructions :</strong>
             <ol style={{ margin: '8px 0 0 18px', color: '#1e40af', lineHeight: 1.9 }}>
               <li>Téléchargez le template CSV</li>
-              <li>Remplissez ligne par ligne : formations, semestres, UEs, ECs</li>
+              <li>Remplissez ligne par ligne : Pôle, Niveau, Formation, Semestre, UE, EC</li>
+              <li>Un Pôle ou Niveau qui n&apos;existe pas encore (code + nom renseignés) est créé automatiquement à l&apos;import — inutile de le créer à part avant</li>
               <li>Respectez l&apos;ordre hiérarchique</li>
               <li>Uploadez le fichier</li>
             </ol>
