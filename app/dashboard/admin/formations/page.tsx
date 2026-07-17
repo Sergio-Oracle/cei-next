@@ -34,12 +34,11 @@ interface Formation {
 type ModalKind =
   | 'manage_poles'
   | 'edit_pole'         | 'edit_niveau'
-  | 'create_formation' | 'edit_formation'
+  | 'edit_formation'
   | 'create_semester'  | 'edit_semester'
   | 'create_ue'        | 'edit_ue'
   | 'create_ec'        | 'edit_ec'
   | 'import_csv'
-  | 'import_excel'
   | 'wizard'
 
 type WizardStep = 'pole' | 'niveau' | 'formation' | 'semester' | 'ue' | 'ec'
@@ -96,12 +95,9 @@ export default function AdminFormationsPage() {
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<any>(null)
 
-  // Import Excel maquette (format réel école — UE/EC avec CC/EX imbriqués)
-  // Sélection en cascade Pôle → Niveau → Formation → Semestre (respecte la
-  // hiérarchie plutôt qu'une liste plate de tous les semestres existants)
-  const [excelPoleId, setExcelPoleId] = useState('')
-  const [excelNiveauId, setExcelNiveauId] = useState('')
-  const [excelFormationId, setExcelFormationId] = useState('')
+  // Import Excel maquette (format réel école — UE/EC avec CC/EX imbriqués),
+  // utilisé depuis l'étape UE de l'assistant "Créer la hiérarchie (pas-à-pas)"
+  // — excelSemesterId est pré-ciblé sur le semestre courant de l'assistant.
   const [excelSemesterId, setExcelSemesterId] = useState('')
   const [excelFile, setExcelFile] = useState<File | null>(null)
   const [excelPreview, setExcelPreview] = useState<any>(null)
@@ -135,8 +131,7 @@ export default function AdminFormationsPage() {
   const [wizardBusy, setWizardBusy] = useState(false)
   const [wizardEcCount, setWizardEcCount] = useState(0)
   // À l'étape UE, choix entre créer une UE/EC à la main ou importer tout le
-  // semestre d'un coup via le fichier Excel officiel (même pipeline que la
-  // modale "Importer Excel (UE/EC)", juste pré-ciblé sur ce semestre).
+  // semestre d'un coup via le fichier Excel officiel (pré-ciblé sur ce semestre).
   const [wizardUeMode, setWizardUeMode] = useState<'manual' | 'excel'>('manual')
 
   function openWizard() {
@@ -379,7 +374,7 @@ export default function AdminFormationsPage() {
         </div>
         {chk('is_active', 'Niveau actif')}
       </>)
-      case 'create_formation': case 'edit_formation': return (<>
+      case 'edit_formation': return (<>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div className="form-group">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -774,7 +769,6 @@ export default function AdminFormationsPage() {
       switch (modal.kind) {
         case 'edit_pole':        endpoint = `/api/admin/poles/${modal.item.id}`; method = 'PUT'; break
         case 'edit_niveau':      endpoint = `/api/admin/niveaux/${modal.item.id}`; method = 'PUT'; break
-        case 'create_formation': endpoint = '/api/admin/formations'; break
         case 'edit_formation':   endpoint = `/api/admin/formations/${modal.item.id}`; method = 'PUT'; break
         case 'create_semester':  endpoint = '/api/admin/semesters'; body.formation_id = modal.formationId; break
         case 'edit_semester':    endpoint = `/api/admin/semesters/${modal.item.id}`; method = 'PUT'; break
@@ -893,7 +887,7 @@ export default function AdminFormationsPage() {
         semester_id: excelPreview.semester_id, ues: excelPreview.ues,
       })
       success(`Import réussi — UEs créées: ${res.created_ues}, ECs créés: ${res.created_ecs}${res.skipped_existing ? `, ${res.skipped_existing} EC(s) déjà existant(s) ignoré(s)` : ''}`)
-      setModal(null); setExcelPreview(null); setExcelFile(null); setExcelSemesterId(''); setExcelPoleId(''); setExcelNiveauId(''); setExcelFormationId('')
+      setModal(null); setExcelPreview(null); setExcelFile(null); setExcelSemesterId('')
       load()
     } catch (e: any) { error(e.message) }
     finally { setExcelBusy(false) }
@@ -1067,21 +1061,10 @@ export default function AdminFormationsPage() {
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
               <i className="fas fa-shoe-prints" /> Créer la hiérarchie (pas-à-pas)
             </button>
-            <button onClick={() => openCreate('create_formation')} disabled={poles.length === 0}
-              title={poles.length === 0 ? "Créez d'abord un pôle ci-dessous" : undefined}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: poles.length === 0 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 700, opacity: poles.length === 0 ? .5 : 1 }}>
-              <i className="fas fa-plus" /> Nouvelle Formation
-            </button>
             <button onClick={() => { setModal({ kind: 'import_csv' }); setCsvFile(null); setImportResult(null) }}
               title="Import en masse — crée aussi le Pôle et le Niveau à la volée s'ils n'existent pas encore"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
               <i className="fas fa-file-csv" /> Import CSV
-            </button>
-            <button onClick={() => { setModal({ kind: 'import_excel' }); setExcelFile(null); setExcelPreview(null); setExcelSemesterId(''); setExcelPoleId(''); setExcelNiveauId(''); setExcelFormationId('') }}
-              disabled={poles.length === 0}
-              title={poles.length === 0 ? "Créez d'abord un pôle, un niveau, une formation et un semestre" : "Importer UE/EC depuis un fichier Excel au format officiel de l'établissement (dans un semestre déjà créé)"}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#0891b2', color: 'white', cursor: poles.length === 0 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 700, opacity: poles.length === 0 ? .5 : 1 }}>
-              <i className="fas fa-file-excel" /> Importer Excel (UE/EC)
             </button>
           </div>
         </div>
@@ -1147,7 +1130,7 @@ export default function AdminFormationsPage() {
                             <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                               {nf.length === 0 ? (
                                 <p style={{ color: 'var(--text-muted)', fontSize: 12.5, margin: 0 }}>
-                                  Aucune formation sous ce niveau — cliquez &quot;+ Nouvelle Formation&quot; en haut
+                                  Aucune formation sous ce niveau — cliquez &quot;Créer la hiérarchie (pas-à-pas)&quot; en haut
                                 </p>
                               ) : nf.map(f => renderFormationCard(f))}
                             </div>
@@ -1347,128 +1330,6 @@ export default function AdminFormationsPage() {
         </ModalOverlay>
       )}
 
-      {/* ══ Modal Import Excel (format officiel école) ══════════════════════════ */}
-      {modal?.kind === 'import_excel' && (
-        <ModalOverlay onClose={() => setModal(null)} wide>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid var(--border)' }}>
-            <div style={{ width: 42, height: 42, borderRadius: 11, background: '#ecfeff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className="fas fa-file-excel" style={{ color: '#0891b2', fontSize: 17 }} />
-            </div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Importer UE/EC — Excel officiel</h3>
-              <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
-                Fichier au format réel de l&apos;établissement (colonnes Code/Nom/Crédit/Type UE puis Code/Nom/Coef EC, pourcentages CC/EX entre crochets dans le nom de l&apos;EC)
-              </p>
-            </div>
-          </div>
-
-          {!excelPreview ? (
-            <>
-              <button onClick={downloadExcelTemplate}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, marginBottom: 18 }}>
-                <i className="fas fa-download" /> Télécharger Template Excel
-              </button>
-              <div className="form-group" style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <label style={{ fontWeight: 600, fontSize: 13 }}>Semestre cible * — Pôle → Niveau → Formation → Semestre</label>
-                  <button type="button" onClick={() => openCreate('create_formation')}
-                    style={{ background: 'none', border: 'none', color: '#0891b2', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <i className="fas fa-plus" /> Créer une formation
-                  </button>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-                  <select className="form-control" value={excelPoleId}
-                    onChange={e => { setExcelPoleId(e.target.value); setExcelNiveauId(''); setExcelFormationId(''); setExcelSemesterId('') }}>
-                    <option value="">— Pôle —</option>
-                    {poles.map(p => <option key={p.id} value={String(p.id)}>{p.code} — {p.name}</option>)}
-                  </select>
-                  <select className="form-control" value={excelNiveauId} disabled={!excelPoleId}
-                    onChange={e => { setExcelNiveauId(e.target.value); setExcelFormationId(''); setExcelSemesterId('') }}>
-                    <option value="">— Niveau —</option>
-                    {niveaux.filter(n => n.pole_id === Number(excelPoleId)).map(n => <option key={n.id} value={String(n.id)}>{n.code} — {n.name}</option>)}
-                  </select>
-                  <select className="form-control" value={excelFormationId} disabled={!excelNiveauId}
-                    onChange={e => { setExcelFormationId(e.target.value); setExcelSemesterId('') }}>
-                    <option value="">— Formation —</option>
-                    {formations.filter(f => f.niveau_id === Number(excelNiveauId)).map(f => <option key={f.id} value={String(f.id)}>{f.code} — {f.name}</option>)}
-                  </select>
-                  <select className="form-control" value={excelSemesterId} disabled={!excelFormationId}
-                    onChange={e => setExcelSemesterId(e.target.value)}>
-                    <option value="">— Semestre —</option>
-                    {(formations.find(f => f.id === Number(excelFormationId))?.semesters ?? []).map(s => (
-                      <option key={s.id} value={String(s.id)}>{s.name || `Semestre ${s.number}`}</option>
-                    ))}
-                  </select>
-                </div>
-                {poles.length === 0 && (
-                  <p style={{ fontSize: 12, color: '#b45309', marginTop: 6 }}>
-                    Aucun pôle disponible — créez d&apos;abord un pôle, un niveau, une formation (bouton ci-dessus) puis un semestre.
-                  </p>
-                )}
-              </div>
-              <div className="form-group" style={{ marginBottom: 8 }}>
-                <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Fichier Excel (.xlsx) *</label>
-                <input type="file" accept=".xlsx,.xls" style={{ width: '100%', fontSize: 14, padding: '8px 0' }}
-                  onChange={e => setExcelFile(e.target.files?.[0] || null)} />
-              </div>
-              <div style={{ display: 'flex', gap: 10, paddingTop: 14 }}>
-                <button onClick={handleExcelPreview} disabled={excelBusy || !excelFile || !excelSemesterId}
-                  style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#0891b2', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 700, opacity: (!excelFile || !excelSemesterId) ? .5 : 1 }}>
-                  <i className={`fas ${excelBusy ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} style={{ marginRight: 7 }} />
-                  {excelBusy ? 'Analyse…' : 'Analyser le fichier'}
-                </button>
-                <button onClick={() => setModal(null)}
-                  style={{ padding: '10px 22px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
-                  Annuler
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ background: '#ecfeff', border: '1px solid #a5f3fc', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#0e7490' }}>
-                <strong>{excelPreview.ue_count} UE</strong> et <strong>{excelPreview.ec_count} EC</strong> détectés pour <strong>{excelPreview.semester_name}</strong> — vérifiez avant de valider.
-              </div>
-              <div style={{ maxHeight: '48vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {excelPreview.ues.map((u: any) => (
-                  <div key={u.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-                    <div style={{ padding: '9px 14px', background: u.already_exists ? '#fef3c7' : '#f0fdf4', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <strong style={{ fontSize: 13 }}>{u.code}</strong>
-                      <span style={{ fontSize: 13 }}>{u.name}</span>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{u.credits} crédits · {u.ue_type}</span>
-                      {u.already_exists && (
-                        <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: '#92400e' }}>
-                          <i className="fas fa-triangle-exclamation" /> UE déjà existante — ne sera pas recréée
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-                      {u.ecs.map((e: any) => (
-                        <div key={e.code} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, padding: '4px 0', color: e.already_exists ? 'var(--text-muted)' : 'var(--text)' }}>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{e.code}</span>
-                          <span style={{ flex: 1 }}>{e.name}</span>
-                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Coef. {e.coefficient} · CC:{e.cc_percentage}% EX:{e.ex_percentage}%</span>
-                          {e.already_exists && <span style={{ fontSize: 11, fontWeight: 700, color: '#b45309' }}>déjà existant — ignoré</span>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: 10, paddingTop: 16 }}>
-                <button onClick={handleExcelConfirm} disabled={excelBusy}
-                  style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
-                  <i className={`fas ${excelBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 7 }} />
-                  {excelBusy ? 'Import…' : 'Confirmer l’import'}
-                </button>
-                <button onClick={() => setExcelPreview(null)}
-                  style={{ padding: '10px 22px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
-                  <i className="fas fa-arrow-left" style={{ marginRight: 6 }} />Revenir
-                </button>
-              </div>
-            </>
-          )}
-        </ModalOverlay>
-      )}
 
       {/* ══ Assistant pas-à-pas Pôle → Niveau → Formation → Semestre → UE → EC ═══ */}
       {modal?.kind === 'wizard' && (
