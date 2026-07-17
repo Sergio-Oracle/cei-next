@@ -539,15 +539,128 @@ export default function AdminFormationsPage() {
     setInlineNiveauOpen(false); setInlineNiveauForm({ code: '', name: '', description: '' })
   }
 
-  /* ── Group formations by pôle ─────────────────────────────────────────────── */
-  const formationsByPole: { pole: Pole | null; formations: Formation[] }[] = []
-  const assigned = new Set<number>()
-  for (const pole of poles) {
-    const pf = formations.filter(f => f.pole_id === pole.id)
-    if (pf.length > 0) { formationsByPole.push({ pole, formations: pf }); pf.forEach(f => assigned.add(f.id)) }
+  /* ── Carte Formation (avec ses Semestres/UE/EC) — imbriquée sous son Niveau ── */
+  function renderFormationCard(f: Formation) {
+    return (
+      <div key={f.id} style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
+        {/* Formation header */}
+        <div style={{ background: poleColor(f.pole_code), color: 'white', padding: '16px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="fas fa-graduation-cap" />
+              {f.code} — {f.name}
+            </div>
+            <div style={{ fontSize: 12, opacity: .82, marginTop: 3 }}>
+              {[f.level, f.department].filter(Boolean).join(' | ')}
+            </div>
+            <div style={{ fontSize: 11, opacity: .68, marginTop: 2 }}>
+              <i className="fas fa-book" style={{ marginRight: 4 }} />{f.semesters.length} semestre(s)
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Btn color="rgba(255,255,255,.2)" onClick={() => openEdit('edit_formation', f)} title="Modifier">
+              <i className="fas fa-pen" />
+            </Btn>
+            <Btn color="#10b981" onClick={() => openCreate('create_semester', { formationId: f.id })}>
+              <i className="fas fa-plus" /> Semestre
+            </Btn>
+            <Btn color="#ef4444" onClick={() => del(`/api/admin/formations/${f.id}`, 'Supprimer cette formation et tous ses semestres/UEs/ECs ?')} title="Supprimer">
+              <i className="fas fa-trash" />
+            </Btn>
+          </div>
+        </div>
+
+        {/* Semesters */}
+        <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {f.semesters.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>
+              <i className="fas fa-inbox" style={{ marginRight: 6 }} />Aucun semestre — cliquez &quot;+ Semestre&quot;
+            </p>
+          ) : f.semesters.map(s => (
+            <div key={s.id} style={{ border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
+              {/* Semester header */}
+              <div style={{ background: '#f8fafc', padding: '11px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
+                  <i className="fas fa-calendar-alt" style={{ marginRight: 7, color: '#3b82f6' }} />
+                  Semestre {s.number}{s.name ? ` — ${s.name}` : ''}
+                  <span style={{ color: '#64748b', marginLeft: 12, fontWeight: 400, fontSize: 13 }}>
+                    <i className="fas fa-star" style={{ marginRight: 4, color: '#f59e0b' }} />{s.total_credits} crédits
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 7 }}>
+                  <Btn color="#3b82f6" onClick={() => openEdit('edit_semester', s)} title="Modifier"><i className="fas fa-pen" /></Btn>
+                  <Btn color="#10b981" onClick={() => openCreate('create_ue', { semesterId: s.id })}><i className="fas fa-plus" /> UE</Btn>
+                  <Btn color="#ef4444" onClick={() => del(`/api/admin/semesters/${s.id}`, 'Supprimer ce semestre et toutes ses UEs/ECs ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
+                </div>
+              </div>
+
+              {/* UEs */}
+              <div style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {s.ues.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Aucune UE</p>
+                ) : s.ues.map(u => (
+                  <div key={u.id} style={{ borderLeft: '4px solid #10b981', background: '#fafcff', borderRadius: '0 10px 10px 0', border: '1px solid #e2e8f0', borderLeftWidth: 4, borderLeftColor: '#10b981' }}>
+                    <div style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontSize: 13, color: '#0f172a' }}>
+                        <i className="fas fa-book-open" style={{ marginRight: 6, color: '#10b981' }} />
+                        <strong>{u.code}</strong> — {u.name}
+                        <span style={{ color: '#64748b', marginLeft: 10, fontSize: 12 }}>
+                          <i className="fas fa-award" style={{ marginRight: 3, color: '#f59e0b' }} />{u.credits} crédits
+                        </span>
+                        {u.ue_type && (
+                          <span style={{
+                            marginLeft: 8, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 12,
+                            background: u.ue_type === 'obligatoire' ? '#dbeafe' : '#fef9c3',
+                            color: u.ue_type === 'obligatoire' ? '#1d4ed8' : '#a16207'
+                          }}>
+                            {u.ue_type === 'obligatoire' ? 'Obligatoire' : 'Optionnel'}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <Btn color="#3b82f6" onClick={() => openEdit('edit_ue', u)} title="Modifier"><i className="fas fa-pen" /></Btn>
+                        <Btn color="#10b981" onClick={() => openCreate('create_ec', { ueId: u.id })}><i className="fas fa-plus" /> EC</Btn>
+                        <Btn color="#ef4444" onClick={() => del(`/api/admin/ues/${u.id}`, 'Supprimer cette UE et tous ses ECs ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
+                      </div>
+                    </div>
+
+                    {/* ECs */}
+                    {u.ecs.length > 0 && (
+                      <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                        {u.ecs.map(ec => (
+                          <div key={ec.id} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 9, padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#78350f' }}>{ec.code}</span>
+                              <span style={{ fontSize: 13, color: '#92400e' }}> — {ec.name}</span>
+                              <div style={{ fontSize: 11, color: '#b45309', marginTop: 3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                <span>Coef: {ec.coefficient}</span>
+                                {(ec.cm || 0) > 0 && <span>CM: {ec.cm}h</span>}
+                                {(ec.td || 0) > 0 && <span>TD: {ec.td}h</span>}
+                                {(ec.tp || 0) > 0 && <span>TP: {ec.tp}h</span>}
+                                <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '1px 7px', borderRadius: 8, fontWeight: 700 }}>
+                                  CC:{ec.cc_percentage ?? 40}% / EX:{ec.ex_percentage ?? 60}%
+                                </span>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                              <Btn color="#3b82f6" onClick={() => openEdit('edit_ec', ec)} title="Modifier"><i className="fas fa-pen" /></Btn>
+                              <Btn color="#ef4444" onClick={() => del(`/api/admin/ecs/${ec.id}`, 'Supprimer cet EC ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
   }
-  const unassigned = formations.filter(f => !assigned.has(f.id))
-  if (unassigned.length > 0) formationsByPole.push({ pole: null, formations: unassigned })
+
+  const formationsSansNiveau = formations.filter(f => !f.niveau_id)
 
   const allSemesters = formations.flatMap(f => f.semesters.map(s => ({
     id: s.id, label: `${f.name} — ${s.name || `Semestre ${s.number}`}`,
@@ -563,145 +676,15 @@ export default function AdminFormationsPage() {
           Maquette Pédagogique — UNCHK
         </h2>
         <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: 14 }}>
-          Gérez la hiérarchie : <strong>Pôle → Formation → Semestre → UE → EC</strong>
+          Gérez la hiérarchie : <strong>Pôle → Niveau → Formation → Semestre → UE → EC</strong>
         </p>
       </div>
 
-      {/* ══ Section Pôles & Niveaux (fusionnée — Pôle → Niveau) ═══════════════════ */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, marginBottom: 24, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="fas fa-sitemap" style={{ color: '#2563eb' }} /> Pôles &amp; Niveaux UNCHK
-          </h3>
-        </div>
-        <div style={{ padding: '16px 24px' }}>
-          {/* Chaque pôle avec ses niveaux imbriqués directement dessous */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
-            {poles.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Aucun pôle créé</p>
-            ) : poles.map(p => {
-              const pnv = niveaux.filter(n => n.pole_id === p.id)
-              return (
-                <div key={p.id} style={{ border: `1.5px solid ${poleColor(p.code)}40`, borderRadius: 12, overflow: 'hidden' }}>
-                  {/* En-tête pôle */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: poleColor(p.code) + '18', padding: '10px 16px' }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: poleColor(p.code) }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 800, fontSize: 13, color: poleColor(p.code) }}>{p.code}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.name} · {p.formations_count} formation(s) · {pnv.length} niveau(x)</div>
-                    </div>
-                    <button onClick={() => openEdit('edit_pole', p)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: poleColor(p.code), fontSize: 13, padding: 2, marginRight: 4 }} title="Modifier le pôle">
-                      <i className="fas fa-pen" />
-                    </button>
-                    <button onClick={() => deletePole(p.id, p.code)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 2 }} title="Désactiver le pôle">
-                      <i className="fas fa-times" />
-                    </button>
-                  </div>
-                  {/* Niveaux imbriqués sous ce pôle */}
-                  <div style={{ padding: '10px 16px', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-                    {pnv.length === 0 && quickNiveauPoleId !== p.id && (
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Aucun niveau sous ce pôle</span>
-                    )}
-                    {pnv.map(n => (
-                      <div key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0d948818', border: '1.5px solid #0d948840', borderRadius: 10, padding: '6px 12px' }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#0d9488' }} />
-                        <div>
-                          <div style={{ fontWeight: 800, fontSize: 12.5, color: '#0d9488' }}>{n.code}</div>
-                          <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{n.name} · {n.formations_count} formation(s)</div>
-                        </div>
-                        <button onClick={() => openEdit('edit_niveau', n)}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize: 12, padding: 2 }} title="Modifier">
-                          <i className="fas fa-pen" />
-                        </button>
-                        <button onClick={() => deleteNiveau(n.id, n.code)}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Désactiver">
-                          <i className="fas fa-times" />
-                        </button>
-                      </div>
-                    ))}
-                    {quickNiveauPoleId === p.id ? (
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        <input placeholder="Code (ex: L1)" autoFocus value={niveauForm.code}
-                          onChange={e => setNiveauForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
-                          style={{ width: 90, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }} />
-                        <input placeholder="Nom (ex: Licence 1)" value={niveauForm.name}
-                          onChange={e => setNiveauForm(f => ({ ...f, name: e.target.value }))}
-                          style={{ width: 150, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }} />
-                        <button onClick={() => createNiveau(p.id)} disabled={niveauSubmitting || !niveauForm.code || !niveauForm.name}
-                          style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: '#0d9488', color: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: (!niveauForm.code || !niveauForm.name) ? .5 : 1 }}>
-                          <i className={`fas ${niveauSubmitting ? 'fa-spinner fa-spin' : 'fa-check'}`} />
-                        </button>
-                        <button onClick={() => { setQuickNiveauPoleId(null); setNiveauForm({ code: '', name: '', description: '' }) }}
-                          style={{ padding: '6px 10px', borderRadius: 7, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 12 }}>
-                          <i className="fas fa-xmark" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button onClick={() => { setQuickNiveauPoleId(p.id); setNiveauForm({ code: '', name: '', description: '' }) }}
-                        style={{ background: 'none', border: '1.5px dashed #0d948870', borderRadius: 8, padding: '6px 12px', color: '#0d9488', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                        <i className="fas fa-plus" style={{ marginRight: 5 }} />Niveau
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-            {/* Niveaux orphelins (sans pôle) — cas hérité, à corriger via modification */}
-            {niveaux.some(n => !n.pole_id) && (
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Sans pôle</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                  {niveaux.filter(n => !n.pole_id).map(n => (
-                    <div key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f1f5f9', border: '1.5px solid #cbd5e1', borderRadius: 10, padding: '6px 12px' }}>
-                      <div style={{ fontWeight: 800, fontSize: 12.5 }}>{n.code}</div>
-                      <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{n.name}</div>
-                      <button onClick={() => openEdit('edit_niveau', n)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize: 12, padding: 2 }} title="Modifier">
-                        <i className="fas fa-pen" />
-                      </button>
-                      <button onClick={() => deleteNiveau(n.id, n.code)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Désactiver">
-                        <i className="fas fa-times" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Formulaire création pôle */}
-          <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 12, padding: '14px 18px' }}>
-            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: '#475569' }}>
-              <i className="fas fa-plus" style={{ marginRight: 6 }} />Créer un nouveau pôle
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 2fr auto', gap: 10, alignItems: 'center' }}>
-              <input placeholder="Code (ex: STN)" value={poleForm.code}
-                onChange={e => setPoleForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
-                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-              <input placeholder="Nom du pôle" value={poleForm.name}
-                onChange={e => setPoleForm(p => ({ ...p, name: e.target.value }))}
-                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-              <input placeholder="Description (optionnel)" value={poleForm.description}
-                onChange={e => setPoleForm(p => ({ ...p, description: e.target.value }))}
-                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-              <button onClick={createPole} disabled={poleSubmitting || !poleForm.code || !poleForm.name}
-                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, opacity: (!poleForm.code || !poleForm.name) ? .5 : 1 }}>
-                <i className={`fas ${poleSubmitting ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 5 }} />
-                Créer
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ══ Section Formations ══════════════════════════════════════════════════ */}
+      {/* ══ Section unique : Pôle → Niveau → Formation → Semestre → UE → EC ═══════ */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
-        <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="fas fa-university" style={{ color: 'var(--primary)' }} /> Formations
+            <i className="fas fa-sitemap" style={{ color: '#2563eb' }} /> Pôles, Niveaux &amp; Formations UNCHK
           </h3>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => openCreate('create_formation')}
@@ -720,150 +703,173 @@ export default function AdminFormationsPage() {
           </div>
         </div>
 
-        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 28 }}>
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: 48 }}>
               <i className="fas fa-spinner fa-spin" style={{ fontSize: 32, color: 'var(--primary)' }} />
             </div>
-          ) : formations.length === 0 ? (
+          ) : poles.length === 0 && formationsSansNiveau.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
               <i className="fas fa-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />
-              Aucune formation créée
+              Aucun pôle créé — commencez par en créer un ci-dessous
             </div>
-          ) : formationsByPole.map(({ pole, formations: pfs }, gi) => (
-            /* ── Groupe par Pôle ── */
-            <div key={gi}>
-              {/* Pôle header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                <div style={{ width: 4, height: 20, borderRadius: 2, background: poleColor(pole?.code) }} />
-                <span style={{ fontWeight: 800, fontSize: 15, color: poleColor(pole?.code) }}>
-                  {pole ? `Pôle ${pole.code} — ${pole.name}` : 'Sans pôle'}
-                </span>
-                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {pfs.map(f => (
-                  /* ── Formation block ── */
-                  <div key={f.id} style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
-                    {/* Formation header */}
-                    <div style={{ background: poleColor(f.pole_code), color: 'white', padding: '16px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <i className="fas fa-graduation-cap" />
-                          {f.code} — {f.name}
-                        </div>
-                        <div style={{ fontSize: 12, opacity: .82, marginTop: 3 }}>
-                          {[f.level, f.department].filter(Boolean).join(' | ')}
-                        </div>
-                        <div style={{ fontSize: 11, opacity: .68, marginTop: 2 }}>
-                          <i className="fas fa-book" style={{ marginRight: 4 }} />{f.semesters.length} semestre(s)
-                        </div>
+          ) : (
+            <>
+              {poles.map(p => {
+                const pnv = niveaux.filter(n => n.pole_id === p.id)
+                return (
+                  <div key={p.id} style={{ border: `1.5px solid ${poleColor(p.code)}40`, borderRadius: 14, overflow: 'hidden' }}>
+                    {/* En-tête pôle */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: poleColor(p.code) + '18', padding: '12px 18px' }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: poleColor(p.code) }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 800, fontSize: 14, color: poleColor(p.code) }}>Pôle {p.code} — {p.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.formations_count} formation(s) · {pnv.length} niveau(x)</div>
                       </div>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <Btn color="rgba(255,255,255,.2)" onClick={() => openEdit('edit_formation', f)} title="Modifier">
-                          <i className="fas fa-pen" />
-                        </Btn>
-                        <Btn color="#10b981" onClick={() => openCreate('create_semester', { formationId: f.id })}>
-                          <i className="fas fa-plus" /> Semestre
-                        </Btn>
-                        <Btn color="#ef4444" onClick={() => del(`/api/admin/formations/${f.id}`, 'Supprimer cette formation et tous ses semestres/UEs/ECs ?')} title="Supprimer">
-                          <i className="fas fa-trash" />
-                        </Btn>
-                      </div>
+                      <button onClick={() => openEdit('edit_pole', p)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: poleColor(p.code), fontSize: 13, padding: 2, marginRight: 4 }} title="Modifier le pôle">
+                        <i className="fas fa-pen" />
+                      </button>
+                      <button onClick={() => deletePole(p.id, p.code)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 2 }} title="Désactiver le pôle">
+                        <i className="fas fa-times" />
+                      </button>
                     </div>
 
-                    {/* Semesters */}
-                    <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                      {f.semesters.length === 0 ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>
-                          <i className="fas fa-inbox" style={{ marginRight: 6 }} />Aucun semestre — cliquez &quot;+ Semestre&quot;
-                        </p>
-                      ) : f.semesters.map(s => (
-                        <div key={s.id} style={{ border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
-                          {/* Semester header */}
-                          <div style={{ background: '#f8fafc', padding: '11px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
-                            <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
-                              <i className="fas fa-calendar-alt" style={{ marginRight: 7, color: '#3b82f6' }} />
-                              Semestre {s.number}{s.name ? ` — ${s.name}` : ''}
-                              <span style={{ color: '#64748b', marginLeft: 12, fontWeight: 400, fontSize: 13 }}>
-                                <i className="fas fa-star" style={{ marginRight: 4, color: '#f59e0b' }} />{s.total_credits} crédits
-                              </span>
-                            </div>
-                            <div style={{ display: 'flex', gap: 7 }}>
-                              <Btn color="#3b82f6" onClick={() => openEdit('edit_semester', s)} title="Modifier"><i className="fas fa-pen" /></Btn>
-                              <Btn color="#10b981" onClick={() => openCreate('create_ue', { semesterId: s.id })}><i className="fas fa-plus" /> UE</Btn>
-                              <Btn color="#ef4444" onClick={() => del(`/api/admin/semesters/${s.id}`, 'Supprimer ce semestre et toutes ses UEs/ECs ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
-                            </div>
-                          </div>
-
-                          {/* UEs */}
-                          <div style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {s.ues.length === 0 ? (
-                              <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Aucune UE</p>
-                            ) : s.ues.map(u => (
-                              <div key={u.id} style={{ borderLeft: '4px solid #10b981', background: '#fafcff', borderRadius: '0 10px 10px 0', border: '1px solid #e2e8f0', borderLeftWidth: 4, borderLeftColor: '#10b981' }}>
-                                <div style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <div style={{ fontSize: 13, color: '#0f172a' }}>
-                                    <i className="fas fa-book-open" style={{ marginRight: 6, color: '#10b981' }} />
-                                    <strong>{u.code}</strong> — {u.name}
-                                    <span style={{ color: '#64748b', marginLeft: 10, fontSize: 12 }}>
-                                      <i className="fas fa-award" style={{ marginRight: 3, color: '#f59e0b' }} />{u.credits} crédits
-                                    </span>
-                                    {u.ue_type && (
-                                      <span style={{
-                                        marginLeft: 8, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 12,
-                                        background: u.ue_type === 'obligatoire' ? '#dbeafe' : '#fef9c3',
-                                        color: u.ue_type === 'obligatoire' ? '#1d4ed8' : '#a16207'
-                                      }}>
-                                        {u.ue_type === 'obligatoire' ? 'Obligatoire' : 'Optionnel'}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div style={{ display: 'flex', gap: 6 }}>
-                                    <Btn color="#3b82f6" onClick={() => openEdit('edit_ue', u)} title="Modifier"><i className="fas fa-pen" /></Btn>
-                                    <Btn color="#10b981" onClick={() => openCreate('create_ec', { ueId: u.id })}><i className="fas fa-plus" /> EC</Btn>
-                                    <Btn color="#ef4444" onClick={() => del(`/api/admin/ues/${u.id}`, 'Supprimer cette UE et tous ses ECs ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
-                                  </div>
-                                </div>
-
-                                {/* ECs */}
-                                {u.ecs.length > 0 && (
-                                  <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                                    {u.ecs.map(ec => (
-                                      <div key={ec.id} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 9, padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div>
-                                          <span style={{ fontSize: 13, fontWeight: 700, color: '#78350f' }}>{ec.code}</span>
-                                          <span style={{ fontSize: 13, color: '#92400e' }}> — {ec.name}</span>
-                                          <div style={{ fontSize: 11, color: '#b45309', marginTop: 3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                                            <span>Coef: {ec.coefficient}</span>
-                                            {(ec.cm || 0) > 0 && <span>CM: {ec.cm}h</span>}
-                                            {(ec.td || 0) > 0 && <span>TD: {ec.td}h</span>}
-                                            {(ec.tp || 0) > 0 && <span>TP: {ec.tp}h</span>}
-                                            <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '1px 7px', borderRadius: 8, fontWeight: 700 }}>
-                                              CC:{ec.cc_percentage ?? 40}% / EX:{ec.ex_percentage ?? 60}%
-                                            </span>
-                                          </div>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                                          <Btn color="#3b82f6" onClick={() => openEdit('edit_ec', ec)} title="Modifier"><i className="fas fa-pen" /></Btn>
-                                          <Btn color="#ef4444" onClick={() => del(`/api/admin/ecs/${ec.id}`, 'Supprimer cet EC ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
+                    {/* Niveaux imbriqués sous ce pôle, chacun avec ses formations imbriquées */}
+                    <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      {pnv.length === 0 && quickNiveauPoleId !== p.id && (
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Aucun niveau sous ce pôle</span>
+                      )}
+                      {pnv.map(n => {
+                        const nf = formations.filter(f => f.niveau_id === n.id)
+                        return (
+                          <div key={n.id} style={{ border: '1px solid #0d948840', borderRadius: 12, overflow: 'hidden' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0d948812', padding: '10px 16px' }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#0d9488' }} />
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: 800, fontSize: 12.5, color: '#0d9488' }}>Niveau {n.code} — {n.name}</div>
+                                <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{nf.length} formation(s)</div>
                               </div>
-                            ))}
+                              <button onClick={() => openEdit('edit_niveau', n)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize: 12, padding: 2 }} title="Modifier">
+                                <i className="fas fa-pen" />
+                              </button>
+                              <button onClick={() => deleteNiveau(n.id, n.code)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Désactiver">
+                                <i className="fas fa-times" />
+                              </button>
+                            </div>
+                            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                              {nf.length === 0 ? (
+                                <p style={{ color: 'var(--text-muted)', fontSize: 12.5, margin: 0 }}>
+                                  Aucune formation sous ce niveau — cliquez &quot;+ Nouvelle Formation&quot; en haut
+                                </p>
+                              ) : nf.map(f => renderFormationCard(f))}
+                            </div>
                           </div>
+                        )
+                      })}
+                      {quickNiveauPoleId === p.id ? (
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <input placeholder="Code (ex: L1)" autoFocus value={niveauForm.code}
+                            onChange={e => setNiveauForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
+                            style={{ width: 90, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }} />
+                          <input placeholder="Nom (ex: Licence 1)" value={niveauForm.name}
+                            onChange={e => setNiveauForm(f => ({ ...f, name: e.target.value }))}
+                            style={{ width: 150, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }} />
+                          <button onClick={() => createNiveau(p.id)} disabled={niveauSubmitting || !niveauForm.code || !niveauForm.name}
+                            style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: '#0d9488', color: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: (!niveauForm.code || !niveauForm.name) ? .5 : 1 }}>
+                            <i className={`fas ${niveauSubmitting ? 'fa-spinner fa-spin' : 'fa-check'}`} />
+                          </button>
+                          <button onClick={() => { setQuickNiveauPoleId(null); setNiveauForm({ code: '', name: '', description: '' }) }}
+                            style={{ padding: '6px 10px', borderRadius: 7, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 12 }}>
+                            <i className="fas fa-xmark" />
+                          </button>
                         </div>
-                      ))}
+                      ) : (
+                        <button onClick={() => { setQuickNiveauPoleId(p.id); setNiveauForm({ code: '', name: '', description: '' }) }}
+                          style={{ alignSelf: 'flex-start', background: 'none', border: '1.5px dashed #0d948870', borderRadius: 8, padding: '6px 12px', color: '#0d9488', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                          <i className="fas fa-plus" style={{ marginRight: 5 }} />Niveau
+                        </button>
+                      )}
                     </div>
                   </div>
-                ))}
+                )
+              })}
+
+              {/* Niveaux orphelins (sans pôle) — cas hérité, à corriger via modification */}
+              {niveaux.some(n => !n.pole_id) && (
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Niveaux sans pôle</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {niveaux.filter(n => !n.pole_id).map(n => {
+                      const nf = formations.filter(f => f.niveau_id === n.id)
+                      return (
+                        <div key={n.id} style={{ border: '1px solid #cbd5e1', borderRadius: 12, overflow: 'hidden' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f1f5f9', padding: '10px 16px' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 800, fontSize: 12.5 }}>{n.code} — {n.name}</div>
+                              <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{nf.length} formation(s)</div>
+                            </div>
+                            <button onClick={() => openEdit('edit_niveau', n)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize: 12, padding: 2 }} title="Modifier">
+                              <i className="fas fa-pen" />
+                            </button>
+                            <button onClick={() => deleteNiveau(n.id, n.code)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Désactiver">
+                              <i className="fas fa-times" />
+                            </button>
+                          </div>
+                          {nf.length > 0 && (
+                            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                              {nf.map(f => renderFormationCard(f))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Formulaire création pôle */}
+              <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 12, padding: '14px 18px' }}>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: '#475569' }}>
+                  <i className="fas fa-plus" style={{ marginRight: 6 }} />Créer un nouveau pôle
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 2fr auto', gap: 10, alignItems: 'center' }}>
+                  <input placeholder="Code (ex: STN)" value={poleForm.code}
+                    onChange={e => setPoleForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
+                    style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+                  <input placeholder="Nom du pôle" value={poleForm.name}
+                    onChange={e => setPoleForm(p => ({ ...p, name: e.target.value }))}
+                    style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+                  <input placeholder="Description (optionnel)" value={poleForm.description}
+                    onChange={e => setPoleForm(p => ({ ...p, description: e.target.value }))}
+                    style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+                  <button onClick={createPole} disabled={poleSubmitting || !poleForm.code || !poleForm.name}
+                    style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, opacity: (!poleForm.code || !poleForm.name) ? .5 : 1 }}>
+                    <i className={`fas ${poleSubmitting ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 5 }} />
+                    Créer
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+
+              {/* Formations sans niveau (à rattacher via "Modifier") */}
+              {formationsSansNiveau.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#b45309', marginBottom: 10 }}>
+                    <i className="fas fa-triangle-exclamation" style={{ marginRight: 6 }} />
+                    Formations sans niveau ({formationsSansNiveau.length}) — à rattacher via &quot;Modifier&quot;
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {formationsSansNiveau.map(f => renderFormationCard(f))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
