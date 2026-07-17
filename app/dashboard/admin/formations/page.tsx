@@ -102,9 +102,6 @@ export default function AdminFormationsPage() {
   const [excelFile, setExcelFile] = useState<File | null>(null)
   const [excelPreview, setExcelPreview] = useState<any>(null)
   const [excelBusy, setExcelBusy] = useState(false)
-  // Pour la gestion inline des pôles
-  const [poleForm, setPoleForm] = useState({ code: '', name: '', description: '' })
-  const [poleSubmitting, setPoleSubmitting] = useState(false)
   // Création d'un pôle directement depuis la modale "Créer une Formation" —
   // évite de devoir fermer la modale pour aller créer le pôle ailleurs
   const [inlinePoleOpen, setInlinePoleOpen] = useState(false)
@@ -791,20 +788,6 @@ export default function AdminFormationsPage() {
     catch (e: any) { error(e.message || 'Erreur suppression') }
   }
 
-  /* ── Pôle creation inline ─────────────────────────────────────────────────── */
-  async function createPole() {
-    if (!poleForm.code || !poleForm.name) { error('Code et nom requis'); return }
-    setPoleSubmitting(true)
-    try {
-      await api.post('/api/admin/poles', poleForm)
-      success(`Pôle ${poleForm.code} créé`)
-      setPoleForm({ code: '', name: '', description: '' })
-      loadPoles()
-      load()
-    } catch (e: any) { error(e.message || 'Erreur') }
-    finally { setPoleSubmitting(false) }
-  }
-
   async function deletePole(id: number, code: string) {
     if (!confirm(`Supprimer définitivement le pôle ${code} et tous ses niveaux ?\n\nLes formations qui en dépendaient seront conservées (juste détachées, à retrouver sous "Formations sans niveau").`)) return
     try { await api.delete(`/api/admin/poles/${id}`); success('Pôle et ses niveaux supprimés'); load() }
@@ -1079,7 +1062,7 @@ export default function AdminFormationsPage() {
               {poles.length === 0 && formationsSansNiveau.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--text-muted)' }}>
                   <i className="fas fa-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />
-                  Aucun pôle créé — commencez par en créer un ci-dessous
+                  Aucun pôle créé — cliquez &quot;Créer la hiérarchie (pas-à-pas)&quot; en haut pour commencer
                 </div>
               )}
               {poles.map(p => {
@@ -1199,29 +1182,6 @@ export default function AdminFormationsPage() {
                   </div>
                 </div>
               )}
-
-              {/* Formulaire création pôle */}
-              <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 12, padding: '14px 18px' }}>
-                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: '#475569' }}>
-                  <i className="fas fa-plus" style={{ marginRight: 6 }} />Créer un nouveau pôle
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 2fr auto', gap: 10, alignItems: 'center' }}>
-                  <input placeholder="Code (ex: STN)" value={poleForm.code}
-                    onChange={e => setPoleForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
-                    style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-                  <input placeholder="Nom du pôle" value={poleForm.name}
-                    onChange={e => setPoleForm(p => ({ ...p, name: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-                  <input placeholder="Description (optionnel)" value={poleForm.description}
-                    onChange={e => setPoleForm(p => ({ ...p, description: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-                  <button onClick={createPole} disabled={poleSubmitting || !poleForm.code || !poleForm.name}
-                    style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, opacity: (!poleForm.code || !poleForm.name) ? .5 : 1 }}>
-                    <i className={`fas ${poleSubmitting ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 5 }} />
-                    Créer
-                  </button>
-                </div>
-              </div>
 
               {/* Formations sans niveau (à rattacher via "Modifier") */}
               {formationsSansNiveau.length > 0 && (
