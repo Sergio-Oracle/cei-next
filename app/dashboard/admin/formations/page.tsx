@@ -258,78 +258,80 @@ export default function AdminFormationsPage() {
         {chk('is_active', 'Niveau actif')}
       </>)
       case 'create_formation': case 'edit_formation': return (<>
-        <div className="form-group">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <label style={{ fontWeight: 600, fontSize: 13 }}>Pôle</label>
-            <button type="button" onClick={() => setInlinePoleOpen(o => !o)}
-              style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <i className={`fas ${inlinePoleOpen ? 'fa-xmark' : 'fa-plus'}`} /> {inlinePoleOpen ? 'Annuler' : 'Nouveau pôle'}
-            </button>
-          </div>
-          {inlinePoleOpen ? (
-            <div style={{ border: '1.5px dashed var(--border)', borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
-              <input placeholder="Code (ex: STN)" value={inlinePoleForm.code}
-                onChange={e => setInlinePoleForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
-                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-              <input placeholder="Nom du pôle" value={inlinePoleForm.name}
-                onChange={e => setInlinePoleForm(p => ({ ...p, name: e.target.value }))}
-                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-              <button type="button" onClick={createInlinePole} disabled={inlinePoleBusy || !inlinePoleForm.code || !inlinePoleForm.name}
-                style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (!inlinePoleForm.code || !inlinePoleForm.name) ? .5 : 1 }}>
-                <i className={`fas ${inlinePoleBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 6 }} />
-                {inlinePoleBusy ? 'Création…' : 'Créer et sélectionner ce pôle'}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="form-group">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <label style={{ fontWeight: 600, fontSize: 13 }}>Pôle</label>
+              <button type="button" onClick={() => setInlinePoleOpen(o => !o)}
+                style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <i className={`fas ${inlinePoleOpen ? 'fa-xmark' : 'fa-plus'}`} /> {inlinePoleOpen ? 'Annuler' : 'Nouveau'}
               </button>
             </div>
-          ) : (
-            <select value={form.pole_id ?? ''}
-              onChange={e => {
-                const pid = e.target.value === '' ? null : Number(e.target.value)
-                setForm((p: any) => {
-                  // Le niveau appartient à un pôle (Pôle → Niveau → Formation) :
-                  // si on change de pôle, un niveau d'un autre pôle n'est plus valide.
-                  const stillValid = p.niveau_id && niveaux.find(n => n.id === p.niveau_id)?.pole_id === pid
-                  return { ...p, pole_id: pid, niveau_id: stillValid ? p.niveau_id : null }
-                })
-              }}
-              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }}>
-              <option value="">— Sélectionner —</option>
-              {poles.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
-            </select>
-          )}
+            {inlinePoleOpen ? (
+              <div style={{ border: '1.5px dashed var(--border)', borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+                <input placeholder="Code (ex: STN)" value={inlinePoleForm.code}
+                  onChange={e => setInlinePoleForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
+                  style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+                <input placeholder="Nom du pôle" value={inlinePoleForm.name}
+                  onChange={e => setInlinePoleForm(p => ({ ...p, name: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+                <button type="button" onClick={createInlinePole} disabled={inlinePoleBusy || !inlinePoleForm.code || !inlinePoleForm.name}
+                  style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (!inlinePoleForm.code || !inlinePoleForm.name) ? .5 : 1 }}>
+                  <i className={`fas ${inlinePoleBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 6 }} />
+                  {inlinePoleBusy ? 'Création…' : 'Créer et sélectionner'}
+                </button>
+              </div>
+            ) : (
+              <select value={form.pole_id ?? ''}
+                onChange={e => {
+                  const pid = e.target.value === '' ? null : Number(e.target.value)
+                  setForm((p: any) => {
+                    // Le niveau appartient à un pôle (Pôle → Niveau → Formation) :
+                    // si on change de pôle, un niveau d'un autre pôle n'est plus valide.
+                    const stillValid = p.niveau_id && niveaux.find(n => n.id === p.niveau_id)?.pole_id === pid
+                    return { ...p, pole_id: pid, niveau_id: stillValid ? p.niveau_id : null }
+                  })
+                }}
+                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }}>
+                <option value="">— Sélectionner —</option>
+                {poles.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
+              </select>
+            )}
+          </div>
+          <div className="form-group">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <label style={{ fontWeight: 600, fontSize: 13 }}>Niveau {form.pole_id ? '' : <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}>(pôle d&apos;abord)</span>}</label>
+              <button type="button" disabled={!form.pole_id} onClick={() => setInlineNiveauOpen(o => !o)}
+                style={{ background: 'none', border: 'none', color: form.pole_id ? 'var(--primary)' : 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: form.pole_id ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <i className={`fas ${inlineNiveauOpen ? 'fa-xmark' : 'fa-plus'}`} /> {inlineNiveauOpen ? 'Annuler' : 'Nouveau'}
+              </button>
+            </div>
+            {inlineNiveauOpen ? (
+              <div style={{ border: '1.5px dashed var(--border)', borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+                <input placeholder="Code (ex: L1)" value={inlineNiveauForm.code}
+                  onChange={e => setInlineNiveauForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
+                  style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+                <input placeholder="Nom du niveau (ex: Licence 1)" value={inlineNiveauForm.name}
+                  onChange={e => setInlineNiveauForm(p => ({ ...p, name: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+                <button type="button" onClick={createInlineNiveau} disabled={inlineNiveauBusy || !inlineNiveauForm.code || !inlineNiveauForm.name || !form.pole_id}
+                  style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (!inlineNiveauForm.code || !inlineNiveauForm.name) ? .5 : 1 }}>
+                  <i className={`fas ${inlineNiveauBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 6 }} />
+                  {inlineNiveauBusy ? 'Création…' : `Créer sous ${poles.find(p => p.id === form.pole_id)?.code || 'ce pôle'}`}
+                </button>
+              </div>
+            ) : (
+              <select value={form.niveau_id ?? ''} disabled={!form.pole_id}
+                onChange={e => setForm((p: any) => ({ ...p, niveau_id: e.target.value === '' ? null : Number(e.target.value) }))}
+                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box', opacity: form.pole_id ? 1 : .6 }}>
+                <option value="">— Sélectionner —</option>
+                {niveaux.filter(n => n.pole_id === form.pole_id).map(n => <option key={n.id} value={n.id}>{n.code} — {n.name}</option>)}
+              </select>
+            )}
+          </div>
         </div>
         {inp('code', 'Code *', { placeholder: 'Ex: L1-SOCIO' })}
         {inp('name', 'Nom *', { placeholder: 'Ex: Licence Sociologie' })}
-        <div className="form-group">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <label style={{ fontWeight: 600, fontSize: 13 }}>Niveau {form.pole_id ? '' : <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(choisissez un pôle d&apos;abord)</span>}</label>
-            <button type="button" disabled={!form.pole_id} onClick={() => setInlineNiveauOpen(o => !o)}
-              style={{ background: 'none', border: 'none', color: form.pole_id ? 'var(--primary)' : 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: form.pole_id ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <i className={`fas ${inlineNiveauOpen ? 'fa-xmark' : 'fa-plus'}`} /> {inlineNiveauOpen ? 'Annuler' : 'Nouveau niveau'}
-            </button>
-          </div>
-          {inlineNiveauOpen ? (
-            <div style={{ border: '1.5px dashed var(--border)', borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
-              <input placeholder="Code (ex: L1)" value={inlineNiveauForm.code}
-                onChange={e => setInlineNiveauForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
-                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-              <input placeholder="Nom du niveau (ex: Licence 1)" value={inlineNiveauForm.name}
-                onChange={e => setInlineNiveauForm(p => ({ ...p, name: e.target.value }))}
-                style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
-              <button type="button" onClick={createInlineNiveau} disabled={inlineNiveauBusy || !inlineNiveauForm.code || !inlineNiveauForm.name || !form.pole_id}
-                style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (!inlineNiveauForm.code || !inlineNiveauForm.name) ? .5 : 1 }}>
-                <i className={`fas ${inlineNiveauBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 6 }} />
-                {inlineNiveauBusy ? 'Création…' : `Créer sous ${poles.find(p => p.id === form.pole_id)?.code || 'ce pôle'} et sélectionner`}
-              </button>
-            </div>
-          ) : (
-            <select value={form.niveau_id ?? ''} disabled={!form.pole_id}
-              onChange={e => setForm((p: any) => ({ ...p, niveau_id: e.target.value === '' ? null : Number(e.target.value) }))}
-              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box', opacity: form.pole_id ? 1 : .6 }}>
-              <option value="">— Sélectionner —</option>
-              {niveaux.filter(n => n.pole_id === form.pole_id).map(n => <option key={n.id} value={n.id}>{n.code} — {n.name}</option>)}
-            </select>
-          )}
-        </div>
         {inp('department', 'Département', { placeholder: 'Ex: Sciences Humaines' })}
         <div className="form-group">
           <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Description</label>
@@ -993,7 +995,7 @@ export default function AdminFormationsPage() {
                     <i className="fas fa-plus" /> Créer une formation
                   </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                   <select className="form-control" value={excelPoleId}
                     onChange={e => { setExcelPoleId(e.target.value); setExcelNiveauId(''); setExcelFormationId(''); setExcelSemesterId('') }}>
                     <option value="">— Pôle —</option>
