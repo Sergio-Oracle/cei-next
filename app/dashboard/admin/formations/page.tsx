@@ -40,6 +40,11 @@ type ModalKind =
   | 'create_ec'        | 'edit_ec'
   | 'import_csv'
   | 'import_excel'
+  | 'wizard'
+
+type WizardStep = 'pole' | 'niveau' | 'formation' | 'semester' | 'ue' | 'ec'
+const WIZARD_STEPS: WizardStep[] = ['pole', 'niveau', 'formation', 'semester', 'ue', 'ec']
+const WIZARD_LABELS: Record<WizardStep, string> = { pole: 'Pôle', niveau: 'Niveau', formation: 'Formation', semester: 'Semestre', ue: 'UE', ec: 'EC' }
 
 interface ModalState {
   kind: ModalKind
@@ -119,6 +124,116 @@ export default function AdminFormationsPage() {
   const [inlineNiveauOpen, setInlineNiveauOpen] = useState(false)
   const [inlineNiveauForm, setInlineNiveauForm] = useState({ code: '', name: '', description: '' })
   const [inlineNiveauBusy, setInlineNiveauBusy] = useState(false)
+  // Assistant de création pas-à-pas — respecte la hiérarchie Pôle → Niveau →
+  // Formation → Semestre → UE → EC en demandant chaque niveau l'un après
+  // l'autre (choisir un existant ou en créer un nouveau), au lieu d'avoir à
+  // naviguer manuellement dans l'arbre après chaque création.
+  const [wizardStep, setWizardStep] = useState<WizardStep>('pole')
+  const [wizardCtx, setWizardCtx] = useState<{ poleId?: number; niveauId?: number; formationId?: number; semesterId?: number; ueId?: number }>({})
+  const [wizardCreatingNew, setWizardCreatingNew] = useState(true)
+  const [wizardForm, setWizardForm] = useState<any>({})
+  const [wizardBusy, setWizardBusy] = useState(false)
+  const [wizardEcCount, setWizardEcCount] = useState(0)
+
+  function openWizard() {
+    setWizardStep('pole')
+    setWizardCtx({})
+    setWizardCreatingNew(poles.length === 0)
+    setWizardForm({})
+    setWizardEcCount(0)
+    setModal({ kind: 'wizard' })
+  }
+
+  async function wizardCreatePole() {
+    if (!wizardForm.code || !wizardForm.name) { error('Code et nom requis'); return }
+    setWizardBusy(true)
+    try {
+      const res = await api.post<Pole>('/api/admin/poles', { code: wizardForm.code, name: wizardForm.name, description: wizardForm.description })
+      success(`Pôle ${res.code} créé`)
+      await loadPoles()
+      setWizardCtx(c => ({ ...c, poleId: res.id }))
+      setWizardStep('niveau'); setWizardCreatingNew(false); setWizardForm({})
+    } catch (e: any) { error(e.message || 'Erreur') }
+    finally { setWizardBusy(false) }
+  }
+
+  async function wizardCreateNiveau() {
+    if (!wizardForm.code || !wizardForm.name) { error('Code et nom requis'); return }
+    setWizardBusy(true)
+    try {
+      const res = await api.post<Niveau>('/api/admin/niveaux', { code: wizardForm.code, name: wizardForm.name, description: wizardForm.description, pole_id: wizardCtx.poleId })
+      success(`Niveau ${res.code} créé`)
+      await loadNiveaux()
+      setWizardCtx(c => ({ ...c, niveauId: res.id }))
+      setWizardStep('formation'); setWizardCreatingNew(false); setWizardForm({})
+    } catch (e: any) { error(e.message || 'Erreur') }
+    finally { setWizardBusy(false) }
+  }
+
+  async function wizardCreateFormation() {
+    if (!wizardForm.code || !wizardForm.name) { error('Code et nom requis'); return }
+    setWizardBusy(true)
+    try {
+      const res = await api.post<any>('/api/admin/formations', { code: wizardForm.code, name: wizardForm.name, department: wizardForm.department, niveau_id: wizardCtx.niveauId })
+      success(`Formation ${res.formation.code} créée`)
+      await load()
+      setWizardCtx(c => ({ ...c, formationId: res.formation.id }))
+      setWizardStep('semester'); setWizardCreatingNew(true); setWizardForm({ number: 1, total_credits: 30 })
+    } catch (e: any) { error(e.message || 'Erreur') }
+    finally { setWizardBusy(false) }
+  }
+
+  async function wizardCreateSemester() {
+    if (!wizardForm.number) { error('Numéro requis'); return }
+    setWizardBusy(true)
+    try {
+      const res = await api.post<any>('/api/admin/semesters', {
+        formation_id: wizardCtx.formationId, number: wizardForm.number,
+        name: wizardForm.name || `Semestre ${wizardForm.number}`, total_credits: wizardForm.total_credits || 30,
+      })
+      success('Semestre créé')
+      await load()
+      setWizardCtx(c => ({ ...c, semesterId: res.semester.id }))
+      setWizardStep('ue'); setWizardCreatingNew(true); setWizardForm({ credits: 6, ue_type: 'obligatoire' })
+    } catch (e: any) { error(e.message || 'Erreur') }
+    finally { setWizardBusy(false) }
+  }
+
+  async function wizardCreateUe() {
+    if (!wizardForm.code || !wizardForm.name) { error('Code et nom requis'); return }
+    setWizardBusy(true)
+    try {
+      const res = await api.post<any>('/api/admin/ues', {
+        semester_id: wizardCtx.semesterId, code: wizardForm.code, name: wizardForm.name,
+        credits: wizardForm.credits || 6, ue_type: wizardForm.ue_type || 'obligatoire',
+      })
+      success(`UE ${res.ue.code} créée`)
+      await load()
+      setWizardCtx(c => ({ ...c, ueId: res.ue.id }))
+      setWizardStep('ec'); setWizardCreatingNew(true)
+      setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 })
+    } catch (e: any) { error(e.message || 'Erreur') }
+    finally { setWizardBusy(false) }
+  }
+
+  async function wizardCreateEc(next: 'another_ec' | 'another_ue' | 'done') {
+    if (!wizardForm.code || !wizardForm.name) { error('Code et nom requis'); return }
+    setWizardBusy(true)
+    try {
+      const res = await api.post<any>('/api/admin/ecs', { ue_id: wizardCtx.ueId, ...wizardForm })
+      success(`EC ${res.ec.code} créé`)
+      await load()
+      setWizardEcCount(n => n + 1)
+      if (next === 'another_ec') {
+        setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 })
+      } else if (next === 'another_ue') {
+        setWizardStep('ue'); setWizardCreatingNew(true); setWizardForm({ credits: 6, ue_type: 'obligatoire' })
+      } else {
+        setModal(null)
+      }
+    } catch (e: any) { error(e.message || 'Erreur') }
+    finally { setWizardBusy(false) }
+  }
 
   async function createInlinePole() {
     if (!inlinePoleForm.code || !inlinePoleForm.name) { error('Code et nom du pôle requis'); return }
@@ -384,6 +499,184 @@ export default function AdminFormationsPage() {
     }
   }
 
+  /* ── Assistant pas-à-pas : contenu de l'étape courante ────────────────────── */
+  function wizardStepBody() {
+    const wInp = (key: string, label: string, opts?: { type?: string; placeholder?: string }) => (
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ fontWeight: 600, fontSize: 12.5, marginBottom: 4, display: 'block' }}>{label}</label>
+        <input type={opts?.type || 'text'} placeholder={opts?.placeholder}
+          value={wizardForm[key] ?? (opts?.type === 'number' ? 0 : '')}
+          onChange={e => setWizardForm((p: any) => ({ ...p, [key]: opts?.type === 'number' ? Number(e.target.value) : e.target.value }))}
+          style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 13.5, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }} />
+      </div>
+    )
+
+    // Bloc générique "choisir un existant OU créer un nouveau" partagé par les
+    // étapes Pôle/Niveau/Formation/Semestre/UE.
+    function pickOrCreate(args: {
+      existing: { id: number; label: string }[]
+      onPick: (id: number) => void
+      createFields: React.ReactNode
+      onCreateSubmit: () => void
+      createDisabled: boolean
+      pickLabel: string
+      createLabel: string
+    }) {
+      const { existing, onPick, createFields, onCreateSubmit, createDisabled, pickLabel, createLabel } = args
+      return existing.length > 0 && !wizardCreatingNew ? (
+        <div>
+          <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>{pickLabel}</label>
+          <select value="" onChange={e => e.target.value && onPick(Number(e.target.value))}
+            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', marginBottom: 10, boxSizing: 'border-box' }}>
+            <option value="">— Sélectionner —</option>
+            {existing.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+          </select>
+          <button type="button" onClick={() => { setWizardCreatingNew(true); setWizardForm({}) }}
+            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+            <i className="fas fa-plus" style={{ marginRight: 4 }} />{createLabel} à la place
+          </button>
+        </div>
+      ) : (
+        <div>
+          {createFields}
+          {existing.length > 0 && (
+            <button type="button" onClick={() => setWizardCreatingNew(false)}
+              style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', marginBottom: 12, display: 'block' }}>
+              <i className="fas fa-arrow-left" style={{ marginRight: 4 }} />{pickLabel} à la place
+            </button>
+          )}
+          <button onClick={onCreateSubmit} disabled={wizardBusy || createDisabled}
+            style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, opacity: createDisabled ? .5 : 1 }}>
+            <i className={`fas ${wizardBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 6 }} />
+            {wizardBusy ? 'Création…' : `${createLabel} et continuer`}
+          </button>
+        </div>
+      )
+    }
+
+    switch (wizardStep) {
+      case 'pole':
+        return pickOrCreate({
+          existing: poles.map(p => ({ id: p.id, label: `${p.code} — ${p.name}` })),
+          onPick: id => { setWizardCtx(c => ({ ...c, poleId: id })); setWizardStep('niveau'); setWizardCreatingNew(false); setWizardForm({}) },
+          createFields: <>
+            {wInp('code', 'Code *', { placeholder: 'Ex: STN' })}
+            {wInp('name', 'Nom *', { placeholder: 'Ex: Sciences et Technologies du Numérique' })}
+            {wInp('description', 'Description (optionnel)')}
+          </>,
+          onCreateSubmit: wizardCreatePole,
+          createDisabled: !wizardForm.code || !wizardForm.name,
+          pickLabel: 'Choisir un Pôle existant', createLabel: 'Créer un Pôle',
+        })
+      case 'niveau': {
+        const opts = niveaux.filter(n => n.pole_id === wizardCtx.poleId)
+        return pickOrCreate({
+          existing: opts.map(n => ({ id: n.id, label: `${n.code} — ${n.name}` })),
+          onPick: id => { setWizardCtx(c => ({ ...c, niveauId: id })); setWizardStep('formation'); setWizardCreatingNew(false); setWizardForm({}) },
+          createFields: <>
+            {wInp('code', 'Code *', { placeholder: 'Ex: L1' })}
+            {wInp('name', 'Nom *', { placeholder: 'Ex: Licence 1' })}
+            {wInp('description', 'Description (optionnel)')}
+          </>,
+          onCreateSubmit: wizardCreateNiveau,
+          createDisabled: !wizardForm.code || !wizardForm.name,
+          pickLabel: 'Choisir un Niveau existant (sous ce pôle)', createLabel: 'Créer un Niveau',
+        })
+      }
+      case 'formation': {
+        const opts = formations.filter(f => f.niveau_id === wizardCtx.niveauId)
+        return pickOrCreate({
+          existing: opts.map(f => ({ id: f.id, label: `${f.code} — ${f.name}` })),
+          onPick: id => { setWizardCtx(c => ({ ...c, formationId: id })); setWizardStep('semester'); setWizardCreatingNew(true); setWizardForm({ number: 1, total_credits: 30 }) },
+          createFields: <>
+            {wInp('code', 'Code *', { placeholder: 'Ex: L1-SOCIO' })}
+            {wInp('name', 'Nom *', { placeholder: 'Ex: Licence Sociologie' })}
+            {wInp('department', 'Département (optionnel)')}
+          </>,
+          onCreateSubmit: wizardCreateFormation,
+          createDisabled: !wizardForm.code || !wizardForm.name,
+          pickLabel: 'Choisir une Formation existante (sous ce niveau)', createLabel: 'Créer une Formation',
+        })
+      }
+      case 'semester': {
+        const currentFormation = formations.find(f => f.id === wizardCtx.formationId)
+        const opts = currentFormation?.semesters ?? []
+        return pickOrCreate({
+          existing: opts.map(s => ({ id: s.id, label: s.name || `Semestre ${s.number}` })),
+          onPick: id => { setWizardCtx(c => ({ ...c, semesterId: id })); setWizardStep('ue'); setWizardCreatingNew(true); setWizardForm({ credits: 6, ue_type: 'obligatoire' }) },
+          createFields: <>
+            {wInp('number', 'Numéro *', { type: 'number', placeholder: 'Ex: 1' })}
+            {wInp('name', 'Nom (optionnel)', { placeholder: 'Ex: Semestre 1' })}
+            {wInp('total_credits', 'Crédits totaux', { type: 'number' })}
+          </>,
+          onCreateSubmit: wizardCreateSemester,
+          createDisabled: !wizardForm.number,
+          pickLabel: 'Choisir un Semestre existant (sous cette formation)', createLabel: 'Créer un Semestre',
+        })
+      }
+      case 'ue': {
+        const currentFormation = formations.find(f => f.id === wizardCtx.formationId)
+        const currentSemester = currentFormation?.semesters.find(s => s.id === wizardCtx.semesterId)
+        const opts = currentSemester?.ues ?? []
+        return pickOrCreate({
+          existing: opts.map(u => ({ id: u.id, label: `${u.code} — ${u.name}` })),
+          onPick: id => { setWizardCtx(c => ({ ...c, ueId: id })); setWizardStep('ec'); setWizardCreatingNew(true); setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 }) },
+          createFields: <>
+            {wInp('code', 'Code *', { placeholder: 'Ex: SOCIO111' })}
+            {wInp('name', 'Nom *', { placeholder: "Ex: Sociologie et Anthropologie" })}
+            {wInp('credits', 'Crédits', { type: 'number' })}
+          </>,
+          onCreateSubmit: wizardCreateUe,
+          createDisabled: !wizardForm.code || !wizardForm.name,
+          pickLabel: 'Choisir une UE existante (sous ce semestre)', createLabel: 'Créer une UE',
+        })
+      }
+      case 'ec': {
+        const currentFormation = formations.find(f => f.id === wizardCtx.formationId)
+        const currentSemester = currentFormation?.semesters.find(s => s.id === wizardCtx.semesterId)
+        const currentUe = currentSemester?.ues.find(u => u.id === wizardCtx.ueId)
+        return (
+          <div>
+            {wizardEcCount > 0 && (
+              <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12.5, color: '#166534' }}>
+                <i className="fas fa-check-circle" style={{ marginRight: 6 }} />{wizardEcCount} EC déjà créé(s) sous {currentUe?.code}
+              </div>
+            )}
+            {wInp('code', 'Code *', { placeholder: 'Ex: SOCIO1111' })}
+            {wInp('name', 'Nom *', { placeholder: "Ex: Introduction à la sociologie" })}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 10 }}>
+              {wInp('cm', 'CM (h)', { type: 'number' })}
+              {wInp('td', 'TD (h)', { type: 'number' })}
+              {wInp('tp', 'TP (h)', { type: 'number' })}
+              {wInp('tpe', 'TPE (h)', { type: 'number' })}
+              {wInp('vht', 'VHT (h)', { type: 'number' })}
+              {wInp('coefficient', 'Coefficient', { type: 'number' })}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+              {wInp('cc_percentage', 'CC % (contrôle continu)', { type: 'number' })}
+              {wInp('ex_percentage', 'EX % (examen final)', { type: 'number' })}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              <button onClick={() => wizardCreateEc('another_ec')} disabled={wizardBusy || !wizardForm.code || !wizardForm.name}
+                style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
+                <i className="fas fa-plus" style={{ marginRight: 6 }} />Créer et ajouter un autre EC
+              </button>
+              <button onClick={() => wizardCreateEc('another_ue')} disabled={wizardBusy || !wizardForm.code || !wizardForm.name}
+                style={{ padding: '10px 16px', borderRadius: 10, border: '1.5px solid #db2777', background: 'transparent', color: '#db2777', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
+                Créer et ajouter une autre UE
+              </button>
+              <button onClick={() => wizardCreateEc('done')} disabled={wizardBusy || !wizardForm.code || !wizardForm.name}
+                style={{ padding: '10px 16px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
+                Créer et terminer
+              </button>
+            </div>
+          </div>
+        )
+      }
+      default: return null
+    }
+  }
+
   function modalTitle() {
     if (!modal) return ''
     const isCreate = modal.kind.startsWith('create')
@@ -440,8 +733,8 @@ export default function AdminFormationsPage() {
   }
 
   async function deletePole(id: number, code: string) {
-    if (!confirm(`Désactiver le pôle ${code} ?`)) return
-    try { await api.delete(`/api/admin/poles/${id}`); success('Pôle désactivé'); load() }
+    if (!confirm(`Supprimer définitivement le pôle ${code} et tous ses niveaux ?\n\nLes formations qui en dépendaient seront conservées (juste détachées, à retrouver sous "Formations sans niveau").`)) return
+    try { await api.delete(`/api/admin/poles/${id}`); success('Pôle et ses niveaux supprimés'); load() }
     catch (e: any) { error(e.message || 'Erreur') }
   }
 
@@ -461,8 +754,8 @@ export default function AdminFormationsPage() {
   }
 
   async function deleteNiveau(id: number, code: string) {
-    if (!confirm(`Désactiver le niveau ${code} ?`)) return
-    try { await api.delete(`/api/admin/niveaux/${id}`); success('Niveau désactivé'); load() }
+    if (!confirm(`Supprimer définitivement le niveau ${code} ?\n\nLes formations qui en dépendaient seront conservées (juste détachées, à retrouver sous "Formations sans niveau").`)) return
+    try { await api.delete(`/api/admin/niveaux/${id}`); success('Niveau supprimé'); load() }
     catch (e: any) { error(e.message || 'Erreur') }
   }
 
@@ -690,6 +983,11 @@ export default function AdminFormationsPage() {
             <i className="fas fa-sitemap" style={{ color: '#2563eb' }} /> Pôles, Niveaux &amp; Formations UNCHK
           </h3>
           <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={openWizard}
+              title="Créer pas-à-pas : Pôle → Niveau → Formation → Semestre → UE → EC"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              <i className="fas fa-shoe-prints" /> Créer la hiérarchie (pas-à-pas)
+            </button>
             <button onClick={() => openCreate('create_formation')} disabled={poles.length === 0}
               title={poles.length === 0 ? "Créez d'abord un pôle ci-dessous" : undefined}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: poles.length === 0 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 700, opacity: poles.length === 0 ? .5 : 1 }}>
@@ -738,7 +1036,7 @@ export default function AdminFormationsPage() {
                         <i className="fas fa-pen" />
                       </button>
                       <button onClick={() => deletePole(p.id, p.code)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 2 }} title="Désactiver le pôle">
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 2 }} title="Supprimer le pôle et ses niveaux">
                         <i className="fas fa-times" />
                       </button>
                     </div>
@@ -763,7 +1061,7 @@ export default function AdminFormationsPage() {
                                 <i className="fas fa-pen" />
                               </button>
                               <button onClick={() => deleteNiveau(n.id, n.code)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Désactiver">
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Supprimer">
                                 <i className="fas fa-times" />
                               </button>
                             </div>
@@ -824,7 +1122,7 @@ export default function AdminFormationsPage() {
                               <i className="fas fa-pen" />
                             </button>
                             <button onClick={() => deleteNiveau(n.id, n.code)}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Désactiver">
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Supprimer">
                               <i className="fas fa-times" />
                             </button>
                           </div>
@@ -1090,6 +1388,57 @@ export default function AdminFormationsPage() {
               </div>
             </>
           )}
+        </ModalOverlay>
+      )}
+
+      {/* ══ Assistant pas-à-pas Pôle → Niveau → Formation → Semestre → UE → EC ═══ */}
+      {modal?.kind === 'wizard' && (
+        <ModalOverlay onClose={() => setModal(null)} wide>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
+            <div style={{ width: 42, height: 42, borderRadius: 11, background: '#fdf2f8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fas fa-shoe-prints" style={{ color: '#db2777', fontSize: 17 }} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Créer la hiérarchie pas-à-pas</h3>
+              <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>À chaque étape : choisissez un existant ou créez-en un nouveau</p>
+            </div>
+          </div>
+
+          {/* Fil d'ariane des étapes */}
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
+            {WIZARD_STEPS.map((s, i) => {
+              const currentIdx = WIZARD_STEPS.indexOf(wizardStep)
+              const state = i < currentIdx ? 'done' : i === currentIdx ? 'current' : 'pending'
+              return (
+                <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{
+                    fontSize: 12.5, fontWeight: 800, padding: '4px 10px', borderRadius: 20,
+                    background: state === 'current' ? '#db2777' : state === 'done' ? '#fce7f3' : 'var(--border)',
+                    color: state === 'current' ? 'white' : state === 'done' ? '#db2777' : 'var(--text-muted)',
+                  }}>
+                    {state === 'done' && <i className="fas fa-check" style={{ marginRight: 4 }} />}
+                    {WIZARD_LABELS[s]}
+                  </span>
+                  {i < WIZARD_STEPS.length - 1 && <i className="fas fa-arrow-right" style={{ fontSize: 10, color: 'var(--text-muted)' }} />}
+                </div>
+              )
+            })}
+          </div>
+
+          {wizardStepBody()}
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+            {wizardCtx.poleId && wizardStep !== 'ec' && (
+              <button onClick={() => { success('Hiérarchie enregistrée jusqu\'ici'); setModal(null); load() }}
+                style={{ padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                Terminer ici
+              </button>
+            )}
+            <button onClick={() => setModal(null)}
+              style={{ padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontWeight: 600, marginLeft: 'auto' }}>
+              Annuler
+            </button>
+          </div>
         </ModalOverlay>
       )}
     </div>
