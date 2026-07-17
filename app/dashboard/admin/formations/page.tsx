@@ -690,17 +690,20 @@ export default function AdminFormationsPage() {
             <i className="fas fa-sitemap" style={{ color: '#2563eb' }} /> Pôles, Niveaux &amp; Formations UNCHK
           </h3>
           <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={() => openCreate('create_formation')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+            <button onClick={() => openCreate('create_formation')} disabled={poles.length === 0}
+              title={poles.length === 0 ? "Créez d'abord un pôle ci-dessous" : undefined}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: poles.length === 0 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 700, opacity: poles.length === 0 ? .5 : 1 }}>
               <i className="fas fa-plus" /> Nouvelle Formation
             </button>
             <button onClick={() => { setModal({ kind: 'import_csv' }); setCsvFile(null); setImportResult(null) }}
+              title="Import en masse — crée aussi le Pôle et le Niveau à la volée s'ils n'existent pas encore"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
               <i className="fas fa-file-csv" /> Import CSV
             </button>
             <button onClick={() => { setModal({ kind: 'import_excel' }); setExcelFile(null); setExcelPreview(null); setExcelSemesterId(''); setExcelPoleId(''); setExcelNiveauId(''); setExcelFormationId('') }}
-              title="Importer UE/EC depuis un fichier Excel au format officiel de l'établissement (dans un semestre déjà créé)"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#0891b2', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              disabled={poles.length === 0}
+              title={poles.length === 0 ? "Créez d'abord un pôle, un niveau, une formation et un semestre" : "Importer UE/EC depuis un fichier Excel au format officiel de l'établissement (dans un semestre déjà créé)"}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#0891b2', color: 'white', cursor: poles.length === 0 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 700, opacity: poles.length === 0 ? .5 : 1 }}>
               <i className="fas fa-file-excel" /> Importer Excel (UE/EC)
             </button>
           </div>
@@ -711,13 +714,14 @@ export default function AdminFormationsPage() {
             <div style={{ textAlign: 'center', padding: 48 }}>
               <i className="fas fa-spinner fa-spin" style={{ fontSize: 32, color: 'var(--primary)' }} />
             </div>
-          ) : poles.length === 0 && formationsSansNiveau.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-              <i className="fas fa-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />
-              Aucun pôle créé — commencez par en créer un ci-dessous
-            </div>
           ) : (
             <>
+              {poles.length === 0 && formationsSansNiveau.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--text-muted)' }}>
+                  <i className="fas fa-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />
+                  Aucun pôle créé — commencez par en créer un ci-dessous
+                </div>
+              )}
               {poles.map(p => {
                 const pnv = niveaux.filter(n => n.pole_id === p.id)
                 return (
