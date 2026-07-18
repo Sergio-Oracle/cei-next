@@ -88,7 +88,14 @@ export default function AdminAffectationsPage() {
   }
 
   async function confirmMultiAssign() {
-    if (!multiModal || multiSelected.size === 0) { error('Sélectionnez au moins un professeur'); return }
+    if (!multiModal) return
+    if (multiSelected.size === 0) {
+      const allAssigned = professors.length > 0 && professors.every(p => multiModal.assignedIds.includes(p.id))
+      error(allAssigned
+        ? 'Tous les professeurs disponibles sont déjà affectés à cet EC'
+        : 'Cochez au moins un professeur non encore affecté')
+      return
+    }
     setMultiBusy(true)
     let ok = 0, fail = 0
     for (const profId of multiSelected) {
@@ -311,7 +318,7 @@ export default function AdminAffectationsPage() {
                 <i className="fas fa-times" /> Fermer
               </button>
               <button className="btn btn-primary" onClick={confirmMultiAssign}
-                disabled={multiBusy || multiSelected.size === 0}
+                disabled={multiBusy}
                 title={multiSelected.size === 0 ? 'Cochez au moins un professeur non encore affecté' : undefined}>
                 <i className={`fas ${multiBusy ? 'fa-spinner fa-spin' : 'fa-save'}`} />
                 {multiBusy ? 'Assignation…' : `Assigner (${multiSelected.size})`}
