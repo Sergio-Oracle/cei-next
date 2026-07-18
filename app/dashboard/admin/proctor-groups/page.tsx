@@ -152,7 +152,8 @@ export default function ProctorGroupsPage() {
           <input className="form-control" value={newName} onChange={e => setNewName(e.target.value)}
             placeholder="Ex : Surveillants Informatique L1" onKeyDown={e => e.key === 'Enter' && createGroup()} />
         </div>
-        <button className="btn btn-primary" onClick={createGroup} disabled={creating || !newName.trim()}>
+        <button className="btn btn-primary" onClick={createGroup} disabled={creating}
+          title={!newName.trim() ? 'Saisissez un nom de groupe' : undefined}>
           <i className={`fas ${creating ? 'fa-spinner fa-spin' : 'fa-plus'}`} /> Créer
         </button>
       </div>
@@ -252,7 +253,8 @@ export default function ProctorGroupsPage() {
                       </label>
                     ))}
                   </div>
-                  <button className="btn btn-primary" style={{ fontSize: 13 }} onClick={addMembers} disabled={addingMembers || memberSelected.size === 0}>
+                  <button className="btn btn-primary" style={{ fontSize: 13 }} onClick={addMembers} disabled={addingMembers}
+                    title={memberSelected.size === 0 ? 'Cochez au moins un surveillant' : undefined}>
                     <i className={`fas ${addingMembers ? 'fa-spinner fa-spin' : 'fa-user-plus'}`} /> Ajouter ({memberSelected.size})
                   </button>
                 </div>
@@ -281,7 +283,8 @@ export default function ProctorGroupsPage() {
                       <option value="">— Sélectionner un EC —</option>
                       {availableEcs.map(e => <option key={e.id} value={e.id}>{e.code} — {e.name}</option>)}
                     </select>
-                    <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={linkEc} disabled={linkingEc || !ecToLink}>
+                    <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={linkEc} disabled={linkingEc}
+                      title={!ecToLink ? 'Sélectionnez un EC' : undefined}>
                       <i className={`fas ${linkingEc ? 'fa-spinner fa-spin' : 'fa-link'}`} /> Rattacher
                     </button>
                   </div>
