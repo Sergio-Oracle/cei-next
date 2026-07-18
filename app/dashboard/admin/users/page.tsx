@@ -14,7 +14,10 @@ const ROLE_META: Record<string, { label: string; plural: string; color: string; 
 }
 
 const SECTION_ORDER = ['admin', 'professor', 'surveillant', 'student']
-const LEVELS        = ['L1', 'L2', 'L3', 'M1', 'M2']
+
+interface Pole { id: number; code: string; name: string }
+interface Niveau { id: number; code: string; name: string; pole_id?: number }
+interface FormationOpt { id: number; code: string; name: string; niveau_id?: number; pole_id?: number }
 
 /* ── Initiales depuis le nom complet ─────────────────────────────────────── */
 function initials(name: string) {
@@ -35,10 +38,21 @@ export default function AdminUsersPage() {
   const [editing, setEditing]   = useState<User | null>(null)
   const [saving, setSaving]     = useState(false)
   const [createRole, setCreateRole] = useState<UserRole>('student')
-  const [form, setForm] = useState({ email: '', full_name: '', password: '', role: 'student' as UserRole, niveau: '', formation_id: '' })
+  const [form, setForm] = useState({ email: '', full_name: '', password: '', role: 'student' as UserRole, formation_id: '' as string | number })
+
+  // Hiérarchie Pôle → Niveau → Formation, pour rattacher un étudiant à sa
+  // formation dès la création (au lieu d'un simple texte "Niveau" isolé) —
+  // ça inscrit aussi automatiquement l'étudiant à toutes les UE de la formation.
+  const [poles, setPoles] = useState<Pole[]>([])
+  const [niveaux, setNiveaux] = useState<Niveau[]>([])
+  const [formationOpts, setFormationOpts] = useState<FormationOpt[]>([])
+  const [selPoleId, setSelPoleId] = useState<number | ''>('')
+  const [selNiveauId, setSelNiveauId] = useState<number | ''>('')
+  const [noEmailSelPoleId, setNoEmailSelPoleId] = useState<number | ''>('')
+  const [noEmailSelNiveauId, setNoEmailSelNiveauId] = useState<number | ''>('')
 
   /* Modal sans email */
-  const [noEmailForm, setNoEmailForm] = useState({ full_name: '', niveau: '' })
+  const [noEmailForm, setNoEmailForm] = useState({ full_name: '', formation_id: '' as string | number })
   const [noEmailResult, setNoEmailResult] = useState<{ email: string; temp_password: string } | null>(null)
 
   /* Modal CSV */
@@ -46,7 +60,20 @@ export default function AdminUsersPage() {
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<any>(null)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(); loadHierarchy() }, [])
+
+  async function loadHierarchy() {
+    try {
+      const [pRes, nRes, fRes] = await Promise.all([
+        api.get<Pole[]>('/api/poles'),
+        api.get<Niveau[]>('/api/niveaux'),
+        api.get<any>('/api/formations'),
+      ])
+      setPoles(Array.isArray(pRes) ? pRes : [])
+      setNiveaux(Array.isArray(nRes) ? nRes : [])
+      setFormationOpts(Array.isArray(fRes) ? fRes : fRes.formations ?? [])
+    } catch { /* silencieux — la Maquette peut ne pas encore être configurée */ }
+  }
 
   async function load() {
     setLoading(true)
@@ -83,13 +110,19 @@ export default function AdminUsersPage() {
   function openCreate(role: UserRole) {
     setCreateRole(role)
     setEditing(null)
-    setForm({ email: '', full_name: '', password: '', role, niveau: '', formation_id: '' })
+    setForm({ email: '', full_name: '', password: '', role, formation_id: '' })
+    setSelPoleId(''); setSelNiveauId('')
     setModal('create')
   }
 
   function openEdit(u: User) {
     setEditing(u)
-    setForm({ email: u.email || '', full_name: u.full_name, password: '', role: u.role, niveau: u.niveau || '', formation_id: '' })
+    setForm({ email: u.email || '', full_name: u.full_name, password: '', role: u.role, formation_id: u.formation_id || '' })
+    // Reconstruire la cascade Pôle → Niveau à partir de la formation actuelle de l'étudiant
+    const f = u.formation_id ? formationOpts.find(x => x.id === u.formation_id) : undefined
+    const n = f?.niveau_id ? niveaux.find(x => x.id === f.niveau_id) : undefined
+    setSelPoleId(n?.pole_id ?? '')
+    setSelNiveauId(f?.niveau_id ?? '')
     setModal('edit')
   }
 
@@ -100,7 +133,7 @@ export default function AdminUsersPage() {
     try {
       const payload: any = { email: form.email, full_name: form.full_name, role: form.role }
       if (form.password) payload.password = form.password
-      payload.niveau = form.role === 'student' ? (form.niveau || null) : null
+      payload.formation_id = form.role === 'student' ? (form.formation_id || null) : null
       if (editing) {
         await api.put(`/api/admin/users/${editing.id}`, payload)
         success('Utilisateur modifié')
@@ -131,7 +164,7 @@ export default function AdminUsersPage() {
     try {
       const res = await api.post<any>('/api/admin/users/student-no-email', {
         full_name: noEmailForm.full_name,
-        niveau: noEmailForm.niveau || undefined,
+        formation_id: noEmailForm.formation_id || undefined,
       })
       setNoEmailResult({ email: res.user?.email || '', temp_password: res.temp_password || '' })
       await load()
@@ -198,7 +231,7 @@ export default function AdminUsersPage() {
             <i className="fas fa-eye" /> Surveillant
           </button>
           <button
-            onClick={() => { setModal('no_email'); setNoEmailForm({ full_name: '', niveau: '' }); setNoEmailResult(null) }}
+            onClick={() => { setModal('no_email'); setNoEmailForm({ full_name: '', formation_id: '' }); setNoEmailResult(null); setNoEmailSelPoleId(''); setNoEmailSelNiveauId('') }}
             style={btnStyle('#3b82f6')}>
             <i className="fas fa-user-slash" /> Sans Email
           </button>
@@ -300,7 +333,13 @@ export default function AdminUsersPage() {
                           </div>
                         </td>
                         <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{u.email || '—'}</td>
-                        {role === 'student' && <td style={{ fontSize: 13 }}>{u.niveau || '—'}</td>}
+                        {role === 'student' && (
+                          <td style={{ fontSize: 13 }}>
+                            {u.formation_code ? (
+                              <span title={u.formation_name}>{u.niveau ? `${u.niveau} · ` : ''}{u.formation_code}</span>
+                            ) : (u.niveau || '—')}
+                          </td>
+                        )}
                         <td>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: u.is_active ? '#10b981' : '#ef4444' }}>
                             <span style={{ width: 7, height: 7, borderRadius: '50%', background: u.is_active ? '#10b981' : '#ef4444', display: 'inline-block' }} />
@@ -346,36 +385,56 @@ export default function AdminUsersPage() {
             <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
               placeholder="prenom.nom@unchk.sn" style={inp} />
           </Fg>
-          <div style={{ display: 'grid', gridTemplateColumns: form.role === 'student' ? '1fr 1fr' : '1fr', gap: 14 }}>
-            <Fg label="Rôle">
-              {modal === 'create' ? (
-                // Rôle déjà déterminé par le bouton cliqué (Étudiant/Professeur/Surveillant) — non modifiable.
-                // Un utilisateur "Administrateur" ne se crée pas via ce chemin (aucun bouton dédié).
-                <div style={{ ...inp, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--background)', color: 'var(--text-muted)' }}>
-                  <i className={`fas ${ROLE_META[form.role]?.icon}`} style={{ color: ROLE_META[form.role]?.color }} />
-                  {ROLE_META[form.role]?.label}
-                </div>
-              ) : (
-                <select value={form.role} onChange={e => {
-                  const role = e.target.value as UserRole
-                  setForm(p => ({ ...p, role, niveau: role === 'student' ? p.niveau : '' }))
-                }} style={inp}>
-                  <option value="student">Étudiant</option>
-                  <option value="professor">Professeur</option>
-                  <option value="surveillant">Surveillant</option>
-                  <option value="admin">Administrateur</option>
-                </select>
-              )}
-            </Fg>
-            {form.role === 'student' && (
-              <Fg label="Niveau">
-                <select value={form.niveau} onChange={e => setForm(p => ({ ...p, niveau: e.target.value }))} style={inp}>
-                  <option value="">— Aucun —</option>
-                  {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
-              </Fg>
+          <Fg label="Rôle">
+            {modal === 'create' ? (
+              // Rôle déjà déterminé par le bouton cliqué (Étudiant/Professeur/Surveillant) — non modifiable.
+              // Un utilisateur "Administrateur" ne se crée pas via ce chemin (aucun bouton dédié).
+              <div style={{ ...inp, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--background)', color: 'var(--text-muted)' }}>
+                <i className={`fas ${ROLE_META[form.role]?.icon}`} style={{ color: ROLE_META[form.role]?.color }} />
+                {ROLE_META[form.role]?.label}
+              </div>
+            ) : (
+              <select value={form.role} onChange={e => {
+                const role = e.target.value as UserRole
+                setForm(p => ({ ...p, role, formation_id: role === 'student' ? p.formation_id : '' }))
+                if (role !== 'student') { setSelPoleId(''); setSelNiveauId('') }
+              }} style={inp}>
+                <option value="student">Étudiant</option>
+                <option value="professor">Professeur</option>
+                <option value="surveillant">Surveillant</option>
+                <option value="admin">Administrateur</option>
+              </select>
             )}
-          </div>
+          </Fg>
+          {form.role === 'student' && (
+            <Fg label="Formation — Pôle → Niveau → Formation">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                <select value={selPoleId} onChange={e => {
+                  const id = e.target.value === '' ? '' : Number(e.target.value)
+                  setSelPoleId(id); setSelNiveauId(''); setForm(p => ({ ...p, formation_id: '' }))
+                }} style={inp}>
+                  <option value="">— Pôle —</option>
+                  {poles.map(p => <option key={p.id} value={p.id}>{p.code}</option>)}
+                </select>
+                <select value={selNiveauId} disabled={!selPoleId} onChange={e => {
+                  const id = e.target.value === '' ? '' : Number(e.target.value)
+                  setSelNiveauId(id); setForm(p => ({ ...p, formation_id: '' }))
+                }} style={{ ...inp, opacity: selPoleId ? 1 : .6 }}>
+                  <option value="">— Niveau —</option>
+                  {niveaux.filter(n => n.pole_id === selPoleId).map(n => <option key={n.id} value={n.id}>{n.code}</option>)}
+                </select>
+                <select value={form.formation_id} disabled={!selNiveauId}
+                  onChange={e => setForm(p => ({ ...p, formation_id: e.target.value === '' ? '' : Number(e.target.value) }))}
+                  style={{ ...inp, opacity: selNiveauId ? 1 : .6 }}>
+                  <option value="">— Formation —</option>
+                  {formationOpts.filter(f => f.niveau_id === selNiveauId).map(f => <option key={f.id} value={f.id}>{f.code}</option>)}
+                </select>
+              </div>
+              <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
+                Optionnel — mais inscrit automatiquement l&apos;étudiant à toutes les UE de la formation choisie.
+              </p>
+            </Fg>
+          )}
           <Fg label={`Mot de passe${modal === 'edit' ? ' (vide = inchangé)' : ' *'}`}>
             <input type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
               placeholder={modal === 'edit' ? '••••••••' : 'Min. 6 caractères'} style={inp} />
@@ -425,11 +484,29 @@ export default function AdminUsersPage() {
                 <input type="text" value={noEmailForm.full_name} onChange={e => setNoEmailForm(p => ({ ...p, full_name: e.target.value }))}
                   placeholder="Prénom Nom" style={inp} />
               </Fg>
-              <Fg label="Niveau (optionnel)">
-                <select value={noEmailForm.niveau} onChange={e => setNoEmailForm(p => ({ ...p, niveau: e.target.value }))} style={inp}>
-                  <option value="">— Aucun —</option>
-                  {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
+              <Fg label="Formation (optionnel) — Pôle → Niveau → Formation">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                  <select value={noEmailSelPoleId} onChange={e => {
+                    const id = e.target.value === '' ? '' : Number(e.target.value)
+                    setNoEmailSelPoleId(id); setNoEmailSelNiveauId(''); setNoEmailForm(p => ({ ...p, formation_id: '' }))
+                  }} style={inp}>
+                    <option value="">— Pôle —</option>
+                    {poles.map(p => <option key={p.id} value={p.id}>{p.code}</option>)}
+                  </select>
+                  <select value={noEmailSelNiveauId} disabled={!noEmailSelPoleId} onChange={e => {
+                    const id = e.target.value === '' ? '' : Number(e.target.value)
+                    setNoEmailSelNiveauId(id); setNoEmailForm(p => ({ ...p, formation_id: '' }))
+                  }} style={{ ...inp, opacity: noEmailSelPoleId ? 1 : .6 }}>
+                    <option value="">— Niveau —</option>
+                    {niveaux.filter(n => n.pole_id === noEmailSelPoleId).map(n => <option key={n.id} value={n.id}>{n.code}</option>)}
+                  </select>
+                  <select value={noEmailForm.formation_id} disabled={!noEmailSelNiveauId}
+                    onChange={e => setNoEmailForm(p => ({ ...p, formation_id: e.target.value === '' ? '' : Number(e.target.value) }))}
+                    style={{ ...inp, opacity: noEmailSelNiveauId ? 1 : .6 }}>
+                    <option value="">— Formation —</option>
+                    {formationOpts.filter(f => f.niveau_id === noEmailSelNiveauId).map(f => <option key={f.id} value={f.id}>{f.code}</option>)}
+                  </select>
+                </div>
               </Fg>
             </>
           )}

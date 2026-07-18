@@ -7,8 +7,12 @@ export interface User {
   full_name: string
   role: UserRole
   niveau?: string
+  niveau_name?: string
   formation_id?: number
   formation_name?: string
+  formation_code?: string
+  pole_code?: string
+  pole_name?: string
   is_active: boolean
   has_email?: boolean
   created_at: string
