@@ -1065,6 +1065,7 @@ export default function AdminFormationsPage() {
                   Aucun pôle créé — cliquez &quot;Créer la hiérarchie (pas-à-pas)&quot; en haut pour commencer
                 </div>
               )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 18, alignItems: 'start' }}>
               {poles.map(p => {
                 const pnv = niveaux.filter(n => n.pole_id === p.id)
                 return (
@@ -1147,6 +1148,7 @@ export default function AdminFormationsPage() {
                   </div>
                 )
               })}
+              </div>
 
               {/* Niveaux orphelins (sans pôle) — cas hérité, à corriger via modification */}
               {niveaux.some(n => !n.pole_id) && (
