@@ -78,6 +78,7 @@ const POLE_COLORS: Record<string, string> = {
   STN:  '#2563eb',
   LSHE: '#10b981',
   SEJA: '#f59e0b',
+  RTN:  '#0891b2',
 }
 function poleColor(code?: string) { return POLE_COLORS[code || ''] || '#3b82f6' }
 

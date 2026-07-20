@@ -17,7 +17,7 @@ interface ECItem {
 }
 interface FormationItem { id: number; code: string; name: string; level: string; pole_id?: number; pole_code?: string; pole_name?: string }
 
-const POLE_COLORS: Record<string, string> = { STN: '#2563eb', LSHE: '#10b981', SEJA: '#f59e0b' }
+const POLE_COLORS: Record<string, string> = { STN: '#2563eb', LSHE: '#10b981', SEJA: '#f59e0b', RTN: '#0891b2' }
 const poleColor = (code?: string | null) => POLE_COLORS[code || ''] || '#64748b'
 interface BasketVersion { label: string; content: string; rubric: string }
 

@@ -39,8 +39,8 @@ interface Student {
 
 // Même palette que les autres pages (admin/questions) — identité visuelle
 // cohérente par pôle dans toute l'application.
-const POLE_COLORS: Record<string, string> = { STN: '#2563eb', LSHE: '#10b981', SEJA: '#f59e0b' }
-const poleColor = (code?: string | null) => POLE_COLORS[code || ''] || '#7c3aed'
+const POLE_COLORS: Record<string, string> = { STN: '#2563eb', LSHE: '#10b981', SEJA: '#f59e0b', RTN: '#0891b2' }
+const poleColor = (code?: string | null) => POLE_COLORS[code || ''] || '#334155'
 
 interface Enrollment {
   enrollment_id: number
