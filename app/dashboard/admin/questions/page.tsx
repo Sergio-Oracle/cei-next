@@ -31,7 +31,6 @@ const TYPE_LABEL: Record<string, string> = {
   subopen:     'Semi-ouvert',
   appariement: 'Appariement',
   code:        'Maths / Code',
-  photo:       'Photo',
 }
 const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
   open:        { bg: '#f1f5f9', color: '#475569' },
@@ -41,7 +40,6 @@ const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
   subopen:     { bg: '#fff7ed', color: '#c2410c' },
   appariement: { bg: '#fdf2f8', color: '#be185d' },
   code:        { bg: '#fff7ed', color: '#c2410c' },
-  photo:       { bg: '#ecfeff', color: '#0e7490' },
 }
 
 const POLE_COLORS: Record<string, string> = { STN: '#2563eb', LSHE: '#10b981', SEJA: '#f59e0b' }

@@ -104,9 +104,13 @@ export default function AdminSuggestionsPage() {
   const [moreType,       setMoreType]       = useState('QCM')
   const [generatingMore, setGeneratingMore] = useState(false)
 
-  /* médias (image/audio) insérés dans le sujet — Notes points 2/15 */
+  /* médias (image/audio/vidéo) joints AVANT génération — Retour équipe DFIP :
+     l'IA analyse chaque média selon la consigne de l'enseignant et l'intègre
+     elle-même dans la question la plus pertinente du sujet généré. */
   const [mediaLinkKey,  setMediaLinkKey]  = useState('')
   const [uploadingMedia, setUploadingMedia] = useState(false)
+  const [mediaInstructions, setMediaInstructions] = useState('')
+  const [preGenMedia, setPreGenMedia] = useState<{ marker: string; media_type: 'image'|'audio'|'video'; filename: string; instructions: string; analysis: string }[]>([])
   const imageInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -120,7 +124,7 @@ export default function AdminSuggestionsPage() {
   const [difficulty, setDifficulty] = useState('Moyen')
   const [level,      setLevel]      = useState('Licence 3')
   const [ecId,       setEcId]       = useState('')
-  const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false, appariement: false, code: false, photo: false })
+  const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false, appariement: false, code: false })
   // QCM = un seul type sélectionnable avec un sous-réglage "une seule / plusieurs
   // réponses" — même mécanisme que le type "Choix multiple" de Moodle
   // (answerhowmany), au lieu de deux boutons QCM / QCM multiple indépendants.
@@ -212,7 +216,7 @@ export default function AdminSuggestionsPage() {
     setCreating(i); setGenFull(true); setGenFullElapsed(0)
     genFullTimer.current = setInterval(() => setGenFullElapsed(x => x + 1), 1000)
     try {
-      const qMap: Record<string, string> = { qcm: qcmSingle ? 'QCM (une seule réponse)' : 'QCM (plusieurs réponses)', open:'Questions ouvertes', vf:'Vrai/Faux', appariement:'Appariement', code:'Maths et programmation', photo:'Photo / Scan' }
+      const qMap: Record<string, string> = { qcm: qcmSingle ? 'QCM (une seule réponse)' : 'QCM (plusieurs réponses)', open:'Questions ouvertes', vf:'Vrai/Faux', appariement:'Appariement', code:'Maths et programmation' }
       const selectedTypes = Object.entries(qTypes).filter(([,v])=>v).map(([k])=>qMap[k])
       const selectedBloom = Object.entries(bloom).filter(([,v])=>v).map(([k])=>k)
       const suggestionWithTypes = {
@@ -221,6 +225,7 @@ export default function AdminSuggestionsPage() {
         exam_type: selectedTypes.join(',') || s.exam_type,
         bloom_levels: selectedBloom,
         question_count: questionCount,
+        media: preGenMedia.map(m => ({ marker: m.marker, instructions: m.instructions, analysis: m.analysis })),
       }
       const data = await api.post<{ success: boolean; title: string; content: string; rubric: string; duplicates?: { similarity: number }[] }>(
         '/api/subjects/generate-full-exam', { suggestion: suggestionWithTypes }
@@ -264,7 +269,9 @@ export default function AdminSuggestionsPage() {
   }
 
   /* ── Générer d'autres questions à ajouter au sujet ── */
-  /* ── Insérer une image/audio/vidéo dans le sujet en cours de composition ── */
+  /* ── Joindre une image/audio/vidéo AVANT génération : uploadée, analysée par
+     l'IA selon la consigne saisie, puis ajoutée à la liste à intégrer par
+     generate-full-exam (Retour équipe DFIP) ── */
   async function handleMediaUpload(file: File, mediaType: 'image' | 'audio' | 'video') {
     setUploadingMedia(true)
     try {
@@ -274,23 +281,21 @@ export default function AdminSuggestionsPage() {
       fd.append('media_type', mediaType)
       fd.append('link_key', linkKey)
       fd.append('file', file)
-      const res = await api.upload<{ success: boolean; media: { marker: string; filename: string } }>('/api/subjects/upload_media', fd)
-      const ta = previewTextareaRef.current
-      const insertion = `\n${res.media.marker}\n`
-      if (ta && document.activeElement === ta) {
-        const start = ta.selectionStart ?? previewContent.length
-        const end = ta.selectionEnd ?? previewContent.length
-        setPreviewContent(p => p.slice(0, start) + insertion + p.slice(end))
-      } else {
-        setPreviewContent(p => `${p.trimEnd()}\n${insertion}`)
-      }
+      fd.append('instructions', mediaInstructions.trim())
+      const res = await api.upload<{ success: boolean; media: { marker: string; filename: string; ai_analysis: string } }>('/api/subjects/upload_media', fd)
+      setPreGenMedia(p => [...p, { marker: res.media.marker, media_type: mediaType, filename: res.media.filename, instructions: mediaInstructions.trim(), analysis: res.media.ai_analysis }])
+      setMediaInstructions('')
       const mediaLabel = mediaType === 'image' ? 'Image' : mediaType === 'video' ? 'Vidéo' : 'Audio'
-      success(`${mediaLabel} inséré(e) : ${res.media.filename}`)
+      success(`${mediaLabel} analysé(e) — sera intégré(e) au sujet généré : ${res.media.filename}`)
     } catch (e: any) {
       toastErr(e.message || 'Erreur upload média')
     } finally {
       setUploadingMedia(false)
     }
+  }
+
+  function removePreGenMedia(marker: string) {
+    setPreGenMedia(p => p.filter(m => m.marker !== marker))
   }
 
   async function handleGenerateMore() {
@@ -478,30 +483,16 @@ export default function AdminSuggestionsPage() {
               <i className="fas fa-robot" style={{ marginRight:4 }} />Généré par IA — modifiable
             </span>
           </div>
-          <div style={{ padding:'14px 14px 0', display:'flex', gap:8 }}>
-            <button type="button" onClick={() => imageInputRef.current?.click()} disabled={uploadingMedia}
-              style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #bfdbfe', background:'#eff6ff', color:'var(--primary)', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
-              <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-image'}`} /> Insérer une image
-            </button>
-            <button type="button" onClick={() => audioInputRef.current?.click()} disabled={uploadingMedia}
-              style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
-              <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-music'}`} /> Insérer un audio
-            </button>
-            <button type="button" onClick={() => videoInputRef.current?.click()} disabled={uploadingMedia}
-              style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #fed7aa', background:'#fff7ed', color:'#c2410c', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
-              <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-film'}`} /> Insérer une vidéo
-            </button>
-            <input ref={imageInputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image'); e.target.value = '' }} />
-            <input ref={audioInputRef} type="file" accept="audio/*" style={{ display:'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'audio'); e.target.value = '' }} />
-            <input ref={videoInputRef} type="file" accept="video/*" style={{ display:'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'video'); e.target.value = '' }} />
-          </div>
-          <div style={{ padding:'0 14px 14px' }}>
+          <div style={{ padding:'14px 14px 0' }}>
             <textarea ref={previewTextareaRef} value={previewContent} onChange={e => setPreviewContent(e.target.value)} rows={14}
-              style={{ width:'100%', padding:14, background:'var(--background)', borderRadius:8, fontFamily:'monospace', fontSize:13, lineHeight:1.7, border:'1px solid var(--border)', resize:'vertical', boxSizing:'border-box', outline:'none', color:'var(--text)', marginTop:14, transition:'border-color .2s' }}
+              style={{ width:'100%', padding:14, background:'var(--background)', borderRadius:8, fontFamily:'monospace', fontSize:13, lineHeight:1.7, border:'1px solid var(--border)', resize:'vertical', boxSizing:'border-box', outline:'none', color:'var(--text)', transition:'border-color .2s' }}
               onFocus={e=>e.target.style.borderColor='var(--primary)'} onBlur={e=>e.target.style.borderColor='var(--border)'} />
-            <p style={{ margin:'6px 0 0', fontSize:11, color:'var(--text-muted)' }}>
-              <i className="fas fa-info-circle" style={{ marginRight:4 }} />Le marqueur <code>[IMAGE:...]</code>/<code>[AUDIO:...]</code> inséré s'affichera à côté de la question pendant l'examen.
-            </p>
+            {preGenMedia.length > 0 && (
+              <p style={{ margin:'6px 0 14px', fontSize:11, color:'var(--text-muted)' }}>
+                <i className="fas fa-info-circle" style={{ marginRight:4 }} />{preGenMedia.length} média(s) joint(s) avant génération — l'IA a placé les marqueurs <code>[IMAGE:...]</code>/<code>[AUDIO:...]</code>/<code>[VIDEO:...]</code> dans le sujet ci-dessus.
+              </p>
+            )}
+            {preGenMedia.length === 0 && <div style={{ height:14 }} />}
           </div>
         </div>
 
@@ -655,7 +646,6 @@ export default function AdminSuggestionsPage() {
                     <option value="OUVERT">Question ouverte</option>
                     <option value="APPARIEMENT">Appariement</option>
                     <option value="CODE">Maths et programmation</option>
-                    <option value="PHOTO">Photo / Scan</option>
                   </select>
                 </div>
                 <div>
@@ -741,7 +731,7 @@ export default function AdminSuggestionsPage() {
             <button className="btn btn-secondary" onClick={() => router.push('/dashboard/admin/subjects')}>
               <i className="fas fa-list" /> Voir mes sujets
             </button>
-            <button className="btn btn-primary" onClick={() => { setStep('form'); setCreatedSubject(null); suggReset() }}>
+            <button className="btn btn-primary" onClick={() => { setStep('form'); setCreatedSubject(null); suggReset(); setPreGenMedia([]); setMediaLinkKey(''); setMediaInstructions('') }}>
               <i className="fas fa-plus" /> Nouvelle génération
             </button>
           </div>
@@ -932,7 +922,6 @@ export default function AdminSuggestionsPage() {
                       ['vf','Vrai / Faux','fa-toggle-on','#10b981','#f0fdf4','#bbf7d0'],
                       ['appariement','Appariement','fa-link','#db2777','#fdf2f8','#fbcfe8'],
                       ['code','Maths / Programmation','fa-code','#ea580c','#fff7ed','#fed7aa'],
-                      ['photo','Photo / Scan','fa-camera','#0891b2','#ecfeff','#a5f3fc'],
                     ] as const).map(([k,label,icon,color,bg,border]) => (
                       <button key={k} type="button" onClick={() => setQTypes(p => ({...p,[k]:!p[k]}))}
                         style={{ display:'flex', alignItems:'center', gap:9, padding:'10px 18px', border:`1.5px solid ${qTypes[k]?border:'var(--border)'}`, borderRadius:10, cursor:'pointer', background:qTypes[k]?bg:'var(--surface)', transition:'all .15s', fontWeight:qTypes[k]?700:400, fontSize:13, color:qTypes[k]?color:'var(--text)' }}>
@@ -995,6 +984,55 @@ export default function AdminSuggestionsPage() {
                       {suggestingCount ? 'Suggestion…' : 'Suggérer (IA)'}
                     </button>
                   </div>
+                </div>
+
+                <div>
+                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:8 }}>
+                    <i className="fas fa-photo-film" style={{ color:'var(--primary)', marginRight:6 }} />
+                    Médias à intégrer (optionnel)
+                  </label>
+                  <p style={{ margin:'0 0 10px', fontSize:12, color:'var(--text-muted)' }}>
+                    <i className="fas fa-info-circle" style={{ marginRight:4 }} />
+                    Joignez une image, un audio ou une vidéo : l'IA l'analyse selon votre consigne et l'intègre elle-même à la question la plus pertinente du sujet généré.
+                  </p>
+                  <textarea value={mediaInstructions} onChange={e => setMediaInstructions(e.target.value)}
+                    placeholder="Consigne pour l'IA sur le prochain média ajouté (ex : « ce schéma représente un circuit RLC, demande d'en identifier les composants »)…"
+                    rows={2} className="form-control" style={{ marginBottom:8, resize:'vertical' }} />
+                  <div style={{ display:'flex', gap:8, marginBottom: preGenMedia.length ? 10 : 0 }}>
+                    <button type="button" onClick={() => imageInputRef.current?.click()} disabled={uploadingMedia}
+                      style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #bfdbfe', background:'#eff6ff', color:'var(--primary)', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                      <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-image'}`} /> Ajouter une image
+                    </button>
+                    <button type="button" onClick={() => audioInputRef.current?.click()} disabled={uploadingMedia}
+                      style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                      <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-music'}`} /> Ajouter un audio
+                    </button>
+                    <button type="button" onClick={() => videoInputRef.current?.click()} disabled={uploadingMedia}
+                      style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #fed7aa', background:'#fff7ed', color:'#c2410c', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                      <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-film'}`} /> Ajouter une vidéo
+                    </button>
+                    <input ref={imageInputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image'); e.target.value = '' }} />
+                    <input ref={audioInputRef} type="file" accept="audio/*" style={{ display:'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'audio'); e.target.value = '' }} />
+                    <input ref={videoInputRef} type="file" accept="video/*" style={{ display:'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'video'); e.target.value = '' }} />
+                  </div>
+                  {preGenMedia.length > 0 && (
+                    <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                      {preGenMedia.map(m => (
+                        <div key={m.marker} style={{ padding:10, border:'1px solid var(--border)', borderRadius:8, background:'var(--background)' }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                            <i className={`fas ${m.media_type==='image'?'fa-image':m.media_type==='audio'?'fa-music':'fa-film'}`} style={{ color:'var(--primary)' }} />
+                            <span style={{ fontWeight:600, fontSize:12.5 }}>{m.filename}</span>
+                            <button type="button" onClick={() => removePreGenMedia(m.marker)} title="Retirer"
+                              style={{ marginLeft:'auto', background:'none', border:'none', color:'#dc2626', cursor:'pointer', fontSize:12 }}>
+                              <i className="fas fa-trash" />
+                            </button>
+                          </div>
+                          {m.instructions && <div style={{ fontSize:11.5, color:'var(--text-muted)', marginBottom:4 }}><strong>Consigne :</strong> {m.instructions}</div>}
+                          <div style={{ fontSize:11.5, color:'var(--text-muted)' }}><strong>Analyse IA :</strong> {m.analysis}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:4 }}>

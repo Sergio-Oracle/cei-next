@@ -23,7 +23,7 @@ interface BasketVersion { label: string; content: string; rubric: string }
 
 type Mode = 'upload' | 'bank'
 
-const TYPE_LABELS: Record<string, string>  = { qcm: 'QCU', qcm_multi: 'QCM', vf: 'Vrai/Faux', open: 'Ouvert', subopen: 'Sous-questions', appariement: 'Appariement', code: 'Maths / Code', photo: 'Photo' }
+const TYPE_LABELS: Record<string, string>  = { qcm: 'QCU', qcm_multi: 'QCM', vf: 'Vrai/Faux', open: 'Ouvert', subopen: 'Sous-questions', appariement: 'Appariement', code: 'Maths / Code' }
 const TYPE_COLORS: Record<string, { bg: string; fg: string }> = {
   qcm:         { bg: '#dbeafe', fg: '#1d4ed8' },
   qcm_multi:   { bg: '#f0fdfa', fg: '#0d9488' },
@@ -32,7 +32,6 @@ const TYPE_COLORS: Record<string, { bg: string; fg: string }> = {
   subopen:     { bg: '#fee2e2', fg: '#b91c1c' },
   appariement: { bg: '#fdf2f8', fg: '#be185d' },
   code:        { bg: '#ffedd5', fg: '#c2410c' },
-  photo:       { bg: '#ecfeff', fg: '#0e7490' },
 }
 const BLOOM_LEVELS = ['Connaissance','Compréhension','Application','Analyse','Synthèse','Évaluation']
 
@@ -669,7 +668,7 @@ export default function AdminCreateSubjectPage() {
             <input type="text" value={bankSearch} onChange={e=>setBankSearch(e.target.value)} placeholder="Rechercher…"
               style={{ flex:1, minWidth:140, padding:'8px 12px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none' }} />
             <select value={bankTypeF} onChange={e=>setBankTypeF(e.target.value)} style={{ padding:'8px 10px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:12, background:'var(--background)', color:'var(--text)', outline:'none' }}>
-              <option value="">Type</option><option value="qcm">QCU</option><option value="qcm_multi">QCM</option><option value="vf">Vrai/Faux</option><option value="open">Ouvert</option><option value="subopen">Sous-questions</option><option value="appariement">Appariement</option><option value="code">Maths/Code</option><option value="photo">Photo</option>
+              <option value="">Type</option><option value="qcm">QCU</option><option value="qcm_multi">QCM</option><option value="vf">Vrai/Faux</option><option value="open">Ouvert</option><option value="subopen">Sous-questions</option><option value="appariement">Appariement</option><option value="code">Maths/Code</option>
             </select>
             <select value={bankPoleF} onChange={e=>{setBankPoleF(e.target.value);setBankFormF('');setBankUeF('');setBankEcF('')}} style={{ padding:'8px 10px', border:`1.5px solid ${bankPoleF?poleColor(bankPoles.find(p=>String(p.id)===bankPoleF)?.code):'var(--border)'}`, borderRadius:8, fontSize:12, background:'var(--background)', color:'var(--text)', outline:'none' }}>
               <option value="">Pôle</option>

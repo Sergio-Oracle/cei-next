@@ -24,7 +24,7 @@ interface Attempt {
   answers?: Record<string, string> | string
 }
 interface ParsedBlock {
-  type: 'text' | 'section' | 'qcm' | 'qcm_multi' | 'vf' | 'open' | 'subopen' | 'appariement' | 'code' | 'photo'
+  type: 'text' | 'section' | 'qcm' | 'qcm_multi' | 'vf' | 'open' | 'subopen' | 'appariement' | 'code'
   content?: string; title?: string; num?: string; text?: string
   extraLines?: string[]; choices?: { letter: string; text: string }[]
   pairs?: { left: string; right: string }[]
@@ -90,7 +90,7 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
   const VF_RE = /\bvrai\s*[\/|ou]\s*faux\b|\bV\s*[\/|]\s*F\b/i
   const strip = (s: string) => s.trim().replace(/^[*_]{1,2}\s*/,'').replace(/\s*[*_]{1,2}$/,'').trim()
   const Q_RE  = /^(?:(?:Question|Q)\.?\s+)?(\d{1,2})(?!\s*\.\s*\d)(?:\s*[.:)–—-]|\.\s+|\s{2,})\s*(.+)/i
-  const TYPE_MARKER = /\[(QCM_MULTI|QCM|VF|OUVERT|SUBOPEN|APPARIEMENT|CODE|PHOTO|OUVERT[ES]*)\]/i
+  const TYPE_MARKER = /\[(QCM_MULTI|QCM|VF|OUVERT|SUBOPEN|APPARIEMENT|CODE|OUVERT[ES]*)\]/i
   const isQ  = (l: string) => Q_RE.test(strip(l))
   const getQ = (l: string) => {
     const m = strip(l).match(Q_RE); if (!m) return null
@@ -146,7 +146,6 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       else if (q.markerType === 'SUBOPEN') type = 'subopen'
       else if (q.markerType === 'APPARIEMENT') type = 'appariement'
       else if (q.markerType === 'CODE') type = 'code'
-      else if (q.markerType === 'PHOTO') type = 'photo'
       else type = 'open'
     } else {
       const hasPtsChoices = choices.some(c => /\(\s*\d+\s*pts?\s*\)/i.test(c.text))
@@ -1095,7 +1094,7 @@ export default function ExamPage() {
     // Source de vérité : pagination calculée côté serveur façon Moodle (page/ordre
     // stables pour la tentative) — repli sur le calcul client si l'appel a échoué.
     const p1Blocks      = serverPages?.p1_blocks ?? displayBlocks.filter(b=>b.type==='qcm'||b.type==='qcm_multi'||b.type==='vf'||b.type==='appariement')
-    const p2Items       = serverPages?.p2_items  ?? displayBlocks.filter(b=>b.type==='section'||b.type==='open'||b.type==='subopen'||b.type==='code'||b.type==='photo')
+    const p2Items       = serverPages?.p2_items  ?? displayBlocks.filter(b=>b.type==='section'||b.type==='open'||b.type==='subopen'||b.type==='code')
     const p2Blocks      = p2Items.filter(b=>b.type!=='section')
     const allQBlocks    = [...p1Blocks, ...p2Blocks]
     const hasParsed    = allQBlocks.length>0
@@ -1308,7 +1307,7 @@ export default function ExamPage() {
                           </div>
                         </div>
                       )}
-                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current} mediaMap={mediaMap}/>)}
+                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} mediaMap={mediaMap}/>)}
                       {p1Pages.length<=1&&p2Blocks.length>0&&!showPart2&&(
                         <button onClick={()=>setShowPart2(true)} style={{marginTop:8,background:'#10b981',border:'none',color:'#fff',borderRadius:8,padding:'10px 18px',cursor:'pointer',fontSize:13,fontWeight:600}}>
                           <i className="fas fa-arrow-right"/> Passer aux questions ouvertes
@@ -1326,7 +1325,7 @@ export default function ExamPage() {
                       </div>
                       {(p2Pages[p2PageIdx]??p2Items).map((b,i)=>{
                         if(b.type==='section') return <div key={i} style={{margin:'18px 0 10px',padding:'10px 16px',background:'#f1f5f9',borderRadius:8,fontWeight:700,fontSize:14,color:'#334155',borderLeft:'4px solid #94a3b8'}}><i className="fas fa-layer-group" style={{color:'#64748b',marginRight:8}}/>{b.title}</div>
-                        return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current} mediaMap={mediaMap}/>
+                        return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers} mediaMap={mediaMap}/>
                       })}
                       {p2Pages.length>1&&(
                         <div style={{display:'flex',alignItems:'center',gap:10,marginTop:16}}>
@@ -1527,48 +1526,8 @@ function SQ({q,idx,answers,setAnswers}:{q:Question;idx:number;answers:Record<str
 }
 
 /* Question parsée (contenu brut) */
-/* Réponse par upload de fichier (photo/scan) — Maths et programmation manuscrits, etc. */
-function PhotoAnswer({value,onChange,attemptId}:{value:string;onChange:(v:string)=>void;attemptId?:number|null}) {
-  const [uploading,setUploading]=useState(false)
-  const [err,setErr]=useState('')
-  const fileRef=useRef<HTMLInputElement>(null)
-  async function handleFile(f:File) {
-    if(!attemptId){setErr('Tentative non initialisée');return}
-    setUploading(true);setErr('')
-    const fd=new FormData();fd.append('file',f)
-    try{
-      const res=await api.upload<{key:string}>(`/api/exam_attempts/${attemptId}/upload_answer_file`,fd)
-      onChange(res.key)
-    }catch(e:any){setErr(e.message||'Échec de l\'envoi')}
-    finally{setUploading(false)}
-  }
-  return(
-    <div>
-      {value?(
-        <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 16px',background:'#f0fdf4',border:'1.5px solid #86efac',borderRadius:10}}>
-          <i className="fas fa-check-circle" style={{color:'#10b981',fontSize:16}}/>
-          <span style={{fontSize:13,color:'#065f46',flex:1,fontWeight:600}}>Fichier envoyé</span>
-          <button onClick={()=>fileRef.current?.click()} disabled={uploading}
-            style={{padding:'6px 14px',background:'#fff',border:'1px solid #86efac',borderRadius:7,color:'#065f46',fontSize:12,fontWeight:600,cursor:'pointer'}}>
-            {uploading?'Envoi…':'Changer'}
-          </button>
-        </div>
-      ):(
-        <button onClick={()=>fileRef.current?.click()} disabled={uploading}
-          style={{width:'100%',padding:'16px',background:'#f8fafc',border:'2px dashed #cbd5e1',borderRadius:10,color:'#475569',fontSize:14,fontWeight:600,cursor:uploading?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-          <i className={`fas ${uploading?'fa-spinner fa-spin':'fa-camera'}`}/>
-          {uploading?'Envoi en cours…':'Choisir une photo ou un fichier'}
-        </button>
-      )}
-      {err&&<div style={{fontSize:12,color:'#ef4444',marginTop:6}}><i className="fas fa-exclamation-circle"/> {err}</div>}
-      <input ref={fileRef} type="file" accept="image/*,.pdf" style={{display:'none'}}
-        onChange={e=>{const f=e.target.files?.[0];if(f)handleFile(f)}}/>
-    </div>
-  )
-}
-
-function PQ({block,answers,setAnswers,onAnswer,attemptId,mediaMap}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:()=>void;attemptId?:number|null;mediaMap?:Record<string,string>}) {
-  const isOpen=block.type==='open'||block.type==='subopen'||block.type==='code'||block.type==='photo'
+function PQ({block,answers,setAnswers,onAnswer,mediaMap}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:()=>void;mediaMap?:Record<string,string>}) {
+  const isOpen=block.type==='open'||block.type==='subopen'||block.type==='code'
   const key=`pq_${block.num}`
   // Mélange stable (par instance de bloc) des choix de droite de l'appariement,
   // indépendamment de l'ordre des items de gauche — façon Moodle (shufflestems +
@@ -1581,7 +1540,7 @@ function PQ({block,answers,setAnswers,onAnswer,attemptId,mediaMap}:{block:Parsed
   const answered=block.type==='subopen'?block.choices?.some(c=>(answers[`${key}_${c.letter}`]??'').trim()!==''):
     block.type==='appariement'?(block.pairs?.every((_,i)=>(answers[`${key}_${i}`]??'').trim()!=='')??false):
     (answers[key]??'').trim()!==''
-  const TYPE_LABEL:Record<string,string>={vf:'V/F',qcm:'QCU',qcm_multi:'QCM',subopen:'Structuré',appariement:'Appariement',code:'Code / Maths',photo:'Photo'}
+  const TYPE_LABEL:Record<string,string>={vf:'V/F',qcm:'QCU',qcm_multi:'QCM',subopen:'Structuré',appariement:'Appariement',code:'Code / Maths'}
   return(
     <div style={{border:`2px solid ${answered?'#10b981':'#e2e8f0'}`,borderRadius:16,padding:'22px 24px',background:'#fff',boxShadow:'0 2px 8px rgba(0,0,0,.05)',marginBottom:16,transition:'border-color .2s'}}>
       <div style={{display:'flex',alignItems:'flex-start',gap:12,marginBottom:16}}>
@@ -1678,9 +1637,6 @@ function PQ({block,answers,setAnswers,onAnswer,attemptId,mediaMap}:{block:Parsed
           style={{width:'100%',padding:'12px 14px',border:'1.5px solid #e2e8f0',borderRadius:8,fontSize:13,fontFamily:"'Courier New',monospace",whiteSpace:'pre',resize:'vertical',color:'#0f172a',outline:'none',boxSizing:'border-box',lineHeight:1.6,background:'#0f172a08',tabSize:2}}
           onFocus={e=>{(e.target as HTMLElement).style.borderColor='#3b82f6'}}
           onBlur={e=>{(e.target as HTMLElement).style.borderColor=(answers[key]?.trim()?'#10b981':'#e2e8f0')}}/>
-      )}
-      {block.type==='photo'&&(
-        <PhotoAnswer value={answers[key]??''} onChange={v=>{setAnswers(p=>({...p,[key]:v}));onAnswer?.()}} attemptId={attemptId}/>
       )}
       {block.type==='open'&&(
         <textarea value={answers[key]??''} onChange={e=>setAnswers(p=>({...p,[key]:e.target.value}))} rows={6} placeholder={`Rédigez votre réponse à la question ${block.num}…`}
