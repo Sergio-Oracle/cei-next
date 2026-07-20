@@ -75,6 +75,11 @@ export default function AdminEnrollmentsPage() {
   const [bulkSel, setBulkSel] = useState<Set<number>>(new Set())
   const [bulkUeId, setBulkUeId] = useState('')
   const [bulkBusy, setBulkBusy] = useState(false)
+  // Inscription en masse SCOPÉE par formation (vue "Par formation") — le
+  // sélecteur d'UE de chaque carte ne propose que les UE de CETTE formation,
+  // pour qu'il soit structurellement impossible d'inscrire un étudiant à une
+  // UE d'une autre formation (logique Pôle → Niveau → Formation à respecter).
+  const [bulkUeIdByFormation, setBulkUeIdByFormation] = useState<Record<number, string>>({})
 
   const loadAll = useCallback(async () => {
     setLoading(true)
@@ -225,6 +230,32 @@ export default function AdminEnrollmentsPage() {
       )
       success(`${res.enrolled} étudiant(s) inscrit(s)${res.already_enrolled ? ` (${res.already_enrolled} déjà inscrit(s))` : ''}`)
       setBulkSel(new Set()); setBulkUeId('')
+      await loadAll()
+    } catch (e: any) { toastErr(e.message || "Erreur lors de l'inscription groupée") }
+    finally { setBulkBusy(false) }
+  }
+
+  function toggleFormationCheckAll(fStudents: Student[], val: boolean) {
+    setBulkSel(prev => {
+      const n = new Set(prev)
+      fStudents.forEach(s => { val ? n.add(s.id) : n.delete(s.id) })
+      return n
+    })
+  }
+
+  async function bulkEnrollFormation(formationId: number, fStudents: Student[]) {
+    const ueId = bulkUeIdByFormation[formationId]
+    const ids = fStudents.map(s => s.id).filter(id => bulkSel.has(id))
+    if (!ueId || ids.length === 0) return
+    setBulkBusy(true)
+    try {
+      const res = await api.post<{ success: boolean; enrolled: number; already_enrolled: number; errors: string[] }>(
+        '/api/admin/student_enrollments/bulk', { student_ids: ids, ue_id: Number(ueId) }
+      )
+      if (res.errors?.length) toastErr(res.errors.join(' — '))
+      success(`${res.enrolled} étudiant(s) inscrit(s)${res.already_enrolled ? ` (${res.already_enrolled} déjà inscrit(s))` : ''}`)
+      setBulkSel(prev => { const n = new Set(prev); ids.forEach(id => n.delete(id)); return n })
+      setBulkUeIdByFormation(prev => ({ ...prev, [formationId]: '' }))
       await loadAll()
     } catch (e: any) { toastErr(e.message || "Erreur lors de l'inscription groupée") }
     finally { setBulkBusy(false) }
@@ -436,13 +467,46 @@ export default function AdminEnrollmentsPage() {
                       {fStudents.length} étudiant{fStudents.length > 1 ? 's' : ''}
                     </span>
                   </div>
+
+                  {/* Barre d'inscription en masse — l'UE proposée est limitée
+                      aux UE de CETTE formation (logique Pôle→Niveau→Formation) */}
+                  {(() => {
+                    const fUes = (formation!.semesters ?? []).flatMap(sem => (sem.ues ?? []).map(u => ({ ...u, sem: sem.name })))
+                    const fSelectedCount = fStudents.filter(s => bulkSel.has(s.id)).length
+                    const fUeId = bulkUeIdByFormation[formation!.id] || ''
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', background: fSelectedCount ? '#eff6ff' : 'var(--background)', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }}>
+                          <input type="checkbox"
+                            checked={fStudents.length > 0 && fStudents.every(s => bulkSel.has(s.id))}
+                            onChange={e => toggleFormationCheckAll(fStudents, e.target.checked)} />
+                          Tout cocher ({fSelectedCount})
+                        </label>
+                        {fSelectedCount > 0 && (
+                          <>
+                            <select value={fUeId} onChange={e => setBulkUeIdByFormation(p => ({ ...p, [formation!.id]: e.target.value }))}
+                              className="form-control" style={{ maxWidth: 320, fontSize: 12, padding: '6px 10px' }}>
+                              <option value="">— Choisir l'UE de {formation!.code} —</option>
+                              {fUes.map(u => <option key={u.id} value={String(u.id)}>{u.code} — {u.name} ({u.sem})</option>)}
+                            </select>
+                            <button onClick={() => bulkEnrollFormation(formation!.id, fStudents)} disabled={!fUeId || bulkBusy} className="btn btn-sm btn-primary"
+                              style={{ opacity: !fUeId || bulkBusy ? .6 : 1, cursor: !fUeId || bulkBusy ? 'not-allowed' : 'pointer' }}>
+                              {bulkBusy ? <><i className="fas fa-spinner fa-spin" /> Inscription…</> : <><i className="fas fa-user-plus" /> Inscrire la sélection ({fSelectedCount})</>}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })()}
+
                   {/* Liste étudiants de cette formation */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 1, padding: 10 }}>
                     {fStudents.map(st => {
                       const enrollments = enrollmentsByStudent[st.id] ?? []
                       const initials = (st.full_name || st.email || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
                       return (
-                        <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 8, background: 'var(--background)', border: '1px solid var(--border)' }}>
+                        <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 8, background: bulkSel.has(st.id) ? '#eff6ff' : 'var(--background)', border: `1px solid ${bulkSel.has(st.id) ? '#bfdbfe' : 'var(--border)'}` }}>
+                          <input type="checkbox" checked={bulkSel.has(st.id)} onChange={() => toggleBulk(st.id)} style={{ flexShrink: 0 }} />
                           <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#dbeafe', color: '#1d4ed8', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             {initials}
                           </div>
