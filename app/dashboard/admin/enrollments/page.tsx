@@ -443,9 +443,11 @@ export default function AdminEnrollmentsPage() {
         )}
       </div>}
 
-      {/* Vue : Par formation */}
+      {/* Vue : Par formation — colonnes côte à côte, même principe que "Par
+          pôle", pour distinguer les formations d'un même pôle (ex: L2-MIC vs
+          L3-TR-DEV) */}
       {view === 'byFormation' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'row', gap: 16, overflowX: 'auto', paddingBottom: 10, alignItems: 'flex-start' }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: 60 }}>
               <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: 'var(--primary)' }} />
@@ -453,7 +455,7 @@ export default function AdminEnrollmentsPage() {
           ) : (
             <>
               {byFormation.map(({ formation, students: fStudents }) => (
-                <div key={formation!.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div key={formation!.id} className="card" style={{ flex: '0 0 380px', padding: 0, overflow: 'hidden' }}>
                   {/* En-tête formation */}
                   <div style={{ background: 'var(--primary)', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -500,33 +502,32 @@ export default function AdminEnrollmentsPage() {
                   })()}
 
                   {/* Liste étudiants de cette formation */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 1, padding: 10 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, maxHeight: 640, overflowY: 'auto' }}>
                     {fStudents.map(st => {
                       const enrollments = enrollmentsByStudent[st.id] ?? []
                       const initials = (st.full_name || st.email || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
                       return (
-                        <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 8, background: bulkSel.has(st.id) ? '#eff6ff' : 'var(--background)', border: `1px solid ${bulkSel.has(st.id) ? '#bfdbfe' : 'var(--border)'}` }}>
-                          <input type="checkbox" checked={bulkSel.has(st.id)} onChange={() => toggleBulk(st.id)} style={{ flexShrink: 0 }} />
-                          <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#dbeafe', color: '#1d4ed8', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            {initials}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{st.full_name || st.email}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
-                              <i className="fas fa-envelope" style={{ marginRight: 3, fontSize: 10 }} />{st.email}
+                        <div key={st.id} style={{ padding: '10px 12px', borderRadius: 8, background: bulkSel.has(st.id) ? '#eff6ff' : 'var(--background)', border: `1px solid ${bulkSel.has(st.id) ? '#bfdbfe' : 'var(--border)'}` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                            <input type="checkbox" checked={bulkSel.has(st.id)} onChange={() => toggleBulk(st.id)} style={{ flexShrink: 0 }} />
+                            <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#dbeafe', color: '#1d4ed8', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              {initials}
                             </div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
-                              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginRight: 2 }}>UEs :</span>
-                              {enrollments.length === 0 ? (
-                                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>Aucune</span>
-                              ) : enrollments.map(e => (
-                                <span key={e.enrollment_id} style={{ display: 'inline-flex', alignItems: 'center', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
-                                  {e.ue_code}
-                                </span>
-                              ))}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{st.full_name || st.email}</div>
+                              <div style={{ fontSize: 10.5, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{st.email}</div>
                             </div>
                           </div>
-                          <button onClick={() => openModal(st)} className="btn btn-sm btn-secondary" style={{ whiteSpace: 'nowrap', flexShrink: 0, fontSize: 12 }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginBottom: 8 }}>
+                            {enrollments.length === 0 ? (
+                              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>Aucune UE</span>
+                            ) : enrollments.map(e => (
+                              <span key={e.enrollment_id} style={{ display: 'inline-flex', alignItems: 'center', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 99, padding: '2px 7px', fontSize: 10.5, fontWeight: 600 }}>
+                                {e.ue_code}
+                              </span>
+                            ))}
+                          </div>
+                          <button onClick={() => openModal(st)} className="btn btn-sm btn-secondary" style={{ width: '100%', fontSize: 11.5 }}>
                             <i className="fas fa-pen-to-square" /> Gérer
                           </button>
                         </div>
@@ -538,7 +539,7 @@ export default function AdminEnrollmentsPage() {
 
               {/* Étudiants sans formation */}
               {noFormation.length > 0 && (
-                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="card" style={{ flex: '0 0 380px', padding: 0, overflow: 'hidden' }}>
                   <div style={{ background: '#f59e0b', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <i className="fas fa-triangle-exclamation" style={{ color: '#fff', fontSize: 16 }} />
@@ -548,7 +549,7 @@ export default function AdminEnrollmentsPage() {
                       {noFormation.length} étudiant{noFormation.length > 1 ? 's' : ''}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 1, padding: 10 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 1, padding: 10, maxHeight: 640, overflowY: 'auto' }}>
                     {noFormation.map(st => {
                       const enrollments = enrollmentsByStudent[st.id] ?? []
                       const initials = (st.full_name || st.email || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
