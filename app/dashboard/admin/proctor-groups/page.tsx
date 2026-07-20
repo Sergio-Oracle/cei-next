@@ -240,7 +240,16 @@ export default function ProctorGroupsPage() {
               {/* Ajouter des membres */}
               {availableSurveillants.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>Ajouter des surveillants</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ajouter des surveillants</div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>
+                      <input type="checkbox"
+                        checked={availableSurveillants.length > 0 && availableSurveillants.every(s => memberSelected.has(s.id))}
+                        onChange={e => setMemberSelected(e.target.checked ? new Set(availableSurveillants.map(s => s.id)) : new Set())}
+                        style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }} />
+                      Tout cocher
+                    </label>
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 180, overflowY: 'auto', marginBottom: 10 }}>
                     {availableSurveillants.map(s => (
                       <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', border: '1.5px solid var(--border)' }}>
