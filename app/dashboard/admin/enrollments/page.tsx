@@ -105,14 +105,13 @@ export default function AdminEnrollmentsPage() {
         } catch { f.semesters = [] }
       }
 
-      // Charger inscriptions de chaque étudiant
+      // Charger les inscriptions de TOUS les étudiants en un seul appel —
+      // Retour : 48 appels individuels saturaient le rate-limit (429)
       const byStudent: Record<number, Enrollment[]> = {}
-      await Promise.all(sList.map(async s => {
-        try {
-          const r = await api.get<any>(`/api/admin/students/${s.id}/enrollments`)
-          byStudent[s.id] = r.enrollments ?? r ?? []
-        } catch { byStudent[s.id] = [] }
-      }))
+      try {
+        const enrRes = await api.get<Record<string, Enrollment[]>>('/api/admin/students/enrollments/bulk')
+        for (const s of sList) byStudent[s.id] = enrRes[String(s.id)] ?? []
+      } catch { sList.forEach(s => { byStudent[s.id] = [] }) }
 
       setFormations(fList)
       setStudents(sList)
