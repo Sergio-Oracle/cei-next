@@ -32,7 +32,15 @@ interface Student {
   formation_id: number | null
   formation_name?: string
   formation_code?: string
+  pole_id?: number | null
+  pole_name?: string
+  pole_code?: string
 }
+
+// Même palette que les autres pages (admin/questions) — identité visuelle
+// cohérente par pôle dans toute l'application.
+const POLE_COLORS: Record<string, string> = { STN: '#2563eb', LSHE: '#10b981', SEJA: '#f59e0b' }
+const poleColor = (code?: string | null) => POLE_COLORS[code || ''] || '#7c3aed'
 
 interface Enrollment {
   enrollment_id: number
@@ -61,7 +69,7 @@ export default function AdminEnrollmentsPage() {
   const [checked, setChecked] = useState<Record<number, boolean>>({}) // ueId → bool
   const [saving, setSaving] = useState(false)
   const [setPrimaryBusy, setSetPrimaryBusy] = useState(false)
-  const [view, setView] = useState<'list' | 'byFormation'>('list')
+  const [view, setView] = useState<'list' | 'byFormation' | 'byPole'>('list')
 
   // Retour #2 — inscription groupée : sélection multi-étudiants + UE cible
   const [bulkSel, setBulkSel] = useState<Set<number>>(new Set())
@@ -232,6 +240,22 @@ export default function AdminEnrollmentsPage() {
   // Étudiants sans formation
   students.filter(s => !s.formation_id).forEach(s => noFormation.push(s))
 
+  // Grouper par pôle — vue côte à côte pour bien distinguer la hiérarchie
+  // Pôle → Niveau → Formation à respecter (demande explicite)
+  const poleMap = new Map<number, { poleId: number; poleCode: string; poleName: string; students: Student[] }>()
+  const noPole: Student[] = []
+  for (const s of students) {
+    if (s.pole_id) {
+      if (!poleMap.has(s.pole_id)) {
+        poleMap.set(s.pole_id, { poleId: s.pole_id, poleCode: s.pole_code || '?', poleName: s.pole_name || s.pole_code || '?', students: [] })
+      }
+      poleMap.get(s.pole_id)!.students.push(s)
+    } else {
+      noPole.push(s)
+    }
+  }
+  const byPole = Array.from(poleMap.values()).sort((a, b) => a.poleCode.localeCompare(b.poleCode))
+
   return (
     <div>
       {/* Header */}
@@ -276,6 +300,11 @@ export default function AdminEnrollmentsPage() {
           onClick={() => setView('byFormation')}
           style={{ padding: '7px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: view === 'byFormation' ? 'var(--primary)' : 'transparent', color: view === 'byFormation' ? '#fff' : 'var(--text-muted)', transition: 'all .15s' }}>
           <i className="fas fa-layer-group" style={{ marginRight: 6 }} />Par formation
+        </button>
+        <button
+          onClick={() => setView('byPole')}
+          style={{ padding: '7px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: view === 'byPole' ? 'var(--primary)' : 'transparent', color: view === 'byPole' ? '#fff' : 'var(--text-muted)', transition: 'all .15s' }}>
+          <i className="fas fa-sitemap" style={{ marginRight: 6 }} />Par pôle
         </button>
       </div>
 
@@ -499,6 +528,119 @@ export default function AdminEnrollmentsPage() {
             </>
           )}
         </div>
+      )}
+
+      {/* Vue : Par pôle — colonnes côte à côte pour bien distinguer la
+          hiérarchie Pôle → Niveau → Formation à respecter */}
+      {view === 'byPole' && (
+        loading ? (
+          <div style={{ textAlign: 'center', padding: 60 }}>
+            <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: 'var(--primary)' }} />
+          </div>
+        ) : byPole.length === 0 && noPole.length === 0 ? (
+          <div className="card empty-message" style={{ padding: '48px 20px' }}>
+            <i className="fas fa-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />
+            Aucun étudiant enregistré.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 10, alignItems: 'flex-start' }}>
+            {byPole.map(p => {
+              const color = poleColor(p.poleCode)
+              return (
+                <div key={p.poleId} className="card" style={{ flex: '0 0 340px', padding: 0, overflow: 'hidden' }}>
+                  <div style={{ background: color, padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, position: 'sticky', top: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                      <i className="fas fa-sitemap" style={{ color: '#fff', fontSize: 16, flexShrink: 0 }} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ color: '#fff', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.poleName}</div>
+                        <div style={{ color: 'rgba(255,255,255,.75)', fontSize: 11 }}>{p.poleCode}</div>
+                      </div>
+                    </div>
+                    <span style={{ background: 'rgba(255,255,255,.22)', color: '#fff', borderRadius: 99, padding: '3px 10px', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                      {p.students.length}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, maxHeight: 640, overflowY: 'auto' }}>
+                    {p.students.map(st => {
+                      const enrollments = enrollmentsByStudent[st.id] ?? []
+                      const initials = (st.full_name || st.email || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
+                      return (
+                        <div key={st.id} style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--background)', border: '1px solid var(--border)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                            <div style={{ width: 30, height: 30, borderRadius: '50%', background: `${color}22`, color, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              {initials}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{st.full_name || st.email}</div>
+                              <div style={{ fontSize: 10.5, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{st.formation_code}</div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginBottom: 8 }}>
+                            {enrollments.length === 0 ? (
+                              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>Aucune UE</span>
+                            ) : enrollments.map(e => (
+                              <span key={e.enrollment_id} style={{ display: 'inline-flex', alignItems: 'center', background: `${color}18`, color, border: `1px solid ${color}44`, borderRadius: 99, padding: '2px 7px', fontSize: 10.5, fontWeight: 600 }}>
+                                {e.ue_code}
+                              </span>
+                            ))}
+                          </div>
+                          <button onClick={() => openModal(st)} className="btn btn-sm btn-secondary" style={{ width: '100%', fontSize: 11.5 }}>
+                            <i className="fas fa-pen-to-square" /> Gérer
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+
+            {noPole.length > 0 && (
+              <div key="nopole" className="card" style={{ flex: '0 0 340px', padding: 0, overflow: 'hidden' }}>
+                <div style={{ background: '#f59e0b', padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <i className="fas fa-triangle-exclamation" style={{ color: '#fff', fontSize: 16 }} />
+                    <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>Sans pôle</div>
+                  </div>
+                  <span style={{ background: 'rgba(255,255,255,.22)', color: '#fff', borderRadius: 99, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>
+                    {noPole.length}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, maxHeight: 640, overflowY: 'auto' }}>
+                  {noPole.map(st => {
+                    const enrollments = enrollmentsByStudent[st.id] ?? []
+                    const initials = (st.full_name || st.email || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
+                    return (
+                      <div key={st.id} style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--background)', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                          <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#fef3c7', color: '#b45309', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {initials}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{st.full_name || st.email}</div>
+                            <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{st.email}</div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginBottom: 8 }}>
+                          {enrollments.length === 0 ? (
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>Aucune UE</span>
+                          ) : enrollments.map(e => (
+                            <span key={e.enrollment_id} style={{ display: 'inline-flex', alignItems: 'center', background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 7px', fontSize: 10.5, fontWeight: 600 }}>
+                              {e.ue_code}
+                            </span>
+                          ))}
+                        </div>
+                        <button onClick={() => openModal(st)} className="btn btn-sm" style={{ width: '100%', fontSize: 11.5, background: 'var(--primary)', color: '#fff', border: 'none' }}>
+                          <i className="fas fa-pen-to-square" /> Affecter
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )
       )}
 
       {/* ══ Modal Inscriptions ════════════════════════════════════════════════ */}
