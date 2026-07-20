@@ -98,7 +98,17 @@ export default function ProfessorCreateSubjectPage() {
   /* ── load shared data ── */
   useEffect(() => {
     Promise.all([api.get<ECItem[]>('/api/ecs'), api.get<FormationItem[]>('/api/formations')])
-      .then(([ecs, fms]) => { setAllEcs(Array.isArray(ecs) ? ecs : []); setFormations(Array.isArray(fms) ? fms : []) })
+      .then(([ecs, fms]) => {
+        const list = Array.isArray(ecs) ? ecs : []
+        setAllEcs(list); setFormations(Array.isArray(fms) ? fms : [])
+        // Présélectionne Pôle/Formation sur les VRAIES affectations du prof —
+        // sans ça, un Pôle/Formation resté sur une valeur périmée masque
+        // silencieusement l'EC qu'on vient de lui assigner.
+        if (list.length > 0 && list[0].pole_id) {
+          setFilterPole(String(list[0].pole_id))
+          if (list[0].formation_id) setFilterFormation(String(list[0].formation_id))
+        }
+      })
       .catch(e => toastErr(e.message || 'Erreur chargement'))
       .finally(() => setDataReady(true))
   }, []) // eslint-disable-line
@@ -577,6 +587,18 @@ export default function ProfessorCreateSubjectPage() {
                   placeholder={!dataReady ? 'Chargement…' : '— Aucun (sujet indépendant) —'}
                   emptyLabel="— Aucun (sujet indépendant) —"
                   options={filteredEcs.map(ec => ({ value: String(ec.id), label: `${ec.ue_code ? ec.ue_code + ' › ' : ''}${ec.code} — ${ec.name}` }))} />
+                {dataReady && filteredEcs.length === 0 && allEcs.length > 0 && (
+                  <p style={{ margin: '6px 0 0', fontSize: 12, color: '#b45309' }}>
+                    <i className="fas fa-triangle-exclamation" style={{ marginRight: 4 }} />
+                    Aucun de vos EC ne correspond à ce Pôle/Formation — vous avez {allEcs.length} EC assigné(s) au total, changez le filtre ci-dessus pour le(s) voir.
+                  </p>
+                )}
+                {dataReady && allEcs.length === 0 && (
+                  <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+                    <i className="fas fa-info-circle" style={{ marginRight: 4 }} />
+                    Aucun EC ne vous est encore assigné — demandez à un administrateur de vous rattacher via « Affectations EC ».
+                  </p>
+                )}
               </div>
 
               {/* File */}

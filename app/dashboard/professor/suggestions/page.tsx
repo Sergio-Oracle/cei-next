@@ -163,7 +163,18 @@ export default function ProfessorSuggestionsPage() {
   } = useSuggestionFlow()
 
   useEffect(() => {
-    api.get<any>('/api/ecs').then(r => setEcs(Array.isArray(r) ? r : r.ecs ?? [])).catch(() => {})
+    api.get<any>('/api/ecs').then(r => {
+      const list: EC[] = Array.isArray(r) ? r : r.ecs ?? []
+      setEcs(list)
+      // Présélectionne Pôle/Formation sur les VRAIES affectations du prof —
+      // sans ça, un Pôle/Formation resté sur une valeur périmée masque
+      // silencieusement l'EC qu'on vient de lui assigner (aucun message
+      // n'indique pourquoi le sélecteur reste vide).
+      if (list.length > 0 && list[0].pole_id) {
+        setFilterPole(String(list[0].pole_id))
+        if (list[0].formation_id) setFilterFormation(String(list[0].formation_id))
+      }
+    }).catch(() => {})
     api.get<any>('/api/formations').then(r => setFormations(Array.isArray(r) ? r : r.formations ?? [])).catch(() => {})
   }, [])
 
@@ -1067,6 +1078,18 @@ export default function ProfessorSuggestionsPage() {
                     placeholder="— Lier à un EC (optionnel) —"
                     emptyLabel="— Lier à un EC (optionnel) —"
                     options={filteredEcs.map(ec => ({ value: String(ec.id), label: `${ec.ue_code ? ec.ue_code + ' - ' : ''}${ec.code}: ${ec.name}` }))} />
+                  {filteredEcs.length === 0 && ecs.length > 0 && (
+                    <p style={{ margin: '6px 0 0', fontSize: 12, color: '#b45309' }}>
+                      <i className="fas fa-triangle-exclamation" style={{ marginRight: 4 }} />
+                      Aucun de vos EC ne correspond à ce Pôle/Formation — vous avez {ecs.length} EC assigné(s) au total, changez le filtre ci-dessus pour le(s) voir.
+                    </p>
+                  )}
+                  {ecs.length === 0 && (
+                    <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+                      <i className="fas fa-info-circle" style={{ marginRight: 4 }} />
+                      Aucun EC ne vous est encore assigné — demandez à un administrateur de vous rattacher via « Affectations EC ».
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
