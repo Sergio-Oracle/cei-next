@@ -272,6 +272,23 @@ export default function AdminEnrollmentsPage() {
     finally { setBulkBusy(false) }
   }
 
+  async function bulkUnenrollFormation(formationId: number, fStudents: Student[]) {
+    const ueId = bulkUeIdByFormation[formationId]
+    const ids = fStudents.map(s => s.id).filter(id => bulkSel.has(id))
+    if (!ueId || ids.length === 0) return
+    setBulkBusy(true)
+    try {
+      const res = await api.post<{ success: boolean; removed: number }>(
+        '/api/admin/student_enrollments/bulk_remove', { student_ids: ids, ue_id: Number(ueId) }
+      )
+      success(`${res.removed} étudiant(s) désinscrit(s)`)
+      setBulkSel(prev => { const n = new Set(prev); ids.forEach(id => n.delete(id)); return n })
+      setBulkUeIdByFormation(prev => ({ ...prev, [formationId]: '' }))
+      await loadAll()
+    } catch (e: any) { toastErr(e.message || "Erreur lors de la désinscription groupée") }
+    finally { setBulkBusy(false) }
+  }
+
   // Grouper les étudiants par formation principale
   const byFormation: { formation: Formation | null; students: Student[] }[] = []
   const noFormation: Student[] = []
@@ -505,6 +522,10 @@ export default function AdminEnrollmentsPage() {
                             <button onClick={() => bulkEnrollFormation(formation!.id, fStudents)} disabled={!fUeId || bulkBusy} className="btn btn-sm btn-primary"
                               style={{ opacity: !fUeId || bulkBusy ? .6 : 1, cursor: !fUeId || bulkBusy ? 'not-allowed' : 'pointer' }}>
                               {bulkBusy ? <><i className="fas fa-spinner fa-spin" /> Inscription…</> : <><i className="fas fa-user-plus" /> Inscrire la sélection ({fSelectedCount})</>}
+                            </button>
+                            <button onClick={() => bulkUnenrollFormation(formation!.id, fStudents)} disabled={!fUeId || bulkBusy}
+                              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: '1px solid #fecaca', background: 'var(--surface)', color: '#ef4444', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: !fUeId || bulkBusy ? 'not-allowed' : 'pointer', opacity: !fUeId || bulkBusy ? .6 : 1 }}>
+                              {bulkBusy ? <><i className="fas fa-spinner fa-spin" /> Désinscription…</> : <><i className="fas fa-user-minus" /> Désinscrire la sélection ({fSelectedCount})</>}
                             </button>
                           </>
                         )}
