@@ -68,7 +68,11 @@ export default function AdminEnrollmentsPage() {
   const [modal, setModal] = useState<EnrollModal | null>(null)
   const [checked, setChecked] = useState<Record<number, boolean>>({}) // ueId → bool
   const [saving, setSaving] = useState(false)
-  const [setPrimaryBusy, setSetPrimaryBusy] = useState(false)
+  // Attribution de formation pour un étudiant qui n'en a pas encore — un
+  // étudiant n'a plus qu'UNE formation (logique Pôle → Niveau → Formation à
+  // respecter, plus de "double cursus" / "formation principale")
+  const [assignFormationId, setAssignFormationId] = useState('')
+  const [assigningFormation, setAssigningFormation] = useState(false)
   const [view, setView] = useState<'list' | 'byFormation' | 'byPole'>('list')
 
   // Retour #2 — inscription groupée : sélection multi-étudiants + UE cible
@@ -137,6 +141,7 @@ export default function AdminEnrollmentsPage() {
       const init: Record<number, boolean> = {}
       ids.forEach(id => { init[id] = true })
       setChecked(init)
+      setAssignFormationId('')
     } catch { toastErr('Erreur chargement inscriptions') }
   }
 
@@ -148,34 +153,41 @@ export default function AdminEnrollmentsPage() {
     setChecked(prev => ({ ...prev, ...updates }))
   }
 
-  async function setPrimary(studentId: number, formationId: number) {
-    setSetPrimaryBusy(true)
+  // Attribue une formation à un étudiant qui n'en a pas encore — rattache
+  // formation_id et inscrit à toutes les UE de la formation en un appel
+  // (même route que la cascade Pôle→Niveau→Formation de la page Utilisateurs).
+  async function assignFormation() {
+    if (!modal || !assignFormationId) return
+    setAssigningFormation(true)
     try {
-      const r = await api.post<any>(`/api/admin/students/${studentId}/set_formation`, {
-        formation_id: formationId, replace_all: false
+      const r = await api.post<any>(`/api/admin/students/${modal.student.id}/set_formation`, {
+        formation_id: Number(assignFormationId)
       })
-      success(r.message || 'Formation principale mise à jour')
+      success(r.message || 'Formation attribuée')
       setModal(null)
+      setAssignFormationId('')
       loadAll()
     } catch (e: any) { toastErr(e.message || 'Erreur') }
-    finally { setSetPrimaryBusy(false) }
+    finally { setAssigningFormation(false) }
   }
 
   async function saveChanges() {
-    if (!modal) return
+    if (!modal || !modal.student.formation_id) return
     setSaving(true)
     try {
+      // Scope strict à la SEULE formation de l'étudiant — jamais aux UE
+      // d'une autre formation, même si une inscription héritée existe
+      // (logique Pôle → Niveau → Formation à respecter).
+      const f = formations.find(x => x.id === modal.student.formation_id)
+      const relevantUeIds = f ? (f.semesters?.flatMap(s => s.ues?.map(u => u.id) ?? []) ?? []) : []
+
       const r = await api.get<any>(`/api/admin/students/${modal.student.id}/enrollments`)
       const current: Enrollment[] = r.enrollments ?? r ?? []
       const enrolledMap: Record<number, number> = {}
       current.forEach(e => { enrolledMap[e.ue_id] = e.enrollment_id })
 
       let added = 0, removed = 0, errors = 0
-      const allUeIds = new Set(
-        formations.flatMap(f => f.semesters?.flatMap(s => s.ues?.map(u => u.id) ?? []) ?? [])
-      )
-
-      for (const ueId of allUeIds) {
+      for (const ueId of relevantUeIds) {
         const shouldEnroll = !!checked[ueId]
         const isEnrolled = ueId in enrolledMap
 
@@ -722,8 +734,9 @@ export default function AdminEnrollmentsPage() {
                   Inscriptions de {modal.student.full_name}
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)', fontWeight: 400 }}>
-                  Cochez les UEs souhaitées. Un étudiant en <strong>double cursus</strong> peut avoir des UEs de plusieurs
-                  formations. La formation <span style={{ background: '#3b82f6', color: '#fff', padding: '1px 6px', borderRadius: 4, fontSize: 11 }}>PRINCIPALE</span> détermine son cursus principal.
+                  {modal.student.formation_id
+                    ? "Un étudiant n'appartient qu'à une seule formation — seules les UE de sa formation sont modifiables ici."
+                    : "Cet étudiant n'a pas encore de formation — attribuez-en une pour faire apparaître ses UE."}
                 </p>
               </div>
               <button onClick={() => setModal(null)}
@@ -734,32 +747,36 @@ export default function AdminEnrollmentsPage() {
 
             {/* Content */}
             <div style={{ overflowY: 'auto', flex: 1, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {formations.length === 0 ? (
-                <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Aucune formation disponible.</p>
-              ) : formations.map(f => {
-                const isPrimary = f.id === modal.student.formation_id
+              {!modal.student.formation_id ? (
+                // Étudiant sans formation — un seul sélecteur, jamais de double cursus
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Formation à attribuer</label>
+                  <select value={assignFormationId} onChange={e => setAssignFormationId(e.target.value)} className="form-control">
+                    <option value="">— Choisir une formation —</option>
+                    {formations.map(f => <option key={f.id} value={String(f.id)}>{f.code} — {f.name}</option>)}
+                  </select>
+                  <button onClick={assignFormation} disabled={!assignFormationId || assigningFormation} className="btn btn-primary"
+                    style={{ alignSelf: 'flex-start', opacity: !assignFormationId || assigningFormation ? .6 : 1 }}>
+                    <i className={`fas ${assigningFormation ? 'fa-spinner fa-spin' : 'fa-check'}`} />
+                    {assigningFormation ? 'Attribution…' : 'Attribuer cette formation'}
+                  </button>
+                </div>
+              ) : (() => {
+                const f = formations.find(x => x.id === modal.student.formation_id)
+                if (!f) return <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Formation introuvable.</p>
                 const allUes = f.semesters?.flatMap(s => s.ues ?? []) ?? []
                 const enrolledInF = allUes.filter(u => !!checked[u.id]).length
 
                 return (
-                  <div key={f.id} style={{ border: `1.5px solid ${isPrimary ? '#3b82f6' : 'var(--border)'}`, borderRadius: 10, overflow: 'hidden' }}>
+                  <div style={{ border: '1.5px solid #3b82f6', borderRadius: 10, overflow: 'hidden' }}>
                     {/* Formation header */}
-                    <div style={{ background: isPrimary ? '#eff6ff' : 'var(--background)', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                    <div style={{ background: '#eff6ff', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {isPrimary && (
-                          <span style={{ fontSize: 10, background: '#3b82f6', color: '#fff', padding: '2px 7px', borderRadius: 99, fontWeight: 700 }}>PRINCIPALE</span>
-                        )}
                         <span style={{ fontWeight: 700, fontSize: 13 }}>{f.code}</span>
                         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>— {f.name}</span>
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{enrolledInF}/{allUes.length} UE(s) inscrites</span>
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {!isPrimary && (
-                          <button onClick={() => setPrimary(modal.student.id, f.id)} disabled={setPrimaryBusy}
-                            style={{ fontSize: 11, padding: '4px 9px', background: 'var(--surface)', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: 6, cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                            <i className="fas fa-star" /> Définir principale
-                          </button>
-                        )}
                         <button onClick={() => bulkCheck(f.id, true)}
                           style={{ fontSize: 11, padding: '4px 9px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>
                           <i className="fas fa-check-double" /> Tout cocher
@@ -793,19 +810,21 @@ export default function AdminEnrollmentsPage() {
                     </div>
                   </div>
                 )
-              })}
+              })()}
             </div>
 
             {/* Footer */}
-            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button className="btn btn-secondary" onClick={() => setModal(null)}>
-                <i className="fas fa-times" /> Annuler
-              </button>
-              <button className="btn btn-primary" onClick={saveChanges} disabled={saving}>
-                <i className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-save'}`} />
-                {saving ? 'Enregistrement…' : 'Enregistrer'}
-              </button>
-            </div>
+            {!!modal.student.formation_id && (
+              <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button className="btn btn-secondary" onClick={() => setModal(null)}>
+                  <i className="fas fa-times" /> Annuler
+                </button>
+                <button className="btn btn-primary" onClick={saveChanges} disabled={saving}>
+                  <i className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-save'}`} />
+                  {saving ? 'Enregistrement…' : 'Enregistrer'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
