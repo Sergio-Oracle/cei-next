@@ -120,7 +120,11 @@ export default function AdminSuggestionsPage() {
   const [difficulty, setDifficulty] = useState('Moyen')
   const [level,      setLevel]      = useState('Licence 3')
   const [ecId,       setEcId]       = useState('')
-  const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false, qcm_multi: false, appariement: false, code: false, photo: false })
+  const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false, appariement: false, code: false, photo: false })
+  // QCM = un seul type sélectionnable avec un sous-réglage "une seule / plusieurs
+  // réponses" — même mécanisme que le type "Choix multiple" de Moodle
+  // (answerhowmany), au lieu de deux boutons QCM / QCM multiple indépendants.
+  const [qcmSingle, setQcmSingle] = useState(true)
   const [bloom,  setBloom]  = useState({
     connaissance: false, comprehension: false,
     application: true,  analyse: true,
@@ -208,7 +212,7 @@ export default function AdminSuggestionsPage() {
     setCreating(i); setGenFull(true); setGenFullElapsed(0)
     genFullTimer.current = setInterval(() => setGenFullElapsed(x => x + 1), 1000)
     try {
-      const qMap: Record<string, string> = { qcm:'QCM', open:'Questions ouvertes', vf:'Vrai/Faux', qcm_multi:'QCM (réponses multiples)', appariement:'Appariement', code:'Maths et programmation', photo:'Photo / Scan' }
+      const qMap: Record<string, string> = { qcm: qcmSingle ? 'QCM (une seule réponse)' : 'QCM (plusieurs réponses)', open:'Questions ouvertes', vf:'Vrai/Faux', appariement:'Appariement', code:'Maths et programmation', photo:'Photo / Scan' }
       const selectedTypes = Object.entries(qTypes).filter(([,v])=>v).map(([k])=>qMap[k])
       const selectedBloom = Object.entries(bloom).filter(([,v])=>v).map(([k])=>k)
       const suggestionWithTypes = {
@@ -921,10 +925,9 @@ export default function AdminSuggestionsPage() {
                   <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
                     <i className="fas fa-list-check" style={{ color:'var(--primary)', marginRight:6 }} />Types de questions
                   </label>
-                  <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+                  <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
                     {([
                       ['qcm','QCM','fa-circle-question','var(--primary)','#eff6ff','#dbeafe'],
-                      ['qcm_multi','QCM multiple','fa-square-check','#0d9488','#f0fdfa','#99f6e4'],
                       ['open','Questions ouvertes','fa-pen-line','#0369a1','#e0f2fe','#bae6fd'],
                       ['vf','Vrai / Faux','fa-toggle-on','#10b981','#f0fdf4','#bbf7d0'],
                       ['appariement','Appariement','fa-link','#db2777','#fdf2f8','#fbcfe8'],
@@ -938,6 +941,19 @@ export default function AdminSuggestionsPage() {
                         {qTypes[k]&&<i className="fas fa-check" style={{ marginLeft:4, fontSize:11, color }} />}
                       </button>
                     ))}
+                    {qTypes.qcm && (
+                      // Sous-réglage du type QCM — même mécanisme que "One answer only" /
+                      // "Multiple answers allowed" dans le type "Multiple choice" de Moodle
+                      // (un seul type, un réglage), au lieu de deux types séparés.
+                      <div style={{ display:'flex', alignItems:'center', gap:4, padding:'4px', borderRadius:10, background:'var(--background)', border:'1px solid var(--border)' }}>
+                        {([[true,'Une seule réponse'],[false,'Plusieurs réponses']] as const).map(([v,lbl]) => (
+                          <button key={String(v)} type="button" onClick={() => setQcmSingle(v)}
+                            style={{ padding:'7px 12px', borderRadius:7, border:'none', cursor:'pointer', fontSize:12, fontWeight:qcmSingle===v?700:400, background:qcmSingle===v?'var(--primary)':'transparent', color:qcmSingle===v?'white':'var(--text-muted)', transition:'all .15s' }}>
+                            {lbl}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
