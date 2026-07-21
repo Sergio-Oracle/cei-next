@@ -312,16 +312,21 @@ export default function ProfessorSuggestionsPage() {
   async function handleGenerateMore() {
     setGeneratingMore(true)
     try {
-      const data = await api.post<{ success: boolean; new_content: string; count_generated: number; duplicates: { similarity: number }[] }>(
+      const data = await api.post<{ success: boolean; new_content: string; full_content?: string; full_rubric?: string; count_generated: number; duplicates: { similarity: number }[] }>(
         '/api/subjects/generate-more-questions',
-        { existing_content: previewContent, count: moreCount, question_type: moreType, title: previewTitle, student_level: level, difficulty }
+        { existing_content: previewContent, existing_rubric: previewRubric, count: moreCount, question_type: moreType, title: previewTitle, student_level: level, difficulty }
       )
-      setPreviewContent(p => `${p.trimEnd()}\n\n${data.new_content}`)
+      // Le backend redistribue les points sur 20 au total (anciennes +
+      // nouvelles questions) et étend le barème — sans ça, les nouvelles
+      // questions n'avaient ni point ni critère et le barème restait figé.
+      if (data.full_content) setPreviewContent(data.full_content)
+      else setPreviewContent(p => `${p.trimEnd()}\n\n${data.new_content}`)
+      if (data.full_rubric) setPreviewRubric(data.full_rubric)
       setShowMoreModal(false)
       if (data.duplicates && data.duplicates.length > 0) {
         toastErr(`${data.count_generated} question(s) ajoutée(s) — ⚠ ${data.duplicates.length} ressemble(nt) à des questions existantes (${data.duplicates[0].similarity}% similaire)`)
       } else {
-        success(`${data.count_generated} question(s) ajoutée(s) au sujet`)
+        success(`${data.count_generated} question(s) ajoutée(s) au sujet — points redistribués sur 20`)
       }
     } catch (e: any) {
       toastErr(e.message || 'Erreur lors de la génération des questions supplémentaires')
