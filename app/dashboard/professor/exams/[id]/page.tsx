@@ -6,6 +6,7 @@ import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam, ExamAttempt, ExamStatus } from '@/types'
+import SecurityReportPanel from '@/components/shared/SecurityReportPanel'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -379,6 +380,13 @@ export default function ProfessorExamDetailPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Rapport de sécurité — propre à cet examen (mêmes stats/tableaux que
+          la page globale "Sécurité", filtrés sur cet examen uniquement) */}
+      <div className="card">
+        <h3 className="card-title"><i className="fa-solid fa-shield-halved" /> Rapport de sécurité de cet examen</h3>
+        <SecurityReportPanel fixedExamId={Number(id)} hideHeader />
       </div>
 
       {/* Tentatives */}
