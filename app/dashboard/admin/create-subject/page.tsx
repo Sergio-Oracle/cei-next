@@ -55,6 +55,7 @@ export default function AdminCreateSubjectPage() {
   const [filterLevel,     setFilterLevel]     = useState('')
   const [file,            setFile]            = useState<File | null>(null)
   const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false })
+  const [rubricMode, setRubricMode] = useState<'ai' | 'manual'>('ai')
 
   /* ── basket ── */
   const [basket,      setBasket]      = useState<BasketVersion[]>([])
@@ -153,7 +154,7 @@ export default function AdminCreateSubjectPage() {
     e.preventDefault()
     if (!title.trim()) { toastErr('Le titre est requis'); return }
     if (!file)         { toastErr('Sélectionnez un fichier'); return }
-    await upload({ title, ecId, qTypes, file })
+    await upload({ title, ecId, qTypes, file, rubricMode })
   }
 
   /* ── basket ── */
@@ -543,6 +544,32 @@ export default function AdminCreateSubjectPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Barème : généré par l'IA ou rédigé manuellement par le professeur —
+                  garde la main sur la notation sans dépendre d'un point de départ IA */}
+              <div style={{ marginBottom:22 }}>
+                <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:600, marginBottom:10 }}>
+                  <i className="fas fa-clipboard-list" style={{ color:'var(--primary)', width:14 }} />Barème de notation
+                </label>
+                <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+                  <button type="button" onClick={() => setRubricMode('ai')}
+                    style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 16px', border:`1.5px solid ${rubricMode==='ai'?'#bfdbfe':'var(--border)'}`, borderRadius:10, cursor:'pointer', background:rubricMode==='ai'?'#dbeafe':'var(--surface)', transition:'all .15s', fontWeight:rubricMode==='ai'?700:400, fontSize:13, color:rubricMode==='ai'?'#1d4ed8':'var(--text)' }}>
+                    <i className="fas fa-wand-magic-sparkles" style={{ fontSize:14, color:rubricMode==='ai'?'#1d4ed8':'var(--text-muted)' }} />Généré par l'IA
+                    {rubricMode==='ai'&&<i className="fas fa-check" style={{ fontSize:10, marginLeft:2, color:'#1d4ed8' }} />}
+                  </button>
+                  <button type="button" onClick={() => setRubricMode('manual')}
+                    style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 16px', border:`1.5px solid ${rubricMode==='manual'?'#86efac':'var(--border)'}`, borderRadius:10, cursor:'pointer', background:rubricMode==='manual'?'#dcfce7':'var(--surface)', transition:'all .15s', fontWeight:rubricMode==='manual'?700:400, fontSize:13, color:rubricMode==='manual'?'#15803d':'var(--text)' }}>
+                    <i className="fas fa-pen" style={{ fontSize:14, color:rubricMode==='manual'?'#15803d':'var(--text-muted)' }} />Je le rédige moi-même
+                    {rubricMode==='manual'&&<i className="fas fa-check" style={{ fontSize:10, marginLeft:2, color:'#15803d' }} />}
+                  </button>
+                </div>
+                <p style={{ margin:'8px 0 0', fontSize:11.5, color:'var(--text-muted)' }}>
+                  <i className="fas fa-circle-info" style={{ marginRight:4 }} />
+                  {rubricMode==='ai'
+                    ? "L'IA propose un barème complet à partir de votre document — modifiable ensuite avant l'enregistrement."
+                    : 'Un squelette vierge (une ligne par question) sera créé — vous définissez vous-même les points et critères.'}
+                </p>
               </div>
 
               {/* EC filters — cascade Pôle → Formation → Niveau → EC */}

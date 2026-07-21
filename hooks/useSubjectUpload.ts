@@ -22,6 +22,7 @@ interface UploadPayload {
   ecId: string
   qTypes: QTypes
   file: File
+  rubricMode?: 'ai' | 'manual'
 }
 
 export interface UseSubjectUploadReturn {
@@ -62,7 +63,7 @@ export function useSubjectUpload(
     setEditContent(''); setEditRubric('')
   }
 
-  async function upload({ title, ecId, qTypes, file }: UploadPayload) {
+  async function upload({ title, ecId, qTypes, file, rubricMode = 'ai' }: UploadPayload) {
     const labelMap: Record<keyof QTypes, string> = {
       qcm: 'QCM', open: 'Questions ouvertes', vf: 'Vrai/Faux',
     }
@@ -80,6 +81,7 @@ export function useSubjectUpload(
       fd.append('title', title)
       if (ecId) fd.append('ec_id', ecId)
       if (selectedTypes.length) fd.append('question_types', selectedTypes.join(','))
+      fd.append('rubric_mode', rubricMode)
       fd.append('file', file)
 
       const res = await api.upload<{ success: boolean; subject: CreatedSubject; duplicates?: { similarity: number }[] }>(
