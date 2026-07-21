@@ -8,8 +8,8 @@
  */
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dev-cei.ddns.net'
 
-const DEFAULT_TIMEOUT_MS = 30_000   // 30 s pour les routes normales
-export const AI_TIMEOUT_MS = 180_000  // 3 min pour les routes IA
+const DEFAULT_TIMEOUT_MS = 600_000   // 10 min pour les routes normales
+export const AI_TIMEOUT_MS = 600_000  // 10 min pour les routes IA
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getToken(): string | null {

@@ -939,26 +939,30 @@ export default function ProfessorSuggestionsPage() {
                       ['appariement','Appariement','fa-link','#db2777','#fdf2f8','#fbcfe8'],
                       ['code','Maths / Programmation','fa-code','#ea580c','#fff7ed','#fed7aa'],
                     ] as const).map(([k,label,icon,color,bg,border]) => (
-                      <button key={k} type="button" onClick={() => setQTypes(p => ({...p,[k]:!p[k]}))}
-                        style={{ display:'flex', alignItems:'center', gap:9, padding:'10px 18px', border:`1.5px solid ${qTypes[k]?border:'var(--border)'}`, borderRadius:10, cursor:'pointer', background:qTypes[k]?bg:'var(--surface)', transition:'all .15s', fontWeight:qTypes[k]?700:400, fontSize:13, color:qTypes[k]?color:'var(--text)' }}>
-                        <i className={`fas ${icon}`} style={{ fontSize:15, color:qTypes[k]?color:'var(--text-muted)' }} />
-                        {label}
-                        {qTypes[k]&&<i className="fas fa-check" style={{ marginLeft:4, fontSize:11, color }} />}
-                      </button>
-                    ))}
-                    {qTypes.qcm && (
-                      // Sous-réglage du type QCM — même mécanisme que "One answer only" /
-                      // "Multiple answers allowed" dans le type "Multiple choice" de Moodle
-                      // (un seul type, un réglage), au lieu de deux types séparés.
-                      <div style={{ display:'flex', alignItems:'center', gap:4, padding:'4px', borderRadius:10, background:'var(--background)', border:'1px solid var(--border)' }}>
-                        {([[true,'Une seule réponse'],[false,'Plusieurs réponses']] as const).map(([v,lbl]) => (
-                          <button key={String(v)} type="button" onClick={() => setQcmSingle(v)}
-                            style={{ padding:'7px 12px', borderRadius:7, border:'none', cursor:'pointer', fontSize:12, fontWeight:qcmSingle===v?700:400, background:qcmSingle===v?'var(--primary)':'transparent', color:qcmSingle===v?'white':'var(--text-muted)', transition:'all .15s' }}>
-                            {lbl}
-                          </button>
-                        ))}
+                      <div key={k} style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                        <button type="button" onClick={() => setQTypes(p => ({...p,[k]:!p[k]}))}
+                          style={{ display:'flex', alignItems:'center', gap:9, padding:'10px 18px', border:`1.5px solid ${qTypes[k]?border:'var(--border)'}`, borderRadius:10, cursor:'pointer', background:qTypes[k]?bg:'var(--surface)', transition:'all .15s', fontWeight:qTypes[k]?700:400, fontSize:13, color:qTypes[k]?color:'var(--text)' }}>
+                          <i className={`fas ${icon}`} style={{ fontSize:15, color:qTypes[k]?color:'var(--text-muted)' }} />
+                          {label}
+                          {qTypes[k]&&<i className="fas fa-check" style={{ marginLeft:4, fontSize:11, color }} />}
+                        </button>
+                        {k === 'qcm' && qTypes.qcm && (
+                          // Sous-réglage du type QCM — même mécanisme que "One answer only" /
+                          // "Multiple answers allowed" dans le type "Multiple choice" de Moodle
+                          // (un seul type, un réglage), au lieu de deux types séparés. Regroupé
+                          // dans le même conteneur que le bouton QCM pour rester collé à lui
+                          // au lieu de se retrouver isolé en bout de ligne par le flex-wrap.
+                          <div style={{ display:'flex', alignItems:'center', gap:4, padding:'4px', borderRadius:10, background:'var(--background)', border:'1px solid var(--border)' }}>
+                            {([[true,'Une seule réponse'],[false,'Plusieurs réponses']] as const).map(([v,lbl]) => (
+                              <button key={String(v)} type="button" onClick={() => setQcmSingle(v)}
+                                style={{ padding:'7px 12px', borderRadius:7, border:'none', cursor:'pointer', fontSize:12, fontWeight:qcmSingle===v?700:400, background:qcmSingle===v?'var(--primary)':'transparent', color:qcmSingle===v?'white':'var(--text-muted)', transition:'all .15s' }}>
+                                {lbl}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    ))}
                   </div>
                 </div>
 
