@@ -16,8 +16,10 @@ interface Question {
   semester_id?: number; semester_number?: number
   formation_id?: number; formation_name?: string; formation_level?: string
   pole_id?: number; pole_code?: string; pole_name?: string
-  created_by?: string
-  created_at?: string
+  created_by?: string; created_by_id?: number
+  created_at?: string; updated_at?: string
+  tags: string[]
+  status: 'active' | 'hidden'
 }
 
 interface ECOpt { id: number; name: string; code?: string }
@@ -67,7 +69,19 @@ export default function AdminQuestionsPage() {
   const [filterUe,     setFilterUe]     = useState('')
   const [filterEc,     setFilterEc]     = useState('')
   const [filterType,   setFilterType]   = useState('')
+  const [filterTag,    setFilterTag]    = useState('')
   const [filterSearch, setFilterSearch] = useState('')
+  const [showHidden,   setShowHidden]   = useState(false)
+
+  // Édition / duplication / déplacement / suppression groupée — parité Moodle
+  const [editQ,      setEditQ]      = useState<Question | null>(null)
+  const [editForm,    setEditForm]   = useState({ title: '', content: '', rubric: '', question_type: 'open', bloom_level: '', ec_id: '', tags: '' })
+  const [savingEdit,  setSavingEdit] = useState(false)
+  const [busyIds,      setBusyIds]     = useState<Set<number>>(new Set())
+  const [moveModal,    setMoveModal]   = useState(false)
+  const [moveEcId,     setMoveEcId]    = useState('')
+  const [moving,        setMoving]      = useState(false)
+  const [bulkDeleting,  setBulkDeleting] = useState(false)
 
   // Assemblage
   const [aTitle,    setATitle]    = useState('Examen Assemblé')
@@ -126,6 +140,87 @@ export default function AdminQuestionsPage() {
     } catch { toastErr('Erreur lors de la suppression') }
   }
 
+  /* ── Édition en place ── */
+  function openEdit(q: Question) {
+    setEditQ(q)
+    setEditForm({
+      title: q.title, content: q.content, rubric: q.rubric || '',
+      question_type: q.question_type, bloom_level: q.bloom_level || '',
+      ec_id: q.ec_id ? String(q.ec_id) : '', tags: (q.tags || []).join(', '),
+    })
+  }
+  async function saveEdit() {
+    if (!editQ) return
+    if (!editForm.title.trim() || !editForm.content.trim()) { toastErr('Titre et contenu requis'); return }
+    setSavingEdit(true)
+    try {
+      await api.put(`/api/question_bank/${editQ.id}`, {
+        title: editForm.title.trim(), content: editForm.content.trim(), rubric: editForm.rubric,
+        question_type: editForm.question_type, bloom_level: editForm.bloom_level,
+        ec_id: editForm.ec_id ? Number(editForm.ec_id) : null,
+        tags: editForm.tags.split(',').map(t => t.trim()).filter(Boolean),
+      })
+      success('Question mise à jour')
+      setEditQ(null)
+      load()
+    } catch (e: any) { toastErr(e.message || 'Erreur lors de la mise à jour') }
+    finally { setSavingEdit(false) }
+  }
+
+  /* ── Duplication ── */
+  async function duplicateQ(id: number) {
+    setBusyIds(prev => new Set(prev).add(id))
+    try {
+      await api.post(`/api/question_bank/${id}/duplicate`)
+      success('Question dupliquée')
+      load()
+    } catch (e: any) { toastErr(e.message || 'Erreur lors de la duplication') }
+    finally { setBusyIds(prev => { const n = new Set(prev); n.delete(id); return n }) }
+  }
+
+  /* ── Masquer / réactiver (retrait de la sélection sans suppression) ── */
+  async function toggleStatus(q: Question) {
+    setBusyIds(prev => new Set(prev).add(q.id))
+    try {
+      const newStatus = q.status === 'hidden' ? 'active' : 'hidden'
+      await api.put(`/api/question_bank/${q.id}`, { status: newStatus })
+      success(newStatus === 'hidden' ? 'Question masquée' : 'Question réactivée')
+      load()
+    } catch (e: any) { toastErr(e.message || 'Erreur') }
+    finally { setBusyIds(prev => { const n = new Set(prev); n.delete(q.id); return n }) }
+  }
+
+  /* ── Déplacement groupé vers un autre EC ── */
+  async function doBulkMove() {
+    const ids = [...selected]
+    if (!ids.length) return
+    setMoving(true)
+    try {
+      const res = await api.post<{ moved: number; skipped: number }>('/api/question_bank/bulk_move', {
+        question_ids: ids, ec_id: moveEcId ? Number(moveEcId) : null,
+      })
+      success(`${res.moved} question(s) déplacée(s)${res.skipped ? ` (${res.skipped} ignorée(s))` : ''}`)
+      setMoveModal(false); setMoveEcId(''); setSelected(new Set())
+      load()
+    } catch (e: any) { toastErr(e.message || 'Erreur lors du déplacement') }
+    finally { setMoving(false) }
+  }
+
+  /* ── Suppression groupée ── */
+  async function bulkDelete() {
+    const ids = [...selected]
+    if (!ids.length) return
+    if (!confirm(`Supprimer définitivement ${ids.length} question(s) de la banque ?`)) return
+    setBulkDeleting(true)
+    try {
+      const res = await api.post<{ deleted: number; skipped: number }>('/api/question_bank/bulk_delete', { question_ids: ids })
+      success(`${res.deleted} question(s) supprimée(s)${res.skipped ? ` (${res.skipped} ignorée(s))` : ''}`)
+      setSelected(new Set())
+      load()
+    } catch (e: any) { toastErr(e.message || 'Erreur lors de la suppression groupée') }
+    finally { setBulkDeleting(false) }
+  }
+
   async function assemble() {
     if (!aTitle.trim()) { toastErr('Veuillez saisir un titre'); return }
     const ids = [...selected]
@@ -173,25 +268,30 @@ export default function AdminQuestionsPage() {
       .map(q => [q.ec_id, { id: q.ec_id!, code: q.ec_code!, name: q.ec_name! }])
   ).values())
 
+  const availTags = Array.from(new Set(questions.flatMap(q => q.tags || []))).sort()
+  const hiddenCount = questions.filter(q => q.status === 'hidden').length
+
   /* ── Filtered questions ─────────────────────────────────────────────────── */
   const filtered = questions.filter(q => {
+    if (!showHidden && q.status === 'hidden')                     return false
     if (filterPole   && String(q.pole_id)       !== filterPole)   return false
     if (filterForm   && String(q.formation_id)  !== filterForm)   return false
     if (filterSem    && String(q.semester_id)   !== filterSem)    return false
     if (filterUe     && String(q.ue_id)         !== filterUe)     return false
     if (filterEc     && String(q.ec_id)         !== filterEc)     return false
     if (filterType   && q.question_type         !== filterType)   return false
+    if (filterTag     && !(q.tags || []).includes(filterTag))      return false
     if (filterSearch && !`${q.title} ${q.content}`.toLowerCase().includes(filterSearch.toLowerCase())) return false
     return true
   })
 
-  const hasFilter = filterPole || filterForm || filterSem || filterUe || filterEc || filterType || filterSearch
+  const hasFilter = filterPole || filterForm || filterSem || filterUe || filterEc || filterType || filterTag || filterSearch
 
   const typeSt    = (t: string) => TYPE_STYLE[t] ?? TYPE_STYLE.open
   const typeLabel = (t: string) => TYPE_LABEL[t] ?? t ?? 'Ouvert'
 
   function resetFilters() {
-    setFilterPole(''); setFilterForm(''); setFilterSem(''); setFilterUe(''); setFilterEc(''); setFilterType(''); setFilterSearch('')
+    setFilterPole(''); setFilterForm(''); setFilterSem(''); setFilterUe(''); setFilterEc(''); setFilterType(''); setFilterTag(''); setFilterSearch('')
   }
 
   /* ── PREVIEW MODAL ─────────────────────────────────────── */
@@ -215,7 +315,17 @@ export default function AdminQuestionsPage() {
           {preview.formation_name && <span className="status-badge secondary" style={{ fontSize: 11 }}>{preview.formation_name}</span>}
           {preview.ue_code && <span className="status-badge secondary" style={{ fontSize: 11 }}>UE {preview.ue_code}</span>}
           {preview.ec_name && <span className="status-badge secondary" style={{ fontSize: 11 }}><i className="fas fa-book" /> {preview.ec_name}</span>}
+          {preview.status === 'hidden' && <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: '#f1f5f9', color: '#64748b' }}><i className="fas fa-eye-slash" style={{ marginRight: 3 }} />Masquée</span>}
         </div>
+        {preview.tags && preview.tags.length > 0 && (
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
+            {preview.tags.map(t => (
+              <span key={t} style={{ fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 99, background: '#f5f3ff', color: '#7c3aed' }}>
+                <i className="fas fa-hashtag" style={{ fontSize: 9, marginRight: 3 }} />{t}
+              </span>
+            ))}
+          </div>
+        )}
         <pre style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 8, padding: 14, fontSize: 13, whiteSpace: 'pre-wrap', lineHeight: 1.7, maxHeight: 280, overflowY: 'auto' }}>
           {preview.content}
         </pre>
@@ -227,6 +337,13 @@ export default function AdminQuestionsPage() {
             {preview.rubric}
           </pre>
         </>)}
+        <p style={{ margin: '14px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>
+          <i className="fas fa-user" style={{ marginRight: 4 }} />Créée par {preview.created_by || '—'}
+          {preview.created_at && <> le {new Date(preview.created_at).toLocaleDateString('fr-FR')}</>}
+          {preview.updated_at && preview.updated_at !== preview.created_at && (
+            <> · modifiée le {new Date(preview.updated_at).toLocaleDateString('fr-FR')}</>
+          )}
+        </p>
         <div style={{ textAlign: 'right', marginTop: 16 }}>
           <button className="btn btn-secondary" onClick={() => setPreview(null)}>Fermer</button>
         </div>
@@ -405,17 +522,34 @@ export default function AdminQuestionsPage() {
             </select>
           </div>
 
+          {/* Tag — parité Moodle : recherche transversale hors hiérarchie */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#7c3aed', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+              <i className="fas fa-hashtag" /> Tag
+            </label>
+            <select value={filterTag} onChange={e => setFilterTag(e.target.value)} style={selStyle} disabled={availTags.length === 0}>
+              <option value="">{availTags.length ? 'Tous les tags' : 'Aucun tag'}</option>
+              {availTags.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
         </div>
 
-        {/* Recherche texte */}
-        <div style={{ marginTop: 10 }}>
+        {/* Recherche texte + afficher masquées */}
+        <div style={{ marginTop: 10, display: 'flex', gap: 10, alignItems: 'center' }}>
           <input
             type="search"
             placeholder="Rechercher dans le titre ou l'énoncé…"
             value={filterSearch}
             onChange={e => setFilterSearch(e.target.value)}
-            style={{ ...selStyle, width: '100%', padding: '9px 14px', fontSize: 13 }}
+            style={{ ...selStyle, flex: 1, padding: '9px 14px', fontSize: 13 }}
           />
+          {hiddenCount > 0 && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <input type="checkbox" checked={showHidden} onChange={e => setShowHidden(e.target.checked)} />
+              Afficher les {hiddenCount} masquée{hiddenCount > 1 ? 's' : ''}
+            </label>
+          )}
         </div>
       </div>
 
@@ -430,10 +564,108 @@ export default function AdminQuestionsPage() {
             style={{ background: 'rgba(255,255,255,.15)', border: 'none', color: '#fff', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <i className="fas fa-times" /> Désélectionner
           </button>
+          <button onClick={() => setMoveModal(true)}
+            style={{ background: 'rgba(255,255,255,.15)', border: 'none', color: '#fff', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <i className="fas fa-arrow-right-arrow-left" /> Déplacer vers un EC
+          </button>
+          <button onClick={bulkDelete} disabled={bulkDeleting}
+            style={{ background: 'rgba(255,255,255,.15)', border: 'none', color: '#fecaca', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: bulkDeleting ? 'not-allowed' : 'pointer' }}>
+            <i className={`fas ${bulkDeleting ? 'fa-spinner fa-spin' : 'fa-trash'}`} /> Supprimer
+          </button>
           <button onClick={() => setAssembleModal(true)}
             style={{ background: '#fff', border: 'none', color: '#1d4ed8', padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 2px 8px rgba(0,0,0,.15)' }}>
             <i className="fas fa-layer-group" /> Créer un sujet d&apos;examen
           </button>
+        </div>
+      )}
+
+      {/* ── Modale : déplacer la sélection vers un autre EC ── */}
+      {moveModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={() => setMoveModal(false)}>
+          <div className="card" style={{ width: '100%', maxWidth: 440, padding: 24 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700 }}>
+              <i className="fas fa-arrow-right-arrow-left" style={{ color: '#2563eb', marginRight: 8 }} />
+              Déplacer {selected.size} question{selected.size > 1 ? 's' : ''}
+            </h3>
+            <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>EC de destination</label>
+            <select className="form-control" value={moveEcId} onChange={e => setMoveEcId(e.target.value)}>
+              <option value="">— Retirer l&apos;EC (question indépendante) —</option>
+              {ecs.map(e => <option key={e.id} value={e.id}>{e.code ? `${e.code} — ` : ''}{e.name}</option>)}
+            </select>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+              <button className="btn btn-secondary" onClick={() => setMoveModal(false)}>Annuler</button>
+              <button className="btn btn-primary" onClick={doBulkMove} disabled={moving}>
+                <i className={`fas ${moving ? 'fa-spinner fa-spin' : 'fa-check'}`} />
+                {moving ? 'Déplacement…' : 'Déplacer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modale : édition en place ── */}
+      {editQ && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={() => setEditQ(null)}>
+          <div className="card" style={{ width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', padding: 28 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 18px', fontSize: 17, fontWeight: 700 }}>
+              <i className="fas fa-pen-to-square" style={{ color: '#2563eb', marginRight: 8 }} />
+              Modifier la question
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Titre *</label>
+                <input className="form-control" value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} />
+              </div>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Énoncé *</label>
+                <textarea className="form-control" rows={6} style={{ resize: 'vertical', fontFamily: 'inherit' }}
+                  value={editForm.content} onChange={e => setEditForm(p => ({ ...p, content: e.target.value }))} />
+              </div>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Barème / correction</label>
+                <textarea className="form-control" rows={3} style={{ resize: 'vertical', fontFamily: 'inherit' }}
+                  value={editForm.rubric} onChange={e => setEditForm(p => ({ ...p, rubric: e.target.value }))} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Type</label>
+                  <select className="form-control" value={editForm.question_type} onChange={e => setEditForm(p => ({ ...p, question_type: e.target.value }))}>
+                    {Object.entries(TYPE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Niveau de Bloom</label>
+                  <select className="form-control" value={editForm.bloom_level} onChange={e => setEditForm(p => ({ ...p, bloom_level: e.target.value }))}>
+                    <option value="">—</option>
+                    {['Connaissance','Compréhension','Application','Analyse','Synthèse','Évaluation'].map(b => <option key={b}>{b}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Élément Constitutif</label>
+                <select className="form-control" value={editForm.ec_id} onChange={e => setEditForm(p => ({ ...p, ec_id: e.target.value }))}>
+                  <option value="">— Aucun —</option>
+                  {ecs.map(e => <option key={e.id} value={e.id}>{e.code ? `${e.code} — ` : ''}{e.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                  <i className="fas fa-hashtag" style={{ color: '#7c3aed', marginRight: 4 }} />Tags (séparés par des virgules)
+                </label>
+                <input className="form-control" value={editForm.tags} onChange={e => setEditForm(p => ({ ...p, tags: e.target.value }))}
+                  placeholder="ex : révision, difficile, 2026" />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+              <button className="btn btn-secondary" onClick={() => setEditQ(null)}>Annuler</button>
+              <button className="btn btn-primary" onClick={saveEdit} disabled={savingEdit}>
+                <i className={`fas ${savingEdit ? 'fa-spinner fa-spin' : 'fa-save'}`} />
+                {savingEdit ? 'Enregistrement…' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -476,8 +708,10 @@ export default function AdminQuestionsPage() {
                 {filtered.map(q => {
                   const st = typeSt(q.question_type)
                   const isSelected = selected.has(q.id)
+                  const isHidden = q.status === 'hidden'
+                  const isBusy = busyIds.has(q.id)
                   return (
-                    <tr key={q.id} style={{ background: isSelected ? '#eff6ff' : undefined, transition: 'background .15s' }}>
+                    <tr key={q.id} style={{ background: isSelected ? '#eff6ff' : undefined, opacity: isHidden ? 0.55 : 1, transition: 'background .15s' }}>
                       <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
                         <input type="checkbox" checked={isSelected} onChange={() => toggle(q.id)}
                           style={{ width: 16, height: 16, accentColor: '#2563eb', cursor: 'pointer' }} />
@@ -488,7 +722,24 @@ export default function AdminQuestionsPage() {
                         </span>
                       </td>
                       <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 600, color: 'var(--text)', maxWidth: 320 }}>
-                        {q.title}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          {q.title}
+                          {isHidden && (
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 99, background: '#f1f5f9', color: '#64748b' }}>
+                              <i className="fas fa-eye-slash" style={{ marginRight: 3 }} />masquée
+                            </span>
+                          )}
+                        </div>
+                        {q.tags && q.tags.length > 0 && (
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                            {q.tags.map(t => (
+                              <span key={t} onClick={() => setFilterTag(t)} title="Filtrer par ce tag"
+                                style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 99, background: '#f5f3ff', color: '#7c3aed', cursor: 'pointer' }}>
+                                <i className="fas fa-hashtag" style={{ fontSize: 8, marginRight: 2 }} />{t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
                         {q.bloom_level || '—'}
@@ -506,13 +757,25 @@ export default function AdminQuestionsPage() {
                         </div>
                       </td>
                       <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
-                        <div style={{ display: 'flex', gap: 6 }}>
+                        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                           <button onClick={() => setPreview(q)} title="Aperçu"
-                            style={{ background: '#eff6ff', border: 'none', color: '#3b82f6', padding: '5px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+                            style={{ background: '#eff6ff', border: 'none', color: '#3b82f6', padding: '5px 9px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
                             <i className="fas fa-eye" />
                           </button>
+                          <button onClick={() => openEdit(q)} title="Modifier"
+                            style={{ background: '#f0fdf4', border: 'none', color: '#16a34a', padding: '5px 9px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+                            <i className="fas fa-pen-to-square" />
+                          </button>
+                          <button onClick={() => duplicateQ(q.id)} title="Dupliquer" disabled={isBusy}
+                            style={{ background: '#eef2ff', border: 'none', color: '#4f46e5', padding: '5px 9px', borderRadius: 6, fontSize: 12, cursor: isBusy ? 'not-allowed' : 'pointer' }}>
+                            <i className={`fas ${isBusy ? 'fa-spinner fa-spin' : 'fa-copy'}`} />
+                          </button>
+                          <button onClick={() => toggleStatus(q)} title={isHidden ? 'Réactiver' : 'Masquer'} disabled={isBusy}
+                            style={{ background: '#fffbeb', border: 'none', color: '#b45309', padding: '5px 9px', borderRadius: 6, fontSize: 12, cursor: isBusy ? 'not-allowed' : 'pointer' }}>
+                            <i className={`fas ${isHidden ? 'fa-eye' : 'fa-eye-slash'}`} />
+                          </button>
                           <button onClick={() => deleteQ(q.id)} title="Supprimer"
-                            style={{ background: '#fef2f2', border: 'none', color: '#ef4444', padding: '5px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+                            style={{ background: '#fef2f2', border: 'none', color: '#ef4444', padding: '5px 9px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
                             <i className="fas fa-trash" />
                           </button>
                         </div>
