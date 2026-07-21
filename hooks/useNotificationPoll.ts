@@ -26,7 +26,7 @@ function getToken(): string | null {
   return localStorage.getItem('token')
 }
 
-async function tryRefresh(): Promise<void> {
+async function tryRefresh(): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/api/auth/refresh`, {
       method: 'POST',
@@ -34,9 +34,13 @@ async function tryRefresh(): Promise<void> {
     })
     if (res.ok) {
       const data = await res.json()
-      if (data?.access_token) localStorage.setItem('token', data.access_token)
+      if (data?.access_token) {
+        localStorage.setItem('token', data.access_token)
+        return true
+      }
     }
   } catch {}
+  return false
 }
 
 /**
@@ -79,8 +83,17 @@ export function useNotificationPoll(
         if (!activeRef.current) return
 
         if (res.status === 401) {
-          await tryRefresh()
-          await new Promise(r => setTimeout(r, 1_000))
+          const refreshed = await tryRefresh()
+          if (!refreshed) {
+            // Session réellement expirée — arrêter le polling au lieu de
+            // boucler indéfiniment sur le même jeton invalide, et aligner
+            // le comportement sur celui de lib/api.ts (déconnexion propre).
+            activeRef.current = false
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            window.location.href = '/login'
+            return
+          }
           if (activeRef.current) poll()
           return
         }

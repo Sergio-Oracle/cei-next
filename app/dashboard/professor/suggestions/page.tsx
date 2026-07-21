@@ -140,7 +140,7 @@ export default function ProfessorSuggestionsPage() {
   async function suggestQuestionCount() {
     setSuggestingCount(true)
     try {
-      const res = await api.post<{ suggested_count: number }>('/api/subjects/suggest-question-count', {
+      const res = await api.aiPost<{ suggested_count: number }>('/api/subjects/suggest-question-count', {
         duration: 60, difficulty, student_level: level,
         question_types: Object.entries(qTypes).filter(([, v]) => v).map(([k]) => k).join(',') || 'mixte',
       })
