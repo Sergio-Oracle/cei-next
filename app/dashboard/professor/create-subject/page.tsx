@@ -55,8 +55,6 @@ export default function ProfessorCreateSubjectPage() {
   const [filterLevel,     setFilterLevel]     = useState('')
   const [file,            setFile]            = useState<File | null>(null)
   const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false })
-  const [rubricMode, setRubricMode] = useState<'ai' | 'manual'>('ai')
-  const [totalPoints, setTotalPoints] = useState(20)
 
   /* ── basket ── */
   const [basket,      setBasket]      = useState<BasketVersion[]>([])
@@ -165,7 +163,7 @@ export default function ProfessorCreateSubjectPage() {
     e.preventDefault()
     if (!title.trim()) { toastErr('Le titre est requis'); return }
     if (!file)         { toastErr('Sélectionnez un fichier'); return }
-    await upload({ title, ecId, qTypes, file, rubricMode, totalPoints })
+    await upload({ title, ecId, qTypes, file })
   }
 
   /* ── basket ── */
@@ -554,49 +552,6 @@ export default function ProfessorCreateSubjectPage() {
                       {qTypes[k]&&<i className="fas fa-check" style={{ fontSize:10, marginLeft:2, color }} />}
                     </button>
                   ))}
-                </div>
-              </div>
-
-              {/* Barème : généré par l'IA ou rédigé manuellement par le professeur —
-                  garde la main sur la notation sans dépendre d'un point de départ IA */}
-              <div style={{ marginBottom:22 }}>
-                <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:600, marginBottom:10 }}>
-                  <i className="fas fa-clipboard-list" style={{ color:'var(--primary)', width:14 }} />Barème de notation
-                </label>
-                <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-                  <button type="button" onClick={() => setRubricMode('ai')}
-                    style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 16px', border:`1.5px solid ${rubricMode==='ai'?'#bfdbfe':'var(--border)'}`, borderRadius:10, cursor:'pointer', background:rubricMode==='ai'?'#dbeafe':'var(--surface)', transition:'all .15s', fontWeight:rubricMode==='ai'?700:400, fontSize:13, color:rubricMode==='ai'?'#1d4ed8':'var(--text)' }}>
-                    <i className="fas fa-wand-magic-sparkles" style={{ fontSize:14, color:rubricMode==='ai'?'#1d4ed8':'var(--text-muted)' }} />Généré par l'IA
-                    {rubricMode==='ai'&&<i className="fas fa-check" style={{ fontSize:10, marginLeft:2, color:'#1d4ed8' }} />}
-                  </button>
-                  <button type="button" onClick={() => setRubricMode('manual')}
-                    style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 16px', border:`1.5px solid ${rubricMode==='manual'?'#86efac':'var(--border)'}`, borderRadius:10, cursor:'pointer', background:rubricMode==='manual'?'#dcfce7':'var(--surface)', transition:'all .15s', fontWeight:rubricMode==='manual'?700:400, fontSize:13, color:rubricMode==='manual'?'#15803d':'var(--text)' }}>
-                    <i className="fas fa-pen" style={{ fontSize:14, color:rubricMode==='manual'?'#15803d':'var(--text-muted)' }} />Je le rédige moi-même
-                    {rubricMode==='manual'&&<i className="fas fa-check" style={{ fontSize:10, marginLeft:2, color:'#15803d' }} />}
-                  </button>
-                </div>
-                <p style={{ margin:'8px 0 0', fontSize:11.5, color:'var(--text-muted)' }}>
-                  <i className="fas fa-circle-info" style={{ marginRight:4 }} />
-                  {rubricMode==='ai'
-                    ? "L'IA répartit les points entre les questions de votre document selon le total choisi ci-dessous — modifiable ensuite avant l'enregistrement."
-                    : 'Un squelette vierge (une ligne par question) sera créé sur le total choisi ci-dessous — vous définissez vous-même les points et critères.'}
-                </p>
-                <div style={{ marginTop:12 }}>
-                  <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:600, color:'var(--text-muted)', marginBottom:7 }}>
-                    <i className="fas fa-hashtag" style={{ color:'var(--primary)', width:12 }} />Total du barème
-                  </label>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-                    {[20, 30, 40, 60].map(v => (
-                      <button key={v} type="button" onClick={() => setTotalPoints(v)}
-                        style={{ padding:'6px 13px', borderRadius:8, border:`1.5px solid ${totalPoints===v?'var(--primary)':'var(--border)'}`, background:totalPoints===v?'#eff6ff':'var(--surface)', color:totalPoints===v?'var(--primary)':'var(--text)', fontWeight:totalPoints===v?700:400, fontSize:12.5, cursor:'pointer' }}>
-                        {v}/{v}
-                      </button>
-                    ))}
-                    <input type="number" min={1} max={200} value={totalPoints}
-                      onChange={e => setTotalPoints(Math.max(1, Math.min(200, parseInt(e.target.value) || 20)))}
-                      style={{ width:80, padding:'6px 10px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:12.5, background:'var(--background)', color:'var(--text)', outline:'none' }} />
-                    <span style={{ fontSize:12, color:'var(--text-muted)' }}>/ {totalPoints} points</span>
-                  </div>
                 </div>
               </div>
 
