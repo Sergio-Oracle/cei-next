@@ -272,13 +272,20 @@ export default function AdminQuestionsPage() {
   const hiddenCount = questions.filter(q => q.status === 'hidden').length
 
   /* ── Filtered questions ─────────────────────────────────────────────────── */
+  // Parité Moodle : une question sans EC (équivalent contexte "Système") est
+  // héritée dans TOUS les filtres hiérarchiques au lieu d'être masquée dès
+  // qu'un Pôle/Formation/UE/EC précis est sélectionné — c'est le principe
+  // même de Moodle (une catégorie créée au niveau Système reste visible
+  // depuis n'importe quel cours/module en dessous).
   const filtered = questions.filter(q => {
     if (!showHidden && q.status === 'hidden')                     return false
-    if (filterPole   && String(q.pole_id)       !== filterPole)   return false
-    if (filterForm   && String(q.formation_id)  !== filterForm)   return false
-    if (filterSem    && String(q.semester_id)   !== filterSem)    return false
-    if (filterUe     && String(q.ue_id)         !== filterUe)     return false
-    if (filterEc     && String(q.ec_id)         !== filterEc)     return false
+    if (q.ec_id != null) {
+      if (filterPole   && String(q.pole_id)       !== filterPole)   return false
+      if (filterForm   && String(q.formation_id)  !== filterForm)   return false
+      if (filterSem    && String(q.semester_id)   !== filterSem)    return false
+      if (filterUe     && String(q.ue_id)         !== filterUe)     return false
+      if (filterEc     && String(q.ec_id)         !== filterEc)     return false
+    }
     if (filterType   && q.question_type         !== filterType)   return false
     if (filterTag     && !(q.tags || []).includes(filterTag))      return false
     if (filterSearch && !`${q.title} ${q.content}`.toLowerCase().includes(filterSearch.toLowerCase())) return false
@@ -753,7 +760,12 @@ export default function AdminQuestionsPage() {
                           )}
                           {q.ue_code && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>UE {q.ue_code}</span>}
                           {q.ec_name && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{q.ec_code} — {q.ec_name}</span>}
-                          {!q.pole_code && !q.ec_name && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>—</span>}
+                          {!q.pole_code && !q.ec_name && (
+                            <span title="Sans EC — visible dans tous les filtres, comme une question de contexte Système dans Moodle"
+                              style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 99, background: '#f1f5f9', color: '#64748b', width: 'fit-content' }}>
+                              <i className="fas fa-globe" style={{ marginRight: 3 }} />Globale
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
