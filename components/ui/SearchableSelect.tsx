@@ -42,6 +42,14 @@ export default function SearchableSelect({ options, value, onChange, placeholder
         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {selected ? selected.label : (placeholder || 'Rechercher…')}
         </span>
+        {/* Compteur visible sans avoir à ouvrir le menu — évite de croire la
+            liste vide/cassée alors qu'elle contient des options non encore
+            consultées (retour : "je vois toujours rien ici"). */}
+        {!selected && (
+          <span style={{ fontSize: 11, fontWeight: 600, color: options.length ? 'var(--primary)' : '#ef4444', background: options.length ? 'var(--background)' : '#fef2f2', border: `1px solid ${options.length ? 'var(--border)' : '#fecaca'}`, borderRadius: 99, padding: '1px 7px', flexShrink: 0 }}>
+            {options.length} option{options.length !== 1 ? 's' : ''}
+          </span>
+        )}
         <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} style={{ fontSize: 11, color: 'var(--text-muted)' }} />
       </div>
       {open && !disabled && (
