@@ -505,7 +505,7 @@ export default function ProfessorCreateSubjectPage() {
           <p>Uploadez un fichier ou assemblez des questions depuis la banque</p>
           <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>
             <i className="fas fa-circle-info" style={{ marginRight:5 }} />
-            Utilise un contenu <strong>déjà existant</strong> (fichier déjà rédigé ou questions déjà en banque) — l'IA ne fait qu'analyser et noter, elle n'invente rien. Pour générer de nouvelles questions à partir de rien, utilisez plutôt « Générer Suggestions ».
+            Utilise un contenu <strong>déjà existant</strong> (fichier déjà rédigé ou questions déjà en banque) — l'IA analyse et note, sans générer de nouvelles questions. Pour générer de nouvelles questions à partir de rien, utilisez plutôt « Générer Suggestions ».
           </p>
         </div>
       </div>
