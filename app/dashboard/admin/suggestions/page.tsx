@@ -46,6 +46,23 @@ function extractQuestionBlocks(content: string): { num: string; title: string; r
   return blocks
 }
 
+// Type de banque déduit du marqueur de la question elle-même — une sauvegarde
+// individuelle doit respecter le type réel de CETTE question, pas le réglage
+// global du formulaire de génération (qui peut mélanger plusieurs types).
+const MARKER_TO_BANK_TYPE: Record<string, string> = {
+  QCM: 'qcm', QCM_MULTI: 'qcm_multi', VF: 'vf', APPARIEMENT: 'appariement', CODE: 'code', OUVERT: 'open', SUBOPEN: 'subopen',
+}
+function detectBlockType(raw: string): string {
+  const m = raw.match(/\[(QCM_MULTI|QCM|VF|APPARIEMENT|CODE|OUVERT|SUBOPEN)\]/)
+  return m ? (MARKER_TO_BANK_TYPE[m[1]] || 'open') : 'open'
+}
+
+function extractRubricForQuestion(rubric: string, num: string): string {
+  const re = new RegExp(`Question\\s+${num}\\s*[—\\-–:.][\\s\\S]*?(?=\\nQuestion\\s+\\d{1,3}\\s*[—\\-–:.]|\\n─+\\nTOTAL|$)`, 'i')
+  const m = rubric.match(re)
+  return m ? m[0].trim() : ''
+}
+
 const DIFF_STYLE: Record<string, { bg: string; color: string; border: string }> = {
   'Facile':         { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
   'Moyen':          { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
@@ -374,26 +391,48 @@ export default function AdminSuggestionsPage() {
 
   function openBankModal() { setBankSaveType(typeFromSelection()); setShowBankModal(true) }
 
-  /* ── Bank save ── */
+  /* ── Bank save ──────────────────────────────────────────────────────────────
+   * Si des questions sont cochées dans "Questions détectées" (Retour #8), on
+   * les sauvegarde INDIVIDUELLEMENT — chacune sa propre entrée, son propre
+   * type détecté depuis son marqueur, et le morceau de barème qui lui
+   * correspond. Sinon (aucune coché), on garde l'ancien comportement :
+   * sauvegarder tout le sujet prévisualisé comme une seule entrée. */
   async function handleBankSave() {
     if (!previewContent.trim()) { toastErr('Aucun contenu à sauvegarder'); return }
     setBankSaving(true)
     try {
-      const titleLine = previewContent.split('\n')
-        .map(l => l.replace(/^#+\s*/, '').replace(/^[\s═─━=\-_*]+$/, '').trim())
-        .find(l => l.length > 2) || previewTitle
-      const res = await api.post<{ success: boolean; question: any; duplicates?: { id: number; title: string; similarity: number }[] }>('/api/question_bank', {
-        title: titleLine.substring(0, 80),
-        content: previewContent,
-        rubric:  previewRubric,
-        question_type: bankSaveType,
-        bloom_level:   bankSaveBloom || undefined,
-        ec_id: bankSaveEc ? parseInt(bankSaveEc) : null,
-      })
-      if (res.duplicates && res.duplicates.length > 0) {
-        success(`Sauvegardé ⚠ Doublon probable détecté (${res.duplicates[0].similarity}% similaire à "${res.duplicates[0].title}")`)
+      if (elimSet.size > 0) {
+        const blocks = extractQuestionBlocks(previewContent).filter(b => elimSet.has(b.num))
+        let dupCount = 0
+        for (const b of blocks) {
+          const res = await api.post<{ success: boolean; duplicates?: { id: number; title: string; similarity: number }[] }>('/api/question_bank', {
+            title: b.title.substring(0, 80) || `Question ${b.num}`,
+            content: b.raw,
+            rubric: extractRubricForQuestion(previewRubric, b.num),
+            question_type: detectBlockType(b.raw),
+            bloom_level: bankSaveBloom || undefined,
+            ec_id: bankSaveEc ? parseInt(bankSaveEc) : null,
+          })
+          if (res.duplicates && res.duplicates.length > 0) dupCount++
+        }
+        success(`${blocks.length} question(s) sauvegardée(s) individuellement dans la banque${dupCount ? ` — ⚠ ${dupCount} doublon(s) probable(s)` : ''}`)
       } else {
-        success('Sauvegardé dans la banque de questions')
+        const titleLine = previewContent.split('\n')
+          .map(l => l.replace(/^#+\s*/, '').replace(/^[\s═─━=\-_*]+$/, '').trim())
+          .find(l => l.length > 2) || previewTitle
+        const res = await api.post<{ success: boolean; question: any; duplicates?: { id: number; title: string; similarity: number }[] }>('/api/question_bank', {
+          title: titleLine.substring(0, 80),
+          content: previewContent,
+          rubric:  previewRubric,
+          question_type: bankSaveType,
+          bloom_level:   bankSaveBloom || undefined,
+          ec_id: bankSaveEc ? parseInt(bankSaveEc) : null,
+        })
+        if (res.duplicates && res.duplicates.length > 0) {
+          success(`Sauvegardé ⚠ Doublon probable détecté (${res.duplicates[0].similarity}% similaire à "${res.duplicates[0].title}")`)
+        } else {
+          success('Sauvegardé dans la banque de questions (sujet entier)')
+        }
       }
       setShowBankModal(false)
     } catch (err: any) { toastErr(err.message || 'Erreur sauvegarde banque') }
@@ -585,6 +624,12 @@ export default function AdminSuggestionsPage() {
               <button onClick={() => setShowBankModal(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
             </div>
             <div style={{ padding:'18px 22px', display:'flex', flexDirection:'column', gap:14 }}>
+              <div style={{ fontSize:12.5, color:'var(--text-muted)', background:'var(--background)', border:'1px solid var(--border)', borderRadius:8, padding:'9px 12px' }}>
+                <i className="fas fa-circle-info" style={{ marginRight:6, color:'var(--primary)' }} />
+                {elimSet.size > 0
+                  ? <>Les <strong>{elimSet.size} question(s) cochée(s)</strong> ci-dessus seront sauvegardées individuellement, chacune sa propre entrée.</>
+                  : <>Aucune question cochée — <strong>tout le sujet</strong> sera sauvegardé comme une seule entrée. Cochez des questions dans « Questions détectées » pour les sauvegarder une par une à la place.</>}
+              </div>
               <div>
                 <label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:8 }}>
                   <i className="fas fa-brain" style={{ color:'var(--primary)', marginRight:6 }} />Niveau de Bloom <span style={{ fontSize:11, fontWeight:400, color:'var(--text-muted)' }}>(optionnel)</span>
