@@ -808,6 +808,10 @@ export default function ProfessorSuggestionsPage() {
         <div>
           <h2><i className="fas fa-magic" style={{ marginRight:10, color:'var(--primary)' }} />Générer des Suggestions d'Examen avec IA</h2>
           <p>Uploadez votre cours, l'IA analysera le contenu et proposera des sujets d'examen adaptés</p>
+          <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>
+            <i className="fas fa-circle-info" style={{ marginRight:5 }} />
+            L'IA <strong>invente de nouvelles questions</strong> à partir de votre cours. Pour importer un examen déjà rédigé ou réutiliser des questions existantes, utilisez plutôt « Créer Sujet ».
+          </p>
         </div>
         {step === 'results' && (
           <button className="btn btn-secondary" onClick={() => setStep('form')}>

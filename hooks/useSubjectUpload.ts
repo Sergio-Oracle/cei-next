@@ -45,6 +45,7 @@ export interface UseSubjectUploadReturn {
 export function useSubjectUpload(
   onSuccess?: (s: CreatedSubject) => void,
   onError?: (msg: string) => void,
+  onDuplicates?: (dups: { similarity: number }[]) => void,
 ): UseSubjectUploadReturn {
   const t1 = useRef<ReturnType<typeof setTimeout> | null>(null)
   const t2 = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -81,7 +82,7 @@ export function useSubjectUpload(
       if (selectedTypes.length) fd.append('question_types', selectedTypes.join(','))
       fd.append('file', file)
 
-      const res = await api.upload<{ success: boolean; subject: CreatedSubject }>(
+      const res = await api.upload<{ success: boolean; subject: CreatedSubject; duplicates?: { similarity: number }[] }>(
         '/api/subjects/upload', fd, 'POST', { timeoutMs: AI_TIMEOUT_MS },
       )
       setPhase(4)
@@ -90,6 +91,7 @@ export function useSubjectUpload(
       setEditContent(res.subject.content ?? '')
       setEditRubric(res.subject.rubric ?? '')
       onSuccess?.(res.subject)
+      if (res.duplicates && res.duplicates.length > 0) onDuplicates?.(res.duplicates)
     } catch (err: any) {
       onError?.(err.message || 'Erreur lors de la création')
     } finally {

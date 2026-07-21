@@ -91,6 +91,7 @@ export default function ProfessorCreateSubjectPage() {
   } = useSubjectUpload(
     () => { setBankSaveEc(ecId) },
     (msg) => toastErr(msg),
+    (dups) => toastErr(`⚠ ${dups.length} question(s) du document ressemble(nt) fortement à des questions déjà présentes dans la banque (${dups[0].similarity}% similaire)`),
   )
 
   const { questions: bankQ, loading: bankLoading, saveQuestion, deleteQuestion, refresh: refreshBank } = useQuestionBank()
@@ -210,12 +211,16 @@ export default function ProfessorCreateSubjectPage() {
     if (!ids.length) { toastErr('Sélectionnez au moins une question'); return }
     setAssembling(true)
     try {
-      const res = await api.post<{ success: boolean; subject: { id:number; title:string; content?:string; rubric?:string; created_at?:string|null } }>('/api/question_bank/assemble', {
+      const res = await api.post<{ success: boolean; subject: { id:number; title:string; content?:string; rubric?:string; created_at?:string|null }; duplicates?: { similarity: number; titles: string[] }[] }>('/api/question_bank/assemble', {
         question_ids: ids, title: asmTitle,
         duration: parseInt(asmDuration)||60, student_level: asmLevel,
         ec_id: asmEc ? parseInt(asmEc) : null,
       })
-      toastOk(`Sujet "${asmTitle}" créé — ${ids.length} question(s).`)
+      if (res.duplicates && res.duplicates.length > 0) {
+        toastErr(`Sujet créé, mais ⚠ ${res.duplicates.length} question(s) sélectionnée(s) se ressemblent fortement (${res.duplicates[0].similarity}% — "${res.duplicates[0].titles[0]}")`)
+      } else {
+        toastOk(`Sujet "${asmTitle}" créé — ${ids.length} question(s).`)
+      }
       setShowAssemble(false); setBankSel(new Set())
       setCreated(res.subject)
       setEditContent(res.subject.content || '')
@@ -498,6 +503,10 @@ export default function ProfessorCreateSubjectPage() {
             <i className="fas fa-file-circle-plus" style={{ color:'var(--primary)' }} />Créer un Sujet d'Examen
           </h2>
           <p>Uploadez un fichier ou assemblez des questions depuis la banque</p>
+          <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>
+            <i className="fas fa-circle-info" style={{ marginRight:5 }} />
+            Utilise un contenu <strong>déjà existant</strong> (fichier déjà rédigé ou questions déjà en banque) — l'IA ne fait qu'analyser et noter, elle n'invente rien. Pour générer de nouvelles questions à partir de rien, utilisez plutôt « Générer Suggestions ».
+          </p>
         </div>
       </div>
 
