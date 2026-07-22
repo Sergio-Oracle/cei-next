@@ -4,18 +4,12 @@ import { useEffect, useState, CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
-import type { Subject, User } from '@/types'
-
-interface ProctorGroupLite { id: number; name: string; ec_ids: number[]; members: unknown[] }
+import type { Subject } from '@/types'
 
 export default function NewExamPage() {
   const router = useRouter()
   const { success, error } = useToast()
   const [subjects, setSubjects]   = useState<Subject[]>([])
-  const [proctors, setProctors]   = useState<User[]>([])
-  const [proctorGroups, setProctorGroups] = useState<ProctorGroupLite[]>([])
-  const [selectedProctors, setSelectedProctors] = useState<number[]>([])
-  const [loading, setLoading]     = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
   const [form, setForm] = useState({
@@ -33,31 +27,17 @@ export default function NewExamPage() {
     auto_correct:       false,
   })
 
+  // Retour : la sélection manuelle de surveillants a été retirée du
+  // formulaire de création — "Groupes Surveillants" (lié à l'EC) est
+  // désormais le seul mécanisme, plus prévisible qu'une double sélection à
+  // chaque examen. Sans groupe couvrant l'EC, les surveillants s'ajoutent
+  // après création via « Gestion de la Surveillance ».
   useEffect(() => {
-    Promise.all([
-      api.get<any>('/api/subjects').then(r => setSubjects(Array.isArray(r) ? r : r.subjects ?? [])),
-      api.get<any>('/api/users/proctors').then(r => setProctors(Array.isArray(r) ? r : r.users ?? [])).catch(() => {}),
-      // Retour : "pourquoi cette liste manuelle existe encore ici" — un groupe
-      // de surveillants déjà rattaché à l'EC du sujet affecte automatiquement
-      // ses membres à la création (routes/exams.py, inconditionnel), donc la
-      // sélection manuelle est redondante dans ce cas. On la masque et on
-      // affiche le groupe concerné à la place ; elle ne reste utile qu'en
-      // secours quand aucun groupe ne couvre l'EC.
-      api.get<ProctorGroupLite[]>('/api/admin/proctor_groups').then(r => setProctorGroups(Array.isArray(r) ? r : [])).catch(() => {}),
-    ]).finally(() => setLoading(false))
+    api.get<any>('/api/subjects').then(r => setSubjects(Array.isArray(r) ? r : r.subjects ?? []))
   }, [])
-
-  const selectedSubject = subjects.find(s => String(s.id) === form.subject_id)
-  const coveringGroups = selectedSubject?.ec_id
-    ? proctorGroups.filter(g => g.ec_ids.includes(selectedSubject.ec_id!) && g.members.length > 0)
-    : []
 
   function set(key: string, val: any) {
     setForm(f => ({ ...f, [key]: val }))
-  }
-
-  function toggleProctor(id: number) {
-    setSelectedProctors(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
   }
 
   function calcDuration() {
@@ -92,17 +72,6 @@ export default function NewExamPage() {
         enable_right_click: form.enable_right_click,
         auto_correct:      form.auto_correct,
       })
-      const examId = res.exam?.id
-
-      // L'API n'accepte qu'un seul proctor_id par appel — un POST par surveillant sélectionné
-      if (examId && selectedProctors.length > 0) {
-        await Promise.all(
-          selectedProctors.map(pid =>
-            api.post(`/api/online_exams/${examId}/proctors`, { proctor_id: pid }).catch(() => {})
-          )
-        )
-      }
-
       success(`Examen créé — Durée : ${res.exam?.duration_minutes ?? '?'} min`)
       router.push(`/dashboard/professor/exams`)
     } catch (e: any) {
@@ -229,54 +198,17 @@ export default function NewExamPage() {
           </div>
         </div>
 
-        {/* Surveillants */}
+        {/* Surveillants — la sélection manuelle a été retirée : "Groupes
+            Surveillants" (lié à l'EC) est le seul mécanisme désormais */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, position: 'sticky', top: 16 }}>
           <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <i className="fas fa-shield-halved" style={{ color: '#1d4ed8', fontSize: 14 }} />
             <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>Surveillants</span>
           </div>
-          {coveringGroups.length > 0 ? (
-            <div style={{ padding: '14px 18px' }}>
-              <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 10px', lineHeight: 1.5 }}>
-                <i className="fas fa-circle-check" style={{ color: '#10b981', marginRight: 5 }} />
-                Un groupe couvre déjà l'EC de ce sujet — ses membres seront affectés automatiquement, pas besoin de sélection manuelle.
-              </p>
-              {coveringGroups.map(g => (
-                <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'var(--background)', borderRadius: 8, border: '1px solid var(--border)', marginBottom: 6, fontSize: 13 }}>
-                  <i className="fas fa-user-shield" style={{ color: '#1d4ed8' }} />
-                  <span style={{ fontWeight: 600 }}>{g.name}</span>
-                  <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: 12 }}>{g.members.length} surveillant(s)</span>
-                </div>
-              ))}
-              <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '8px 0 0' }}>
-                Vous pourrez ajouter/retirer des surveillants après création via « Gestion de la Surveillance ».
-              </p>
-            </div>
-          ) : (
-          <div style={{ padding: '8px 18px', maxHeight: 280, overflowY: 'auto' }}>
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: 20 }}><i className="fas fa-spinner fa-spin" /></div>
-            ) : proctors.length === 0 ? (
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>Aucun surveillant disponible</p>
-            ) : (
-              <>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '8px 0 10px', lineHeight: 1.5 }}>
-                  <i className="fas fa-circle-info" style={{ marginRight: 5 }} />
-                  Aucun groupe de surveillants ne couvre l'EC de ce sujet — sélectionnez-les manuellement ci-dessous, ou <a href="/dashboard/professor/proctor-groups" style={{ color: 'var(--primary)' }}>configurez un groupe</a>.
-                </p>
-                {proctors.map(p => (
-                  <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}>
-                    <input type="checkbox" checked={selectedProctors.includes(p.id)} onChange={() => toggleProctor(p.id)} style={{ width: 'auto' }} />
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{p.full_name}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.email}</div>
-                    </div>
-                  </label>
-                ))}
-              </>
-            )}
+          <div style={{ padding: '14px 18px', fontSize: 12.5, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+            <i className="fas fa-circle-info" style={{ marginRight: 5 }} />
+            Un <a href="/dashboard/professor/proctor-groups" style={{ color: 'var(--primary)', fontWeight: 600 }}>groupe de surveillants</a> rattaché à l'EC de ce sujet sera automatiquement affecté à cet examen. Sans groupe, vous pourrez ajouter des surveillants après création via « Gestion de la Surveillance ».
           </div>
-          )}
           <div style={{ padding: 16, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <button onClick={handleSubmit} disabled={submitting} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 18px', background: submitting ? '#93c5fd' : '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer' }}>
               {submitting
