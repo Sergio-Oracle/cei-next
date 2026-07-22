@@ -66,7 +66,7 @@ export default function AdminDashboard() {
               { href: '/dashboard/admin/users', icon: 'fa-user-plus', label: 'Ajouter un utilisateur', desc: 'Créer un compte étudiant, professeur ou surveillant' },
               { href: '/dashboard/admin/exams', icon: 'fa-plus-circle', label: 'Nouvel examen en ligne', desc: 'Créer et planifier un examen surveillé' },
               { href: '/dashboard/admin/subjects', icon: 'fa-file-circle-plus', label: 'Nouveau sujet', desc: 'Uploader ou générer un sujet avec l\'IA' },
-              { href: '/dashboard/admin/formations', icon: 'fa-building-columns', label: 'Gérer les formations', desc: 'Maquette pédagogique Formation → Semestre → UE → EC' },
+              { href: '/dashboard/admin/formations', icon: 'fa-building-columns', label: 'Gérer les formations', desc: 'Maquette pédagogique Pôle → Niveau → Formation → Semestre → UE → EC' },
               { href: '/dashboard/admin/transcripts', icon: 'fa-scroll', label: 'Relevés de notes', desc: 'Générer et publier les transcripts LMD' },
               { href: '/dashboard/admin/security', icon: 'fa-shield-halved', label: 'Rapport de sécurité', desc: 'Incidents, fraudes et comportements suspects' },
             ].map((a, i) => (
