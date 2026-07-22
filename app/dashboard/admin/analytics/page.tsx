@@ -29,6 +29,13 @@ interface RecentCorrection {
   corrected_at: string
 }
 
+interface Ratios {
+  students_per_proctor:    { total_assignments: number; distinct_proctors: number; avg: number | null }
+  students_per_exam:       { avg_eligible: number | null; avg_attempts: number | null; participation_rate: number | null }
+  students_per_grade:      { total_submitted: number; total_corrected: number; completion_rate: number | null }
+  students_per_validation: { total_scored: number; total_validated: number; validation_rate: number | null }
+}
+
 interface ExamAnalytics {
   total_exams?: number
   total_attempts?: number
@@ -40,6 +47,7 @@ interface ExamAnalytics {
   top_exams?: ExamStat[]
   bottom_exams?: ExamStat[]
   recent_corrections?: RecentCorrection[]
+  ratios?: Ratios
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -188,6 +196,52 @@ export default function AdminAnalyticsPage() {
                     </div>
                     <div style={{ fontSize: 20, fontWeight: 800, color }}>{value}</div>
                     <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 2 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Ratios (Retour #21) */}
+          {exams.ratios && (
+            <div style={{ marginBottom: 24 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
+                <i className="fas fa-scale-balanced" style={{ marginRight: 6, color: '#7c3aed' }} />Ratios
+              </p>
+              <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+                {[
+                  {
+                    icon: 'fa-user-shield', color: '#7c3aed', bg: '#ede9fe',
+                    label: 'Étudiants / surveillant',
+                    value: exams.ratios.students_per_proctor.avg != null ? exams.ratios.students_per_proctor.avg : '—',
+                    caption: `${exams.ratios.students_per_proctor.total_assignments} affectation(s) — ${exams.ratios.students_per_proctor.distinct_proctors} surveillant(s)`,
+                  },
+                  {
+                    icon: 'fa-laptop-code', color: '#2563eb', bg: '#dbeafe',
+                    label: 'Étudiants / examen',
+                    value: exams.ratios.students_per_exam.avg_attempts != null ? exams.ratios.students_per_exam.avg_attempts : '—',
+                    caption: `Éligibles en moy. ${exams.ratios.students_per_exam.avg_eligible ?? '—'}/examen — participation ${exams.ratios.students_per_exam.participation_rate != null ? exams.ratios.students_per_exam.participation_rate + '%' : '—'}`,
+                  },
+                  {
+                    icon: 'fa-clipboard-check', color: '#10b981', bg: '#d1fae5',
+                    label: 'Étudiants / note',
+                    value: exams.ratios.students_per_grade.completion_rate != null ? `${exams.ratios.students_per_grade.completion_rate}%` : '—',
+                    caption: `${exams.ratios.students_per_grade.total_corrected}/${exams.ratios.students_per_grade.total_submitted} soumission(s) corrigée(s)`,
+                  },
+                  {
+                    icon: 'fa-trophy', color: '#f59e0b', bg: '#fef3c7',
+                    label: 'Étudiants / validation',
+                    value: exams.ratios.students_per_validation.validation_rate != null ? `${exams.ratios.students_per_validation.validation_rate}%` : '—',
+                    caption: `${exams.ratios.students_per_validation.total_validated}/${exams.ratios.students_per_validation.total_scored} noté(s) validé(s) (≥10)`,
+                  },
+                ].map(({ icon, color, bg, label, value, caption }) => (
+                  <div key={label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                      <i className={`fas ${icon}`} style={{ color, fontSize: 13 }} />
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color }}>{value}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text)', fontWeight: 600, marginTop: 2 }}>{label}</div>
+                    <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 3, lineHeight: 1.4 }}>{caption}</div>
                   </div>
                 ))}
               </div>
