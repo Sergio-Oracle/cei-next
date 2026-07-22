@@ -58,10 +58,11 @@ export default function ProfessorStudentsPage() {
     finally { setLoading(false) }
   }
 
-  // Retour : "je veux que tu les affiches par Pôles" — regroupement/filtre
-  // par Pôle en plus du filtre EC déjà existant, sans jamais élargir
-  // l'ensemble de base déjà correctement scopé au professeur côté backend
-  // (ECAssignment → EC → UE → StudentUEEnrollment).
+  // Retour : "je veux que tu les affiches par Pôles" puis "il faut les
+  // afficher côte à côte par pôles" — un pôle = une colonne, affichées
+  // simultanément côte à côte plutôt que filtrées par onglet. Sans jamais
+  // élargir l'ensemble de base déjà correctement scopé au professeur côté
+  // backend (ECAssignment → EC → UE → StudentUEEnrollment).
   const poles = Array.from(
     new Map(ecs.filter(e => e.pole_code).map(e => [e.pole_code, { code: e.pole_code!, name: e.pole_name || e.pole_code! }])).values()
   )
@@ -74,6 +75,8 @@ export default function ProfessorStudentsPage() {
     const q = search.toLowerCase()
     return s.full_name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
   })
+
+  const sideBySide = poles.length > 1 && !filterPole
 
   return (
     <div style={{ padding: '28px 32px' }}>
@@ -141,73 +144,102 @@ export default function ProfessorStudentsPage() {
         </span>
       </div>
 
-      {/* Tableau */}
-      <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px 24px', color: '#64748b' }}>
-            <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: '#2563eb', display: 'block', marginBottom: 14 }} />
-            Chargement…
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 24px', color: '#64748b' }}>
-            <i className="fas fa-user-slash" style={{ fontSize: 36, display: 'block', marginBottom: 14, opacity: .4 }} />
-            <p style={{ margin: '0 0 6px', fontWeight: 600 }}>
-              {students.length === 0 ? 'Aucun étudiant inscrit dans vos UEs' : 'Aucun résultat'}
-            </p>
-            <p style={{ margin: 0, fontSize: 13 }}>
-              {students.length === 0 ? 'Les étudiants apparaissent après leur inscription aux UEs de vos ECs' : 'Modifiez votre recherche'}
-            </p>
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f8fafc' }}>
-                {['Étudiant','Email','Pôle','ECs','Formation','Niveau'].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, borderBottom: '1px solid #e2e8f0' }}>{h}</th>
-                ))}
+      {/* Tableau(x) */}
+      {loading ? (
+        <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, textAlign: 'center', padding: '60px 24px', color: '#64748b' }}>
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: '#2563eb', display: 'block', marginBottom: 14 }} />
+          Chargement…
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, textAlign: 'center', padding: '60px 24px', color: '#64748b' }}>
+          <i className="fas fa-user-slash" style={{ fontSize: 36, display: 'block', marginBottom: 14, opacity: .4 }} />
+          <p style={{ margin: '0 0 6px', fontWeight: 600 }}>
+            {students.length === 0 ? 'Aucun étudiant inscrit dans vos UEs' : 'Aucun résultat'}
+          </p>
+          <p style={{ margin: 0, fontSize: 13 }}>
+            {students.length === 0 ? 'Les étudiants apparaissent après leur inscription aux UEs de vos ECs' : 'Modifiez votre recherche'}
+          </p>
+        </div>
+      ) : sideBySide ? (
+        /* Un pôle = une colonne, affichées côte à côte */
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${poles.length}, 1fr)`, gap: 16, overflowX: 'auto' }}>
+          {poles.map(p => {
+            const poleStudents = filtered.filter(s => s.pole_code === p.code)
+            return (
+              <div key={p.code} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden', minWidth: 320 }}>
+                <div style={{ padding: '10px 16px', background: '#f5f3ff', borderBottom: '1px solid #ddd6fe', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="fas fa-sitemap" style={{ color: '#7c3aed', fontSize: 13 }} />
+                  <span style={{ fontWeight: 700, fontSize: 13, color: '#7c3aed' }}>{p.name}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#7c3aed', background: '#ede9fe', padding: '2px 8px', borderRadius: 20 }}>{poleStudents.length}</span>
+                </div>
+                {poleStudents.length === 0 ? (
+                  <p style={{ padding: 16, fontSize: 13, color: '#94a3b8', margin: 0 }}>Aucun étudiant</p>
+                ) : (
+                  <StudentsTable students={poleStudents} showPoleColumn={false} />
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
+          <StudentsTable students={filtered} showPoleColumn />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function StudentsTable({ students, showPoleColumn }: { students: Student[]; showPoleColumn: boolean }) {
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ background: '#f8fafc' }}>
+            {['Étudiant', 'Email', ...(showPoleColumn ? ['Pôle'] : []), 'ECs', 'Formation', 'Niveau'].map(h => (
+              <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, borderBottom: '1px solid #e2e8f0' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {students.map((s, i) => {
+            const initials = (s.full_name || s.email || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+            return (
+              <tr key={s.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f0f9ff' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? 'white' : '#fafafa' }}>
+                <td style={{ padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#dbeafe', color: '#1d4ed8', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {initials}
+                    </div>
+                    <span style={{ fontWeight: 600, color: '#0f172a', fontSize: 14 }}>{s.full_name}</span>
+                  </div>
+                </td>
+                <td style={{ padding: '12px 16px', color: '#64748b', fontSize: 13 }}>{s.email}</td>
+                {showPoleColumn && (
+                  <td style={{ padding: '12px 16px' }}>
+                    {s.pole_code
+                      ? <span style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{s.pole_code}</span>
+                      : <span style={{ color: '#94a3b8', fontSize: 13 }}>—</span>}
+                  </td>
+                )}
+                <td style={{ padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {s.ecs.map(e => (
+                      <span key={e.ec_code} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
+                        {e.ec_code}
+                      </span>
+                    ))}
+                  </div>
+                </td>
+                <td style={{ padding: '12px 16px', color: '#475569', fontSize: 13 }}>{s.formation_name ?? '—'}</td>
+                <td style={{ padding: '12px 16px', color: '#475569', fontSize: 13 }}>{s.niveau ?? '—'}</td>
               </tr>
-            </thead>
-            <tbody>
-              {filtered.map((s, i) => {
-                const initials = (s.full_name || s.email || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
-                return (
-                  <tr key={s.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f0f9ff' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? 'white' : '#fafafa' }}>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#dbeafe', color: '#1d4ed8', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {initials}
-                        </div>
-                        <span style={{ fontWeight: 600, color: '#0f172a', fontSize: 14 }}>{s.full_name}</span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 16px', color: '#64748b', fontSize: 13 }}>{s.email}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      {s.pole_code
-                        ? <span style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{s.pole_code}</span>
-                        : <span style={{ color: '#94a3b8', fontSize: 13 }}>—</span>}
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {s.ecs.map(e => (
-                          <span key={e.ec_code} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
-                            {e.ec_code}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 16px', color: '#475569', fontSize: 13 }}>{s.formation_name ?? '—'}</td>
-                    <td style={{ padding: '12px 16px', color: '#475569', fontSize: 13 }}>{s.niveau ?? '—'}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-          </div>
-        )}
-      </div>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }

@@ -31,7 +31,6 @@ export default function AdminUsersPage() {
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
   const [activeFilter, setActiveFilter] = useState<string>('') // role | 'no_email'
-  const [studentPoleFilter, setStudentPoleFilter] = useState('') // Retour : regroupement des étudiants par Pôle
   const [deleting, setDeleting]   = useState<number | null>(null)
 
   /* Modal créer / modifier */
@@ -295,14 +294,77 @@ export default function AdminUsersPage() {
         sections.map(({ role, users: sUsers }) => {
           const m = ROLE_META[role] || ROLE_META.student
 
-          // Retour : "je veux que tu les affiches par Pôles" — regroupement/
-          // filtre par Pôle spécifiquement pour la section Étudiants.
+          // Retour : "je veux que tu les affiches par Pôles" — puis "il faut
+          // les afficher côte à côte par pôles" : au lieu d'onglets filtrant
+          // une même table, chaque pôle obtient sa propre colonne affichée
+          // simultanément à côté des autres.
           const studentPoles = role === 'student'
             ? Array.from(new Map(sUsers.filter(u => u.pole_code).map(u => [u.pole_code, { code: u.pole_code!, name: u.pole_name || u.pole_code! }])).values())
             : []
-          const sUsersDisplayed = role === 'student' && studentPoleFilter
-            ? sUsers.filter(u => u.pole_code === studentPoleFilter)
-            : sUsers
+
+          const renderRow = (u: User) => (
+            <tr key={u.id}>
+              <td>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                    {initials(u.full_name || '')}
+                  </div>
+                  <span style={{ fontWeight: 600 }}>{u.full_name}</span>
+                  {isNoEmail(u) && (
+                    <span style={{ fontSize: 10, background: '#dbeafe', color: '#2563eb', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>Sans email</span>
+                  )}
+                </div>
+              </td>
+              <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{u.email || '—'}</td>
+              {role === 'student' && studentPoles.length <= 1 && (
+                <td style={{ fontSize: 13 }}>
+                  {u.pole_code
+                    ? <span title={u.pole_name} style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{u.pole_code}</span>
+                    : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                </td>
+              )}
+              {role === 'student' && (
+                <td style={{ fontSize: 13 }}>
+                  {u.formation_code ? (
+                    <span title={u.formation_name}>{u.niveau ? `${u.niveau} · ` : ''}{u.formation_code}</span>
+                  ) : (u.niveau || '—')}
+                </td>
+              )}
+              <td>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: u.is_active ? '#10b981' : '#ef4444' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: u.is_active ? '#10b981' : '#ef4444', display: 'inline-block' }} />
+                  {u.is_active ? 'Actif' : 'Inactif'}
+                </span>
+              </td>
+              <td>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <button onClick={() => openEdit(u)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', fontSize: 13, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', color: 'var(--text)' }}>
+                    <i className="fas fa-pen" style={{ fontSize: 11 }} /> Modifier
+                  </button>
+                  {role !== 'admin' && (
+                    <button onClick={() => handleDelete(u.id, u.full_name)} disabled={deleting === u.id}
+                      style={{ width: 30, height: 30, borderRadius: 7, border: '1px solid #fca5a5', background: '#fff1f2', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <i className={`fas ${deleting === u.id ? 'fa-spinner fa-spin' : 'fa-trash'}`} style={{ fontSize: 11 }} />
+                    </button>
+                  )}
+                </div>
+              </td>
+            </tr>
+          )
+
+          const tableHead = (
+            <thead>
+              <tr>
+                <th>NOM</th>
+                <th>EMAIL</th>
+                {role === 'student' && studentPoles.length <= 1 && <th>PÔLE</th>}
+                {role === 'student' && <th>NIVEAU</th>}
+                <th>STATUT</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+          )
 
           return (
             <div key={role} className="card" style={{ marginBottom: 20 }}>
@@ -315,89 +377,39 @@ export default function AdminUsersPage() {
                   {m.plural}
                   <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 600, color: m.color, background: m.bg, padding: '2px 8px', borderRadius: 20 }}>{sUsers.length}</span>
                 </h3>
-                {role === 'student' && studentPoles.length > 1 && (
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginLeft: 'auto' }}>
-                    <button onClick={() => setStudentPoleFilter('')}
-                      style={{ padding: '5px 12px', borderRadius: 99, border: `1.5px solid ${!studentPoleFilter ? '#3b82f6' : 'var(--border)'}`, background: !studentPoleFilter ? '#dbeafe' : 'var(--surface)', color: !studentPoleFilter ? '#1d4ed8' : 'var(--text-muted)', fontWeight: !studentPoleFilter ? 700 : 500, fontSize: 12, cursor: 'pointer' }}>
-                      Tous
-                    </button>
-                    {studentPoles.map(p => (
-                      <button key={p.code} onClick={() => setStudentPoleFilter(studentPoleFilter === p.code ? '' : p.code)}
-                        style={{ padding: '5px 12px', borderRadius: 99, border: `1.5px solid ${studentPoleFilter === p.code ? '#3b82f6' : 'var(--border)'}`, background: studentPoleFilter === p.code ? '#dbeafe' : 'var(--surface)', color: studentPoleFilter === p.code ? '#1d4ed8' : 'var(--text-muted)', fontWeight: studentPoleFilter === p.code ? 700 : 500, fontSize: 12, cursor: 'pointer' }}>
-                        {p.name} ({sUsers.filter(u => u.pole_code === p.code).length})
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
 
-              {/* Table */}
-              <div className="table-responsive">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>NOM</th>
-                      <th>EMAIL</th>
-                      {role === 'student' && <th>PÔLE</th>}
-                      {role === 'student' && <th>NIVEAU</th>}
-                      <th>STATUT</th>
-                      <th>ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sUsersDisplayed.map(u => (
-                      <tr key={u.id}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ width: 34, height: 34, borderRadius: '50%', background: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
-                              {initials(u.full_name || '')}
-                            </div>
-                            <span style={{ fontWeight: 600 }}>{u.full_name}</span>
-                            {isNoEmail(u) && (
-                              <span style={{ fontSize: 10, background: '#dbeafe', color: '#2563eb', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>Sans email</span>
-                            )}
-                          </div>
-                        </td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{u.email || '—'}</td>
-                        {role === 'student' && (
-                          <td style={{ fontSize: 13 }}>
-                            {u.pole_code
-                              ? <span title={u.pole_name} style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{u.pole_code}</span>
-                              : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                          </td>
-                        )}
-                        {role === 'student' && (
-                          <td style={{ fontSize: 13 }}>
-                            {u.formation_code ? (
-                              <span title={u.formation_name}>{u.niveau ? `${u.niveau} · ` : ''}{u.formation_code}</span>
-                            ) : (u.niveau || '—')}
-                          </td>
-                        )}
-                        <td>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: u.is_active ? '#10b981' : '#ef4444' }}>
-                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: u.is_active ? '#10b981' : '#ef4444', display: 'inline-block' }} />
-                            {u.is_active ? 'Actif' : 'Inactif'}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                            <button onClick={() => openEdit(u)}
-                              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', fontSize: 13, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', color: 'var(--text)' }}>
-                              <i className="fas fa-pen" style={{ fontSize: 11 }} /> Modifier
-                            </button>
-                            {role !== 'admin' && (
-                              <button onClick={() => handleDelete(u.id, u.full_name)} disabled={deleting === u.id}
-                                style={{ width: 30, height: 30, borderRadius: 7, border: '1px solid #fca5a5', background: '#fff1f2', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <i className={`fas ${deleting === u.id ? 'fa-spinner fa-spin' : 'fa-trash'}`} style={{ fontSize: 11 }} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {role === 'student' && studentPoles.length > 1 ? (
+                /* Un pôle = une colonne, affichées côte à côte */
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${studentPoles.length}, 1fr)`, gap: 16, padding: 16, overflowX: 'auto' }}>
+                  {studentPoles.map(p => {
+                    const poleUsers = sUsers.filter(u => u.pole_code === p.code)
+                    return (
+                      <div key={p.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', minWidth: 320 }}>
+                        <div style={{ padding: '10px 14px', background: '#f5f3ff', borderBottom: '1px solid #ddd6fe', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <i className="fas fa-sitemap" style={{ color: '#7c3aed', fontSize: 13 }} />
+                          <span style={{ fontWeight: 700, fontSize: 13, color: '#7c3aed' }}>{p.name}</span>
+                          <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#7c3aed', background: '#ede9fe', padding: '2px 8px', borderRadius: 20 }}>{poleUsers.length}</span>
+                        </div>
+                        <div className="table-responsive">
+                          <table>
+                            {tableHead}
+                            <tbody>{poleUsers.map(renderRow)}</tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                /* Table unique — autres rôles, ou étudiants sur un seul pôle */
+                <div className="table-responsive">
+                  <table>
+                    {tableHead}
+                    <tbody>{sUsers.map(renderRow)}</tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )
         })
