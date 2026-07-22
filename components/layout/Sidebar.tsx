@@ -50,6 +50,7 @@ const professorNav: NavEntry[] = [
   { label: 'Créer Sujet',          href: '/dashboard/professor/create-subject', icon: 'fa-plus-circle' },
   { label: 'Mes Sujets',           href: '/dashboard/professor/subjects',       icon: 'fa-book' },
   { label: 'Examens en Ligne',     href: '/dashboard/professor/exams',          icon: 'fa-laptop-code' },
+  { label: 'Groupes Surveillants', href: '/dashboard/professor/proctor-groups', icon: 'fa-user-shield' },
   { divider: 'Corrections' },
   { label: 'Corriger Copies',             href: '/dashboard/professor/papers',             icon: 'fa-pencil-alt' },
   { label: 'Copies Corrigées',          href: '/dashboard/professor/corrected',          icon: 'fa-check-circle' },
