@@ -43,7 +43,6 @@ export default function ProfessorStudentsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
   const [filterEc, setFilterEc] = useState('')
-  const [filterPole, setFilterPole] = useState('')
 
   useEffect(() => { load() }, [])
 
@@ -60,23 +59,21 @@ export default function ProfessorStudentsPage() {
 
   // Retour : "je veux que tu les affiches par Pôles" puis "il faut les
   // afficher côte à côte par pôles" — un pôle = une colonne, affichées
-  // simultanément côte à côte plutôt que filtrées par onglet. Sans jamais
-  // élargir l'ensemble de base déjà correctement scopé au professeur côté
-  // backend (ECAssignment → EC → UE → StudentUEEnrollment).
+  // simultanément côte à côte, sans onglet redondant. Sans jamais élargir
+  // l'ensemble de base déjà correctement scopé au professeur côté backend
+  // (ECAssignment → EC → UE → StudentUEEnrollment).
   const poles = Array.from(
     new Map(ecs.filter(e => e.pole_code).map(e => [e.pole_code, { code: e.pole_code!, name: e.pole_name || e.pole_code! }])).values()
   )
-  const visibleEcs = filterPole ? ecs.filter(e => e.pole_code === filterPole) : ecs
 
   const filtered = students.filter(s => {
-    if (filterPole && s.pole_code !== filterPole) return false
     if (filterEc && !s.ecs.some(e => e.ec_code === filterEc)) return false
     if (!search) return true
     const q = search.toLowerCase()
     return s.full_name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
   })
 
-  const sideBySide = poles.length > 1 && !filterPole
+  const sideBySide = poles.length > 1
 
   return (
     <div style={{ padding: '28px 32px' }}>
@@ -90,26 +87,11 @@ export default function ProfessorStudentsPage() {
         </p>
       </div>
 
-      {/* Onglets Pôle — regroupe/filtre l'ensemble déjà scopé au professeur */}
-      {!loading && poles.length > 1 && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-          <button onClick={() => { setFilterPole(''); setFilterEc('') }}
-            style={{ padding: '7px 16px', borderRadius: 99, border: `1.5px solid ${!filterPole ? '#2563eb' : '#e2e8f0'}`, background: !filterPole ? '#eff6ff' : 'white', color: !filterPole ? '#1d4ed8' : '#475569', fontWeight: !filterPole ? 700 : 500, fontSize: 13, cursor: 'pointer' }}>
-            Tous les pôles ({students.length})
-          </button>
-          {poles.map(p => (
-            <button key={p.code} onClick={() => { setFilterPole(filterPole === p.code ? '' : p.code); setFilterEc('') }}
-              style={{ padding: '7px 16px', borderRadius: 99, border: `1.5px solid ${filterPole === p.code ? '#2563eb' : '#e2e8f0'}`, background: filterPole === p.code ? '#eff6ff' : 'white', color: filterPole === p.code ? '#1d4ed8' : '#475569', fontWeight: filterPole === p.code ? 700 : 500, fontSize: 13, cursor: 'pointer' }}>
-              {p.name} ({students.filter(s => s.pole_code === p.code).length})
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Cartes EC */}
       {!loading && ecs.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
-          {visibleEcs.map(ec => (
+          {ecs.map(ec => (
             <div key={ec.ec_code}
               onClick={() => setFilterEc(filterEc === ec.ec_code ? '' : ec.ec_code)}
               style={{ background: 'white', border: `2px solid ${filterEc === ec.ec_code ? '#2563eb' : '#e2e8f0'}`, borderRadius: 10, padding: 16, cursor: 'pointer', transition: 'border-color .15s' }}>
