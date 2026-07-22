@@ -327,7 +327,7 @@ export default function AdminQuestionsPage() {
         {preview.tags && preview.tags.length > 0 && (
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
             {preview.tags.map(t => (
-              <span key={t} style={{ fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 99, background: '#f5f3ff', color: '#7c3aed' }}>
+              <span key={t} style={{ fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 99, background: '#f0fdfa', color: '#0d9488' }}>
                 <i className="fas fa-hashtag" style={{ fontSize: 9, marginRight: 3 }} />{t}
               </span>
             ))}
@@ -531,7 +531,7 @@ export default function AdminQuestionsPage() {
 
           {/* Tag — parité Moodle : recherche transversale hors hiérarchie */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#7c3aed', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#0d9488', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
               <i className="fas fa-hashtag" /> Tag
             </label>
             <select value={filterTag} onChange={e => setFilterTag(e.target.value)} style={selStyle} disabled={availTags.length === 0}>
@@ -659,7 +659,7 @@ export default function AdminQuestionsPage() {
               </div>
               <div>
                 <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                  <i className="fas fa-hashtag" style={{ color: '#7c3aed', marginRight: 4 }} />Tags (séparés par des virgules)
+                  <i className="fas fa-hashtag" style={{ color: '#0d9488', marginRight: 4 }} />Tags (séparés par des virgules)
                 </label>
                 <input className="form-control" value={editForm.tags} onChange={e => setEditForm(p => ({ ...p, tags: e.target.value }))}
                   placeholder="ex : révision, difficile, 2026" />
@@ -741,7 +741,7 @@ export default function AdminQuestionsPage() {
                           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
                             {q.tags.map(t => (
                               <span key={t} onClick={() => setFilterTag(t)} title="Filtrer par ce tag"
-                                style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 99, background: '#f5f3ff', color: '#7c3aed', cursor: 'pointer' }}>
+                                style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 99, background: '#f0fdfa', color: '#0d9488', cursor: 'pointer' }}>
                                 <i className="fas fa-hashtag" style={{ fontSize: 8, marginRight: 2 }} />{t}
                               </span>
                             ))}

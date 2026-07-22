@@ -319,7 +319,7 @@ export default function AdminUsersPage() {
               {role === 'student' && studentPoles.length <= 1 && (
                 <td style={{ fontSize: 13 }}>
                   {u.pole_code
-                    ? <span title={u.pole_name} style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{u.pole_code}</span>
+                    ? <span title={u.pole_name} style={{ background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4', borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{u.pole_code}</span>
                     : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                 </td>
               )}
@@ -386,10 +386,10 @@ export default function AdminUsersPage() {
                     const poleUsers = sUsers.filter(u => u.pole_code === p.code)
                     return (
                       <div key={p.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', minWidth: 320 }}>
-                        <div style={{ padding: '10px 14px', background: '#f5f3ff', borderBottom: '1px solid #ddd6fe', display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <i className="fas fa-sitemap" style={{ color: '#7c3aed', fontSize: 13 }} />
-                          <span style={{ fontWeight: 700, fontSize: 13, color: '#7c3aed' }}>{p.name}</span>
-                          <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#7c3aed', background: '#ede9fe', padding: '2px 8px', borderRadius: 20 }}>{poleUsers.length}</span>
+                        <div style={{ padding: '10px 14px', background: '#f0fdfa', borderBottom: '1px solid #99f6e4', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <i className="fas fa-sitemap" style={{ color: '#0d9488', fontSize: 13 }} />
+                          <span style={{ fontWeight: 700, fontSize: 13, color: '#0d9488' }}>{p.name}</span>
+                          <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#0d9488', background: '#ccfbf1', padding: '2px 8px', borderRadius: 20 }}>{poleUsers.length}</span>
                         </div>
                         <div className="table-responsive">
                           <table>

@@ -167,10 +167,10 @@ export default function ProfessorStudentsPage() {
             const poleStudents = filtered.filter(s => s.pole_code === p.code)
             return (
               <div key={p.code} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden', minWidth: 320 }}>
-                <div style={{ padding: '10px 16px', background: '#f5f3ff', borderBottom: '1px solid #ddd6fe', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <i className="fas fa-sitemap" style={{ color: '#7c3aed', fontSize: 13 }} />
-                  <span style={{ fontWeight: 700, fontSize: 13, color: '#7c3aed' }}>{p.name}</span>
-                  <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#7c3aed', background: '#ede9fe', padding: '2px 8px', borderRadius: 20 }}>{poleStudents.length}</span>
+                <div style={{ padding: '10px 16px', background: '#f0fdfa', borderBottom: '1px solid #99f6e4', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="fas fa-sitemap" style={{ color: '#0d9488', fontSize: 13 }} />
+                  <span style={{ fontWeight: 700, fontSize: 13, color: '#0d9488' }}>{p.name}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#0d9488', background: '#ccfbf1', padding: '2px 8px', borderRadius: 20 }}>{poleStudents.length}</span>
                 </div>
                 {poleStudents.length === 0 ? (
                   <p style={{ padding: 16, fontSize: 13, color: '#94a3b8', margin: 0 }}>Aucun étudiant</p>
@@ -220,7 +220,7 @@ function StudentsTable({ students, showPoleColumn }: { students: Student[]; show
                 {showPoleColumn && (
                   <td style={{ padding: '12px 16px' }}>
                     {s.pole_code
-                      ? <span style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{s.pole_code}</span>
+                      ? <span style={{ background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4', borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{s.pole_code}</span>
                       : <span style={{ color: '#94a3b8', fontSize: 13 }}>—</span>}
                   </td>
                 )}

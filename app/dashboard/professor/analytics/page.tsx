@@ -101,12 +101,12 @@ export default function ProfessorAnalyticsPage() {
           {data.ratios && (
             <div style={{ marginBottom: 24 }}>
               <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 7 }}>
-                <i className="fas fa-scale-balanced" style={{ color: '#7c3aed' }} />Ratios
+                <i className="fas fa-scale-balanced" style={{ color: '#0d9488' }} />Ratios
               </h3>
               <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
                 {[
                   {
-                    icon: 'fa-user-shield', color: '#7c3aed', bg: '#ede9fe',
+                    icon: 'fa-user-shield', color: '#0d9488', bg: '#ccfbf1',
                     label: 'Étudiants / surveillant',
                     value: data.ratios.students_per_proctor.avg != null ? data.ratios.students_per_proctor.avg : '—',
                     caption: `${data.ratios.students_per_proctor.total_assignments} affectation(s) — ${data.ratios.students_per_proctor.distinct_proctors} surveillant(s)`,

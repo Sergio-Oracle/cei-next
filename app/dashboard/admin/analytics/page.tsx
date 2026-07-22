@@ -206,12 +206,12 @@ export default function AdminAnalyticsPage() {
           {exams.ratios && (
             <div style={{ marginBottom: 24 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
-                <i className="fas fa-scale-balanced" style={{ marginRight: 6, color: '#7c3aed' }} />Ratios
+                <i className="fas fa-scale-balanced" style={{ marginRight: 6, color: '#0d9488' }} />Ratios
               </p>
               <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
                 {[
                   {
-                    icon: 'fa-user-shield', color: '#7c3aed', bg: '#ede9fe',
+                    icon: 'fa-user-shield', color: '#0d9488', bg: '#ccfbf1',
                     label: 'Étudiants / surveillant',
                     value: exams.ratios.students_per_proctor.avg != null ? exams.ratios.students_per_proctor.avg : '—',
                     caption: `${exams.ratios.students_per_proctor.total_assignments} affectation(s) — ${exams.ratios.students_per_proctor.distinct_proctors} surveillant(s)`,
