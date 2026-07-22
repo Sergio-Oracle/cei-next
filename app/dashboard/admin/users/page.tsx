@@ -31,6 +31,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
   const [activeFilter, setActiveFilter] = useState<string>('') // role | 'no_email'
+  const [studentPoleFilter, setStudentPoleFilter] = useState('') // Retour : regroupement des étudiants par Pôle
   const [deleting, setDeleting]   = useState<number | null>(null)
 
   /* Modal créer / modifier */
@@ -293,10 +294,20 @@ export default function AdminUsersPage() {
       ) : (
         sections.map(({ role, users: sUsers }) => {
           const m = ROLE_META[role] || ROLE_META.student
+
+          // Retour : "je veux que tu les affiches par Pôles" — regroupement/
+          // filtre par Pôle spécifiquement pour la section Étudiants.
+          const studentPoles = role === 'student'
+            ? Array.from(new Map(sUsers.filter(u => u.pole_code).map(u => [u.pole_code, { code: u.pole_code!, name: u.pole_name || u.pole_code! }])).values())
+            : []
+          const sUsersDisplayed = role === 'student' && studentPoleFilter
+            ? sUsers.filter(u => u.pole_code === studentPoleFilter)
+            : sUsers
+
           return (
             <div key={role} className="card" style={{ marginBottom: 20 }}>
               {/* Section header */}
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: m.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <i className={`fas ${m.icon}`} style={{ color: m.color, fontSize: 16 }} />
                 </div>
@@ -304,6 +315,20 @@ export default function AdminUsersPage() {
                   {m.plural}
                   <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 600, color: m.color, background: m.bg, padding: '2px 8px', borderRadius: 20 }}>{sUsers.length}</span>
                 </h3>
+                {role === 'student' && studentPoles.length > 1 && (
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginLeft: 'auto' }}>
+                    <button onClick={() => setStudentPoleFilter('')}
+                      style={{ padding: '5px 12px', borderRadius: 99, border: `1.5px solid ${!studentPoleFilter ? '#3b82f6' : 'var(--border)'}`, background: !studentPoleFilter ? '#dbeafe' : 'var(--surface)', color: !studentPoleFilter ? '#1d4ed8' : 'var(--text-muted)', fontWeight: !studentPoleFilter ? 700 : 500, fontSize: 12, cursor: 'pointer' }}>
+                      Tous
+                    </button>
+                    {studentPoles.map(p => (
+                      <button key={p.code} onClick={() => setStudentPoleFilter(studentPoleFilter === p.code ? '' : p.code)}
+                        style={{ padding: '5px 12px', borderRadius: 99, border: `1.5px solid ${studentPoleFilter === p.code ? '#3b82f6' : 'var(--border)'}`, background: studentPoleFilter === p.code ? '#dbeafe' : 'var(--surface)', color: studentPoleFilter === p.code ? '#1d4ed8' : 'var(--text-muted)', fontWeight: studentPoleFilter === p.code ? 700 : 500, fontSize: 12, cursor: 'pointer' }}>
+                        {p.name} ({sUsers.filter(u => u.pole_code === p.code).length})
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Table */}
@@ -313,13 +338,14 @@ export default function AdminUsersPage() {
                     <tr>
                       <th>NOM</th>
                       <th>EMAIL</th>
+                      {role === 'student' && <th>PÔLE</th>}
                       {role === 'student' && <th>NIVEAU</th>}
                       <th>STATUT</th>
                       <th>ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sUsers.map(u => (
+                    {sUsersDisplayed.map(u => (
                       <tr key={u.id}>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -333,6 +359,13 @@ export default function AdminUsersPage() {
                           </div>
                         </td>
                         <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{u.email || '—'}</td>
+                        {role === 'student' && (
+                          <td style={{ fontSize: 13 }}>
+                            {u.pole_code
+                              ? <span title={u.pole_name} style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{u.pole_code}</span>
+                              : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                          </td>
+                        )}
                         {role === 'student' && (
                           <td style={{ fontSize: 13 }}>
                             {u.formation_code ? (

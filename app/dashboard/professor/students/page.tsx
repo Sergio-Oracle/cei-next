@@ -9,6 +9,9 @@ interface ECInfo {
   ec_name: string
   ue_code: string
   student_count: number
+  pole_id?: number | null
+  pole_code?: string | null
+  pole_name?: string | null
 }
 
 interface StudentEC { ec_code: string }
@@ -21,6 +24,9 @@ interface Student {
   formation_name?: string
   niveau?: string
   is_active?: boolean
+  pole_id?: number | null
+  pole_code?: string | null
+  pole_name?: string | null
 }
 
 interface MyStudentsResponse {
@@ -37,6 +43,7 @@ export default function ProfessorStudentsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
   const [filterEc, setFilterEc] = useState('')
+  const [filterPole, setFilterPole] = useState('')
 
   useEffect(() => { load() }, [])
 
@@ -51,7 +58,17 @@ export default function ProfessorStudentsPage() {
     finally { setLoading(false) }
   }
 
+  // Retour : "je veux que tu les affiches par Pôles" — regroupement/filtre
+  // par Pôle en plus du filtre EC déjà existant, sans jamais élargir
+  // l'ensemble de base déjà correctement scopé au professeur côté backend
+  // (ECAssignment → EC → UE → StudentUEEnrollment).
+  const poles = Array.from(
+    new Map(ecs.filter(e => e.pole_code).map(e => [e.pole_code, { code: e.pole_code!, name: e.pole_name || e.pole_code! }])).values()
+  )
+  const visibleEcs = filterPole ? ecs.filter(e => e.pole_code === filterPole) : ecs
+
   const filtered = students.filter(s => {
+    if (filterPole && s.pole_code !== filterPole) return false
     if (filterEc && !s.ecs.some(e => e.ec_code === filterEc)) return false
     if (!search) return true
     const q = search.toLowerCase()
@@ -70,10 +87,26 @@ export default function ProfessorStudentsPage() {
         </p>
       </div>
 
+      {/* Onglets Pôle — regroupe/filtre l'ensemble déjà scopé au professeur */}
+      {!loading && poles.length > 1 && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+          <button onClick={() => { setFilterPole(''); setFilterEc('') }}
+            style={{ padding: '7px 16px', borderRadius: 99, border: `1.5px solid ${!filterPole ? '#2563eb' : '#e2e8f0'}`, background: !filterPole ? '#eff6ff' : 'white', color: !filterPole ? '#1d4ed8' : '#475569', fontWeight: !filterPole ? 700 : 500, fontSize: 13, cursor: 'pointer' }}>
+            Tous les pôles ({students.length})
+          </button>
+          {poles.map(p => (
+            <button key={p.code} onClick={() => { setFilterPole(filterPole === p.code ? '' : p.code); setFilterEc('') }}
+              style={{ padding: '7px 16px', borderRadius: 99, border: `1.5px solid ${filterPole === p.code ? '#2563eb' : '#e2e8f0'}`, background: filterPole === p.code ? '#eff6ff' : 'white', color: filterPole === p.code ? '#1d4ed8' : '#475569', fontWeight: filterPole === p.code ? 700 : 500, fontSize: 13, cursor: 'pointer' }}>
+              {p.name} ({students.filter(s => s.pole_code === p.code).length})
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Cartes EC */}
       {!loading && ecs.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
-          {ecs.map(ec => (
+          {visibleEcs.map(ec => (
             <div key={ec.ec_code}
               onClick={() => setFilterEc(filterEc === ec.ec_code ? '' : ec.ec_code)}
               style={{ background: 'white', border: `2px solid ${filterEc === ec.ec_code ? '#2563eb' : '#e2e8f0'}`, borderRadius: 10, padding: 16, cursor: 'pointer', transition: 'border-color .15s' }}>
@@ -81,6 +114,7 @@ export default function ProfessorStudentsPage() {
                 {ec.ec_code} <span style={{ fontWeight: 400, color: '#64748b', fontSize: 13 }}>— {ec.ec_name}</span>
               </div>
               <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                {ec.pole_name && <><i className="fas fa-sitemap" style={{ marginRight: 4, color: '#94a3b8' }} />{ec.pole_name}&nbsp;·&nbsp;</>}
                 <i className="fas fa-layer-group" style={{ marginRight: 4, color: '#94a3b8' }} />UE {ec.ue_code}
                 &nbsp;·&nbsp;
                 <i className="fas fa-users" style={{ marginRight: 4, color: '#94a3b8' }} />{ec.student_count} étudiant(s)
@@ -129,7 +163,7 @@ export default function ProfessorStudentsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc' }}>
-                {['Étudiant','Email','ECs','Formation','Niveau'].map(h => (
+                {['Étudiant','Email','Pôle','ECs','Formation','Niveau'].map(h => (
                   <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, borderBottom: '1px solid #e2e8f0' }}>{h}</th>
                 ))}
               </tr>
@@ -150,6 +184,11 @@ export default function ProfessorStudentsPage() {
                       </div>
                     </td>
                     <td style={{ padding: '12px 16px', color: '#64748b', fontSize: 13 }}>{s.email}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      {s.pole_code
+                        ? <span style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{s.pole_code}</span>
+                        : <span style={{ color: '#94a3b8', fontSize: 13 }}>—</span>}
+                    </td>
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {s.ecs.map(e => (
