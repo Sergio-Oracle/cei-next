@@ -539,10 +539,15 @@ export default function ProfessorCreateSubjectPage() {
                   onFocus={e=>e.target.style.borderColor='var(--primary)'} onBlur={e=>e.target.style.borderColor='var(--border)'} />
               </div>
 
-              {/* Types de questions */}
+              {/* Types de questions — cochez UNIQUEMENT les types réellement présents dans
+                  le document : ça conditionne à la fois l'étiquetage automatique [QCM]/[VF]/
+                  [OUVERT] du contenu (annotate_markers, pur Python) et le format du barème
+                  que l'IA doit produire (_build_rubric_prompt) — un type non coché ne sera
+                  jamais détecté même s'il est bien présent dans le fichier. */}
               <div style={{ marginBottom:22 }}>
-                <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:600, marginBottom:10 }}>
-                  <i className="fas fa-list-check" style={{ color:'var(--primary)', width:14 }} />Types de questions
+                <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:600, marginBottom:10 }}
+                  title="Détermine comment le document est analysé et noté">
+                  <i className="fas fa-list-check" style={{ color:'var(--primary)', width:14 }} />Types de questions présents dans le document
                 </label>
                 <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
                   {([['qcm','QCM','fa-circle-question','#1d4ed8','#dbeafe','#bfdbfe'],['open','Questions ouvertes','fa-pen-line','#0369a1','#e0f2fe','#7dd3fc'],['vf','Vrai / Faux','fa-toggle-on','#15803d','#dcfce7','#86efac']] as const).map(([k,label,icon,color,bg,border])=>(
@@ -553,6 +558,10 @@ export default function ProfessorCreateSubjectPage() {
                     </button>
                   ))}
                 </div>
+                <p style={{ margin:'8px 0 0', fontSize:11.5, color:'var(--text-muted)' }}>
+                  <i className="fas fa-circle-info" style={{ marginRight:4 }} />
+                  Sert à reconnaître chaque question dans votre fichier (un type non coché ne sera pas détecté même s'il est présent) et à donner à l'IA le bon format de barème pour la noter correctement.
+                </p>
               </div>
 
               {/* EC filters — cascade Pôle → Formation → Niveau → EC */}
