@@ -199,7 +199,6 @@ export default function ExamPage() {
   const [lastSaved,    setLastSaved]    = useState<Date|null>(null)
   const [submitting,   setSubmitting]   = useState(false)
   const [showFinalSig, setShowFinalSig] = useState(false)
-  const [subjectOpen,  setSubjectOpen]  = useState(false)
   const [msgText,      setMsgText]      = useState('')
   const [msgSent,      setMsgSent]      = useState<{text:string;time:string}[]>([])
   const [camOn,        setCamOn]        = useState(false)
@@ -1152,7 +1151,6 @@ export default function ExamPage() {
     const perPage      = exam.questions_per_page && exam.questions_per_page>0 ? exam.questions_per_page : Infinity
     const p1Pages       = serverPages?.p1_pages ?? paginateBlocks(p1Blocks, perPage)
     const p2Pages       = serverPages?.p2_pages ?? paginateBlocks(p2Items, perPage)
-    const subjectRaw   = exam.subject_content?(typeof exam.subject_content==='object'?exam.subject_content.content:exam.subject_content as string):null
 
     const structAnswered = structuredQs.filter(q=>(answers[q.id.toString()]??'').trim()!=='').length
     const parsedAnswered = allQBlocks.filter(b=>{
@@ -1284,18 +1282,6 @@ export default function ExamPage() {
           </div>
 
           <div style={{flex:1,padding:24,maxWidth:900,width:'100%',margin:'0 auto'}}>
-            {/* Sujet complet */}
-            {subjectRaw&&(
-              <div style={{background:'white',borderRadius:12,marginBottom:24,border:'1px solid #e2e8f0',overflow:'hidden'}}>
-                <div onClick={()=>setSubjectOpen(o=>!o)} style={{display:'flex',alignItems:'center',gap:10,padding:'14px 20px',cursor:'pointer',userSelect:'none',borderBottom:subjectOpen?'1px solid #e2e8f0':'none'}}>
-                  <i className="fas fa-file-alt" style={{color:'#2563eb',fontSize:16}}/>
-                  <h2 style={{margin:0,fontSize:15,fontWeight:700,color:'#0f172a',flex:1}}>Consulter le sujet complet</h2>
-                  <i className={`fas fa-chevron-${subjectOpen?'up':'down'}`} style={{color:'#94a3b8',fontSize:13}}/>
-                </div>
-                {subjectOpen&&<div style={{padding:24,fontSize:14,lineHeight:1.8,color:'#374151',whiteSpace:'pre-wrap',maxHeight:450,overflowY:'auto'}}>{subjectRaw}</div>}
-              </div>
-            )}
-
             {/* Zone réponses */}
             <div style={{background:'white',borderRadius:12,border:'1px solid #e2e8f0',padding:24,marginBottom:24}}>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
