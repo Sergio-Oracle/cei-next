@@ -83,6 +83,8 @@ export default function ProfessorNotificationsPage() {
   const [loading,        setLoading]        = useState(true)
   const [filterSeverity, setFilterSeverity] = useState<'all' | 'high' | 'medium' | 'info'>('all')
   const [lightboxSrc,    setLightboxSrc]    = useState<string | null>(null)
+  const [dismissing,     setDismissing]     = useState<string | null>(null)
+  const [clearingAll,    setClearingAll]    = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -93,6 +95,27 @@ export default function ProfessorNotificationsPage() {
       setIncidents(res.incidents ?? [])
     } catch { setIncidents([]) }
     finally { setLoading(false) }
+  }
+
+  async function dismiss(id: number | string) {
+    setDismissing(String(id))
+    try {
+      await api.post('/api/professor/recent_incidents/dismiss', { item_id: id })
+      setIncidents(prev => prev.filter(i => i.id !== id))
+    } catch { /* silencieux — l'item reste visible, l'utilisateur peut réessayer */ }
+    finally { setDismissing(null) }
+  }
+
+  async function dismissAll() {
+    if (visible.length === 0) return
+    if (!confirm(`Marquer ${visible.length} incident(s) comme lu(s) ? Ils ne réapparaîtront plus.`)) return
+    setClearingAll(true)
+    try {
+      await api.post('/api/professor/recent_incidents/dismiss', { item_ids: visible.map(i => i.id) })
+      const dismissedIds = new Set(visible.map(i => i.id))
+      setIncidents(prev => prev.filter(i => !dismissedIds.has(i.id)))
+    } catch { /* silencieux */ }
+    finally { setClearingAll(false) }
   }
 
   const visible = incidents.filter(inc => filterSeverity === 'all' || inc.severity === filterSeverity)
@@ -114,9 +137,18 @@ export default function ProfessorNotificationsPage() {
           </h1>
           <p style={{ color: '#64748b', margin: 0, fontSize: 14 }}>Incidents détectés lors de vos examens dans les dernières 24h</p>
         </div>
-        <button onClick={load} style={{ padding: '9px 16px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
-          <i className="fas fa-rotate-right" style={{ marginRight: 6 }} />Actualiser
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {visible.length > 0 && (
+            <button onClick={dismissAll} disabled={clearingAll}
+              style={{ padding: '9px 16px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 600, cursor: clearingAll ? 'not-allowed' : 'pointer', fontSize: 13 }}>
+              {clearingAll ? <i className="fas fa-spinner fa-spin" style={{ marginRight: 6 }} /> : <i className="fas fa-check-double" style={{ marginRight: 6 }} />}
+              Tout marquer comme lu
+            </button>
+          )}
+          <button onClick={load} style={{ padding: '9px 16px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
+            <i className="fas fa-rotate-right" style={{ marginRight: 6 }} />Actualiser
+          </button>
+        </div>
       </div>
 
       {/* Cartes stats */}
@@ -192,7 +224,7 @@ export default function ProfessorNotificationsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f8fafc' }}>
-                  {['Quand', 'Examen', 'Étudiant', 'Type d\'incident', ...(hasSnapshots ? ['Capture'] : []), 'Sévérité'].map(h => (
+                  {['Quand', 'Examen', 'Étudiant', 'Type d\'incident', ...(hasSnapshots ? ['Capture'] : []), 'Sévérité', ''].map(h => (
                     <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
@@ -264,6 +296,17 @@ export default function ProfessorNotificationsPage() {
                           <i className={`fas ${sev.icon}`} style={{ fontSize: 11 }} />
                           {sev.label}
                         </span>
+                      </td>
+
+                      {/* Supprimer */}
+                      <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                        <button onClick={() => dismiss(inc.id)} disabled={dismissing === String(inc.id)}
+                          title="Supprimer cette notification"
+                          style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: dismissing === String(inc.id) ? 'not-allowed' : 'pointer', padding: 6, borderRadius: 6, fontSize: 13 }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ef4444'; (e.currentTarget as HTMLElement).style.background = '#fef2f2' }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#94a3b8'; (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+                          <i className={`fas ${dismissing === String(inc.id) ? 'fa-spinner fa-spin' : 'fa-times'}`} />
+                        </button>
                       </td>
                     </tr>
                   )
