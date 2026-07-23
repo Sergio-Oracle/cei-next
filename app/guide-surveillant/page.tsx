@@ -88,12 +88,13 @@ export default function GuideSurveillant() {
           <div className="section-body">
             <p style={{color:'#475569',marginBottom:20}}>Le surveillant est un acteur clé de l&apos;intégrité des examens en ligne. Contrairement à l&apos;enseignant qui gère l&apos;ensemble de la promotion, le surveillant se concentre sur un <strong>groupe réduit d&apos;étudiants qui lui est assigné</strong>.</p>
             <div className="feature-grid">
-              <div className="feature-item"><i className="fas fa-users-cog" /><h5>Assignation par l&apos;enseignant</h5><p>C&apos;est l&apos;enseignant (ou l&apos;admin) qui vous affecte à un examen et vous attribue un groupe d&apos;étudiants à surveiller.</p></div>
-              <div className="feature-item"><i className="fas fa-filter" /><h5>Vue filtrée</h5><p>Vous ne voyez que les étudiants de votre groupe — pas l&apos;ensemble de la promotion. Cela facilite une surveillance attentive.</p></div>
-              <div className="feature-item"><i className="fas fa-bolt" /><h5>Action directe</h5><p>Vous pouvez avertir, envoyer un message ou bannir immédiatement un étudiant de votre groupe. L&apos;enseignant est notifié de vos actions.</p></div>
+              <div className="feature-item"><i className="fas fa-user-shield" /><h5>Affectation via un Groupe Surveillants</h5><p>Un enseignant (ou l&apos;admin) vous ajoute à un <strong>Groupe Surveillants</strong> rattaché à un ou plusieurs EC. Dès qu&apos;un examen est créé pour ces EC, vous y êtes <strong>automatiquement affecté</strong> — aucune action de votre part n&apos;est nécessaire.</p></div>
+              <div className="feature-item"><i className="fas fa-bell" /><h5>Notifications automatiques</h5><p>Vous recevez une notification (in-app et par email) à chaque étape : ajout au groupe, nouvel EC couvert par votre groupe, et affectation à un examen concret.</p></div>
+              <div className="feature-item"><i className="fas fa-filter" /><h5>Vue filtrée</h5><p>Vous ne voyez que les étudiants qui vous sont attribués — pas l&apos;ensemble de la promotion. Cela facilite une surveillance attentive.</p></div>
+              <div className="feature-item"><i className="fas fa-bolt" /><h5>Action directe</h5><p>Vous pouvez avertir, envoyer un message ou bannir immédiatement un étudiant qui vous est attribué. L&apos;enseignant est notifié de vos actions.</p></div>
               <div className="feature-item"><i className="fas fa-phone" /><h5>Appel privé</h5><p>Vous pouvez ouvrir un appel audio/vidéo privé avec l&apos;un de vos étudiants à tout moment pendant l&apos;examen.</p></div>
             </div>
-            <div className="tip"><i className="fas fa-lightbulb" /> Un enseignant peut aussi se désigner lui-même comme surveillant d&apos;un groupe dans son propre examen si sa disponibilité le lui permet.</div>
+            <div className="tip"><i className="fas fa-lightbulb" /> Un enseignant peut aussi se désigner lui-même comme surveillant en s&apos;ajoutant à un groupe.</div>
           </div>
         </div>
 
@@ -103,7 +104,7 @@ export default function GuideSurveillant() {
           <div className="section-body">
             <div className="steps">
               <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Recevoir vos identifiants</h4><p>Un administrateur crée votre compte avec le rôle <strong>Surveillant</strong>. Vous recevez un email contenant votre adresse email et votre mot de passe temporaire.</p></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Se connecter sur la plateforme</h4><p>Rendez-vous sur <strong>dev-cei.ddns.net</strong> (ou l&apos;adresse communiquée par votre établissement). Entrez votre email et votre mot de passe, puis cliquez sur <strong>Connexion</strong>.</p></div></div>
+              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Se connecter sur la plateforme</h4><p>Rendez-vous sur l&apos;adresse communiquée par votre établissement. Entrez votre email et votre mot de passe, puis cliquez sur <strong>Connexion</strong>.</p></div></div>
               <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Interface dédiée au surveillant</h4><p>Après connexion, vous accédez directement à votre <strong>Tableau de Bord Surveillant</strong>. Il n&apos;y a qu&apos;un seul onglet disponible : <em>Mes Examens</em>. Vous ne pouvez pas accéder aux autres fonctionnalités de la plateforme (correction, notes, etc.).</p><div className="info"><i className="fas fa-info-circle" /> Votre interface est intentionnellement épurée. Seuls les outils de surveillance vous sont accessibles.</div></div></div>
             </div>
           </div>

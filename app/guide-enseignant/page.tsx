@@ -73,7 +73,7 @@ export default function GuideEnseignant() {
             <li><a href="#enregistrements"><i className="fas fa-film" /> 6. Accéder aux enregistrements</a></li>
             <li><a href="#appel-prive"><i className="fas fa-phone" /> 6b. Appel privé étudiant</a></li>
             <li><a href="#notes"><i className="fas fa-star" /> 7. Publier les notes</a></li>
-            <li><a href="#surveillants"><i className="fas fa-eye" /> 8. Gérer les Surveillants</a></li>
+            <li><a href="#surveillants"><i className="fas fa-user-shield" /> 8. Groupes Surveillants — affectation automatique</a></li>
           </ul>
         </div>
 
@@ -131,10 +131,10 @@ export default function GuideEnseignant() {
                   <p>Dans <strong>Examens en Ligne</strong>, cliquez sur <strong>+ Créer un Examen</strong>. Remplissez le formulaire :</p>
                   <ul>
                     <li>Titre de l&apos;examen, sujet associé</li>
-                    <li>Date/heure de début et de fin</li>
-                    <li>Durée (en minutes)</li>
+                    <li>Date/heure de début et de fin — la <strong>durée est calculée automatiquement</strong> à partir de ces deux dates</li>
                     <li>Instructions optionnelles</li>
                   </ul>
+                  <div className="info"><i className="fas fa-info-circle" /> Si l&apos;EC du sujet a un <a href="#surveillants" style={{color:'#2563eb',fontWeight:600}}>Groupe Surveillants</a> rattaché, ses membres sont automatiquement affectés à cet examen dès sa création — aucune sélection manuelle de surveillants n&apos;est nécessaire ici.</div>
                   <img className="guide-img" src="/screenshots/capture-5.jpg" alt="Formulaire de création d'un examen en ligne avec paramètres de sécurité" />
                 </div>
               </div>
@@ -175,6 +175,13 @@ export default function GuideEnseignant() {
               </div>
               <div className="step">
                 <div className="step-num">2</div>
+                <div className="step-content">
+                  <h4>Reprogrammer sans recréer l&apos;examen</h4>
+                  <p>Tant que l&apos;examen est en <strong>Brouillon</strong> ou <strong>Planifié</strong>, le bouton <strong>Reprogrammer</strong> permet de changer directement la nouvelle date/heure de début et de fin — la durée est recalculée automatiquement, pas besoin de recréer l&apos;examen.</p>
+                </div>
+              </div>
+              <div className="step">
+                <div className="step-num">3</div>
                 <div className="step-content">
                   <h4>Ouvrir le Dashboard de Surveillance</h4>
                   <p>Cliquez sur <strong>Surveiller</strong> sur la carte de l&apos;examen. Le dashboard s&apos;ouvre dans un nouvel onglet avec les flux vidéo en direct de tous les étudiants.</p>
@@ -234,8 +241,9 @@ export default function GuideEnseignant() {
               <div className="step">
                 <div className="step-num">3</div>
                 <div className="step-content">
-                  <h4>Réviser et valider</h4>
-                  <p>Vérifiez les notes proposées par l&apos;IA, ajustez si nécessaire, puis publiez les résultats. Une notification email est envoyée aux étudiants.</p>
+                  <h4>Réviser et publier les résultats</h4>
+                  <p>Vérifiez les notes proposées par l&apos;IA, ajustez si nécessaire. <strong>Tant que vous n&apos;avez pas cliqué sur &quot;Publier les notes&quot;</strong> (sur la page de détail de l&apos;examen), les étudiants ne voient aucune note ni feedback — même si la copie est déjà corrigée. Vous, en revanche, voyez toujours les notes.</p>
+                  <div className="info"><i className="fas fa-info-circle" /> La publication n&apos;envoie pas d&apos;email automatique — les étudiants voient simplement leur note apparaître dans &quot;Mes Copies&quot; dès que vous publiez, ou &quot;En attente de publication&quot; avant.</div>
                 </div>
               </div>
             </div>
@@ -339,47 +347,53 @@ export default function GuideEnseignant() {
         {/* 8. Surveillants */}
         <div className="section" id="surveillants">
           <div className="section-header">
-            <div className="section-icon" style={{background:'#d97706'}}><i className="fas fa-eye" /></div>
-            <h2>8. Gérer les Surveillants</h2>
+            <div className="section-icon" style={{background:'#d97706'}}><i className="fas fa-user-shield" /></div>
+            <h2>8. Groupes Surveillants — affectation 100% automatique</h2>
           </div>
           <div className="section-body">
-            <p style={{color:'#475569',marginBottom:20}}>Pour les examens avec de nombreux étudiants, vous pouvez déléguer la surveillance à des <strong>surveillants dédiés</strong>. Chacun reçoit un groupe d&apos;étudiants à surveiller.</p>
+            <p style={{color:'#475569',marginBottom:20}}>La surveillance ne se gère plus examen par examen : vous créez des <strong>Groupes Surveillants</strong>, les rattachez aux EC dont vous avez la charge, et tout le reste — affectation aux examens, répartition des étudiants — se fait automatiquement.</p>
             <div className="steps">
               <div className="step">
                 <div className="step-num">1</div>
                 <div className="step-content">
-                  <h4>Ouvrir la gestion des surveillants</h4>
-                  <p>Sur la carte d&apos;un examen (statut planifié ou en cours), cliquez sur le bouton <strong style={{color:'#d97706'}}><i className="fas fa-eye" /> Surveillants</strong>. Une modale s&apos;ouvre avec la liste des surveillants déjà assignés et le nombre d&apos;étudiants de chacun.</p>
+                  <h4>Créer un groupe</h4>
+                  <p>Dans le menu, allez dans <strong>Groupes Surveillants</strong>. Cliquez sur <strong>+ Nouveau Groupe</strong>, donnez-lui un nom (ex. &quot;Surveillants L3 Réseaux&quot;). Vous ne voyez et ne gérez que les groupes que vous créez vous-même.</p>
                 </div>
               </div>
               <div className="step">
                 <div className="step-num">2</div>
                 <div className="step-content">
-                  <h4>Ajouter un surveillant</h4>
-                  <p>Dans le menu déroulant, sélectionnez un utilisateur de rôle <strong>Surveillant</strong> (ou un autre enseignant) puis cliquez sur <strong>Ajouter</strong>. Un surveillant déjà ajouté n&apos;apparaît pas dans la liste de sélection.</p>
-                  <div className="tip"><i className="fas fa-lightbulb" /> Vous pouvez vous ajouter vous-même comme surveillant d&apos;un groupe si vous souhaitez superviser une partie des étudiants tout en gardant la vue globale de l&apos;enseignant.</div>
+                  <h4>Ajouter des surveillants au groupe</h4>
+                  <p>Sélectionnez un ou plusieurs utilisateurs de rôle <strong>Surveillant</strong> et cliquez sur <strong>Ajouter</strong>. Chacun reçoit une notification (in-app et par email) l&apos;informant de son ajout au groupe.</p>
                 </div>
               </div>
               <div className="step">
                 <div className="step-num">3</div>
                 <div className="step-content">
-                  <h4>Répartir automatiquement les étudiants</h4>
-                  <p>Une fois vos surveillants ajoutés, cliquez sur <strong>&quot;Répartir automatiquement&quot;</strong>. Le système distribue les étudiants en <strong>ordre alphabétique</strong> par groupe de taille égale (round-robin). Un résumé affiche combien d&apos;étudiants chaque surveillant reçoit.</p>
-                  <div className="info"><i className="fas fa-info-circle" /> La répartition peut être relancée à tout moment — les affectations existantes sont remplacées. Cela permet de rééquilibrer si des étudiants abandonnent l&apos;examen.</div>
+                  <h4>Rattacher le groupe à un ou plusieurs EC</h4>
+                  <p>Toujours depuis la page du groupe, rattachez-le aux <strong>EC dont vous avez la charge</strong> (vous ne pouvez rattacher que vos propres EC). Les membres du groupe reçoivent une notification pour chaque nouvel EC couvert.</p>
                 </div>
               </div>
               <div className="step">
                 <div className="step-num">4</div>
                 <div className="step-content">
-                  <h4>Retirer un surveillant</h4>
-                  <p>Cliquez sur le bouton <strong style={{color:'#ef4444'}}>Retirer</strong> à côté du nom du surveillant. Ses affectations d&apos;étudiants sont automatiquement supprimées. Ces étudiants deviennent &quot;non affectés&quot; jusqu&apos;à la prochaine répartition.</p>
+                  <h4>Affectation et répartition entièrement automatiques</h4>
+                  <p>Dès qu&apos;un examen est créé pour un EC couvert par un groupe, <strong>tous les membres du groupe sont automatiquement affectés</strong> comme surveillants de cet examen, et les étudiants inscrits sont <strong>répartis automatiquement</strong> entre eux (round-robin alphabétique). Aucune action manuelle n&apos;est requise.</p>
+                  <div className="info"><i className="fas fa-info-circle" /> Ajouter ou retirer un membre du groupe, ou rattacher/détacher un EC, se propage immédiatement à tous les examens déjà planifiés de cet EC (pas seulement aux futurs) — les surveillants et la répartition des étudiants sont recalculés à la volée. Un examen déjà <strong>en cours</strong> n&apos;est pas touché, pour ne pas perturber une surveillance active.</div>
                 </div>
               </div>
               <div className="step">
                 <div className="step-num">5</div>
                 <div className="step-content">
+                  <h4>Un renfort ponctuel = un ajout au groupe</h4>
+                  <p>Besoin d&apos;un surveillant supplémentaire pour un examen particulier ? Ajoutez-le simplement au groupe correspondant — il sera affecté automatiquement à cet examen (et à tous ceux du même EC). Il n&apos;existe plus de gestion &quot;par examen&quot; isolée du groupe.</p>
+                </div>
+              </div>
+              <div className="step">
+                <div className="step-num">6</div>
+                <div className="step-content">
                   <h4>Recevoir les notifications de bannissement</h4>
-                  <p>Quand un surveillant banni un étudiant, vous recevez automatiquement une notification dans votre dashboard : le nom du surveillant, le nom de l&apos;étudiant et le motif saisi. Vous restez informé de toutes les actions disciplinaires.</p>
+                  <p>Quand un surveillant bannit un étudiant, vous recevez automatiquement une notification dans votre dashboard : le nom du surveillant, le nom de l&apos;étudiant et le motif saisi. Vous restez informé de toutes les actions disciplinaires.</p>
                 </div>
               </div>
             </div>

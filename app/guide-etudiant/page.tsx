@@ -82,7 +82,7 @@ export default function GuideEtudiant() {
           <div className="section-header"><div className="section-icon"><i className="fas fa-sign-in-alt" /></div><h2>1. Se connecter à la plateforme</h2></div>
           <div className="section-body">
             <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Accéder à l&apos;application</h4><p>Rendez-vous sur <strong>dev-cei.ddns.net</strong> et cliquez sur <strong>Commencer Maintenant</strong>, ou allez directement sur <strong>dev-cei.ddns.net</strong>.</p></div></div>
+              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Accéder à l&apos;application</h4><p>Rendez-vous sur l&apos;adresse de la plateforme communiquée par votre établissement et cliquez sur <strong>Commencer Maintenant</strong>, ou accédez directement à la page de connexion.</p></div></div>
               <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Saisir vos identifiants</h4><p>Entrez votre <strong>adresse email institutionnelle</strong> et votre <strong>mot de passe</strong> fournis par l&apos;administration. Si vous n&apos;avez pas de compte, contactez votre administration.</p></div></div>
             </div>
             <div className="tip"><i className="fas fa-lightbulb" /> Votre session reste active pendant 30 jours. Déconnectez-vous toujours sur un ordinateur partagé.</div>
@@ -170,7 +170,7 @@ export default function GuideEtudiant() {
           <div className="section-header"><div className="section-icon"><i className="fas fa-star" /></div><h2>7. Consulter vos résultats</h2></div>
           <div className="section-body">
             <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Voir la note et le feedback</h4><p>Dans <strong>Mes Copies</strong>, cliquez sur une copie corrigée pour voir votre note, le feedback détaillé de l&apos;IA par question et les commentaires de l&apos;enseignant.</p></div></div>
+              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Voir la note et le feedback</h4><p>Dans <strong>Mes Copies</strong>, cliquez sur une copie corrigée pour voir votre note, le feedback détaillé de l&apos;IA par question et les commentaires de l&apos;enseignant.</p><div className="warn"><i className="fas fa-clock" /> Même une fois votre copie corrigée, la note reste masquée (affichage <strong>&quot;En attente de publication&quot;</strong>) tant que l&apos;enseignant n&apos;a pas explicitement cliqué sur &quot;Publier les notes&quot; — généralement après délibération. Aucune notification ne vous prévient : revenez consulter la page régulièrement.</div></div></div>
               <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Télécharger le relevé de notes</h4><p>Dans <strong>Relevés de Notes</strong>, téléchargez votre relevé semestriel officiel en PDF avec votre GPA, vos crédits obtenus et le détail de toutes les UEs.</p></div></div>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function GuideEtudiant() {
           <div className="section-body">
             <div className="steps">
               <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Contester une note</h4><p>Dans <strong>Réclamations</strong>, cliquez sur <strong>Nouvelle Réclamation</strong>. Sélectionnez la copie concernée et rédigez votre argumentation.</p></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Analyse IA de votre réclamation</h4><p>La plateforme analyse automatiquement vos arguments et les compare au barème. L&apos;enseignant prend la décision finale et vous êtes notifié par email.</p></div></div>
+              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Analyse IA de votre réclamation</h4><p>La plateforme analyse automatiquement vos arguments et les compare au barème. L&apos;enseignant prend la décision finale.</p><div className="warn"><i className="fas fa-info-circle" /> Aucune notification (email ou in-app) n&apos;est envoyée quand la décision est prise — revenez consulter la page <strong>Réclamations</strong> pour voir la réponse et le statut mis à jour.</div></div></div>
             </div>
             <div className="tip"><i className="fas fa-lightbulb" /> Soyez précis dans votre argumentation. Référencez les questions spécifiques et expliquez pourquoi vous pensez que votre réponse mérite plus de points.</div>
           </div>
