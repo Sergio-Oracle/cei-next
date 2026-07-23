@@ -138,7 +138,7 @@ export default function ProctorGroupsPage() {
             <i className="fas fa-user-shield" style={{ marginRight: 10, color: 'var(--primary)' }} />
             Groupes de Surveillants
           </h2>
-          <p>Regroupez des surveillants par EC — ils seront automatiquement affectés à chaque nouvel examen créé pour cet EC</p>
+          <p>Regroupez des surveillants par EC — ils sont automatiquement affectés à tout examen (nouveau ou déjà planifié) de cet EC, avec répartition des étudiants entre eux. Ajouter un surveillant en renfort le propage immédiatement à tous les examens planifiés de l'EC.</p>
         </div>
         <button className="btn btn-secondary" onClick={load}>
           <i className="fas fa-rotate" /> Actualiser

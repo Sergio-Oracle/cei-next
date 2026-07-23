@@ -144,10 +144,10 @@ export default function ProfessorProctorGroupsPage() {
             <i className="fas fa-user-shield" style={{ marginRight: 10, color: 'var(--primary)' }} />
             Groupes de Surveillants
           </h2>
-          <p>Regroupez des surveillants par EC — ils seront automatiquement affectés à chaque nouvel examen créé pour cet EC</p>
+          <p>Regroupez des surveillants par EC — ils sont automatiquement affectés à tout examen (nouveau ou déjà planifié) de cet EC, avec répartition des étudiants entre eux</p>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>
             <i className="fas fa-circle-info" style={{ marginRight: 4 }} />
-            Vous ne voyez que les groupes que vous créez, et vous ne pouvez les rattacher qu'à vos propres ECs.
+            Vous ne voyez que les groupes que vous créez, et vous ne pouvez les rattacher qu'à vos propres ECs. Ajouter un surveillant en renfort ici le propage immédiatement à tous les examens planifiés de l'EC.
           </p>
         </div>
         <button className="btn btn-secondary" onClick={load}>

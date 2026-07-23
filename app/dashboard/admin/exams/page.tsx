@@ -7,7 +7,6 @@ import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam } from '@/types'
 import ExamDetailModal from './ExamDetailModal'
 import ExamCopiesModal from './ExamCopiesModal'
-import ProctorsManageModal from './ProctorsManageModal'
 
 /* ── Helpers ───────────────────────────────────────────────────── */
 type ExamStatus = 'draft' | 'scheduled' | 'active' | 'closed'
@@ -58,7 +57,6 @@ export default function AdminExamsPage() {
   const [detailExam,  setDetailExam]  = useState<OnlineExam | null>(null)
   const [copiesExamId, setCopiesExamId] = useState<number | null>(null)
   const [copiesTitle,  setCopiesTitle]  = useState('')
-  const [proctorsExamId, setProctorsExamId] = useState<number | null>(null)
 
   /* Rallonger modal */
   const [extendId,   setExtendId]   = useState<number | null>(null)
@@ -287,14 +285,6 @@ export default function AdminExamsPage() {
                     </button>
                   )}
 
-                  {/* Surveillants (planifié ou actif) */}
-                  {(isScheduled || isActive) && (
-                    <button onClick={() => setProctorsExamId(exam.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#92400e', cursor: 'pointer' }}>
-                      <i className="fas fa-user-shield" />Surveillants
-                    </button>
-                  )}
-
                   {/* Activer (brouillon ou planifié) */}
                   {(isDraft || isScheduled) && (
                     <button onClick={() => activate(exam.id)} disabled={busy}
@@ -403,13 +393,6 @@ export default function AdminExamsPage() {
         />
       )}
 
-      {/* ── Modal Surveillants ── */}
-      {proctorsExamId !== null && (
-        <ProctorsManageModal
-          examId={proctorsExamId}
-          onClose={() => setProctorsExamId(null)}
-        />
-      )}
     </div>
   )
 }
