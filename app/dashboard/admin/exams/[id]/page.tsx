@@ -55,7 +55,7 @@ export default function AdminExamDetailPage() {
   const [importingGrades, setImportingGrades] = useState(false)
   const gradesFileRef = useRef<HTMLInputElement | null>(null)
   const [rescheduleModal, setRescheduleModal] = useState(false)
-  const [rescheduleForm, setRescheduleForm] = useState({ start_time: '', end_time: '', duration_minutes: 60 })
+  const [rescheduleForm, setRescheduleForm] = useState({ start_time: '', end_time: '' })
   const [rescheduling, setRescheduling] = useState(false)
 
   useEffect(() => { load() }, [id])
@@ -98,7 +98,8 @@ export default function AdminExamDetailPage() {
   }
 
   // Retour #6 — reprogrammation d'un examen déjà planifié, sans recréer l'examen.
-  // Début/fin/durée restent synchronisés entre eux quel que soit le champ modifié.
+  // Déplacer le début préserve la durée actuelle (l'écart début/fin est
+  // recalculé côté serveur à partir de end_time).
   function parseLocalInput(v: string) { return new Date(v + ':00Z') }
   function toLocalInput(d: Date) { return d.toISOString().slice(0, 16) }
 
@@ -109,25 +110,19 @@ export default function AdminExamDetailPage() {
     setRescheduleForm({
       start_time: toLocalInput(start),
       end_time: toLocalInput(end),
-      duration_minutes: exam.duration_minutes,
     })
     setRescheduleModal(true)
   }
   function onRescheduleStartChange(v: string) {
+    const oldStart = parseLocalInput(rescheduleForm.start_time)
+    const oldEnd = parseLocalInput(rescheduleForm.end_time)
+    const durationMs = oldEnd.getTime() - oldStart.getTime()
     const newStart = parseLocalInput(v)
-    const newEnd = new Date(newStart.getTime() + rescheduleForm.duration_minutes * 60000)
+    const newEnd = new Date(newStart.getTime() + durationMs)
     setRescheduleForm(f => ({ ...f, start_time: v, end_time: toLocalInput(newEnd) }))
   }
-  function onRescheduleDurationChange(min: number) {
-    const start = parseLocalInput(rescheduleForm.start_time)
-    const newEnd = new Date(start.getTime() + min * 60000)
-    setRescheduleForm(f => ({ ...f, duration_minutes: min, end_time: toLocalInput(newEnd) }))
-  }
   function onRescheduleEndChange(v: string) {
-    const start = parseLocalInput(rescheduleForm.start_time)
-    const end = parseLocalInput(v)
-    const diffMin = Math.max(5, Math.round((end.getTime() - start.getTime()) / 60000))
-    setRescheduleForm(f => ({ ...f, end_time: v, duration_minutes: diffMin }))
+    setRescheduleForm(f => ({ ...f, end_time: v }))
   }
   async function handleReschedule() {
     setRescheduling(true)
@@ -135,7 +130,6 @@ export default function AdminExamDetailPage() {
       const res = await api.put<{ success: boolean; exam: OnlineExam }>(`/api/admin/online_exams/${id}`, {
         start_time: rescheduleForm.start_time,
         end_time: rescheduleForm.end_time,
-        duration_minutes: rescheduleForm.duration_minutes,
       })
       success('Examen reprogrammé')
       setExam(e => e && res.exam ? { ...e, ...res.exam } : e)
@@ -484,20 +478,11 @@ export default function AdminExamDetailPage() {
               <input type="datetime-local" className="form-control" value={rescheduleForm.start_time}
                 onChange={e => onRescheduleStartChange(e.target.value)} />
             </div>
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 20 }}>
               <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Nouvelle date/heure de fin</label>
               <input type="datetime-local" className="form-control" value={rescheduleForm.end_time}
                 min={rescheduleForm.start_time || undefined}
                 onChange={e => onRescheduleEndChange(e.target.value)} />
-            </div>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Durée (minutes)</label>
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 6px' }}>
-                <i className="fas fa-circle-info" style={{ marginRight: 4 }} />
-                Début, fin et durée restent synchronisés — modifiez l'un ou l'autre.
-              </p>
-              <input type="number" min={5} className="form-control" value={rescheduleForm.duration_minutes}
-                onChange={e => onRescheduleDurationChange(Math.max(5, Number(e.target.value) || 5))} />
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setRescheduleModal(false)} className="btn btn-secondary">Annuler</button>
