@@ -95,9 +95,14 @@ export default function StudentDashboard() {
         const v = rExams.value
         const list: OnlineExam[] = Array.isArray(v) ? v : (v as any).exams ?? []
         const now = Date.now()
-        // Garder les examens actifs (dans la fenêtre de temps) avec attempt en cours ou composable
+        // Garder uniquement les examens réellement accessibles : statut Actif
+        // (le professeur a cliqué "Activer") ET dans la fenêtre horaire. Un
+        // examen "Planifié" dont l'heure est arrivée mais pas encore activé
+        // ne doit pas apparaître comme "ouvert" — sinon "Accéder" échoue avec
+        // "Examen non disponible actuellement" alors que la bannière promet
+        // un accès immédiat.
         const active = list.filter(e => {
-          if (e.status !== 'active' && e.status !== 'scheduled') return false
+          if (e.status !== 'active') return false
           const start = new Date(e.start_time).getTime()
           const end   = new Date(e.end_time).getTime()
           return now >= start && now <= end

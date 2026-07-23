@@ -117,7 +117,10 @@ function ExamCard({ exam }: { exam: OnlineExam }) {
 
   const effectiveStatus = exam.status === 'active' && now > end ? 'closed' : exam.status
   const sc = STATUS_CFG[effectiveStatus] ?? STATUS_CFG.draft
-  const canCompose = now >= start && now <= end && (exam.status === 'active' || exam.status === 'scheduled')
+  // Le serveur n'autorise l'accès que si le statut est strictement "active"
+  // (le professeur a cliqué "Activer") — "scheduled" avec l'heure déjà
+  // arrivée ne suffit pas, sinon le bouton "Composer" mène à une erreur.
+  const canCompose = now >= start && now <= end && exam.status === 'active'
 
   const att = exam.my_attempt
 
@@ -171,6 +174,13 @@ function ExamCard({ exam }: { exam: OnlineExam }) {
     actionNode = (
       <span style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
         <i className="fas fa-clock" /> Pas encore ouvert
+      </span>
+    )
+  } else if (now <= end && exam.status !== 'active') {
+    // Plage horaire atteinte mais l'enseignant n'a pas encore cliqué "Activer"
+    actionNode = (
+      <span style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
+        <i className="fas fa-hourglass-half" /> Ouverture imminente — patientez
       </span>
     )
   } else {
