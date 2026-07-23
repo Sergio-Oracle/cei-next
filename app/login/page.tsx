@@ -75,6 +75,26 @@ export default function LoginPage() {
   return (
     <div id="login-screen" className="auth-screen">
 
+      {/* Éléments décoratifs — silhouette organique + motif de points, en
+          blanc translucide sur le fond bleu existant (pas de dégradé, pas de
+          violet). Purement visuels : pointer-events désactivés, en arrière-plan. */}
+      <svg viewBox="0 0 420 900" preserveAspectRatio="none" aria-hidden="true"
+        style={{ position: 'absolute', top: 0, left: 0, width: 340, height: '100%', zIndex: 0, pointerEvents: 'none' }}>
+        <path
+          d="M0,0 L360,0 C300,90 400,180 330,280 C270,360 410,460 320,560 C255,640 400,720 310,820 C270,865 330,890 300,900 L0,900 Z"
+          fill="rgba(255,255,255,0.07)"
+        />
+      </svg>
+      <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true"
+        style={{ position: 'absolute', right: 28, bottom: 28, zIndex: 0, pointerEvents: 'none' }}>
+        <defs>
+          <pattern id="login-dots" width="16" height="16" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="2" fill="rgba(255,255,255,0.35)" />
+          </pattern>
+        </defs>
+        <rect width="150" height="150" rx="18" fill="url(#login-dots)" />
+      </svg>
+
       {/* Bouton retour accueil */}
       <Link href="/" className="btn-home">
         <i className="fas fa-home" /> {t.back}
