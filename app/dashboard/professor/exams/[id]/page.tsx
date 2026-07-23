@@ -7,6 +7,7 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam, ExamAttempt, ExamStatus } from '@/types'
 import SecurityReportPanel from '@/components/shared/SecurityReportPanel'
+import StatTile from '@/components/ui/StatTile'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -291,7 +292,7 @@ export default function ProfessorExamDetailPage() {
           </h2>
           <p>{exam.formation_name ?? 'Examen en ligne'} · {exam.duration_minutes} min</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           {exam.status === 'active' && (
             <Link href={`/proctor/${exam.id}`} className="btn btn-info">
               <i className="fa-solid fa-eye" /> Surveiller
@@ -312,6 +313,9 @@ export default function ProfessorExamDetailPage() {
               <i className="fa-solid fa-stop" /> Clôturer
             </button>
           )}
+
+          <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)', margin: '0 2px' }} />
+
           <button className="btn btn-secondary" onClick={downloadCsv} disabled={downloading}>
             {downloading
               ? <><i className="fa-solid fa-spinner spin" /> Export...</>
@@ -322,12 +326,6 @@ export default function ProfessorExamDetailPage() {
             {downloadingSecurity
               ? <><i className="fa-solid fa-spinner spin" /> Rapport...</>
               : <><i className="fa-solid fa-shield-halved" /> Rapport sécurité</>}
-          </button>
-          <button className={exam.results_published ? 'btn btn-warning' : 'btn btn-success'} onClick={togglePublish}
-            title="Publier/masquer les notes aux étudiants (après délibération)">
-            {exam.results_published
-              ? <><i className="fa-solid fa-eye-slash" /> Dépublier les notes</>
-              : <><i className="fa-solid fa-bullhorn" /> Publier les notes</>}
           </button>
           <input
             ref={gradesFileRef}
@@ -342,85 +340,97 @@ export default function ProfessorExamDetailPage() {
               ? <><i className="fa-solid fa-spinner spin" /> Import...</>
               : <><i className="fa-solid fa-file-import" /> Importer notes</>}
           </button>
-          <Link href="/dashboard/professor/exams" className="btn btn-secondary">
+          <button className={exam.results_published ? 'btn btn-warning' : 'btn btn-success'} onClick={togglePublish}
+            title="Publier/masquer les notes aux étudiants (après délibération)">
+            {exam.results_published
+              ? <><i className="fa-solid fa-eye-slash" /> Dépublier les notes</>
+              : <><i className="fa-solid fa-bullhorn" /> Publier les notes</>}
+          </button>
+
+          <Link href="/dashboard/professor/exams" className="btn btn-secondary" style={{ marginLeft: 'auto' }}>
             <i className="fa-solid fa-arrow-left" /> Retour
           </Link>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        {[
-          { icon: 'fa-users', label: 'Participants',  val: attempts.length,               color: '#3b82f6' },
-          { icon: 'fa-pen',   label: 'À corriger',    val: toCorrect,                     color: toCorrect > 0 ? '#f59e0b' : '#10b981' },
-          { icon: 'fa-check', label: 'Corrigées',     val: corrected,                     color: '#10b981' },
-          { icon: 'fa-chart-bar', label: 'Moyenne',   val: avgScore ? `${avgScore}/20` : '—', color: '#3b82f6' },
-        ].map(({ icon, label, val, color }) => (
-          <div key={label} className="stat-card" style={{ borderColor: color }}>
-            <div className="stat-label"><i className={`fa-solid ${icon}`} style={{ color }} /> {label}</div>
-            <div className="stat-value" style={{ color }}>{val}</div>
-          </div>
-        ))}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <StatTile icon="fa-users" label="Participants" value={attempts.length} color="#3b82f6" />
+        <StatTile icon="fa-pen" label="À corriger" value={toCorrect} color={toCorrect > 0 ? '#f59e0b' : '#10b981'} />
+        <StatTile icon="fa-check" label="Corrigées" value={corrected} color="#10b981" />
+        <StatTile icon="fa-chart-bar" label="Moyenne" value={avgScore ? `${avgScore}/20` : '—'} color="#3b82f6" />
       </div>
 
       {/* Horaires + sécurité */}
-      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 24 }}>
         <div className="card">
-          <h3 className="card-title"><i className="fa-solid fa-clock" /> Horaires</h3>
-          <table style={{ width: '100%', fontSize: 14 }}>
-            <tbody>
-              {[
-                { label: 'Début', val: fmt(exam.start_time) },
-                { label: 'Fin',   val: fmt(exam.end_time) },
-                { label: 'Durée', val: `${exam.duration_minutes} min` },
-                { label: 'Correction IA', val: exam.auto_correct ? 'Activée' : 'Désactivée' },
-              ].map(({ label, val }) => (
-                <tr key={label}>
-                  <td style={{ color: 'var(--text-muted)', padding: '6px 0', width: '40%' }}>{label}</td>
-                  <td style={{ fontWeight: 600 }}>{val}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="card-header">
+            <h3 style={{ margin: 0 }}><i className="fa-solid fa-clock" style={{ color: 'var(--primary)', marginRight: 8 }} />Horaires</h3>
+          </div>
+          <div style={{ padding: '18px 24px' }}>
+            <table style={{ width: '100%' }}>
+              <tbody>
+                {[
+                  { label: 'Début', val: fmt(exam.start_time) },
+                  { label: 'Fin',   val: fmt(exam.end_time) },
+                  { label: 'Durée', val: `${exam.duration_minutes} min` },
+                  { label: 'Correction IA', val: exam.auto_correct ? 'Activée' : 'Désactivée' },
+                ].map(({ label, val }) => (
+                  <tr key={label}>
+                    <td style={{ color: 'var(--text-muted)', width: '40%', border: 'none', padding: '7px 0' }}>{label}</td>
+                    <td style={{ fontWeight: 600, border: 'none', padding: '7px 0' }}>{val}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
         <div className="card">
-          <h3 className="card-title"><i className="fa-solid fa-shield-alt" /> Sécurité</h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {[
-              { label: `Onglets max : ${exam.max_tab_switches ?? 2}`, ok: true },
-              { label: `Alertes caméra max : ${exam.max_no_face_count ?? 10}`, ok: true },
-              { label: 'Copier/coller', ok: !!exam.enable_copy_paste },
-              { label: 'Clic droit', ok: !!exam.enable_right_click },
-              { label: 'Questions mélangées', ok: !!exam.randomize_questions },
-              { label: 'Bannir DevTools', ok: !!exam.ban_on_devtools },
-            ].map(({ label, ok }) => (
-              <span key={label} style={{ padding: '3px 10px', borderRadius: 99, fontSize: 12, background: ok ? '#dcfce7' : '#f1f5f9', color: ok ? '#166534' : '#64748b', border: `1px solid ${ok ? '#bbf7d0' : '#e2e8f0'}` }}>
-                <i className={`fa-solid ${ok ? 'fa-check' : 'fa-times'}`} style={{ marginRight: 4 }} />{label}
-              </span>
-            ))}
+          <div className="card-header">
+            <h3 style={{ margin: 0 }}><i className="fa-solid fa-shield-alt" style={{ color: 'var(--primary)', marginRight: 8 }} />Sécurité</h3>
           </div>
-          {exam.instructions && (
-            <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--bg)', borderRadius: 'var(--radius)', fontSize: 13, color: 'var(--text-muted)', borderLeft: '3px solid var(--primary)' }}>
-              <strong>Instructions :</strong> {exam.instructions}
+          <div style={{ padding: '20px 24px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {[
+                { label: `Onglets max : ${exam.max_tab_switches ?? 2}`, ok: true },
+                { label: `Alertes caméra max : ${exam.max_no_face_count ?? 10}`, ok: true },
+                { label: 'Copier/coller', ok: !!exam.enable_copy_paste },
+                { label: 'Clic droit', ok: !!exam.enable_right_click },
+                { label: 'Questions mélangées', ok: !!exam.randomize_questions },
+                { label: 'Bannir DevTools', ok: !!exam.ban_on_devtools },
+              ].map(({ label, ok }) => (
+                <span key={label} style={{ padding: '5px 12px', borderRadius: 99, fontSize: 12.5, fontWeight: 500, background: ok ? '#dcfce7' : 'var(--background)', color: ok ? '#166534' : 'var(--text-muted)', border: `1px solid ${ok ? '#bbf7d0' : 'var(--border)'}` }}>
+                  <i className={`fa-solid ${ok ? 'fa-check' : 'fa-times'}`} style={{ marginRight: 5 }} />{label}
+                </span>
+              ))}
             </div>
-          )}
+            {exam.instructions && (
+              <div style={{ marginTop: 14, padding: '12px 16px', background: 'var(--background)', borderRadius: 'var(--radius)', fontSize: 13, color: 'var(--text-muted)', borderLeft: '3px solid var(--primary)' }}>
+                <strong style={{ color: 'var(--text)' }}>Instructions :</strong> {exam.instructions}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Rapport de sécurité — propre à cet examen (mêmes stats/tableaux que
           la page globale "Sécurité", filtrés sur cet examen uniquement) */}
-      <div className="card">
-        <h3 className="card-title"><i className="fa-solid fa-shield-halved" /> Rapport de sécurité de cet examen</h3>
-        <SecurityReportPanel fixedExamId={Number(id)} hideHeader />
+      <div className="card" style={{ marginBottom: 24 }}>
+        <div className="card-header">
+          <h3 style={{ margin: 0 }}><i className="fa-solid fa-shield-halved" style={{ color: 'var(--danger)', marginRight: 8 }} />Rapport de sécurité de cet examen</h3>
+        </div>
+        <div style={{ padding: '20px 24px' }}>
+          <SecurityReportPanel fixedExamId={Number(id)} hideHeader />
+        </div>
       </div>
 
       {/* Tentatives */}
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 className="card-title" style={{ margin: 0 }}>
-            <i className="fa-solid fa-users" /> Tentatives ({attempts.length})
+        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>
+            <i className="fa-solid fa-users" style={{ color: 'var(--primary)', marginRight: 8 }} />Tentatives ({attempts.length})
             {toCorrect > 0 && (
-              <span style={{ marginLeft: 8, background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: 99, fontSize: 12 }}>
+              <span style={{ marginLeft: 10, background: '#fef3c7', color: '#92400e', padding: '3px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
                 {toCorrect} à corriger
               </span>
             )}
@@ -473,12 +483,12 @@ export default function ProfessorExamDetailPage() {
                       {(a.status === 'submitted' || a.status === 'auto_submitted') && (
                         <>
                           <button onClick={() => openGradeModal(a)} title={a.score != null ? 'Modifier la note' : 'Noter'}
-                            style={{ fontSize: 11, padding: '3px 8px', background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640', borderRadius: 6, cursor: 'pointer' }}>
+                            style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640', borderRadius: 6, cursor: 'pointer' }}>
                             <i className="fa-solid fa-pen" /> Note
                           </button>
                           {exam.auto_correct && a.score == null && (
                             <button onClick={() => autoCorrect(a.id)} disabled={correcting === a.id} title="Correction IA"
-                              style={{ fontSize: 11, padding: '3px 8px', background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640', borderRadius: 6, cursor: 'pointer' }}>
+                              style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640', borderRadius: 6, cursor: 'pointer' }}>
                               <i className={`fa-solid ${correcting === a.id ? 'fa-spinner fa-spin' : 'fa-robot'}`} /> IA
                             </button>
                           )}
@@ -486,19 +496,19 @@ export default function ProfessorExamDetailPage() {
                       )}
                       {a.status === 'in_progress' && (
                         <button onClick={() => { setExtraModal(a); setExtraMin(10) }}
-                          style={{ fontSize: 11, padding: '3px 8px', background: '#10b98120', color: '#10b981', border: '1px solid #10b98140', borderRadius: 6, cursor: 'pointer' }}>
+                          style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#10b98120', color: '#10b981', border: '1px solid #10b98140', borderRadius: 6, cursor: 'pointer' }}>
                           <i className="fa-solid fa-clock" /> +Temps
                         </button>
                       )}
                       {a.status === 'in_progress' && (
                         <button onClick={() => { setBanModal(a); setBanReason('') }}
-                          style={{ fontSize: 11, padding: '3px 8px', background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: 6, cursor: 'pointer' }}>
+                          style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: 6, cursor: 'pointer' }}>
                           <i className="fa-solid fa-ban" /> Exclure
                         </button>
                       )}
                       {a.status === 'banned' && (
                         <button onClick={() => unban(a)}
-                          style={{ fontSize: 11, padding: '3px 8px', background: '#10b98120', color: '#10b981', border: '1px solid #10b98140', borderRadius: 6, cursor: 'pointer' }}>
+                          style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#10b98120', color: '#10b981', border: '1px solid #10b98140', borderRadius: 6, cursor: 'pointer' }}>
                           <i className="fa-solid fa-undo" /> Réintégrer
                         </button>
                       )}

@@ -7,6 +7,7 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam, ExamAttempt, ExamStatus } from '@/types'
 import SecurityReportPanel from '@/components/shared/SecurityReportPanel'
+import StatTile from '@/components/ui/StatTile'
 
 function SBadge({ s }: { s: string }) {
   const m: Record<string, [string, string]> = {
@@ -270,20 +271,19 @@ export default function AdminExamDetailPage() {
           </h2>
           <p>{exam.formation_name ?? 'Examen en ligne'} · {exam.duration_minutes} min · {attempts.length} tentative(s)</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           {exam.status === 'active' && <Link href={`/proctor/${id}`} className="btn btn-info"><i className="fas fa-eye" /> Surveiller</Link>}
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-success" onClick={activate} disabled={acting}><i className="fas fa-play" /> Activer</button>}
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-secondary" onClick={openRescheduleModal} title="Reprogrammer sans recréer l'examen"><i className="fas fa-calendar-days" /> Reprogrammer</button>}
           {exam.status === 'active' && <button className="btn btn-warning" onClick={close} disabled={acting}><i className="fas fa-stop" /> Clôturer</button>}
+
+          <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)', margin: '0 2px' }} />
+
           <button className="btn btn-secondary" onClick={downloadCsv} disabled={downloading}><i className="fas fa-file-csv" /> CSV</button>
           <button className="btn btn-secondary" onClick={downloadPdf}><i className="fas fa-file-pdf" /> PDF Bilan</button>
           <button className="btn btn-secondary" onClick={downloadSecurityReport} disabled={downloadingSecurity}
             title="Rapport de sécurité agrégé (risques, incidents) pour cet examen">
             <i className={`fas ${downloadingSecurity ? 'fa-spinner fa-spin' : 'fa-shield-halved'}`} /> Rapport sécurité
-          </button>
-          <button className={exam.results_published ? 'btn btn-warning' : 'btn btn-success'} onClick={togglePublish}
-            title="Publier/masquer les notes aux étudiants (après délibération)">
-            <i className={`fas ${exam.results_published ? 'fa-eye-slash' : 'fa-bullhorn'}`} /> {exam.results_published ? 'Dépublier les notes' : 'Publier les notes'}
           </button>
           <input
             ref={gradesFileRef}
@@ -296,45 +296,51 @@ export default function AdminExamDetailPage() {
             title="Importer des notes déjà calculées (étudiants n'ayant pas composé sur la plateforme)">
             <i className={`fas ${importingGrades ? 'fa-spinner fa-spin' : 'fa-file-import'}`} /> {importingGrades ? 'Import...' : 'Importer notes'}
           </button>
+          <button className={exam.results_published ? 'btn btn-warning' : 'btn btn-success'} onClick={togglePublish}
+            title="Publier/masquer les notes aux étudiants (après délibération)">
+            <i className={`fas ${exam.results_published ? 'fa-eye-slash' : 'fa-bullhorn'}`} /> {exam.results_published ? 'Dépublier les notes' : 'Publier les notes'}
+          </button>
+
+          <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)', margin: '0 2px' }} />
+
           <button className="btn btn-danger" onClick={del} disabled={acting}><i className="fas fa-trash" /> Supprimer</button>
-          <Link href="/dashboard/admin/exams" className="btn btn-secondary"><i className="fas fa-arrow-left" /> Retour</Link>
+          <Link href="/dashboard/admin/exams" className="btn btn-secondary" style={{ marginLeft: 'auto' }}><i className="fas fa-arrow-left" /> Retour</Link>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(5,1fr)', gap: 12, marginBottom: 20 }}>
-        {[
-          { icon: 'fa-users',     label: 'Participants', val: attempts.length,                       color: '#3b82f6' },
-          { icon: 'fa-check',     label: 'Corrigées',    val: corrected,                             color: '#10b981' },
-          { icon: 'fa-pen',       label: 'À corriger',   val: toCorrect,                             color: toCorrect > 0 ? '#f59e0b' : '#10b981' },
-          { icon: 'fa-ban',       label: 'Exclus',       val: banned,                                color: banned > 0 ? '#ef4444' : '#10b981' },
-          { icon: 'fa-chart-bar', label: 'Moyenne',      val: avgScore ? `${avgScore}/20` : '—',     color: '#3b82f6' },
-        ].map(({ icon, label, val, color }) => (
-          <div key={label} className="stat-card" style={{ borderColor: color }}>
-            <div className="stat-label"><i className={`fas ${icon}`} style={{ color }} /> {label}</div>
-            <div className="stat-value" style={{ color }}>{val}</div>
-          </div>
-        ))}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <StatTile icon="fa-users" label="Participants" value={attempts.length} color="#3b82f6" />
+        <StatTile icon="fa-check" label="Corrigées" value={corrected} color="#10b981" />
+        <StatTile icon="fa-pen" label="À corriger" value={toCorrect} color={toCorrect > 0 ? '#f59e0b' : '#10b981'} />
+        <StatTile icon="fa-ban" label="Exclus" value={banned} color={banned > 0 ? '#ef4444' : '#10b981'} />
+        <StatTile icon="fa-chart-bar" label="Moyenne" value={avgScore ? `${avgScore}/20` : '—'} color="#3b82f6" />
       </div>
 
       {/* Infos + Sécurité */}
-      <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 24 }}>
         <div className="card">
-          <h3 className="card-title"><i className="fas fa-clock" /> Horaires</h3>
-          {[
-            ['Début', fmt(exam.start_time)],
-            ['Fin',   fmt(exam.end_time)],
-            ['Durée', `${exam.duration_minutes} min`],
-            ['Correction IA', exam.auto_correct ? 'Activée' : 'Désactivée'],
-          ].map(([l, v]) => (
-            <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border)', fontSize: 14 }}>
-              <span style={{ color: 'var(--text-muted)' }}>{l}</span><strong>{v}</strong>
-            </div>
-          ))}
+          <div className="card-header">
+            <h3 style={{ margin: 0 }}><i className="fas fa-clock" style={{ color: 'var(--primary)', marginRight: 8 }} />Horaires</h3>
+          </div>
+          <div style={{ padding: '18px 24px' }}>
+            {[
+              ['Début', fmt(exam.start_time)],
+              ['Fin',   fmt(exam.end_time)],
+              ['Durée', `${exam.duration_minutes} min`],
+              ['Correction IA', exam.auto_correct ? 'Activée' : 'Désactivée'],
+            ].map(([l, v], i, arr) => (
+              <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none', fontSize: 14 }}>
+                <span style={{ color: 'var(--text-muted)' }}>{l}</span><strong>{v}</strong>
+              </div>
+            ))}
+          </div>
         </div>
         <div className="card">
-          <h3 className="card-title"><i className="fas fa-shield-alt" /> Sécurité</h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          <div className="card-header">
+            <h3 style={{ margin: 0 }}><i className="fas fa-shield-alt" style={{ color: 'var(--primary)', marginRight: 8 }} />Sécurité</h3>
+          </div>
+          <div style={{ padding: '20px 24px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {[
               [`Onglets max : ${exam.max_tab_switches ?? 2}`, true],
               [`Alertes caméra max : ${exam.max_no_face_count ?? 10}`, true],
@@ -343,8 +349,8 @@ export default function AdminExamDetailPage() {
               ['Questions mélangées', !!exam.randomize_questions],
               ['Ban sur DevTools', !!exam.ban_on_devtools],
             ].map(([label, ok]) => (
-              <span key={String(label)} style={{ padding: '3px 10px', borderRadius: 20, fontSize: 12, background: ok ? '#dcfce7' : '#f1f5f9', color: ok ? '#166534' : '#64748b' }}>
-                <i className={`fas ${ok ? 'fa-check' : 'fa-times'}`} style={{ marginRight: 4 }} />{String(label)}
+              <span key={String(label)} style={{ padding: '5px 12px', borderRadius: 99, fontSize: 12.5, fontWeight: 500, background: ok ? '#dcfce7' : 'var(--background)', color: ok ? '#166534' : 'var(--text-muted)', border: `1px solid ${ok ? '#bbf7d0' : 'var(--border)'}` }}>
+                <i className={`fas ${ok ? 'fa-check' : 'fa-times'}`} style={{ marginRight: 5 }} />{String(label)}
               </span>
             ))}
           </div>
@@ -353,15 +359,19 @@ export default function AdminExamDetailPage() {
 
       {/* Rapport de sécurité — propre à cet examen (mêmes stats/tableaux que
           la page globale "Sécurité", filtrés sur cet examen uniquement) */}
-      <div className="card">
-        <h3 className="card-title"><i className="fas fa-shield-halved" /> Rapport de sécurité de cet examen</h3>
-        <SecurityReportPanel fixedExamId={Number(id)} hideHeader />
+      <div className="card" style={{ marginBottom: 24 }}>
+        <div className="card-header">
+          <h3 style={{ margin: 0 }}><i className="fas fa-shield-halved" style={{ color: 'var(--danger)', marginRight: 8 }} />Rapport de sécurité de cet examen</h3>
+        </div>
+        <div style={{ padding: '20px 24px' }}>
+          <SecurityReportPanel fixedExamId={Number(id)} hideHeader />
+        </div>
       </div>
 
       {/* Tableau tentatives */}
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 className="card-title" style={{ marginBottom: 0 }}><i className="fas fa-users" /> Tentatives ({attempts.length})</h3>
+        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}><i className="fas fa-users" style={{ color: 'var(--primary)', marginRight: 8 }} />Tentatives ({attempts.length})</h3>
         </div>
         <div className="table-responsive">
           <table>
@@ -397,35 +407,35 @@ export default function AdminExamDetailPage() {
                         {/* Note manuelle */}
                         {(a.status === 'submitted' || a.status === 'auto_submitted') && (
                           <button onClick={() => { setGradeModal(a); setGradeForm({ score: a.score != null ? String(a.score) : '', feedback: a.feedback ?? '' }) }}
-                            style={{ fontSize: 11, padding: '3px 8px', background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640', borderRadius: 6, cursor: 'pointer' }}>
+                            style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640', borderRadius: 6, cursor: 'pointer' }}>
                             <i className="fas fa-pen" /> Note
                           </button>
                         )}
                         {/* Correction IA */}
                         {a.needs_correction && a.score == null && (
                           <button onClick={() => autoCorrect(a.id)} disabled={correctingId === a.id}
-                            style={{ fontSize: 11, padding: '3px 8px', background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640', borderRadius: 6, cursor: 'pointer' }}>
+                            style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640', borderRadius: 6, cursor: 'pointer' }}>
                             <i className={`fas ${correctingId === a.id ? 'fa-spinner fa-spin' : 'fa-robot'}`} /> IA
                           </button>
                         )}
                         {/* Temps extra */}
                         {a.status === 'in_progress' && (
                           <button onClick={() => { setExtraModal(a); setExtraMin(10) }}
-                            style={{ fontSize: 11, padding: '3px 8px', background: '#10b98120', color: '#10b981', border: '1px solid #10b98140', borderRadius: 6, cursor: 'pointer' }}>
+                            style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#10b98120', color: '#10b981', border: '1px solid #10b98140', borderRadius: 6, cursor: 'pointer' }}>
                             <i className="fas fa-clock" /> +Temps
                           </button>
                         )}
                         {/* Exclure */}
                         {a.status === 'in_progress' && (
                           <button onClick={() => { setBanModal(a); setBanReason('') }}
-                            style={{ fontSize: 11, padding: '3px 8px', background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: 6, cursor: 'pointer' }}>
+                            style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: 6, cursor: 'pointer' }}>
                             <i className="fas fa-ban" /> Exclure
                           </button>
                         )}
                         {/* Réintégrer */}
                         {a.status === 'banned' && (
                           <button onClick={() => unban(a)}
-                            style={{ fontSize: 11, padding: '3px 8px', background: '#10b98120', color: '#10b981', border: '1px solid #10b98140', borderRadius: 6, cursor: 'pointer' }}>
+                            style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#10b98120', color: '#10b981', border: '1px solid #10b98140', borderRadius: 6, cursor: 'pointer' }}>
                             <i className="fas fa-undo" /> Réintégrer
                           </button>
                         )}

@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import StatTile from '@/components/ui/StatTile'
 
 interface EventSummary  { event: string; count: number }
 interface HighRiskAttempt {
@@ -198,40 +199,31 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
         <div className="alert alert-error">Impossible de charger le rapport de sécurité.</div>
       ) : (
         <>
-          <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
-            {[
-              { val: report.banned_count || 0, icon: 'fa-ban',                  color: '#ef4444', label: 'Étudiants bannis' },
-              { val: report.high_risk?.length || 0, icon: 'fa-exclamation-triangle', color: '#f59e0b', label: 'À haut risque (score ≥ 70)' },
-              { val: totalIncidents,            icon: 'fa-list',                 color: '#2563eb', label: 'Incidents totaux' },
-            ].map(({ val, icon, color, label }) => (
-              <div key={label} className="stat-card" style={{ textAlign: 'center', borderLeft: `4px solid ${color}` }}>
-                <div style={{ fontSize: 28, fontWeight: 800, color }}>{val}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                  <i className={`fas ${icon}`} /> {label}
-                </div>
-              </div>
-            ))}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
+            <StatTile icon="fa-ban" color="#ef4444" label="Étudiants bannis" value={report.banned_count || 0} />
+            <StatTile icon="fa-triangle-exclamation" color="#f59e0b" label="À haut risque (score ≥ 70)" value={report.high_risk?.length || 0} />
+            <StatTile icon="fa-list" color="#2563eb" label="Incidents totaux" value={totalIncidents} />
           </div>
 
-          <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 18, alignItems: 'start' }}>
             <div className="card">
               <div className="card-header">
                 <h3 style={{ margin: 0 }}><i className="fas fa-chart-bar" /> Types d'incidents</h3>
               </div>
               <div className="table-responsive">
                 <table>
-                  <thead><tr><th>Événement</th><th>Nb</th></tr></thead>
+                  <thead><tr><th>Événement</th><th style={{ textAlign: 'center' }}>Nb</th></tr></thead>
                   <tbody>
                     {report.event_summary.length === 0 ? (
                       <tr><td colSpan={2} className="empty-message">Aucun incident</td></tr>
                     ) : report.event_summary.map(e => (
                       <tr key={e.event}>
-                        <td style={{ fontSize: 13 }}>
+                        <td>
                           <i className={`fas ${EVT_ICONS[e.event] || 'fa-circle'}`}
-                            style={{ color: EVT_RISK_COLOR[e.event] || '#94a3b8', marginRight: 8 }} />
+                            style={{ color: EVT_RISK_COLOR[e.event] || '#94a3b8', marginRight: 8, width: 14, textAlign: 'center' }} />
                           {EVT_LABELS[e.event] || e.event}
                         </td>
-                        <td style={{ fontWeight: 700, fontSize: 13 }}>{e.count}</td>
+                        <td style={{ fontWeight: 700, textAlign: 'center' }}>{e.count}</td>
                       </tr>
                     ))}
                   </tbody>
