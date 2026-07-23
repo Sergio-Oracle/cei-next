@@ -371,24 +371,27 @@ export default function ExamPage() {
       warning(`Attention : changement d'onglet détecté (${next}/${examRef.current?.max_tab_switches??3})`)
       const aId = attemptRef.current
       if (aId) {
-        try { await api.post(`/api/exam_attempts/${aId}/log_activity`,{event:'tab_switch',count:next}) } catch {}
+        // Le serveur décide seul de bannir ou non (selon auto_ban_enabled) —
+        // on ne force plus jamais la soumission côté client sur un simple
+        // compteur local : ça bannissait même quand le prof n'avait rien activé.
+        try { await logActivity(aId,'tab_switch',`Changement onglet ${next}`) } catch {}
         try { await logProctoring(aId,'tab_switch',`Changement onglet ${next}`) } catch {}
       }
-      if (examRef.current?.max_tab_switches && next >= examRef.current.max_tab_switches) handleSubmit(true)
     }
     const noCtx  = (e:MouseEvent)     => { if (!examRef.current?.enable_right_click) e.preventDefault() }
     const noCopy = (e:ClipboardEvent) => { if (!examRef.current?.enable_copy_paste) { e.preventDefault(); warning('Copier/coller désactivé') } }
     const noKey  = (e:KeyboardEvent)  => {
       if (e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C'].includes(e.key))||(e.ctrlKey&&e.key==='u')) {
         e.preventDefault()
-        const aId = attemptRef.current; if (aId) logProctoring(aId,'devtools_attempt','Tentative outils dev').catch(()=>{})
+        const aId = attemptRef.current
+        if (aId) { logActivity(aId,'devtools_attempt','Tentative outils dev').catch(()=>{}); logProctoring(aId,'devtools_attempt','Tentative outils dev').catch(()=>{}) }
         setAlerts(a => [{type:'devtools',msg:'Accès outils développeur bloqué',at:new Date().toLocaleTimeString('fr-FR')},...a])
       }
     }
     const onFs = () => {
       if (!document.fullscreenElement && !sessionEndedRef.current) {
         const aId = attemptRef.current
-        if (aId) { try { api.post(`/api/exam_attempts/${aId}/log_activity`,{event:'fullscreen_exit'}) } catch {} }
+        if (aId) { logActivity(aId,'fullscreen_exit','Plein écran quitté').catch(()=>{}) }
         setAlerts(a => [{type:'fs',msg:'Plein écran quitté',at:new Date().toLocaleTimeString('fr-FR')},...a])
       }
     }
@@ -537,7 +540,7 @@ export default function ExamPage() {
       track.addEventListener('ended',()=>{
         setScreenOn(false)
         setAlerts(a=>[{type:'screen',msg:"Partage d'écran interrompu",at:new Date().toLocaleTimeString('fr-FR')},...a])
-        const aId=attemptRef.current; if(aId){try{api.post(`/api/exam_attempts/${aId}/log_activity`,{event:'screen_share_stopped'})}catch{}}
+        const aId=attemptRef.current; if(aId){logActivity(aId,'screen_share_stopped',"Partage d'écran interrompu").catch(()=>{})}
       })
     } catch {
       setPermScreen('error')
@@ -661,6 +664,14 @@ export default function ExamPage() {
       const res=await api.post<{risk_score?:number;banned?:boolean}>(`/api/exam_attempts/${aId}/proctoring_event`,{event_type:eventType,event_data:eventData})
       if(res.risk_score!=null) setRiskScore(res.risk_score)
       if(res.banned) triggerBan()
+    } catch {}
+  }
+  async function logActivity(aId:number,eventType:string,eventData:string) {
+    if(sessionEndedRef.current) return
+    try {
+      const res=await api.post<{banned?:boolean;alert_sent?:boolean;ban_reason?:string}>(`/api/exam_attempts/${aId}/log_activity`,{event_type:eventType,event_data:eventData})
+      if(res.banned) triggerBan()
+      else if(res.alert_sent) warning("Comportement à risque détecté — l'enseignant a été alerté.")
     } catch {}
   }
 
@@ -862,6 +873,7 @@ export default function ExamPage() {
             if(now-lastFaceAlertRef.current.no_face>ALERT_COOLDOWN){
               lastFaceAlertRef.current.no_face=now
               warning('Aucun visage détecté — repositionnez-vous face à la caméra')
+              logActivity(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
               logProctoring(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
               captureSnapshot('no_face_detected',curAId,false,0,null,5_000)
             }

@@ -24,6 +24,7 @@ export default function NewExamPage() {
     questions_per_page: 5,
     max_no_face_count: 10,
     ban_on_devtools:   true,
+    auto_ban_enabled:  false,
     enable_copy_paste: false,
     enable_right_click: false,
     auto_correct:      false,
@@ -67,6 +68,7 @@ export default function NewExamPage() {
         questions_per_page: form.questions_per_page,
         max_no_face_count: form.max_no_face_count,
         ban_on_devtools:   form.ban_on_devtools,
+        auto_ban_enabled:  form.auto_ban_enabled,
         enable_copy_paste: form.enable_copy_paste,
         enable_right_click: form.enable_right_click,
         auto_correct:      form.auto_correct,
@@ -159,28 +161,43 @@ export default function NewExamPage() {
               <span style={{ fontWeight: 700, color: '#0f172a', fontSize: 14 }}>Paramètres de Sécurité</span>
             </div>
 
+            {/* Bannissement automatique — interrupteur maître */}
+            <div style={{ background: form.auto_ban_enabled ? '#fef2f2' : '#f0f9ff', border: `1px solid ${form.auto_ban_enabled ? '#fecaca' : '#bae6fd'}`, borderRadius: 8, padding: '12px 14px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <input type="checkbox" id="auto_ban" checked={form.auto_ban_enabled} onChange={e => set('auto_ban_enabled', e.target.checked)} style={{ width: 'auto', marginTop: 2, flexShrink: 0, accentColor: '#dc2626' }} />
+              <div>
+                <label htmlFor="auto_ban" style={{ fontSize: 13, fontWeight: 700, color: form.auto_ban_enabled ? '#dc2626' : '#0369a1', cursor: 'pointer', margin: 0, display: 'block' }}>
+                  <i className="fas fa-ban" /> Bannissement automatique
+                </label>
+                <small style={{ color: '#64748b' }}>
+                  {form.auto_ban_enabled
+                    ? 'Activé — un étudiant est exclu automatiquement dès qu\'un seuil ci-dessous est atteint.'
+                    : 'Désactivé (par défaut) — un seuil atteint envoie une alerte (agent autonome + notification) au lieu d\'exclure automatiquement.'}
+                </small>
+              </div>
+            </div>
+
             {/* Seuils */}
             <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
               <div style={{ marginBottom: 16 }}>
                 <label style={{ ...lbl, fontSize: 13 }}><i className="fas fa-exchange-alt" style={{ color: '#f59e0b' }} /> Seuil — changements de fenêtre</label>
                 <input type="number" min={0} max={20} value={form.max_tab_switches} onChange={e => set('max_tab_switches', Number(e.target.value))} style={inp} />
-                <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>Bannissement après ce nombre (0 = aucun toléré)</small>
+                <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>{form.auto_ban_enabled ? 'Bannissement' : 'Alerte'} après ce nombre (0 = aucun toléré)</small>
               </div>
               <div style={{ marginBottom: 16 }}>
                 <label style={{ ...lbl, fontSize: 13 }}><i className="fas fa-eye-slash" style={{ color: '#ef4444' }} /> Seuil — visage absent (caméra)</label>
                 <input type="number" min={-1} max={100} value={form.max_no_face_count} onChange={e => set('max_no_face_count', Number(e.target.value))} style={inp} />
-                <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>Bannissement après N détections sans visage (-1 = désactivé)</small>
+                <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>{form.auto_ban_enabled ? 'Bannissement' : 'Alerte'} après N détections sans visage (-1 = désactivé)</small>
               </div>
             </div>
 
-            {/* DevTools ban */}
+            {/* DevTools */}
             <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 14px', marginBottom: 14, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <input type="checkbox" id="ban_devtools" checked={form.ban_on_devtools} onChange={e => set('ban_on_devtools', e.target.checked)} style={{ width: 'auto', marginTop: 2, flexShrink: 0, accentColor: '#dc2626' }} />
               <div>
                 <label htmlFor="ban_devtools" style={{ fontSize: 13, fontWeight: 600, color: '#dc2626', cursor: 'pointer', margin: 0, display: 'block' }}>
-                  <i className="fas fa-terminal" /> Bannir immédiatement si outils développeur ouverts
+                  <i className="fas fa-terminal" /> {form.auto_ban_enabled ? 'Bannir immédiatement' : 'Alerter'} si outils développeur ouverts
                 </label>
-                <small style={{ color: '#64748b' }}>Exclusion instantanée en cas de tentative d'accès aux outils développeur (F12, Ctrl+Shift+I…)</small>
+                <small style={{ color: '#64748b' }}>Tentative d'accès aux outils développeur détectée (F12, Ctrl+Shift+I…)</small>
               </div>
             </div>
 
