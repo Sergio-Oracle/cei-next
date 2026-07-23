@@ -37,6 +37,7 @@ interface Proctor {
   proctor_email?: string
   proctor_identity: string
   student_count?: number
+  group_names?: string[]
 }
 
 interface ProctorData {
@@ -1138,6 +1139,13 @@ export default function ProctorMonitorPage() {
                         </span>
                       )}
                     </div>
+                    {/* Groupe(s) Surveillants d'origine */}
+                    {!!p.group_names?.length && (
+                      <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,.45)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <i className="fas fa-user-shield" style={{ fontSize: 9 }} />
+                        {p.group_names.join(', ')}
+                      </div>
+                    )}
                     {/* Icônes cam/mic + count */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: groupStudents.length > 0 ? 8 : 0 }}>
                       <i className={`fas fa-video`} style={{ fontSize: 11, color: st.camOn ? '#10b981' : 'rgba(255,255,255,.25)' }} />
