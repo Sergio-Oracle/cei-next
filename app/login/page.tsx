@@ -6,10 +6,37 @@ import { useToast } from '@/contexts/ToastContext'
 import Link from 'next/link'
 
 const LANGS = {
-  fr: { email: 'Email', password: 'Mot de passe', btn: 'Se Connecter', forgot: 'Mot de passe oublié ?', contact: "Contactez l'administration pour obtenir un compte", back: "Retour à l'accueil", title: "Centre d'Examen Intelligent", tagline: 'Connexion à votre compte' },
-  en: { email: 'Email', password: 'Password', btn: 'Sign In', forgot: 'Forgot password?', contact: 'Contact administration to get an account', back: 'Back to home', title: 'Intelligent Examination Centre', tagline: 'Sign in to your account' },
-  wo: { email: 'Email', password: 'Mot de passe', btn: 'Dugg', forgot: 'Mot de passe oublié ?', contact: "Xibaar l'administration", back: 'Dellu ci kanam', title: "Xëtu Jëfandikoo yu Xam-Xam", tagline: 'Dugg ci sa kont' },
+  fr: {
+    email: 'Email', password: 'Mot de passe', btn: 'Se Connecter', forgot: 'Mot de passe oublié ?',
+    contact: "Contactez l'administration pour obtenir un compte", back: "Retour à l'accueil",
+    title: "Centre d'Examen Intelligent", tagline: 'Connexion à votre compte',
+    connexion: 'Connexion', connexionSub: 'Accédez à votre espace CEI',
+    welcome: 'Bienvenue !', welcomeSub: "Connectez-vous pour composer vos examens, surveiller une session ou consulter vos relevés de notes, en toute sécurité.",
+  },
+  en: {
+    email: 'Email', password: 'Password', btn: 'Sign In', forgot: 'Forgot password?',
+    contact: 'Contact administration to get an account', back: 'Back to home',
+    title: 'Intelligent Examination Centre', tagline: 'Sign in to your account',
+    connexion: 'Sign In', connexionSub: 'Access your CEI workspace',
+    welcome: 'Welcome!', welcomeSub: 'Sign in to take your exams, proctor a session or check your transcripts, all securely.',
+  },
+  wo: {
+    email: 'Email', password: 'Mot de passe', btn: 'Dugg', forgot: 'Mot de passe oublié ?',
+    contact: "Xibaar l'administration", back: 'Dellu ci kanam',
+    title: "Xëtu Jëfandikoo yu Xam-Xam", tagline: 'Dugg ci sa kont',
+    connexion: 'Dugg', connexionSub: 'Dugg ci sa espace CEI',
+    welcome: 'Dalal ak jàmm !', welcomeSub: 'Dugg ngir jëfandikoo say examen ci kaaraange.',
+  },
 }
+
+const FEATURE_ICONS = [
+  { icon: 'fa-video',       top: '14%', left: '72%' },
+  { icon: 'fa-file-lines',  top: '24%', left: '14%' },
+  { icon: 'fa-shield-halved', top: '38%', left: '80%' },
+  { icon: 'fa-chart-line',  top: '58%', left: '10%' },
+  { icon: 'fa-clock',       top: '68%', left: '78%' },
+  { icon: 'fa-circle-check',top: '82%', left: '20%' },
+]
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -73,110 +100,210 @@ export default function LoginPage() {
   }
 
   return (
-    <div id="login-screen" className="auth-screen">
-
-      {/* Éléments décoratifs — silhouette organique + motif de points, en
-          blanc translucide sur le fond bleu existant (pas de dégradé, pas de
-          violet). Purement visuels : pointer-events désactivés, en arrière-plan. */}
-      <svg viewBox="0 0 420 900" preserveAspectRatio="none" aria-hidden="true"
-        style={{ position: 'absolute', top: 0, left: 0, width: 340, height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-        <path
-          d="M0,0 L360,0 C300,90 400,180 330,280 C270,360 410,460 320,560 C255,640 400,720 310,820 C270,865 330,890 300,900 L0,900 Z"
-          fill="rgba(255,255,255,0.07)"
-        />
-      </svg>
-      <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true"
-        style={{ position: 'absolute', right: 28, bottom: 28, zIndex: 0, pointerEvents: 'none' }}>
-        <defs>
-          <pattern id="login-dots" width="16" height="16" patternUnits="userSpaceOnUse">
-            <circle cx="2" cy="2" r="2" fill="rgba(255,255,255,0.35)" />
-          </pattern>
-        </defs>
-        <rect width="150" height="150" rx="18" fill="url(#login-dots)" />
-      </svg>
-
-      {/* Bouton retour accueil */}
-      <Link href="/" className="btn-home">
-        <i className="fas fa-home" /> {t.back}
-      </Link>
-
-      {/* Sélecteur de langue */}
-      <div className="lang-switcher" id="login-lang-sw" style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
-        <button className="lang-btn" onClick={e => { e.stopPropagation(); setMenuOpen(v => !v) }}>
-          <i className="fas fa-globe" />
-          <span className="lang-current-label">{lang === 'fr' ? '🇫🇷 FR' : lang === 'en' ? '🇬🇧 EN' : '🇸🇳 WO'}</span>
-          <i className="fas fa-chevron-down" style={{ fontSize: 10 }} />
-        </button>
-        {menuOpen && (
-          <div className="lang-menu">
-            <button className={`lang-option${lang === 'fr' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('fr') }}>
-              <span className="lang-flag">🇫🇷</span> Français
-            </button>
-            <button className={`lang-option${lang === 'en' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('en') }}>
-              <span className="lang-flag">🇬🇧</span> English
-            </button>
-            <button className={`lang-option${lang === 'wo' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('wo') }}>
-              <span className="lang-flag">🇸🇳</span> Wolof
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Formulaire */}
-      <div className="auth-container">
-        <div className="auth-header">
-          <i className="fas fa-graduation-cap" />
-          <h1>{t.title}</h1>
-          <p>{t.tagline}</p>
-        </div>
-
-        <form id="login-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label><i className="fas fa-envelope" /> {t.email}</label>
-            <input
-              type="email"
-              id="login-email"
-              required
-              placeholder="votre@email.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              autoComplete="email"
-            />
-          </div>
-          <div className="form-group">
-            <label><i className="fas fa-lock" /> {t.password}</label>
-            <input
-              type="password"
-              id="login-password"
-              required
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-          </div>
-          <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-            {loading
-              ? <><i className="fas fa-spinner" style={{ animation: 'spin 1s linear infinite' }} /> Connexion…</>
-              : <><i className="fas fa-sign-in-alt" /> {t.btn}</>
-            }
-          </button>
-        </form>
-
-        <p style={{ textAlign: 'center', margin: '14px 0 0' }}>
-          <Link href="/forgot-password" style={{ background: 'none', color: '#3b82f6', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <i className="fas fa-key" /> {t.forgot}
-          </Link>
-        </p>
-
-        <p className="auth-footer">
-          <i className="fas fa-info-circle" /> {t.contact}
-        </p>
-      </div>
-
+    <div className="cei-split">
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        .cei-split {
+          min-height: 100vh;
+          display: flex;
+          background: #f8fafc;
+          padding: 20px;
+          gap: 20px;
+        }
+        .cei-split-panel {
+          flex: 1 1 46%;
+          max-width: 560px;
+          background: var(--primary, #1d4ed8);
+          border-radius: 28px;
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          padding: 32px;
+          color: white;
+          min-height: calc(100vh - 40px);
+        }
+        .cei-split-brand {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          position: relative;
+          z-index: 1;
+        }
+        .cei-split-brand-icon {
+          width: 42px; height: 42px;
+          background: rgba(255,255,255,.15);
+          border-radius: 12px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 18px;
+          flex-shrink: 0;
+        }
+        .cei-split-brand-name {
+          font-weight: 800;
+          font-size: 15px;
+          letter-spacing: .02em;
+        }
+        .cei-split-welcome {
+          position: relative;
+          z-index: 1;
+          margin: auto 0 40px;
+          text-align: center;
+          padding: 0 12px;
+        }
+        .cei-split-welcome-icon {
+          width: 84px; height: 84px;
+          background: white;
+          border-radius: 20px;
+          display: flex; align-items: center; justify-content: center;
+          margin: 0 auto 28px;
+          box-shadow: 0 12px 32px rgba(0,0,0,.18);
+        }
+        .cei-split-welcome-icon i { font-size: 38px; color: var(--primary, #1d4ed8); }
+        .cei-split-welcome h2 { font-size: 26px; font-weight: 800; margin: 0 0 10px; }
+        .cei-split-welcome p { font-size: 14px; opacity: .85; line-height: 1.6; max-width: 360px; margin: 0 auto; }
+        .cei-split-feature-icon {
+          position: absolute;
+          font-size: 26px;
+          color: rgba(255,255,255,.16);
+          z-index: 0;
+        }
+        .cei-split-right {
+          flex: 1 1 54%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          padding: 24px;
+        }
+        .cei-split-topbar {
+          position: absolute;
+          top: 20px; right: 20px;
+          display: flex; align-items: center; gap: 10px;
+          z-index: 10;
+        }
+        .cei-split-form-wrap {
+          width: 100%;
+          max-width: 400px;
+        }
+        .cei-split-form-wrap h1 { font-size: 30px; font-weight: 800; color: var(--text, #0f172a); margin: 0 0 8px; }
+        .cei-split-form-wrap > p { color: var(--text-light, #64748b); font-size: 14px; margin: 0 0 32px; }
+        @media (max-width: 900px) {
+          .cei-split-panel { display: none; }
+          .cei-split { padding: 0; }
+          .cei-split-right { min-height: 100vh; }
+        }
       `}</style>
+
+      {/* ── Panneau gauche — identité CEI ── */}
+      <div className="cei-split-panel">
+        {/* Silhouette + points décoratifs, en blanc translucide */}
+        <svg viewBox="0 0 500 900" preserveAspectRatio="none" aria-hidden="true"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
+          <path d="M0,900 L0,600 C60,520 -20,420 40,340 C90,270 20,180 90,80 C120,40 70,20 100,0 L0,0 Z" fill="rgba(255,255,255,0.06)" />
+        </svg>
+        <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true"
+          style={{ position: 'absolute', right: 0, bottom: 0, zIndex: 0, pointerEvents: 'none' }}>
+          <defs>
+            <pattern id="split-dots" width="16" height="16" patternUnits="userSpaceOnUse">
+              <circle cx="2" cy="2" r="2" fill="rgba(255,255,255,0.3)" />
+            </pattern>
+          </defs>
+          <rect width="150" height="150" fill="url(#split-dots)" />
+        </svg>
+
+        {/* Icônes représentant les fonctionnalités réelles de CEI */}
+        {FEATURE_ICONS.map(f => (
+          <i key={f.icon} className={`fas ${f.icon} cei-split-feature-icon`} style={{ top: f.top, left: f.left }} />
+        ))}
+
+        <div className="cei-split-brand">
+          <div className="cei-split-brand-icon"><i className="fas fa-graduation-cap" /></div>
+          <span className="cei-split-brand-name">CENTRE D&apos;EXAMEN INTELLIGENT</span>
+        </div>
+
+        <div className="cei-split-welcome">
+          <div className="cei-split-welcome-icon"><i className="fas fa-shield-halved" /></div>
+          <h2>{t.welcome}</h2>
+          <p>{t.welcomeSub}</p>
+        </div>
+      </div>
+
+      {/* ── Colonne droite — formulaire ── */}
+      <div className="cei-split-right">
+        <div className="cei-split-topbar">
+          <Link href="/" className="btn-home" style={{ position: 'static' }}>
+            <i className="fas fa-home" /> {t.back}
+          </Link>
+          <div className="lang-switcher" id="login-lang-sw" style={{ position: 'relative' }}>
+            <button className="lang-btn" onClick={e => { e.stopPropagation(); setMenuOpen(v => !v) }}>
+              <i className="fas fa-globe" />
+              <span className="lang-current-label">{lang === 'fr' ? '🇫🇷 FR' : lang === 'en' ? '🇬🇧 EN' : '🇸🇳 WO'}</span>
+              <i className="fas fa-chevron-down" style={{ fontSize: 10 }} />
+            </button>
+            {menuOpen && (
+              <div className="lang-menu">
+                <button className={`lang-option${lang === 'fr' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('fr') }}>
+                  <span className="lang-flag">🇫🇷</span> Français
+                </button>
+                <button className={`lang-option${lang === 'en' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('en') }}>
+                  <span className="lang-flag">🇬🇧</span> English
+                </button>
+                <button className={`lang-option${lang === 'wo' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('wo') }}>
+                  <span className="lang-flag">🇸🇳</span> Wolof
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="cei-split-form-wrap">
+          <h1>{t.connexion}</h1>
+          <p>{t.connexionSub}</p>
+
+          <form id="login-form" onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label><i className="fas fa-envelope" /> {t.email}</label>
+              <input
+                type="email"
+                id="login-email"
+                required
+                placeholder="votre@email.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
+            <div className="form-group">
+              <label><i className="fas fa-lock" /> {t.password}</label>
+              <input
+                type="password"
+                id="login-password"
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
+            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+              {loading
+                ? <><i className="fas fa-spinner" style={{ animation: 'spin 1s linear infinite' }} /> Connexion…</>
+                : <><i className="fas fa-sign-in-alt" /> {t.btn}</>
+              }
+            </button>
+          </form>
+
+          <p style={{ textAlign: 'center', margin: '14px 0 0' }}>
+            <Link href="/forgot-password" style={{ background: 'none', color: '#3b82f6', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <i className="fas fa-key" /> {t.forgot}
+            </Link>
+          </p>
+
+          <p className="auth-footer">
+            <i className="fas fa-info-circle" /> {t.contact}
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
