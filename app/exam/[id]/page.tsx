@@ -198,6 +198,7 @@ export default function ExamPage() {
   const [alerts,       setAlerts]       = useState<{type:string;msg:string;at:string}[]>([])
   const [lastSaved,    setLastSaved]    = useState<Date|null>(null)
   const [submitting,   setSubmitting]   = useState(false)
+  const [showFinalSig, setShowFinalSig] = useState(false)
   const [subjectOpen,  setSubjectOpen]  = useState(false)
   const [msgText,      setMsgText]      = useState('')
   const [msgSent,      setMsgSent]      = useState<{text:string;time:string}[]>([])
@@ -251,6 +252,10 @@ export default function ExamPage() {
   const sigMeta         = useRef({strokes:0,pathLength:0,startTime:0,endTime:0})
   const drawing         = useRef(false)
   const lastPos         = useRef([0,0])
+  const finalSigCanvasRef = useRef<HTMLCanvasElement|null>(null)
+  const finalSigMeta      = useRef({strokes:0,pathLength:0,startTime:0,endTime:0})
+  const finalDrawing      = useRef(false)
+  const finalLastPos      = useRef([0,0])
   const faceIntervalRef = useRef<ReturnType<typeof setInterval>|null>(null)
   const lastFaceAlertRef= useRef<{no_face:number;multiple:number;mismatch:number}>({no_face:0,multiple:0,mismatch:0})
   const consNoFaceRef   = useRef(0)
@@ -441,12 +446,58 @@ export default function ExamPage() {
   }
   function onSigEnd() { drawing.current=false }
 
+  /* ── Signature de fin de composition (soumission manuelle uniquement — pas
+     en cas de soumission automatique par expiration du temps ou déconnexion) ── */
+  function initFinalSig() {
+    const c = finalSigCanvasRef.current; if (!c) return
+    const r = c.getBoundingClientRect(); c.width = Math.round(r.width)||480; c.height = 130
+    const ctx = c.getContext('2d')!; drawWm(ctx,c.width,c.height)
+    finalSigMeta.current = {strokes:0,pathLength:0,startTime:0,endTime:0}
+  }
+  function clearFinalSig() {
+    const c = finalSigCanvasRef.current; if (!c) return
+    const ctx = c.getContext('2d')!; ctx.clearRect(0,0,c.width,c.height); drawWm(ctx,c.width,c.height)
+    finalSigMeta.current = {strokes:0,pathLength:0,startTime:0,endTime:0}
+    c.style.border='2px solid #e2e8f0'; c.style.background='#fafafa'
+  }
+  function getFinalSigPos(e:React.MouseEvent|React.TouchEvent) {
+    const c=finalSigCanvasRef.current!; const r=c.getBoundingClientRect()
+    const s='touches' in e?e.touches[0]:e as any
+    return [(s.clientX-r.left)*(c.width/r.width),(s.clientY-r.top)*(c.height/r.height)]
+  }
+  function onFinalSigStart(e:React.MouseEvent|React.TouchEvent) {
+    e.preventDefault(); finalDrawing.current=true; const [x,y]=getFinalSigPos(e); finalLastPos.current=[x,y]
+    const m=finalSigMeta.current; if(!m.startTime) m.startTime=Date.now(); m.strokes++
+  }
+  function onFinalSigMove(e:React.MouseEvent|React.TouchEvent) {
+    e.preventDefault(); if(!finalDrawing.current) return
+    const [x,y]=getFinalSigPos(e); const [lx,ly]=finalLastPos.current
+    const ctx=finalSigCanvasRef.current!.getContext('2d')!
+    ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(x,y)
+    ctx.strokeStyle='#1e293b'; ctx.lineWidth=2.2; ctx.lineCap='round'; ctx.stroke()
+    const m=finalSigMeta.current; m.pathLength+=Math.sqrt((x-lx)**2+(y-ly)**2); m.endTime=Date.now(); finalLastPos.current=[x,y]
+  }
+  function onFinalSigEnd() { finalDrawing.current=false }
+  function openFinalSigModal() {
+    setShowFinalSig(true)
+    requestAnimationFrame(()=>initFinalSig())
+  }
+  function confirmFinalSubmit() {
+    const c = finalSigCanvasRef.current; if (!c) return
+    const m = finalSigMeta.current
+    if (m.strokes===0) { c.style.border='2px solid #ef4444'; c.style.background='#fef2f2'; toastErr('Vous devez signer pour confirmer la remise.'); return }
+    if (m.pathLength<100) { toastErr('Signature trop courte — tracez un trait plus long.'); return }
+    if ((m.endTime-m.startTime)<800) { toastErr('Signature trop rapide — signez normalement.'); return }
+    setShowFinalSig(false)
+    handleSubmit(false, c.toDataURL('image/png'))
+  }
+
   /* ── Démarrer ─────────────────────────────────────────────────────────── */
   async function doStartExam() {
     const c = canvasRef.current; if (!c) return
     const m = sigMeta.current
     if (m.strokes===0) { c.style.border='2px solid #ef4444'; c.style.background='#fef2f2'; toastErr('Vous devez signer avant de démarrer.'); return }
-    if (m.strokes<2||m.pathLength<100) { toastErr('Signature insuffisante — tracez plusieurs traits.'); return }
+    if (m.pathLength<100) { toastErr('Signature trop courte — tracez un trait plus long.'); return }
     if ((m.endTime-m.startTime)<800) { toastErr('Signature trop rapide — signez normalement.'); return }
     setStarting(true)
     try {
@@ -898,7 +949,7 @@ export default function ExamPage() {
     try{await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answers)});setLastSaved(new Date())}catch{}
   }
 
-  const handleSubmit = useCallback(async(auto=false)=>{
+  const handleSubmit = useCallback(async(auto=false,signatureData?:string)=>{
     const aId=attemptRef.current; if(!aId||submitting||sessionEndedRef.current) return
     sessionEndedRef.current=true; setSubmitting(true)
     ;[timerRef,saveRef,msgPollRef,snapshotRef,extraPollRef].forEach(r=>{if(r.current)clearInterval(r.current)})
@@ -907,7 +958,7 @@ export default function ExamPage() {
     screenStream.current?.getTracks().forEach(t=>t.stop())
     if(lkRoomRef.current){try{lkRoomRef.current.disconnect()}catch{}}
     try {
-      await api.post(`/api/exam_attempts/${aId}/submit`,{answers:JSON.stringify(answers)})
+      await api.post(`/api/exam_attempts/${aId}/submit`,{answers:JSON.stringify(answers),...(signatureData?{signature_data:signatureData}:{})})
       if(!auto) success('Copie soumise avec succès !')
       setPhase('submitted')
     } catch {
@@ -1225,7 +1276,7 @@ export default function ExamPage() {
               <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 16px',background:timerColor,color:'white',borderRadius:8,fontSize:20,fontWeight:700,fontVariantNumeric:'tabular-nums'}}>
                 <i className="fas fa-clock" style={{fontSize:16}}/> {fmtTimer(timeLeft)}
               </div>
-              <button onClick={()=>{if(confirm('Soumettre votre copie ? Cette action est irréversible.'))handleSubmit(false)}} disabled={submitting}
+              <button onClick={openFinalSigModal} disabled={submitting}
                 style={{padding:'10px 20px',background:'#10b981',color:'white',border:'none',borderRadius:8,fontWeight:700,fontSize:14,cursor:submitting?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:7}}>
                 {submitting?<><i className="fas fa-spinner fa-spin"/>Soumission…</>:<><i className="fas fa-paper-plane"/>Soumettre</>}
               </button>
@@ -1359,7 +1410,7 @@ export default function ExamPage() {
               style={{padding:'10px 20px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',gap:7}}>
               <i className="fas fa-save"/> Sauvegarder brouillon
             </button>
-            <button onClick={()=>{if(confirm('Soumettre votre copie ? Cette action est irréversible.'))handleSubmit(false)}} disabled={submitting}
+            <button onClick={openFinalSigModal} disabled={submitting}
               style={{padding:'10px 24px',background:'#10b981',color:'white',border:'none',borderRadius:8,fontWeight:700,fontSize:14,cursor:submitting?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:7}}>
               <i className="fas fa-paper-plane"/> Soumettre l'examen
             </button>
@@ -1395,6 +1446,41 @@ export default function ExamPage() {
                   <button onClick={()=>setShowPrivateCallModal(false)}
                     style={{padding:'9px 20px',background:'#ef4444',color:'white',border:'none',borderRadius:8,fontWeight:700,cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',gap:6}}>
                     <i className="fas fa-phone-slash"/> Refuser
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal signature de fin de composition */}
+        {showFinalSig&&(
+          <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
+            <div style={{background:'white',borderRadius:12,overflow:'hidden',maxWidth:460,width:'100%',boxShadow:'0 20px 40px rgba(0,0,0,.3)',borderTop:'4px solid #10b981'}}>
+              <div style={{padding:'22px 26px'}}>
+                <h3 style={{fontSize:16,fontWeight:700,marginBottom:6,color:'#065f46',display:'flex',alignItems:'center',gap:8}}>
+                  <i className="fas fa-file-signature"/> Signature de fin de composition
+                </h3>
+                <p style={{fontSize:12.5,color:'#475569',marginBottom:14,lineHeight:1.6}}>
+                  Signez pour confirmer la remise de votre copie. Cette action est <strong>irréversible</strong>.
+                </p>
+                <canvas ref={finalSigCanvasRef}
+                  style={{border:'2px solid #e2e8f0',borderRadius:8,display:'block',cursor:'crosshair',background:'#fafafa',touchAction:'none',width:'100%',height:130}}
+                  onMouseDown={onFinalSigStart as any} onMouseMove={onFinalSigMove as any} onMouseUp={onFinalSigEnd} onMouseLeave={onFinalSigEnd}
+                  onTouchStart={onFinalSigStart as any} onTouchMove={onFinalSigMove as any} onTouchEnd={onFinalSigEnd}/>
+                <div style={{display:'flex',justifyContent:'flex-end',marginTop:6,marginBottom:14}}>
+                  <button onClick={clearFinalSig} style={{background:'none',border:'none',color:'#94a3b8',fontSize:12,cursor:'pointer'}}>
+                    <i className="fas fa-eraser"/> Effacer
+                  </button>
+                </div>
+                <div style={{display:'flex',gap:10}}>
+                  <button onClick={()=>setShowFinalSig(false)} disabled={submitting}
+                    style={{flex:1,padding:'10px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:13}}>
+                    <i className="fas fa-times" style={{marginRight:6}}/>Annuler
+                  </button>
+                  <button onClick={confirmFinalSubmit} disabled={submitting}
+                    style={{flex:2,padding:'10px',background:'#10b981',color:'white',border:'none',borderRadius:8,fontWeight:700,cursor:submitting?'not-allowed':'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:7}}>
+                    {submitting?<><i className="fas fa-spinner fa-spin"/>Soumission…</>:<><i className="fas fa-paper-plane"/>Confirmer et soumettre</>}
                   </button>
                 </div>
               </div>

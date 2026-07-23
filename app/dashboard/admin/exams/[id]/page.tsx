@@ -29,6 +29,82 @@ interface AttemptEx extends ExamAttempt {
   student_name?: string; student_email?: string; has_incidents?: boolean; needs_correction?: boolean; feedback?: string; extra_minutes?: number;
 }
 
+interface SigResponse { data: string | null; meta: string | null }
+
+function SignaturesModal({ attempt, onClose }: { attempt: AttemptEx; onClose: () => void }) {
+  const [loading, setLoading] = useState(true)
+  const [pre, setPre] = useState<SigResponse | null>(null)
+  const [post, setPost] = useState<SigResponse | null>(null)
+
+  useEffect(() => {
+    Promise.all([
+      api.get<SigResponse>(`/api/exam_attempts/${attempt.id}/signature/pre`).catch(() => null),
+      api.get<SigResponse>(`/api/exam_attempts/${attempt.id}/signature/post`).catch(() => null),
+    ]).then(([p, s]) => { setPre(p); setPost(s) }).finally(() => setLoading(false))
+  }, [attempt.id])
+
+  let preMeta: { strokes?: number; path_length?: number; duration_ms?: number; signed_at?: string } | null = null
+  try { preMeta = pre?.meta ? JSON.parse(pre.meta) : null } catch { preMeta = null }
+
+  const isAutoSubmitted = attempt.status === 'auto_submitted'
+
+  function Panel({ title, sig, emptyReason }: { title: string; sig: SigResponse | null; emptyReason: string }) {
+    return (
+      <div style={{ flex: 1, minWidth: 220 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: .04, marginBottom: 8 }}>{title}</div>
+        {sig?.data ? (
+          <img src={sig.data} alt={title}
+            style={{ width: '100%', height: 130, objectFit: 'contain', background: '#fafafa', border: '1px solid var(--border)', borderRadius: 8 }} />
+        ) : (
+          <div style={{ width: '100%', height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--background)', border: '1px dashed var(--border)', borderRadius: 8, color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', padding: 12 }}>
+            <span><i className="fas fa-file-circle-xmark" style={{ display: 'block', fontSize: 20, marginBottom: 6, opacity: .6 }} />{emptyReason}</span>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 24, width: '100%', maxWidth: 560, boxShadow: '0 20px 60px rgba(0,0,0,.2)' }}>
+        <h3 style={{ marginBottom: 4 }}>
+          <i className="fas fa-file-signature" style={{ color: 'var(--primary)', marginRight: 8 }} />
+          Signatures — {attempt.student_name ?? `Étudiant #${attempt.student_id}`}
+        </h3>
+        <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 18px' }}>Comparaison de l&apos;attestation signée avant composition et de la signature de remise.</p>
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <i className="fas fa-spinner fa-spin" style={{ fontSize: 24, color: 'var(--primary)' }} />
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <Panel title="Pré-examen (attestation)" sig={pre} emptyReason="Aucune signature enregistrée" />
+              <Panel title="Fin de composition" sig={post}
+                emptyReason={isAutoSubmitted
+                  ? 'Soumis automatiquement — signature finale non disponible (temps écoulé ou déconnexion)'
+                  : 'Signature finale non disponible'} />
+            </div>
+            {preMeta && (
+              <p style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 14 }}>
+                <i className="fas fa-circle-info" style={{ marginRight: 5 }} />
+                Attestation : {preMeta.strokes ?? '?'} trait(s) · {preMeta.duration_ms ? Math.round(preMeta.duration_ms / 100) / 10 : '?'}s ·
+                {' '}signée {preMeta.signed_at ? new Date(preMeta.signed_at).toLocaleString('fr-FR') : '—'}
+              </p>
+            )}
+          </>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+          <button className="btn btn-secondary" onClick={onClose}>Fermer</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminExamDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
@@ -56,6 +132,7 @@ export default function AdminExamDetailPage() {
   const gradesFileRef = useRef<HTMLInputElement | null>(null)
   const [rescheduleModal, setRescheduleModal] = useState(false)
   const [rescheduleForm, setRescheduleForm] = useState({ start_time: '', end_time: '' })
+  const [sigModal, setSigModal] = useState<AttemptEx | null>(null)
   const [rescheduling, setRescheduling] = useState(false)
 
   useEffect(() => { load() }, [id])
@@ -433,6 +510,13 @@ export default function AdminExamDetailPage() {
                             <i className="fas fa-undo" /> Réintégrer
                           </button>
                         )}
+                        {/* Signatures */}
+                        {a.status !== 'in_progress' && (
+                          <button onClick={() => setSigModal(a)} title="Voir les signatures pré/post-examen"
+                            style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#64748b20', color: '#475569', border: '1px solid #64748b40', borderRadius: 6, cursor: 'pointer' }}>
+                            <i className="fas fa-file-signature" /> Signatures
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -534,6 +618,9 @@ export default function AdminExamDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Modal signatures pré/post-examen */}
+      {sigModal && <SignaturesModal attempt={sigModal} onClose={() => setSigModal(null)} />}
     </div>
   )
 }
