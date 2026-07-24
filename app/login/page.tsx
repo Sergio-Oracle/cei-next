@@ -147,7 +147,7 @@ export default function LoginPage() {
         .cei-split-unchk-logo {
           position: relative;
           z-index: 1;
-          margin: 0 auto 24px;
+          margin: 0 0 24px;
           background: white;
           border-radius: 16px;
           padding: 12px 20px;
