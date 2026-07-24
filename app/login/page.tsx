@@ -111,8 +111,8 @@ export default function LoginPage() {
           gap: 20px;
         }
         .cei-split-panel {
-          flex: 1 1 38%;
-          max-width: 500px;
+          flex: 1 1 48%;
+          max-width: 680px;
           background: var(--primary, #1d4ed8);
           border-radius: 28px;
           position: relative;
@@ -169,7 +169,7 @@ export default function LoginPage() {
           z-index: 0;
         }
         .cei-split-right {
-          flex: 1 1 62%;
+          flex: 1 1 52%;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -185,7 +185,7 @@ export default function LoginPage() {
         }
         .cei-split-form-wrap {
           width: 100%;
-          max-width: 560px;
+          max-width: 460px;
         }
         .cei-split-form-wrap h1 { font-size: 36px; font-weight: 800; color: var(--text, #0f172a); margin: 0 0 10px; }
         .cei-split-form-wrap > p { color: var(--text-light, #64748b); font-size: 15px; margin: 0 0 36px; }
