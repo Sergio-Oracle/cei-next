@@ -95,7 +95,7 @@ function ReclamationsContent() {
     <div>
       <div className="page-header">
         <div>
-          <h2><i className="fa-solid fa-comment-exclamation" style={{ marginRight: 10, color: 'var(--warning)' }} />Mes réclamations</h2>
+          <h2><i className="fa-solid fa-triangle-exclamation" style={{ marginRight: 10, color: 'var(--warning)' }} />Mes réclamations</h2>
           <p>{reclamations.length} réclamation(s)</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowCreate(true)}>

@@ -102,7 +102,7 @@ export default function StudentPapersPage() {
                       </button>
                       {canReclaim(p) && (
                         <button className="btn btn-sm btn-warning" onClick={() => { setSelected(p); setShowReclamation(true) }} title="Faire une réclamation">
-                          <i className="fa-solid fa-comment-exclamation" />
+                          <i className="fa-solid fa-triangle-exclamation" />
                         </button>
                       )}
                     </div>
@@ -137,7 +137,7 @@ export default function StudentPapersPage() {
           {canReclaim(selected) && (
             <div style={{ marginTop: 16 }}>
               <button className="btn btn-warning" onClick={() => setShowReclamation(true)}>
-                <i className="fa-solid fa-comment-exclamation" /> Faire une réclamation
+                <i className="fa-solid fa-triangle-exclamation" /> Faire une réclamation
               </button>
               {selected.reclamation_window_end && (
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>

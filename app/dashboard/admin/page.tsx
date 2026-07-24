@@ -25,7 +25,7 @@ export default function AdminDashboard() {
     { label: 'Surveillants',    value: stats.total_surveillants,    icon: 'fa-eye',                color: '#f59e0b' },
     { label: 'Sujets',          value: stats.total_subjects,        icon: 'fa-file-lines',         color: '#06b6d4' },
     { label: 'Copies totales',  value: stats.total_papers,          icon: 'fa-copy',               color: '#0891b2' },
-    { label: 'Réclamations',    value: stats.pending_reclamations,  icon: 'fa-comment-exclamation',color: '#dc2626' },
+    { label: 'Réclamations',    value: stats.pending_reclamations,  icon: 'fa-triangle-exclamation',color: '#dc2626' },
     { label: 'Copies corrigées',value: stats.total_corrected_papers,icon: 'fa-check-circle',       color: '#ef4444' },
   ] : []
 

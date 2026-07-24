@@ -140,7 +140,7 @@ export default function StudentResultsPage() {
                         </button>
                         {!r.has_reclamation && r.score != null && (
                           <button className="btn btn-sm btn-warning" onClick={() => { setViewItem(r); setShowReclamation(true) }} title="Faire une réclamation">
-                            <i className="fa-solid fa-comment-exclamation" />
+                            <i className="fa-solid fa-triangle-exclamation" />
                           </button>
                         )}
                         {r.has_reclamation && (
@@ -192,7 +192,7 @@ export default function StudentResultsPage() {
           {!viewItem.has_reclamation && viewItem.score != null && (
             <div style={{ marginTop: 16 }}>
               <button className="btn btn-warning" onClick={() => setShowReclamation(true)}>
-                <i className="fa-solid fa-comment-exclamation" /> Faire une réclamation
+                <i className="fa-solid fa-triangle-exclamation" /> Faire une réclamation
               </button>
             </div>
           )}

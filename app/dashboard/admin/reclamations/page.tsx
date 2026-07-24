@@ -114,7 +114,7 @@ export default function AdminReclamationsPage() {
     <div>
       <div className="page-header">
         <div>
-          <h2><i className="fa-solid fa-comment-exclamation" style={{ marginRight: 10, color: 'var(--warning)' }} />Réclamations</h2>
+          <h2><i className="fa-solid fa-triangle-exclamation" style={{ marginRight: 10, color: 'var(--warning)' }} />Réclamations</h2>
           <p>{pending} réclamation{pending > 1 ? 's' : ''} en attente</p>
         </div>
       </div>
