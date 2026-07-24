@@ -111,8 +111,8 @@ export default function LoginPage() {
           gap: 20px;
         }
         .cei-split-panel {
-          flex: 1 1 48%;
-          max-width: 680px;
+          flex: 1 1 52%;
+          max-width: 980px;
           background: var(--primary, #1d4ed8);
           border-radius: 28px;
           position: relative;
@@ -169,7 +169,7 @@ export default function LoginPage() {
           z-index: 0;
         }
         .cei-split-right {
-          flex: 1 1 52%;
+          flex: 1 1 48%;
           display: flex;
           align-items: center;
           justify-content: center;
