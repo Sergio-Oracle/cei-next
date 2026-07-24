@@ -268,8 +268,11 @@ export default function LoginPage() {
         ))}
 
         <div className="cei-split-unchk-logo">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/logo-unchk.png" alt="Université Numérique Cheikh Hamidou Kane" />
+          <picture>
+            <source srcSet="/brand/logo-unchk.webp" type="image/webp" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/logo-unchk.png" alt="Université Numérique Cheikh Hamidou Kane" width={169} height={40} decoding="async" />
+          </picture>
         </div>
 
         <div className="cei-split-brand">

@@ -205,8 +205,11 @@ export default function LandingPage() {
     <>
       {/* Logo UNCHK */}
       <div className="landing-brand-logo">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/logo-unchk.png" alt="Université Numérique Cheikh Hamidou Kane" />
+        <picture>
+          <source srcSet="/brand/logo-unchk.webp" type="image/webp" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/logo-unchk.png" alt="Université Numérique Cheikh Hamidou Kane" width={135} height={32} decoding="async" />
+        </picture>
       </div>
 
       {/* Sélecteur de langue */}
