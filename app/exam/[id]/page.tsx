@@ -509,7 +509,7 @@ export default function ExamPage() {
       })
       const att=res.attempt; setAttempt(att); attemptRef.current=att.id
       extraMinRef.current=att.extra_minutes??0
-      if (att.answers) { try { const p=typeof att.answers==='string'?JSON.parse(att.answers):att.answers; setAnswers(p||{}) } catch {} }
+      if (att.answers) { try { const p=typeof att.answers==='string'?JSON.parse(att.answers):att.answers; setAnswers(p||{}); if(p?.__qcm_locked==='1') setShowPart2(true) } catch {} }
       setPhase('permissions')
     } catch (e:any) { toastErr(e.message||"Impossible de démarrer l'examen") }
     finally { setStarting(false) }
@@ -1205,6 +1205,32 @@ export default function ExamPage() {
     // l'étudiant ne devrait pas avoir à cliquer sur "Suiv." après avoir choisi
     // sa réponse. Exclu volontairement pour le QCM à choix multiples (l'étudiant
     // doit pouvoir cocher plusieurs cases avant d'avancer) — il garde le bouton.
+    // Verrouille définitivement la partie QCM une fois terminée : marqueur
+    // persisté dans les réponses sauvegardées (survit à une actualisation de
+    // page) — empêche un étudiant de revenir voir/modifier ses réponses QCM
+    // une fois passé aux questions ouvertes, et donc de les partager avec
+    // d'autres étudiants encore en train de composer.
+    function lockQcmAndAdvance() {
+      setShowPart2(true)
+      setAnswers(p=>({...p,__qcm_locked:'1'}))
+      if(attemptRef.current) doAutoSave(attemptRef.current)
+    }
+
+    // Version confirmée, pour le clic manuel sur "Terminer QCM" (contrairement
+    // à l'avance automatique, ici toutes les questions ne sont pas forcément
+    // répondues — on avertit avant un verrouillage irréversible).
+    function confirmAndLockQcm() {
+      const unanswered=p1Blocks.filter(b=>{
+        if(b.type==='appariement') return !(b.pairs?.every((_,i)=>(answers[`pq_${b.num}_${i}`]??'').trim()!=='')??false)
+        return (answers[`pq_${b.num}`]??'').trim()===''
+      }).length
+      const msg=unanswered>0
+        ? `${unanswered} question${unanswered>1?'s':''} QCM sans réponse. Une fois la partie 2 commencée, retour impossible. Continuer ?`
+        : "Une fois la partie 2 commencée, vous ne pourrez plus revenir au QCM. Continuer ?"
+      if(!window.confirm(msg)) return
+      lockQcmAndAdvance()
+    }
+
     function checkAutoAdvance(justKey:string, blockType:string) {
       if(blockType==='qcm_multi') return
       const currentBlocks=p1Pages[qcmIdx]??p1Blocks
@@ -1215,9 +1241,8 @@ export default function ExamPage() {
         return (answers[k]??'').trim()!==''
       })
       if(!allDone) return
-      if(qcmIdx<p1Pages.length-1) setQcmIdx(i=>i+1)
-      else if(p2Blocks.length>0) setShowPart2(true)
-      if(attemptRef.current) doAutoSave(attemptRef.current)
+      if(qcmIdx<p1Pages.length-1) { setQcmIdx(i=>i+1); if(attemptRef.current) doAutoSave(attemptRef.current) }
+      else if(p2Blocks.length>0) lockQcmAndAdvance()
     }
 
     return(
@@ -1368,9 +1393,11 @@ export default function ExamPage() {
                 const saveNow=()=>{if(attemptRef.current)doAutoSave(attemptRef.current)}
                 return(<>
                   <ProgBar answered={parsedAnswered} total={allQBlocks.length}/>
-                  {/* Partie 1 QCM/VF — pagination par groupes */}
-                  {p1Blocks.length>0&&(
-                    <div style={{marginBottom:p2Blocks.length?(showPart2?20:0):0}}>
+                  {/* Partie 1 QCM/VF — pagination par groupes. Masquée définitivement une
+                      fois la partie 2 débloquée : un étudiant ne doit plus pouvoir revoir
+                      ni modifier ses réponses QCM (risque de partage entre étudiants). */}
+                  {p1Blocks.length>0&&!showPart2&&(
+                    <div>
                       <SecHead icon="fa-check-square" color="#3b82f6" bg="#eff6ff" tc="#1e40af" title="Partie 1 — Questions à Choix Multiples" sub={`${p1Blocks.length} question${p1Blocks.length>1?'s':''}${isFinite(perPage)?` • ${perPage} par page`:''}`}/>
                       {p1Pages.length>1&&(
                         <div style={{background:'#1e293b',borderRadius:12,padding:'12px 16px',marginBottom:16}}>
@@ -1385,7 +1412,7 @@ export default function ExamPage() {
                                 Suiv. <i className="fas fa-chevron-right"/>
                               </button>
                             ):(
-                              <button onClick={()=>{setShowPart2(true);saveNow()}} disabled={p2Blocks.length===0}
+                              <button onClick={confirmAndLockQcm} disabled={p2Blocks.length===0}
                                 style={{background:p2Blocks.length?'#10b981':'#475569',border:'none',color:'#fff',borderRadius:8,padding:'8px 16px',cursor:p2Blocks.length?'pointer':'default',fontSize:13,fontWeight:600}}>
                                 {p2Blocks.length?<><i className="fas fa-arrow-right"/> Terminer QCM</>:<><i className="fas fa-check"/> Fin</>}
                               </button>
@@ -1406,8 +1433,8 @@ export default function ExamPage() {
                         </div>
                       )}
                       {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} onAnswer={checkAutoAdvance} mediaMap={mediaMap}/>)}
-                      {p1Pages.length<=1&&p2Blocks.length>0&&!showPart2&&(
-                        <button onClick={()=>setShowPart2(true)} style={{marginTop:8,background:'#10b981',border:'none',color:'#fff',borderRadius:8,padding:'10px 18px',cursor:'pointer',fontSize:13,fontWeight:600}}>
+                      {p1Pages.length<=1&&p2Blocks.length>0&&(
+                        <button onClick={confirmAndLockQcm} style={{marginTop:8,background:'#10b981',border:'none',color:'#fff',borderRadius:8,padding:'10px 18px',cursor:'pointer',fontSize:13,fontWeight:600}}>
                           <i className="fas fa-arrow-right"/> Passer aux questions ouvertes
                         </button>
                       )}
@@ -1418,8 +1445,11 @@ export default function ExamPage() {
                     <div>
                       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14,padding:'12px 16px',background:'#ecfdf5',borderRadius:10,borderLeft:'4px solid #10b981'}}>
                         <i className="fas fa-pen-alt" style={{color:'#10b981',fontSize:18}}/>
-                        <div style={{flex:1}}><div style={{fontWeight:700,fontSize:14,color:'#065f46'}}>Partie 2 — Questions à réponses courtes / développées</div><div style={{fontSize:12,color:'#10b981'}}>{p2Blocks.length} question{p2Blocks.length>1?'s':''}{isFinite(perPage)?` • ${perPage} par page`:''} • Rédigez vos réponses dans les zones ci-dessous</div></div>
-                        {p1Blocks.length>0&&showPart2&&<button onClick={()=>setShowPart2(false)} style={{background:'#d1fae5',border:'none',borderRadius:8,padding:'6px 12px',fontSize:12,fontWeight:600,color:'#065f46',cursor:'pointer'}}><i className="fas fa-arrow-left"/> Retour QCM</button>}
+                        <div style={{flex:1}}>
+                          <div style={{fontWeight:700,fontSize:14,color:'#065f46'}}>Partie 2 — Questions à réponses courtes / développées</div>
+                          <div style={{fontSize:12,color:'#10b981'}}>{p2Blocks.length} question{p2Blocks.length>1?'s':''}{isFinite(perPage)?` • ${perPage} par page`:''} • Rédigez vos réponses dans les zones ci-dessous</div>
+                          {p1Blocks.length>0&&<div style={{fontSize:11,color:'#059669',marginTop:4}}><i className="fas fa-lock" style={{marginRight:4}}/>Partie QCM terminée — retour impossible</div>}
+                        </div>
                       </div>
                       {(p2Pages[p2PageIdx]??p2Items).map((b,i)=>{
                         if(b.type==='section') return <div key={i} style={{margin:'18px 0 10px',padding:'10px 16px',background:'#f1f5f9',borderRadius:8,fontWeight:700,fontSize:14,color:'#334155',borderLeft:'4px solid #94a3b8'}}><i className="fas fa-layer-group" style={{color:'#64748b',marginRight:8}}/>{b.title}</div>
