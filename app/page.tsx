@@ -164,7 +164,6 @@ export default function LandingPage() {
     localStorage.setItem('lang', code)
     setLang(code)
     setMenuOpen(false)
-    window.dispatchEvent(new CustomEvent('cei:lang-change', { detail: code }))
 
     const host = window.location.hostname
     const pastExp = 'expires=Thu, 01 Jan 1970 00:00:00 GMT'
@@ -205,7 +204,7 @@ export default function LandingPage() {
   return (
     <>
       {/* Logo UNCHK */}
-      <div className="landing-brand-logo notranslate" translate="no">
+      <div className="landing-brand-logo">
         <picture>
           <source srcSet="/brand/logo-unchk.webp" type="image/webp" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -214,7 +213,7 @@ export default function LandingPage() {
       </div>
 
       {/* Sélecteur de langue */}
-      <div className="landing-lang-switcher notranslate" id="lang-sw" translate="no">
+      <div className="landing-lang-switcher" id="lang-sw">
         <button className="landing-lang-btn" onClick={e => { e.stopPropagation(); setMenuOpen(v => !v) }}>
           <i className="fas fa-globe" />
           <span>{lang === 'fr' ? '🇫🇷 FR' : lang === 'en' ? '🇬🇧 EN' : '🇸🇳 WO'}</span>
@@ -261,7 +260,7 @@ export default function LandingPage() {
           <rect width="90" height="90" fill="url(#hero-dots)" />
         </svg>
 
-        <div className="hero-content notranslate" translate="no">
+        <div className="hero-content">
           <div className="hero-icon">
             <i className="fas fa-graduation-cap" />
           </div>
