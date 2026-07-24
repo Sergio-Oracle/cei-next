@@ -151,6 +151,13 @@ export default function LoginPage() {
           text-align: center;
           padding: 0 12px;
         }
+        .cei-split-welcome-glow {
+          width: 190px; height: 190px;
+          background: rgba(255,255,255,.10);
+          border-radius: 50%;
+          margin: 0 auto -139px;
+          position: relative;
+        }
         .cei-split-welcome-icon {
           width: 84px; height: 84px;
           background: white;
@@ -158,14 +165,20 @@ export default function LoginPage() {
           display: flex; align-items: center; justify-content: center;
           margin: 0 auto 28px;
           box-shadow: 0 12px 32px rgba(0,0,0,.18);
+          position: relative;
         }
         .cei-split-welcome-icon i { font-size: 38px; color: var(--primary, #1d4ed8); }
         .cei-split-welcome h2 { font-size: 26px; font-weight: 800; margin: 0 0 10px; }
         .cei-split-welcome p { font-size: 14px; opacity: .85; line-height: 1.6; max-width: 360px; margin: 0 auto; }
         .cei-split-feature-icon {
           position: absolute;
-          font-size: 26px;
-          color: rgba(255,255,255,.16);
+          width: 44px; height: 44px;
+          border-radius: 50%;
+          background: rgba(255,255,255,.08);
+          border: 1px solid rgba(255,255,255,.12);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 17px;
+          color: rgba(255,255,255,.55);
           z-index: 0;
         }
         .cei-split-right {
@@ -200,9 +213,10 @@ export default function LoginPage() {
 
       {/* ── Panneau gauche — identité CEI ── */}
       <div className="cei-split-panel">
-        {/* Silhouette + points décoratifs, en blanc translucide */}
+        {/* Silhouette en 2 couches (profondeur) + points décoratifs, en blanc translucide */}
         <svg viewBox="0 0 500 900" preserveAspectRatio="none" aria-hidden="true"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
+          <path d="M0,900 L0,560 C70,490 -30,410 50,330 C110,270 30,170 100,90 C135,50 80,25 110,0 L0,0 Z" fill="rgba(255,255,255,0.045)" />
           <path d="M0,900 L0,600 C60,520 -20,420 40,340 C90,270 20,180 90,80 C120,40 70,20 100,0 L0,0 Z" fill="rgba(255,255,255,0.06)" />
         </svg>
         <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true"
@@ -214,10 +228,16 @@ export default function LoginPage() {
           </defs>
           <rect width="150" height="150" fill="url(#split-dots)" />
         </svg>
+        <svg width="90" height="90" viewBox="0 0 90 90" aria-hidden="true"
+          style={{ position: 'absolute', left: 24, top: 100, zIndex: 0, pointerEvents: 'none', opacity: .6 }}>
+          <rect width="90" height="90" fill="url(#split-dots)" />
+        </svg>
 
-        {/* Icônes représentant les fonctionnalités réelles de CEI */}
+        {/* Icônes représentant les fonctionnalités réelles de CEI, dans des badges circulaires */}
         {FEATURE_ICONS.map(f => (
-          <i key={f.icon} className={`fas ${f.icon} cei-split-feature-icon`} style={{ top: f.top, left: f.left }} />
+          <div key={f.icon} className="cei-split-feature-icon" style={{ top: f.top, left: f.left }}>
+            <i className={`fas ${f.icon}`} />
+          </div>
         ))}
 
         <div className="cei-split-brand">
@@ -226,6 +246,7 @@ export default function LoginPage() {
         </div>
 
         <div className="cei-split-welcome">
+          <div className="cei-split-welcome-glow" />
           <div className="cei-split-welcome-icon"><i className="fas fa-graduation-cap" /></div>
           <h2>{t.welcome}</h2>
           <p>{t.welcomeSub}</p>
