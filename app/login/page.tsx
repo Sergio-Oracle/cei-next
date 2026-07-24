@@ -111,8 +111,8 @@ export default function LoginPage() {
           gap: 20px;
         }
         .cei-split-panel {
-          flex: 1 1 46%;
-          max-width: 560px;
+          flex: 1 1 38%;
+          max-width: 500px;
           background: var(--primary, #1d4ed8);
           border-radius: 28px;
           position: relative;
@@ -169,7 +169,7 @@ export default function LoginPage() {
           z-index: 0;
         }
         .cei-split-right {
-          flex: 1 1 54%;
+          flex: 1 1 62%;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -185,10 +185,12 @@ export default function LoginPage() {
         }
         .cei-split-form-wrap {
           width: 100%;
-          max-width: 400px;
+          max-width: 560px;
         }
-        .cei-split-form-wrap h1 { font-size: 30px; font-weight: 800; color: var(--text, #0f172a); margin: 0 0 8px; }
-        .cei-split-form-wrap > p { color: var(--text-light, #64748b); font-size: 14px; margin: 0 0 32px; }
+        .cei-split-form-wrap h1 { font-size: 36px; font-weight: 800; color: var(--text, #0f172a); margin: 0 0 10px; }
+        .cei-split-form-wrap > p { color: var(--text-light, #64748b); font-size: 15px; margin: 0 0 36px; }
+        .cei-split-form-wrap .form-group input { font-size: 16px; padding: 14px 16px; }
+        .cei-split-form-wrap .btn-block { padding: 14px; font-size: 15px; }
         @media (max-width: 900px) {
           .cei-split-panel { display: none; }
           .cei-split { padding: 0; }
