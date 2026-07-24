@@ -61,29 +61,17 @@ export default function LoginPage() {
     return () => document.removeEventListener('click', close)
   }, [])
 
+  // La page de connexion est entièrement traduite via LANGS (aucun texte
+  // ne dépend du widget Google Translate) — on se contente de propager le
+  // choix aux autres composants (ex. bannière PWA) sans toucher au cookie
+  // googtrans ni recharger la page, pour éviter tout conflit entre React
+  // et les mutations DOM de Google Translate (cause du bug de désynchro
+  // du sélecteur signalé par l'utilisateur).
   function changeLang(code: 'fr' | 'en' | 'wo') {
     localStorage.setItem('lang', code)
     setLang(code)
     setMenuOpen(false)
-    const host = window.location.hostname
-    const pastExp = 'expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    const futExp  = 'expires=Fri, 31 Dec 9999 23:59:59 GMT'
-    if (code === 'fr') {
-      document.cookie = `googtrans=;path=/;${pastExp}`
-      if (host && host.includes('.')) document.cookie = `googtrans=;path=/;domain=.${host};${pastExp}`
-      window.location.reload()
-      return
-    }
-    const val = `/fr/${code}`
-    document.cookie = `googtrans=${val};path=/;${futExp}`
-    if (host && host.includes('.')) document.cookie = `googtrans=${val};path=/;domain=.${host};${futExp}`
-    const tryCombo = (n: number) => {
-      const c = document.querySelector('select.goog-te-combo') as HTMLSelectElement | null
-      if (c) { c.value = code; c.dispatchEvent(new Event('change', { bubbles: true })) }
-      else if (n > 0) setTimeout(() => tryCombo(n - 1), 250)
-      else window.location.reload()
-    }
-    tryCombo(8)
+    window.dispatchEvent(new CustomEvent('cei:lang-change', { detail: code }))
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -100,7 +88,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="cei-split">
+    <div className="cei-split notranslate" translate="no">
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .cei-split {
@@ -277,7 +265,7 @@ export default function LoginPage() {
 
         <div className="cei-split-brand">
           <div className="cei-split-brand-icon"><i className="fas fa-graduation-cap" /></div>
-          <span className="cei-split-brand-name">CENTRE D&apos;EXAMEN INTELLIGENT</span>
+          <span className="cei-split-brand-name">{t.title.toUpperCase()}</span>
         </div>
 
         <div className="cei-split-welcome">
