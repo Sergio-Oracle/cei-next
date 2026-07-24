@@ -172,18 +172,6 @@ export default function ProfessorExamDetailPage() {
     } catch (e: any) { error(e.message) } finally { setActioning(false) }
   }
 
-  // Retour #29 — publication des notes aux étudiants (après délibération) ;
-  // le prof/admin voit toujours les notes, seul l'étudiant est concerné
-  async function togglePublish() {
-    if (!exam) return
-    const next = !exam.results_published
-    try {
-      await api.put(`/api/online_exams/${id}/publish-results`, { published: next })
-      success(next ? 'Notes publiées aux étudiants' : 'Publication des notes retirée')
-      setExam(e => e ? { ...e, results_published: next } : e)
-    } catch (e: any) { error(e.message) }
-  }
-
   // Retour #6 — reprogrammation d'un examen déjà planifié, sans repasser par
   // toutes les étapes de création. Déplacer le début préserve la durée
   // actuelle (l'écart début/fin est recalculé côté serveur à partir de end_time).
@@ -410,13 +398,6 @@ export default function ProfessorExamDetailPage() {
               ? <><i className="fa-solid fa-spinner spin" /> Import...</>
               : <><i className="fa-solid fa-file-import" /> Importer notes</>}
           </button>
-          <button className={exam.results_published ? 'btn btn-warning' : 'btn btn-success'} onClick={togglePublish}
-            title="Publier/masquer les notes aux étudiants (après délibération)">
-            {exam.results_published
-              ? <><i className="fa-solid fa-eye-slash" /> Dépublier les notes</>
-              : <><i className="fa-solid fa-bullhorn" /> Publier les notes</>}
-          </button>
-
           <Link href="/dashboard/professor/exams" className="btn btn-secondary" style={{ marginLeft: 'auto' }}>
             <i className="fa-solid fa-arrow-left" /> Retour
           </Link>

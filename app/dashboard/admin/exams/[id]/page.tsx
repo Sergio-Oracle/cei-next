@@ -162,18 +162,6 @@ export default function AdminExamDetailPage() {
     catch (e: any) { error(e.message) } finally { setActing(false) }
   }
 
-  // Retour #29 — publication des notes aux étudiants (après délibération) ;
-  // le prof/admin voit toujours les notes, seul l'étudiant est concerné
-  async function togglePublish() {
-    if (!exam) return
-    const next = !exam.results_published
-    try {
-      await api.put(`/api/online_exams/${id}/publish-results`, { published: next })
-      success(next ? 'Notes publiées aux étudiants' : 'Publication des notes retirée')
-      setExam(e => e && { ...e, results_published: next })
-    } catch (e: any) { error(e.message) }
-  }
-
   // Retour #6 — reprogrammation d'un examen déjà planifié, sans recréer l'examen.
   // Déplacer le début préserve la durée actuelle (l'écart début/fin est
   // recalculé côté serveur à partir de end_time).
@@ -367,13 +355,6 @@ export default function AdminExamDetailPage() {
             title="Importer des notes déjà calculées (étudiants n'ayant pas composé sur la plateforme)">
             <i className={`fas ${importingGrades ? 'fa-spinner fa-spin' : 'fa-file-import'}`} /> {importingGrades ? 'Import...' : 'Importer notes'}
           </button>
-          <button className={exam.results_published ? 'btn btn-warning' : 'btn btn-success'} onClick={togglePublish}
-            title="Publier/masquer les notes aux étudiants (après délibération)">
-            <i className={`fas ${exam.results_published ? 'fa-eye-slash' : 'fa-bullhorn'}`} /> {exam.results_published ? 'Dépublier les notes' : 'Publier les notes'}
-          </button>
-
-          <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)', margin: '0 2px' }} />
-
           <button className="btn btn-danger" onClick={del} disabled={acting}><i className="fas fa-trash" /> Supprimer</button>
           <Link href="/dashboard/admin/exams" className="btn btn-secondary" style={{ marginLeft: 'auto' }}><i className="fas fa-arrow-left" /> Retour</Link>
         </div>
