@@ -156,16 +156,9 @@ export default function AttemptDetailPage() {
         : null
     }
 
-    // 1. raw_answers en priorité
-    if (data.raw_answers) {
-      try {
-        const raw = typeof data.raw_answers === 'string' ? JSON.parse(data.raw_answers) : data.raw_answers
-        if (typeof raw === 'object' && raw !== null) return extractFromObj(raw as Record<string, unknown>)
-        if (typeof raw === 'string') return raw.trim() || null
-      } catch {}
-    }
-
-    // 2. student_answer — peut être JSON ou texte libre
+    // 1. student_answer en priorité — reconstruit lisible côté serveur
+    // (numéro + texte de question, choix résolus), pas les clés de
+    // stockage brutes (pq_1, pq_2…) que montrait raw_answers.
     if (data.student_answer) {
       try {
         const parsed = JSON.parse(data.student_answer)
@@ -174,6 +167,15 @@ export default function AttemptDetailPage() {
       } catch {
         return data.student_answer.trim() || null
       }
+    }
+
+    // 2. raw_answers — repli si le serveur n'a pas pu reconstruire de texte lisible
+    if (data.raw_answers) {
+      try {
+        const raw = typeof data.raw_answers === 'string' ? JSON.parse(data.raw_answers) : data.raw_answers
+        if (typeof raw === 'object' && raw !== null) return extractFromObj(raw as Record<string, unknown>)
+        if (typeof raw === 'string') return raw.trim() || null
+      } catch {}
     }
 
     return null
