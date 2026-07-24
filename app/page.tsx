@@ -221,14 +221,20 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className="hero">
-        {/* Éléments décoratifs — silhouette organique + motif de points, en
-            blanc translucide (pas de dégradé, pas de violet), même
-            traitement que la page de connexion pour la cohérence visuelle. */}
-        <svg viewBox="0 0 420 900" preserveAspectRatio="none" aria-hidden="true"
-          style={{ position: 'absolute', top: 0, left: 0, width: 340, height: '100%', zIndex: 0, pointerEvents: 'none' }}>
+        {/* Courbes/spirales décoratives en trait blanc translucide + motifs de
+            points, même traitement que la page de connexion pour la
+            cohérence visuelle (pas de dégradé, pas de violet). */}
+        <svg viewBox="0 0 1200 600" preserveAspectRatio="none" aria-hidden="true"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
           <path
-            d="M0,0 L360,0 C300,90 400,180 330,280 C270,360 410,460 320,560 C255,640 400,720 310,820 C270,865 330,890 300,900 L0,900 Z"
-            fill="rgba(255,255,255,0.07)"
+            d="M-20,60 C80,110 -40,200 90,250 C220,300 300,190 380,280
+               C460,370 310,410 400,500 C490,590 640,520 600,610"
+            fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"
+          />
+          <path
+            d="M1220,40 C1120,90 1240,170 1110,220 C980,270 900,170 830,250
+               C760,330 900,380 830,460 C760,540 620,500 640,580"
+            fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"
           />
         </svg>
         <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true"
@@ -240,6 +246,17 @@ export default function LandingPage() {
           </defs>
           <rect width="150" height="150" rx="18" fill="url(#hero-dots)" />
         </svg>
+        <svg width="90" height="90" viewBox="0 0 90 90" aria-hidden="true"
+          style={{ position: 'absolute', left: 28, bottom: 28, zIndex: 0, pointerEvents: 'none', opacity: .6 }}>
+          <rect width="90" height="90" fill="url(#hero-dots)" />
+        </svg>
+
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'flex-start', maxWidth: 1200, margin: '0 auto 8px' }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: '10px 18px', boxShadow: '0 12px 32px rgba(0,0,0,.18)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/logo-unchk.png" alt="Université Numérique Cheikh Hamidou Kane" style={{ display: 'block', height: 36, width: 'auto' }} />
+          </div>
+        </div>
 
         <div className="hero-content">
           <div className="hero-icon">
