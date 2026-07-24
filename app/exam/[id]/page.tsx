@@ -1200,6 +1200,26 @@ export default function ExamPage() {
       return (answers[`pq_${b.num}`]??'').trim()!==''
     }).length
 
+    // Avance automatiquement à la page suivante quand la dernière question à
+    // choix unique (QCU/V-F) de la page vient d'être répondue — comme demandé :
+    // l'étudiant ne devrait pas avoir à cliquer sur "Suiv." après avoir choisi
+    // sa réponse. Exclu volontairement pour le QCM à choix multiples (l'étudiant
+    // doit pouvoir cocher plusieurs cases avant d'avancer) — il garde le bouton.
+    function checkAutoAdvance(justKey:string, blockType:string) {
+      if(blockType==='qcm_multi') return
+      const currentBlocks=p1Pages[qcmIdx]??p1Blocks
+      const allDone=currentBlocks.every(b=>{
+        const k=`pq_${b.num}`
+        if(k===justKey) return true
+        if(b.type==='appariement') return b.pairs?.every((_,i)=>(answers[`${k}_${i}`]??'').trim()!=='')??false
+        return (answers[k]??'').trim()!==''
+      })
+      if(!allDone) return
+      if(qcmIdx<p1Pages.length-1) setQcmIdx(i=>i+1)
+      else if(p2Blocks.length>0) setShowPart2(true)
+      if(attemptRef.current) doAutoSave(attemptRef.current)
+    }
+
     return(
       <div className="exam-shell" style={{display:'flex',height:'100vh',width:'100%',overflow:'hidden',fontFamily:"-apple-system,'Segoe UI',Roboto,sans-serif"}}>
         <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes agP{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}50%{box-shadow:0 0 0 5px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}`}</style>
@@ -1385,7 +1405,7 @@ export default function ExamPage() {
                           </div>
                         </div>
                       )}
-                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} mediaMap={mediaMap}/>)}
+                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} onAnswer={checkAutoAdvance} mediaMap={mediaMap}/>)}
                       {p1Pages.length<=1&&p2Blocks.length>0&&!showPart2&&(
                         <button onClick={()=>setShowPart2(true)} style={{marginTop:8,background:'#10b981',border:'none',color:'#fff',borderRadius:8,padding:'10px 18px',cursor:'pointer',fontSize:13,fontWeight:600}}>
                           <i className="fas fa-arrow-right"/> Passer aux questions ouvertes
@@ -1639,7 +1659,7 @@ function SQ({q,idx,answers,setAnswers}:{q:Question;idx:number;answers:Record<str
 }
 
 /* Question parsée (contenu brut) */
-function PQ({block,answers,setAnswers,onAnswer,mediaMap}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:()=>void;mediaMap?:Record<string,string>}) {
+function PQ({block,answers,setAnswers,onAnswer,mediaMap}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:(key:string,blockType:string)=>void;mediaMap?:Record<string,string>}) {
   const isOpen=block.type==='open'||block.type==='subopen'||block.type==='code'
   const key=`pq_${block.num}`
   // Mélange stable (par instance de bloc) des choix de droite de l'appariement,
@@ -1684,7 +1704,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap}:{block:ParsedBlock;answ
       {block.type==='vf'&&(
         <div style={{display:'flex',gap:12}}>
           {['Vrai','Faux'].map(opt=>{const sel=answers[key]===opt;const col=SELECTED_COLOR;return(
-            <label key={opt} onClick={()=>{setAnswers(p=>({...p,[key]:opt}));onAnswer?.()}} style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',flex:1,justifyContent:'center',transition:'all .18s'}}>
+            <label key={opt} onClick={()=>{setAnswers(p=>({...p,[key]:opt}));onAnswer?.(key,block.type)}} style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',flex:1,justifyContent:'center',transition:'all .18s'}}>
               <span style={{width:32,height:32,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:14,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{opt[0]}</span>
               <span style={{fontSize:15,color:'#1e293b'}}>{opt}</span>{sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:18}}/>}
             </label>
@@ -1696,7 +1716,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap}:{block:ParsedBlock;answ
           {block.choices.map((c,ci)=>{
             const col=SELECTED_COLOR;const sel=answers[key]===c.letter
             return(
-              <label key={ci} onClick={()=>{setAnswers(p=>({...p,[key]:c.letter}));onAnswer?.()}} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',transition:'all .18s',userSelect:'none'}}>
+              <label key={ci} onClick={()=>{setAnswers(p=>({...p,[key]:c.letter}));onAnswer?.(key,block.type)}} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',transition:'all .18s',userSelect:'none'}}>
                 <span style={{width:32,height:32,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:14,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{c.letter}</span>
                 <span style={{fontSize:15,color:'#1e293b',flex:1,lineHeight:1.5}}>{c.text}</span>
                 {sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:18,flexShrink:0}}/>}
@@ -1713,8 +1733,10 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap}:{block:ParsedBlock;answ
             const selLetters=(answers[key]??'').split(',').map(s=>s.trim()).filter(Boolean)
             const sel=selLetters.includes(c.letter)
             const toggle=()=>{
+              // Pas d'avance automatique ici : l'étudiant doit pouvoir cocher
+              // plusieurs cases (QCM à choix multiples) avant de continuer.
               const next=sel?selLetters.filter(l=>l!==c.letter):[...selLetters,c.letter]
-              setAnswers(p=>({...p,[key]:next.sort().join(',')}));onAnswer?.()
+              setAnswers(p=>({...p,[key]:next.sort().join(',')}))
             }
             return(
               <label key={ci} onClick={toggle} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',transition:'all .18s',userSelect:'none'}}>
@@ -1734,7 +1756,9 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap}:{block:ParsedBlock;answ
               <div key={i} style={{display:'flex',alignItems:'center',gap:12}}>
                 <div style={{flex:1,padding:'12px 16px',border:'1.5px solid #e2e8f0',borderRadius:10,background:'#f8fafc',fontSize:14,color:'#0f172a',fontWeight:600}}>{pr.left}</div>
                 <i className="fas fa-arrow-right" style={{color:'#94a3b8',flexShrink:0}}/>
-                <select value={sv} onChange={e=>{setAnswers(p=>({...p,[sk]:e.target.value}));onAnswer?.()}}
+                {/* Pas d'avance automatique : l'appariement comporte plusieurs
+                    paires à compléter avant de continuer. */}
+                <select value={sv} onChange={e=>{setAnswers(p=>({...p,[sk]:e.target.value}))}}
                   style={{flex:1,padding:'12px 14px',border:`1.5px solid ${sv?'#10b981':'#e2e8f0'}`,borderRadius:10,fontSize:14,color:'#0f172a',background:'#fff',outline:'none'}}>
                   <option value="">— Choisir —</option>
                   {shuffledRights.map((r,j)=><option key={j} value={r}>{r}</option>)}
