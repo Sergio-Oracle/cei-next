@@ -122,6 +122,7 @@ export default function LoginPage() {
           padding: 32px;
           color: white;
           min-height: calc(100vh - 40px);
+          order: 2;
         }
         .cei-split-brand {
           display: flex;
@@ -174,6 +175,7 @@ export default function LoginPage() {
           justify-content: center;
           position: relative;
           padding: 24px;
+          order: 1;
         }
         .cei-split-topbar {
           position: absolute;
@@ -222,7 +224,7 @@ export default function LoginPage() {
         </div>
 
         <div className="cei-split-welcome">
-          <div className="cei-split-welcome-icon"><i className="fas fa-shield-halved" /></div>
+          <div className="cei-split-welcome-icon"><i className="fas fa-graduation-cap" /></div>
           <h2>{t.welcome}</h2>
           <p>{t.welcomeSub}</p>
         </div>
