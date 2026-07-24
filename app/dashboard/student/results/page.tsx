@@ -124,9 +124,12 @@ export default function StudentResultsPage() {
                       }
                     </td>
                     <td>
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                        {r.feedback ? r.feedback.substring(0, 50) + (r.feedback.length > 50 ? '...' : '') : '—'}
-                      </span>
+                      {r.feedback
+                        ? <button className="btn btn-sm btn-secondary" onClick={() => setViewItem(r)}>
+                            <i className="fa-solid fa-comment-dots" /> Voir
+                          </button>
+                        : <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      }
                     </td>
                     <td><span className={`status-badge ${si.cls}`}>{si.label}</span></td>
                     <td>{r.corrected_at ? new Date(r.corrected_at).toLocaleDateString('fr-FR') : '—'}</td>
