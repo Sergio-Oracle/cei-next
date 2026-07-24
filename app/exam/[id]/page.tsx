@@ -103,7 +103,13 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
   const PAIR_RE = /^(?:\(?([A-Fa-f])\)?)\s*[.):\s-]\s+(.+?)\s*(?:→|->)\s*(.+)/
   const getPair = (l: string) => { const m = strip(l).match(PAIR_RE); return m ? { left: strip(m[2]), right: strip(m[3]) } : null }
   const isSep  = (l: string) => !l.trim() || /^[-=*─═▬]{3,}$/.test(l.trim())
-  const isSect = (l: string) => /^(?:Partie|Section|Exercice|Part)\s+(?:[IVX]+|\d+)/i.test(strip(l)) && !isQ(l)
+  // Accepte "Partie 3", "Partie III" ET "Partie — Appariement (5 pts)" /
+  // "Partie : QCM" — un en-tête de section n'est pas toujours suivi d'un
+  // numéro, parfois d'un simple séparateur puis d'un libellé. Sans ce cas,
+  // la ligne se collait aux lignes annexes de la question précédente
+  // (garbled overlap constaté : "Vrai / Faux" + "Partie — Appariement…"
+  // affichés l'un sur l'autre dans le même bloc de question).
+  const isSect = (l: string) => /^(?:Partie|Section|Exercice|Part)\s+(?:[IVX]+\b|\d+\b|[-–—:])/i.test(strip(l)) && !isQ(l)
   const INSTR_RE = /^(?:Défini[rz]|Expliqu[eé][rz]?|Décri[vz]|Analys[eé][rz]?|Calcul[eé][rz]?|Rédig[eé][rz]?|Démontr[eé][rz]?|Comment[eé][rz]?|Identifi[eé][rz]?|Justifi[eé][rz]?|Compar[eé][rz]?|Présent[eé][rz]?|Discut[eé][rz]?|Montr[eé][rz]?|Propos[eé][rz]?|Cit[eé][rz]?|Donner?)/i
 
   const lines = raw.split('\n')
