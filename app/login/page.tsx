@@ -147,18 +147,19 @@ export default function LoginPage() {
         .cei-split-unchk-logo {
           position: relative;
           z-index: 1;
-          margin: 36px auto 0;
+          margin: 0 auto 24px;
           background: white;
           border-radius: 16px;
-          padding: 14px 22px;
+          padding: 12px 20px;
           box-shadow: 0 12px 32px rgba(0,0,0,.18);
           display: flex;
           align-items: center;
           justify-content: center;
+          width: fit-content;
         }
         .cei-split-unchk-logo img {
           display: block;
-          height: 46px;
+          height: 40px;
           width: auto;
         }
         .cei-split-welcome {
@@ -266,14 +267,14 @@ export default function LoginPage() {
           </div>
         ))}
 
-        <div className="cei-split-brand">
-          <div className="cei-split-brand-icon"><i className="fas fa-graduation-cap" /></div>
-          <span className="cei-split-brand-name">CENTRE D&apos;EXAMEN INTELLIGENT</span>
-        </div>
-
         <div className="cei-split-unchk-logo">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/logo-unchk.png" alt="Université Numérique Cheikh Hamidou Kane" />
+        </div>
+
+        <div className="cei-split-brand">
+          <div className="cei-split-brand-icon"><i className="fas fa-graduation-cap" /></div>
+          <span className="cei-split-brand-name">CENTRE D&apos;EXAMEN INTELLIGENT</span>
         </div>
 
         <div className="cei-split-welcome">
