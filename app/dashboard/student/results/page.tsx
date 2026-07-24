@@ -62,6 +62,10 @@ export default function StudentResultsPage() {
     return { label: 'Ajourné', cls: 'danger' }
   }
 
+  const RECLAMATION_LABELS: Record<string, string> = {
+    pending: 'En attente', in_review: 'En cours d\'examen', resolved: 'Résolue', rejected: 'Rejetée',
+  }
+
   const scoredResults = results.filter(r => r.score != null)
   const avgScore = scoredResults.length > 0
     ? scoredResults.reduce((s, r) => s + (r.score ?? 0), 0) / scoredResults.length
@@ -145,7 +149,7 @@ export default function StudentResultsPage() {
                         )}
                         {r.has_reclamation && (
                           <span className={`status-badge ${r.reclamation_status === 'resolved' ? 'success' : r.reclamation_status === 'rejected' ? 'danger' : 'warning'}`} style={{ fontSize: 11 }}>
-                            {r.reclamation_status}
+                            {RECLAMATION_LABELS[r.reclamation_status ?? ''] ?? r.reclamation_status}
                           </span>
                         )}
                       </div>
@@ -198,7 +202,7 @@ export default function StudentResultsPage() {
           )}
           {viewItem.has_reclamation && (
             <div className="alert alert-info" style={{ marginTop: 12 }}>
-              <i className="fa-solid fa-circle-check" /> Réclamation déjà soumise — statut : <strong>{viewItem.reclamation_status}</strong>
+              <i className="fa-solid fa-circle-check" /> Réclamation déjà soumise — statut : <strong>{RECLAMATION_LABELS[viewItem.reclamation_status ?? ''] ?? viewItem.reclamation_status}</strong>
             </div>
           )}
         </Modal>
