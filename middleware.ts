@@ -15,6 +15,7 @@ const PUBLIC_PREFIXES = [
   '/static/',
   '/screenshots/',  // captures d'écran produit sur la page d'accueil publique
   '/icons/',        // icônes PWA (manifest.json) — doivent rester accessibles sans authentification
+  '/brand/',        // logos partenaires (ex. UNCHK) affichés sur les pages publiques
   '/favicon',
   '/manifest.json',
   '/sw.js',
