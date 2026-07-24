@@ -50,8 +50,19 @@ export default function LoginPage() {
   const t = LANGS[lang]
 
   useEffect(() => {
-    const s = localStorage.getItem('lang') as 'fr' | 'en' | 'wo' | null
-    if (s && ['fr', 'en', 'wo'].includes(s)) setLang(s)
+    // Le cookie googtrans est ce qui détermine réellement ce que Google
+    // Translate affiche — s'il diverge de localStorage (ex. cookie posé
+    // par une navigation précédente sur un autre onglet/domaine sans que
+    // localStorage suive), le sélecteur affichait une langue différente
+    // de celle réellement montrée à l'écran. Le cookie fait foi.
+    const m = document.cookie.match(/(?:^|; )googtrans=([^;]*)/)
+    const cookieLang = m ? (decodeURIComponent(m[1]).split('/')[2] as 'fr' | 'en' | 'wo' | undefined) : undefined
+    const stored = localStorage.getItem('lang') as 'fr' | 'en' | 'wo' | null
+    const effective = (cookieLang && ['fr', 'en', 'wo'].includes(cookieLang)) ? cookieLang : stored
+    if (effective && ['fr', 'en', 'wo'].includes(effective)) {
+      setLang(effective)
+      if (effective !== stored) localStorage.setItem('lang', effective)
+    }
 
     const close = (e: MouseEvent) => {
       const sw = document.getElementById('login-lang-sw')

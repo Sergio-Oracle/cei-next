@@ -51,12 +51,22 @@ export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const t = LD[lang]
 
-  /* Restore lang from localStorage + sync cookie + déclencher GT si besoin */
+  /* Restore lang — le cookie googtrans fait foi (c'est lui qui détermine
+     ce que Google Translate affiche réellement) ; localStorage n'est qu'un
+     repli si le cookie est absent. Si les deux divergent (ex. cookie posé
+     par une navigation antérieure sans que localStorage suive), le
+     sélecteur affichait une langue différente de celle réellement montrée
+     à l'écran — on les reconcilie ici. */
   useEffect(() => {
-    const s = localStorage.getItem('lang') as 'fr' | 'en' | 'wo' | null
+    const m = document.cookie.match(/(?:^|; )googtrans=([^;]*)/)
+    const cookieLang = m ? (decodeURIComponent(m[1]).split('/')[2] as 'fr' | 'en' | 'wo' | undefined) : undefined
+    const stored = localStorage.getItem('lang') as 'fr' | 'en' | 'wo' | null
+    const cookieValid = cookieLang && ['fr', 'en', 'wo'].includes(cookieLang)
+    const s = cookieValid ? (cookieLang as 'fr' | 'en' | 'wo') : stored
     if (s && ['fr', 'en', 'wo'].includes(s)) {
       setLang(s)
-      if (s !== 'fr') {
+      if (s !== stored) localStorage.setItem('lang', s)
+      if (s !== 'fr' && !cookieValid) {
         const val = `/fr/${s}`
         document.cookie = `googtrans=${val};path=/;expires=Fri, 31 Dec 9999 23:59:59 GMT`
         const host = window.location.hostname
