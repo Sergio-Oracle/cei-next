@@ -105,6 +105,20 @@ const EVT_RISK_COLOR: Record<string, string> = {
   copy_attempt: '#ef4444', paste_attempt: '#ef4444', multiple_faces: '#dc2626',
 }
 
+// Seuls les événements ci-dessous représentent un comportement suspect /
+// une violation potentielle des règles d'examen — le reste (messages,
+// appels enseignant, photo de référence, etc.) est de l'activité normale
+// de la plateforme et n'a pas sa place dans un rapport de SÉCURITÉ : les
+// compter comme "incidents" gonfle artificiellement le total et noie les
+// vrais signaux (changement d'onglet, plein écran quitté, visage absent…)
+// au milieu d'événements routiniers.
+const INCIDENT_EVENT_TYPES = new Set([
+  'no_face_detected', 'no_face', 'face_absent', 'window_blur', 'tab_switch',
+  'copy_attempt', 'paste_attempt', 'right_click', 'multiple_faces',
+  'screen_share_stopped', 'devtools_attempt', 'fullscreen_exit',
+  'warning_issued', 'proctor_ban', 'teacher_ban',
+])
+
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   banned:         { label: 'Banni',                color: '#ef4444' },
   submitted:      { label: 'Soumis',                color: '#f59e0b' },
@@ -162,7 +176,9 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
     } catch { error('Photo de référence non disponible') }
   }
 
-  const totalIncidents = (report?.event_summary ?? []).reduce((a, e) => a + e.count, 0)
+  const incidentEvents = (report?.event_summary ?? []).filter(e => INCIDENT_EVENT_TYPES.has(e.event))
+  const routineEvents  = (report?.event_summary ?? []).filter(e => !INCIDENT_EVENT_TYPES.has(e.event))
+  const totalIncidents = incidentEvents.reduce((a, e) => a + e.count, 0)
 
   return (
     <div>
@@ -214,9 +230,9 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
                 <table>
                   <thead><tr><th>Événement</th><th style={{ textAlign: 'center' }}>Nb</th></tr></thead>
                   <tbody>
-                    {report.event_summary.length === 0 ? (
+                    {incidentEvents.length === 0 ? (
                       <tr><td colSpan={2} className="empty-message">Aucun incident</td></tr>
-                    ) : report.event_summary.map(e => (
+                    ) : incidentEvents.map(e => (
                       <tr key={e.event}>
                         <td>
                           <i className={`fas ${EVT_ICONS[e.event] || 'fa-circle'}`}
@@ -229,6 +245,31 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
                   </tbody>
                 </table>
               </div>
+              {routineEvents.length > 0 && (
+                <>
+                  <div className="card-header" style={{ borderTop: '1px solid var(--border)' }}>
+                    <h3 style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>
+                      <i className="fas fa-circle-info" /> Activité de la plateforme (hors incidents)
+                    </h3>
+                  </div>
+                  <div className="table-responsive">
+                    <table>
+                      <tbody>
+                        {routineEvents.map(e => (
+                          <tr key={e.event}>
+                            <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                              <i className={`fas ${EVT_ICONS[e.event] || 'fa-circle'}`}
+                                style={{ color: '#94a3b8', marginRight: 8, width: 14, textAlign: 'center' }} />
+                              {EVT_LABELS[e.event] || e.event}
+                            </td>
+                            <td style={{ fontWeight: 600, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>{e.count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="card">
