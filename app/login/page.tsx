@@ -213,11 +213,20 @@ export default function LoginPage() {
 
       {/* ── Panneau gauche — identité CEI ── */}
       <div className="cei-split-panel">
-        {/* Silhouette en 2 couches (profondeur) + points décoratifs, en blanc translucide */}
-        <svg viewBox="0 0 500 900" preserveAspectRatio="none" aria-hidden="true"
+        {/* Courbes/spirales décoratives, en blanc translucide (trait, pas d'aplat) */}
+        <svg viewBox="0 0 600 900" preserveAspectRatio="none" aria-hidden="true"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-          <path d="M0,900 L0,560 C70,490 -30,410 50,330 C110,270 30,170 100,90 C135,50 80,25 110,0 L0,0 Z" fill="rgba(255,255,255,0.045)" />
-          <path d="M0,900 L0,600 C60,520 -20,420 40,340 C90,270 20,180 90,80 C120,40 70,20 100,0 L0,0 Z" fill="rgba(255,255,255,0.06)" />
+          <path
+            d="M120,30 C220,80 60,170 170,220 C280,270 360,160 400,250
+               C440,340 290,380 350,470 C410,560 540,490 500,600
+               C460,710 320,650 360,750 C400,850 530,790 500,880"
+            fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"
+          />
+          <path
+            d="M40,250 C110,300 20,360 90,410 C160,460 220,390 250,460
+               C280,530 180,560 220,630"
+            fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"
+          />
         </svg>
         <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true"
           style={{ position: 'absolute', right: 0, bottom: 0, zIndex: 0, pointerEvents: 'none' }}>
