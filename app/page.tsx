@@ -4,6 +4,22 @@ import './landing.css'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 
+// Écrit le cookie googtrans sur l'hôte exact ET tous les niveaux de
+// domaine parents plausibles (ex. cei.unchk.sn → .cei.unchk.sn, .unchk.sn).
+// Une session de test antérieure peut avoir laissé un cookie du même nom
+// sous un scope de domaine différent ; s'il n'est pas aussi réécrit ici,
+// il peut cohabiter avec le nouveau et être lu en priorité par Google
+// Translate, rendant le changement de langue silencieusement inopérant.
+function setGoogTransAllScopes(val: string) {
+  const futExp = 'expires=Fri, 31 Dec 9999 23:59:59 GMT'
+  const host = window.location.hostname
+  document.cookie = `googtrans=${val};path=/;${futExp}`
+  const parts = host.split('.')
+  for (let i = 0; i < parts.length - 1; i++) {
+    document.cookie = `googtrans=${val};path=/;domain=.${parts.slice(i).join('.')};${futExp}`
+  }
+}
+
 /* ── i18n ───────────────────────────────────────────────────────────── */
 const LD: Record<string, Record<string, string>> = {
   fr: {
@@ -64,12 +80,7 @@ export default function LandingPage() {
     if (s && ['fr', 'en', 'wo'].includes(s)) {
       setLang(s)
       if (s !== 'fr') {
-        const val = `/fr/${s}`
-        document.cookie = `googtrans=${val};path=/;expires=Fri, 31 Dec 9999 23:59:59 GMT`
-        const host = window.location.hostname
-        if (host && host.includes('.')) {
-          document.cookie = `googtrans=${val};path=/;domain=.${host};expires=Fri, 31 Dec 9999 23:59:59 GMT`
-        }
+        setGoogTransAllScopes(`/fr/${s}`)
         const tryCombo = (attempts: number) => {
           const combo = document.querySelector('select.goog-te-combo') as HTMLSelectElement | null
           if (combo) { combo.value = s; combo.dispatchEvent(new Event('change', { bubbles: true })) }
@@ -172,20 +183,17 @@ export default function LandingPage() {
     setLang(code)
     setMenuOpen(false)
 
-    const host = window.location.hostname
-    const futExp  = 'expires=Fri, 31 Dec 9999 23:59:59 GMT'
-
     // Ne jamais supprimer le cookie googtrans (une suppression JS ne
     // correspond pas forcément exactement au cookie posé en interne par
     // Google, ce qui la fait parfois échouer silencieusement — cause du
     // bug où "Français" restait sans effet). On pose toujours une valeur,
     // "/fr/fr" pour le retour au français (traduction français→français,
-    // un no-op pour Google) — comme sur la plateforme historique.
+    // un no-op pour Google) — comme sur la plateforme historique. Écrit
+    // aussi sur tous les niveaux de domaine parents plausibles (une
+    // session de test antérieure a pu laisser un cookie sous un autre
+    // scope, qui sinon prime silencieusement sur la nouvelle valeur).
     const val = code === 'fr' ? '/fr/fr' : `/fr/${code}`
-    document.cookie = `googtrans=${val};path=/;${futExp}`
-    if (host && host.includes('.')) {
-      document.cookie = `googtrans=${val};path=/;domain=.${host};${futExp}`
-    }
+    setGoogTransAllScopes(val)
 
     // location.replace (plutôt que reload) garantit un chargement neuf de
     // la page avec le cookie déjà en place, et ?_l= lève toute ambiguïté

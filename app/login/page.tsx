@@ -38,6 +38,22 @@ const FEATURE_ICONS = [
   { icon: 'fa-circle-check',top: '82%', left: '20%' },
 ]
 
+// Écrit le cookie googtrans sur l'hôte exact ET tous les niveaux de
+// domaine parents plausibles (ex. cei.unchk.sn → .cei.unchk.sn, .unchk.sn).
+// Une session de test antérieure peut avoir laissé un cookie du même nom
+// sous un scope de domaine différent ; s'il n'est pas aussi réécrit ici,
+// il peut cohabiter avec le nouveau et être lu en priorité par Google
+// Translate, rendant le changement de langue silencieusement inopérant.
+function setGoogTransAllScopes(val: string) {
+  const futExp = 'expires=Fri, 31 Dec 9999 23:59:59 GMT'
+  const host = window.location.hostname
+  document.cookie = `googtrans=${val};path=/;${futExp}`
+  const parts = host.split('.')
+  for (let i = 0; i < parts.length - 1; i++) {
+    document.cookie = `googtrans=${val};path=/;domain=.${parts.slice(i).join('.')};${futExp}`
+  }
+}
+
 export default function LoginPage() {
   const { login } = useAuth()
   const { error: showError } = useToast()
@@ -76,17 +92,19 @@ export default function LoginPage() {
     localStorage.setItem('lang', code)
     setLang(code)
     setMenuOpen(false)
-    const host = window.location.hostname
-    const futExp = 'expires=Fri, 31 Dec 9999 23:59:59 GMT'
     // Ne jamais supprimer le cookie googtrans (une suppression JS ne
     // correspond pas forcément exactement au cookie posé en interne par
     // Google, ce qui la fait parfois échouer silencieusement — cause du
     // bug où "Français" restait sans effet). Comme sur la plateforme
     // historique : on pose toujours une valeur, "/fr/fr" pour le retour au
     // français (traduction français→français, un no-op pour Google).
+    // On écrit aussi sur TOUS les niveaux de domaine plausibles (pas
+    // seulement l'hôte exact et le sous-domaine courant) : un cookie
+    // resté d'une session de test antérieure sous un autre scope de
+    // domaine (ex. .unchk.sn au lieu de .cei.unchk.sn) sinon persiste et
+    // prime silencieusement sur la nouvelle valeur.
     const val = code === 'fr' ? '/fr/fr' : `/fr/${code}`
-    document.cookie = `googtrans=${val};path=/;${futExp}`
-    if (host && host.includes('.')) document.cookie = `googtrans=${val};path=/;domain=.${host};${futExp}`
+    setGoogTransAllScopes(val)
     // location.replace (plutôt que reload) garantit un chargement neuf de
     // la page avec le cookie déjà en place, et ?_l= lève toute ambiguïté
     // pendant la brève fenêtre où le cookie Google n'est pas encore relu.
