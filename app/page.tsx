@@ -51,9 +51,16 @@ export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const t = LD[lang]
 
-  /* Restore lang from localStorage + sync cookie + déclencher GT si besoin */
+  /* Restore lang from localStorage/?_l= + sync cookie + déclencher GT si besoin */
   useEffect(() => {
-    const s = localStorage.getItem('lang') as 'fr' | 'en' | 'wo' | null
+    let s = localStorage.getItem('lang') as 'fr' | 'en' | 'wo' | null
+    try {
+      const urlLang = new URLSearchParams(window.location.search).get('_l') as 'fr' | 'en' | 'wo' | null
+      if (urlLang && ['fr', 'en', 'wo'].includes(urlLang)) {
+        s = urlLang
+        localStorage.setItem('lang', s)
+      }
+    } catch {}
     if (s && ['fr', 'en', 'wo'].includes(s)) {
       setLang(s)
       if (s !== 'fr') {
@@ -166,38 +173,25 @@ export default function LandingPage() {
     setMenuOpen(false)
 
     const host = window.location.hostname
-    const pastExp = 'expires=Thu, 01 Jan 1970 00:00:00 GMT'
     const futExp  = 'expires=Fri, 31 Dec 9999 23:59:59 GMT'
 
-    if (code === 'fr') {
-      /* Retour au français : supprimer le cookie → Google Translate revient à l'original */
-      document.cookie = `googtrans=;path=/;${pastExp}`
-      if (host && host.includes('.')) {
-        document.cookie = `googtrans=;path=/;domain=.${host};${pastExp}`
-      }
-      window.location.reload()
-      return
-    }
-
-    /* Autre langue : poser le cookie et déclencher GT */
-    const val = `/fr/${code}`
+    // Ne jamais supprimer le cookie googtrans (une suppression JS ne
+    // correspond pas forcément exactement au cookie posé en interne par
+    // Google, ce qui la fait parfois échouer silencieusement — cause du
+    // bug où "Français" restait sans effet). On pose toujours une valeur,
+    // "/fr/fr" pour le retour au français (traduction français→français,
+    // un no-op pour Google) — comme sur la plateforme historique.
+    const val = code === 'fr' ? '/fr/fr' : `/fr/${code}`
     document.cookie = `googtrans=${val};path=/;${futExp}`
     if (host && host.includes('.')) {
       document.cookie = `googtrans=${val};path=/;domain=.${host};${futExp}`
     }
 
-    const tryCombo = (attempts: number) => {
-      const combo = document.querySelector('select.goog-te-combo') as HTMLSelectElement | null
-      if (combo) {
-        combo.value = code
-        combo.dispatchEvent(new Event('change', { bubbles: true }))
-      } else if (attempts > 0) {
-        setTimeout(() => tryCombo(attempts - 1), 250)
-      } else {
-        window.location.reload()
-      }
-    }
-    tryCombo(8)
+    // location.replace (plutôt que reload) garantit un chargement neuf de
+    // la page avec le cookie déjà en place, et ?_l= lève toute ambiguïté
+    // pendant la brève fenêtre où le cookie Google n'est pas encore relu.
+    const url = window.location.href.split('?')[0].split('#')[0]
+    window.location.replace(`${url}?_l=${code}&_t=${Date.now()}`)
   }
 
   /* ── Render ─────────────────────────────────────────────────────── */
