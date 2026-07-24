@@ -907,6 +907,33 @@ section h2 {
     opacity: 1 !important;
 }
 
+/* ── Logo UNCHK (coin supérieur gauche) ── */
+.landing-brand-logo {
+    position: fixed;
+    top: 18px;
+    left: 20px;
+    z-index: 9999;
+    background: white;
+    border-radius: 16px;
+    padding: 8px 16px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.18);
+    transition: top 0.2s ease;
+    line-height: 0;
+}
+.landing-brand-logo img {
+    display: block;
+    height: 32px;
+    width: auto;
+}
+body.pwa-banner-visible .landing-brand-logo {
+    top: 72px;
+}
+@media (max-width: 480px) {
+    body.pwa-banner-visible .landing-brand-logo {
+        top: 92px;
+    }
+}
+
 /* ── Lang switcher ── */
 .landing-lang-switcher {
     position: fixed;

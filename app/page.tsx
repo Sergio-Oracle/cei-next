@@ -203,6 +203,12 @@ export default function LandingPage() {
   /* ── Render ─────────────────────────────────────────────────────── */
   return (
     <>
+      {/* Logo UNCHK */}
+      <div className="landing-brand-logo">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/logo-unchk.png" alt="Université Numérique Cheikh Hamidou Kane" />
+      </div>
+
       {/* Sélecteur de langue */}
       <div className="landing-lang-switcher" id="lang-sw">
         <button className="landing-lang-btn" onClick={e => { e.stopPropagation(); setMenuOpen(v => !v) }}>
@@ -250,13 +256,6 @@ export default function LandingPage() {
           style={{ position: 'absolute', left: 28, bottom: 28, zIndex: 0, pointerEvents: 'none', opacity: .6 }}>
           <rect width="90" height="90" fill="url(#hero-dots)" />
         </svg>
-
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'flex-start', maxWidth: 1200, margin: '0 auto 8px' }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: '10px 18px', boxShadow: '0 12px 32px rgba(0,0,0,.18)' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/logo-unchk.png" alt="Université Numérique Cheikh Hamidou Kane" style={{ display: 'block', height: 36, width: 'auto' }} />
-          </div>
-        </div>
 
         <div className="hero-content">
           <div className="hero-icon">
