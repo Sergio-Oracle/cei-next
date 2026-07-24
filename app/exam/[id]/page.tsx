@@ -584,6 +584,32 @@ export default function ExamPage() {
     s.crossOrigin='anonymous'; s.onload=()=>connectLiveKit(aId); document.head.appendChild(s)
   }
 
+  /* Publie (ou republie) caméra/micro/écran sur la salle. Doit être
+     rappelée après CHAQUE (re)connexion : si la connexion initiale échoue
+     avant que la publication n'ait eu le temps d'aboutir (ex. timeout ICE
+     sur le transport publisher, cas réel observé où l'étudiant restait
+     connecté à la salle sans jamais transmettre d'image), la seule
+     reconnexion de room.connect() ne republie rien — l'étudiant paraît
+     alors "en ligne" côté surveillance mais l'écran reste noir en
+     permanence, sans qu'aucune erreur ne remonte à personne. */
+  async function publishLocalTracks(room:any,LK:any) {
+    const camTracks=camStream.current?.getVideoTracks()
+    if(camTracks?.length){
+      try{const vt=new LK.LocalVideoTrack(camTracks[0].clone(),undefined,false);await room.localParticipant.publishTrack(vt,{simulcast:true,videoEncoding:{maxBitrate:300_000,maxFramerate:15}})}
+      catch(e){console.warn('[LiveKit] échec publication caméra:',e)}
+    }
+    const micTracks=camStream.current?.getAudioTracks()
+    if(micTracks?.length){
+      try{const at=new LK.LocalAudioTrack(micTracks[0].clone(),undefined,false);await room.localParticipant.publishTrack(at)}
+      catch(e){console.warn('[LiveKit] échec publication micro:',e)}
+    }
+    const screenTracks=screenStream.current?.getVideoTracks()
+    if(screenTracks?.length&&screenTracks[0].readyState!=='ended'){
+      try{const st=new LK.LocalVideoTrack(screenTracks[0],undefined,false);await room.localParticipant.publishTrack(st,{source:LK.Track.Source.ScreenShare,name:'screen',screenShareEncoding:{maxBitrate:500_000,maxFramerate:5}})}
+      catch(e){console.warn('[LiveKit] échec publication écran:',e)}
+    }
+  }
+
   async function connectLiveKit(aId:number) {
     try {
       const tok=await api.get<{ws_url:string;token:string}>(`/api/exam_attempts/${aId}/livekit_token`)
@@ -594,7 +620,16 @@ export default function ExamPage() {
       room.on(LK.RoomEvent.Disconnected,()=>{
         if(sessionEndedRef.current||reconnects>=5) return
         const delay=Math.min(2000*Math.pow(1.5,reconnects),30000); reconnects++
-        setTimeout(async()=>{try{const t=await api.get<any>(`/api/exam_attempts/${aId}/livekit_token`);await room.connect(t.ws_url,t.token);reconnects=0}catch{}},delay)
+        setTimeout(async()=>{
+          try{
+            const t=await api.get<any>(`/api/exam_attempts/${aId}/livekit_token`)
+            await room.connect(t.ws_url,t.token)
+            reconnects=0
+            /* Aucune piste ne survit à une reconnexion complète (nouvelle
+               session RTC côté serveur) — il faut toujours republier. */
+            await publishLocalTracks(room,LK)
+          }catch{}
+        },delay)
       })
       room.on(LK.RoomEvent.DataReceived,(payload:Uint8Array)=>{
         try{handleTeacherMessage(JSON.parse(new TextDecoder().decode(payload)))}catch{}
@@ -647,13 +682,7 @@ export default function ExamPage() {
       /* Re-attacher la caméra locale après connect seulement si nécessaire */
       if(videoRef.current&&camStream.current&&videoRef.current.srcObject!==camStream.current)
         videoRef.current.srcObject=camStream.current
-      /* Publier caméra avec track cloné pour ne pas bloquer l'aperçu */
-      const camTracks=camStream.current?.getVideoTracks()
-      if(camTracks?.length){try{const vt=new LK.LocalVideoTrack(camTracks[0].clone(),undefined,false);await room.localParticipant.publishTrack(vt,{simulcast:true,videoEncoding:{maxBitrate:300_000,maxFramerate:15}})}catch{}}
-      const micTracks=camStream.current?.getAudioTracks()
-      if(micTracks?.length){try{const at=new LK.LocalAudioTrack(micTracks[0].clone(),undefined,false);await room.localParticipant.publishTrack(at)}catch{}}
-      const screenTracks=screenStream.current?.getVideoTracks()
-      if(screenTracks?.length&&screenTracks[0].readyState!=='ended'){try{const st=new LK.LocalVideoTrack(screenTracks[0],undefined,false);await room.localParticipant.publishTrack(st,{source:LK.Track.Source.ScreenShare,name:'screen',screenShareEncoding:{maxBitrate:500_000,maxFramerate:5}})}catch{}}
+      await publishLocalTracks(room,LK)
     } catch {}
   }
 
