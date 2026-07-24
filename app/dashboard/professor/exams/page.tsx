@@ -74,7 +74,7 @@ export default function ProfessorExamsPage() {
     if (isNaN(minutes) || minutes <= 0) { error('Nombre de minutes invalide'); return }
     setActioning(id)
     try {
-      await api.post(`/api/online_exams/${id}/extend`, { minutes })
+      await api.post(`/api/online_exams/${id}/extend`, { extra_minutes: minutes })
       success(`+${minutes} min ajoutées`)
     } catch (e: any) { error(e.message || 'Erreur') }
     finally { setActioning(null) }
