@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 
+interface ECAssignmentRef { id: number; professor_id: number }
 interface EC {
   id: number
   code: string
@@ -12,6 +13,7 @@ interface EC {
   ue_name?: string
   assigned_professor_id?: number | null
   assigned_professors?: number[]
+  assignments?: ECAssignmentRef[]
 }
 
 interface Professor {
@@ -24,6 +26,8 @@ interface MultiModal {
   ecId: number
   ecName: string
   assignedIds: number[]
+  /** professor_id -> id d'affectation (ECAssignment.id), pour permettre le retrait */
+  assignmentIdByProf: Record<number, number>
 }
 
 export default function AdminAffectationsPage() {
@@ -33,6 +37,7 @@ export default function AdminAffectationsPage() {
   const [professors, setProfessors] = useState<Professor[]>([])
   const [loading, setLoading] = useState(true)
   const [assigning, setAssigning] = useState<number | null>(null)
+  const [unassigning, setUnassigning] = useState<number | null>(null)
   const [selections, setSelections] = useState<Record<number, string>>({})
   const [multiModal, setMultiModal] = useState<MultiModal | null>(null)
   const [multiSelected, setMultiSelected] = useState<Set<number>>(new Set())
@@ -71,11 +76,34 @@ export default function AdminAffectationsPage() {
     finally { setAssigning(null) }
   }
 
+  async function unassign(assignmentId: number) {
+    if (!assignmentId || assignmentId < 0) { error('Affectation introuvable — actualisez la page'); return }
+    setUnassigning(assignmentId)
+    try {
+      await api.delete(`/api/admin/ec_assignments/${assignmentId}`)
+      success('Professeur retiré de cet EC')
+      // Si le modal multi-affectation est ouvert sur cet EC, retire aussi le
+      // professeur de son état local pour refléter le changement sans avoir
+      // à fermer/rouvrir le modal.
+      setMultiModal(prev => {
+        if (!prev) return prev
+        const profId = Object.entries(prev.assignmentIdByProf).find(([, aid]) => aid === assignmentId)?.[0]
+        if (!profId) return prev
+        const { [Number(profId)]: _removed, ...rest } = prev.assignmentIdByProf
+        return { ...prev, assignedIds: prev.assignedIds.filter(id => id !== Number(profId)), assignmentIdByProf: rest }
+      })
+      load()
+    } catch (e: any) { error(e.message || 'Erreur retrait') }
+    finally { setUnassigning(null) }
+  }
+
   function openMulti(ec: EC) {
-    const assignedIds = ec.assigned_professors?.length
-      ? ec.assigned_professors
-      : ec.assigned_professor_id ? [ec.assigned_professor_id] : []
-    setMultiModal({ ecId: ec.id, ecName: ec.name, assignedIds })
+    const assignments = ec.assignments?.length
+      ? ec.assignments
+      : (ec.assigned_professors ?? []).map(pid => ({ id: -1, professor_id: pid }))
+    const assignedIds = assignments.map(a => a.professor_id)
+    const assignmentIdByProf = Object.fromEntries(assignments.map(a => [a.professor_id, a.id]))
+    setMultiModal({ ecId: ec.id, ecName: ec.name, assignedIds, assignmentIdByProf })
     setMultiSelected(new Set())
   }
 
@@ -177,8 +205,9 @@ export default function AdminAffectationsPage() {
               </thead>
               <tbody>
                 {ecs.map(ec => {
-                  const currentProfId = ec.assigned_professor_id ?? (ec.assigned_professors?.[0] ?? null)
-                  const name = profName(currentProfId)
+                  const assignments = ec.assignments?.length
+                    ? ec.assignments
+                    : (ec.assigned_professors ?? []).map(pid => ({ id: -1, professor_id: pid }))
 
                   return (
                     <tr key={ec.id}>
@@ -201,16 +230,27 @@ export default function AdminAffectationsPage() {
                         </span>
                       </td>
 
-                      {/* Professeur actuel */}
+                      {/* Professeur actuel — tous les professeurs assignés, retirables un par un
+                          (rien n'empêche plusieurs professeurs sur le même EC ; jusqu'ici aucun
+                          moyen de voir/retirer les affectations au-delà de la première) */}
                       <td>
-                        {name ? (
-                          <span className="status-badge success">
-                            <i className="fas fa-circle-check" /> {name}
-                          </span>
-                        ) : (
+                        {assignments.length === 0 ? (
                           <span className="status-badge secondary">
                             <i className="fas fa-circle-minus" /> Non assigné
                           </span>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                            {assignments.map(a => (
+                              <span key={a.id} className="status-badge success" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                <i className="fas fa-circle-check" /> {profName(a.professor_id) ?? `#${a.professor_id}`}
+                                <button onClick={() => unassign(a.id)} disabled={unassigning === a.id}
+                                  title="Retirer ce professeur de cet EC"
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', opacity: .7, padding: 0, marginLeft: 2, lineHeight: 1 }}>
+                                  <i className={`fas ${unassigning === a.id ? 'fa-spinner fa-spin' : 'fa-times'}`} style={{ fontSize: 11 }} />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </td>
 
@@ -303,9 +343,18 @@ export default function AdminAffectationsPage() {
                       <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.email}</div>
                     </div>
                     {isAssigned && (
-                      <span className="status-badge success" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>
-                        <i className="fas fa-check-circle" /> Assigné
-                      </span>
+                      <>
+                        <span className="status-badge success" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>
+                          <i className="fas fa-check-circle" /> Assigné
+                        </span>
+                        <button type="button"
+                          onClick={e => { e.preventDefault(); e.stopPropagation(); unassign(multiModal.assignmentIdByProf[p.id]) }}
+                          disabled={unassigning === multiModal.assignmentIdByProf[p.id]}
+                          title="Retirer ce professeur de cet EC"
+                          style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: 6, padding: '3px 8px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          <i className={`fas ${unassigning === multiModal.assignmentIdByProf[p.id] ? 'fa-spinner fa-spin' : 'fa-times'}`} /> Retirer
+                        </button>
+                      </>
                     )}
                   </label>
                 )
