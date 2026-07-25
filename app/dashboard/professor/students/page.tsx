@@ -62,8 +62,16 @@ export default function ProfessorStudentsPage() {
   // simultanément côte à côte, sans onglet redondant. Sans jamais élargir
   // l'ensemble de base déjà correctement scopé au professeur côté backend
   // (ECAssignment → EC → UE → StudentUEEnrollment).
+  // Ne garder que les pôles où au moins un étudiant est réellement inscrit —
+  // un professeur peut avoir des ECs affectés dans plusieurs pôles sans
+  // qu'aucun étudiant n'y soit encore inscrit ; afficher quand même la
+  // colonne vide de ce pôle n'apporte rien et prête à confusion.
+  const studentPoleCodes = new Set(students.map(s => s.pole_code).filter(Boolean))
   const poles = Array.from(
-    new Map(ecs.filter(e => e.pole_code).map(e => [e.pole_code, { code: e.pole_code!, name: e.pole_name || e.pole_code! }])).values()
+    new Map(
+      ecs.filter(e => e.pole_code && studentPoleCodes.has(e.pole_code))
+        .map(e => [e.pole_code, { code: e.pole_code!, name: e.pole_name || e.pole_code! }])
+    ).values()
   )
 
   const filtered = students.filter(s => {
