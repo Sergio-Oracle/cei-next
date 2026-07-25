@@ -74,8 +74,13 @@ self.addEventListener('fetch', event => {
   }
 
   // Network-First pour les pages HTML (dashboard, login, etc.)
+  // cache:'no-store' est essentiel ici : sans ça, le Cache-Control très long
+  // que Next.js met sur les pages statiquement pré-rendues (s-maxage=1 an) fait
+  // que le cache HTTP du navigateur répond directement sans jamais recontacter
+  // le serveur — un PWA installé restait alors bloqué sur une ancienne version
+  // de la page (ex. connexion) même après un nouveau déploiement.
   event.respondWith(
-    fetch(request)
+    fetch(request, { cache: 'no-store' })
       .then(response => {
         if (response.ok) {
           const clone = response.clone();
