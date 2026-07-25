@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import api, { AI_TIMEOUT_MS } from '@/lib/api'
+import { useToast } from '@/contexts/ToastContext'
 
 interface Subject {
   id: number
@@ -44,6 +45,7 @@ function getMention(score: number) {
 }
 
 export default function ProfessorPapersPage() {
+  const { error: toastErr } = useToast()
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [loadingSubjects, setLoadingSubjects] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>('single')
@@ -466,7 +468,7 @@ export default function ProfessorPapersPage() {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
-                  onClick={async () => { try { const blob = await api.blob(`/api/papers/${singleResult.id}/export`); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `correction_${singleResult.student_name}.pdf`; a.click() } catch {} }}
+                  onClick={async () => { try { const blob = await api.blob(`/api/papers/${singleResult.id}/export`); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `correction_${singleResult.student_name}.pdf`; a.click() } catch { toastErr('Impossible de télécharger le PDF') } }}
                   style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="fas fa-file-pdf" />Télécharger PDF
                 </button>

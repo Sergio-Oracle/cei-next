@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
+import { useToast } from '@/contexts/ToastContext'
 
 interface Incident {
   timestamp: string
@@ -71,6 +72,7 @@ function getMention(score: number) {
 }
 
 export default function AttemptDetailPage() {
+  const { error: toastErr } = useToast()
   const { id } = useParams() as { id: string }
   const [data, setData]         = useState<AttemptReview | null>(null)
   const [loading, setLoading]   = useState(true)
@@ -93,7 +95,7 @@ export default function AttemptDetailPage() {
       a.download = `correction_${data?.student_name?.replace(/\s+/g, '_') ?? id}.pdf`
       a.click()
       URL.revokeObjectURL(a.href)
-    } catch { alert('Impossible de générer le rapport PDF') }
+    } catch { toastErr('Impossible de générer le rapport PDF') }
     finally { setPdfLoading(false) }
   }
 

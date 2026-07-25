@@ -44,7 +44,7 @@ export default function ProfilePage() {
   async function savePassword() {
     if (!pwForm.current_password || !pwForm.new_password) { error('Tous les champs sont requis'); return }
     if (pwForm.new_password !== pwForm.confirm_password) { error('Les mots de passe ne correspondent pas'); return }
-    if (pwForm.new_password.length < 6) { error('Le mot de passe doit faire au moins 6 caractères'); return }
+    if (pwForm.new_password.length < 8) { error('Le mot de passe doit faire au moins 8 caractères'); return }
     setSavingPw(true)
     try {
       await api.put('/api/profile/password', {

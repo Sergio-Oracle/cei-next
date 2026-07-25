@@ -231,6 +231,7 @@ export default function ExamPage() {
 
   const timerRef        = useRef<ReturnType<typeof setInterval>|null>(null)
   const saveRef         = useRef<ReturnType<typeof setInterval>|null>(null)
+  const saveFailedRef   = useRef(false)
   const msgPollRef      = useRef<ReturnType<typeof setInterval>|null>(null)
   const snapshotRef     = useRef<ReturnType<typeof setInterval>|null>(null)
   const extraPollRef    = useRef<ReturnType<typeof setInterval>|null>(null)
@@ -992,7 +993,15 @@ export default function ExamPage() {
   }
 
   async function doAutoSave(aId:number) {
-    try{await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answers)});setLastSaved(new Date())}catch{}
+    try{
+      await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answers)})
+      setLastSaved(new Date())
+      saveFailedRef.current=false
+    }catch{
+      // n'alerter qu'une fois par série d'échecs (auto-save toutes les 30s) —
+      // éviter de spammer l'étudiant si la coupure réseau dure plusieurs minutes
+      if(!saveFailedRef.current){saveFailedRef.current=true;warning('Sauvegarde automatique impossible — vérifiez votre connexion')}
+    }
   }
 
   const handleSubmit = useCallback(async(auto=false,signatureData?:string)=>{

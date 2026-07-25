@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import { useToast } from '@/contexts/ToastContext'
 
 interface CorrectedPaper {
   id: number
@@ -23,6 +24,7 @@ interface PapersResponse {
 
 export default function AdminPapersPage() {
   const router = useRouter()
+  const { error: toastErr } = useToast()
   const [papers, setPapers]   = useState<CorrectedPaper[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
@@ -53,7 +55,7 @@ export default function AdminPapersPage() {
       a.download = `correction_${(paper.student_name || '').replace(/\s+/g, '_')}.pdf`
       a.click()
       URL.revokeObjectURL(a.href)
-    } catch { alert('Impossible de générer le PDF') }
+    } catch { toastErr('Impossible de générer le PDF') }
     finally { setPdfBusy(null) }
   }
 

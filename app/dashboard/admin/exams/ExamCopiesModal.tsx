@@ -153,7 +153,7 @@ function ExtraTimeModal({ attemptId, studentName, onClose, onDone }: { attemptId
 
   async function save() {
     const m = parseInt(min)
-    if (!m || m < 1 || m > 120) { error('Durée invalide (1–120 min)'); return }
+    if (!m || m < 1 || m > 60) { error('Durée invalide (1–60 min)'); return }
     setSaving(true)
     try {
       await api.put(`/api/exam_attempts/${attemptId}/extra-time`, { minutes: m })
@@ -181,7 +181,7 @@ function ExtraTimeModal({ attemptId, studentName, onClose, onDone }: { attemptId
               </button>
             ))}
           </div>
-          <input type="number" min={1} max={120} value={min} onChange={e => setMin(e.target.value)}
+          <input type="number" min={1} max={60} value={min} onChange={e => setMin(e.target.value)}
             className="form-control" style={{ fontSize: 16, fontWeight: 700, textAlign: 'center' }} />
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={onClose} className="btn btn-secondary">Annuler</button>

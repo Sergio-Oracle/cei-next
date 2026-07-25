@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import { useToast } from '@/contexts/ToastContext'
 
 interface CorrectedPaper {
   id: number
@@ -20,6 +21,7 @@ interface Stats { total: number; online: number; paper: number }
 
 export default function CorrectedPage() {
   const router = useRouter()
+  const { error: toastErr } = useToast()
   const [papers, setPapers]   = useState<CorrectedPaper[]>([])
   const [stats, setStats]     = useState<Stats>({ total: 0, online: 0, paper: 0 })
   const [loading, setLoading] = useState(true)
@@ -56,7 +58,7 @@ export default function CorrectedPage() {
       a.download = `correction_${paper.student_name.replace(/\s+/g,'_')}_${paper.subject_title.replace(/\s+/g,'_')}.pdf`
       a.click()
       URL.revokeObjectURL(url)
-    } catch { alert('Impossible de générer le PDF de correction') } finally { setPdfBusy(null) }
+    } catch { toastErr('Impossible de générer le PDF de correction') } finally { setPdfBusy(null) }
   }
 
   function openDetail(paper: CorrectedPaper) {

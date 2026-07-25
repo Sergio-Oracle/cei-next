@@ -53,14 +53,16 @@ function RecBadge({ hasRec, status }: { hasRec?: boolean; status?: string }) {
   )
 }
 
-async function downloadPDF(paperId: number) {
+async function downloadPDF(paperId: number, onError?: (msg: string) => void) {
   try {
     const blob = await api.blob(`/api/papers/${paperId}/pdf`)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url; a.download = `copie_${paperId}.pdf`; a.click()
     URL.revokeObjectURL(url)
-  } catch {}
+  } catch {
+    onError?.('Impossible de télécharger la copie')
+  }
 }
 
 const LOCALE_OPTS: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Dakar' }
@@ -233,7 +235,7 @@ export default function StudentDashboard() {
                         <td style={{ padding: '10px 14px' }}>
                           {p.score != null ? (
                             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                              <button onClick={() => downloadPDF(p.id)} style={actBtn('#3b82f6')}>
+                              <button onClick={() => downloadPDF(p.id, error)} style={actBtn('#3b82f6')}>
                                 <i className="fas fa-file-pdf" /> PDF
                               </button>
                               {!p.has_reclamation && (

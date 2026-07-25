@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { useToast } from '@/contexts/ToastContext'
 
 interface Incident {
   id: number | string
@@ -79,6 +80,7 @@ const SEV_CFG = {
 }
 
 export default function ProfessorNotificationsPage() {
+  const { error: toastErr } = useToast()
   const [incidents,      setIncidents]      = useState<Incident[]>([])
   const [loading,        setLoading]        = useState(true)
   const [filterSeverity, setFilterSeverity] = useState<'all' | 'high' | 'medium' | 'info'>('all')
@@ -102,7 +104,7 @@ export default function ProfessorNotificationsPage() {
     try {
       await api.post('/api/professor/recent_incidents/dismiss', { item_id: id })
       setIncidents(prev => prev.filter(i => i.id !== id))
-    } catch { /* silencieux — l'item reste visible, l'utilisateur peut réessayer */ }
+    } catch { toastErr("Échec — l'incident n'a pas été marqué comme lu") }
     finally { setDismissing(null) }
   }
 
@@ -114,7 +116,7 @@ export default function ProfessorNotificationsPage() {
       await api.post('/api/professor/recent_incidents/dismiss', { item_ids: visible.map(i => i.id) })
       const dismissedIds = new Set(visible.map(i => i.id))
       setIncidents(prev => prev.filter(i => !dismissedIds.has(i.id)))
-    } catch { /* silencieux */ }
+    } catch { toastErr("Échec — les incidents n'ont pas été marqués comme lus") }
     finally { setClearingAll(false) }
   }
 
