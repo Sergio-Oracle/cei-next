@@ -49,6 +49,14 @@ self.addEventListener('fetch', event => {
   // Ne pas intercepter les requêtes non-GET
   if (request.method !== 'GET') return;
 
+  // Ne jamais tenter de mettre en cache une requête dont le schéma n'est pas
+  // http(s) — une extension navigateur (bloqueur de pub, gestionnaire de mots
+  // de passe...) peut déclencher des fetch() en chrome-extension:// depuis la
+  // page ; Cache.put() lève alors une TypeError non catchée ("Request scheme
+  // 'chrome-extension' is unsupported"). On laisse le navigateur gérer ces
+  // requêtes normalement, sans passer par le Service Worker.
+  if (!url.protocol.startsWith('http')) return;
+
   // Jamais de cache pour l'API (données dynamiques + authentification)
   if (url.pathname.startsWith('/api/')) return;
 
