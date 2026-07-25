@@ -19,9 +19,17 @@ interface HighRiskAttempt {
   risk_score: number; warnings_count: number; tab_switches: number
   no_face_count: number; status: string; ban_reason?: string
 }
+interface IncidentSnapshot { timestamp: string | null; event_type: string | null; image_url: string }
+interface StudentIncidents {
+  attempt_id: number; student_name: string; exam_title: string
+  risk_score: number; status: string
+  incidents: EventSummary[]; total_incidents: number
+  snapshots: IncidentSnapshot[]
+}
 interface SecurityReport {
   event_summary: EventSummary[]
   high_risk: HighRiskAttempt[]
+  by_student: StudentIncidents[]
   banned_count: number
   exam_id?: number | null
   exam_title?: string | null
@@ -151,6 +159,8 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
   const [facePhoto, setFacePhoto] = useState<(FaceRefData & { attemptId: number }) | null>(null)
   const [exams,     setExams]     = useState<ExamOption[]>([])
   const [examId,    setExamId]    = useState(fixedExamId ? String(fixedExamId) : '')
+  const [zoomed,    setZoomed]    = useState<IncidentSnapshot | null>(null)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
 
   useEffect(() => {
     load(fixedExamId ? String(fixedExamId) : undefined)
@@ -167,6 +177,22 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
     }
     catch { error('Erreur chargement rapport de sécurité') }
     finally { setLoading(false) }
+  }
+
+  async function downloadPdf() {
+    const targetExamId = fixedExamId ?? (examId ? Number(examId) : null)
+    if (!targetExamId) { error('Sélectionnez un examen pour télécharger son rapport PDF'); return }
+    setDownloadingPdf(true)
+    try {
+      const blob = await api.blob(`/api/online_exams/${targetExamId}/security_report/pdf`)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `securite-${targetExamId}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e: any) { error(e.message || 'Erreur téléchargement PDF') }
+    finally { setDownloadingPdf(false) }
   }
 
   async function viewFacePhoto(attemptId: number) {
@@ -197,12 +223,22 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
                 {exams.map(x => <option key={x.id} value={String(x.id)}>{x.title}</option>)}
               </select>
             )}
+            {(fixedExamId || examId) && (
+              <button className="btn btn-secondary" onClick={downloadPdf} disabled={downloadingPdf}>
+                {downloadingPdf ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-file-pdf" />} PDF
+              </button>
+            )}
             <button className="btn btn-secondary" onClick={() => load(examId || undefined)}><i className="fas fa-rotate" /> Actualiser</button>
           </div>
         </div>
       )}
       {hideHeader && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 12 }}>
+          {(fixedExamId || examId) && (
+            <button className="btn btn-secondary" onClick={downloadPdf} disabled={downloadingPdf}>
+              {downloadingPdf ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-file-pdf" />} PDF
+            </button>
+          )}
           <button className="btn btn-secondary" onClick={() => load(examId || undefined)}><i className="fas fa-rotate" /> Actualiser</button>
         </div>
       )}
@@ -326,12 +362,75 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
             </div>
           </div>
 
+          <div className="card" style={{ marginTop: 18 }}>
+            <div className="card-header">
+              <h3 style={{ margin: 0 }}><i className="fas fa-user-clock" /> Incidents par étudiant</h3>
+            </div>
+            {!report.by_student?.length ? (
+              <p className="empty-message">Aucun étudiant avec un incident enregistré</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 16px 16px' }}>
+                {report.by_student.map(s => (
+                  <div key={s.attempt_id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{s.student_name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{s.exam_title}</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: (STATUS_MAP[s.status] ?? { color: '#64748b' }).color,
+                          background: (STATUS_MAP[s.status] ?? { color: '#64748b' }).color + '18', padding: '3px 8px', borderRadius: 99 }}>
+                          {(STATUS_MAP[s.status] ?? { label: s.status }).label}
+                        </span>
+                        <span style={{ fontWeight: 800, color: riskColor(s.risk_score), fontSize: 14 }}>{s.risk_score}/100</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: s.snapshots.length ? 12 : 0 }}>
+                      {s.incidents.map(inc => (
+                        <span key={inc.event} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12,
+                          background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: 99, padding: '3px 10px' }}>
+                          <i className={`fas ${EVT_ICONS[inc.event] || 'fa-circle'}`} />
+                          {EVT_LABELS[inc.event] || inc.event} × {inc.count}
+                        </span>
+                      ))}
+                    </div>
+                    {s.snapshots.length > 0 && (
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {s.snapshots.map((snap, i) => (
+                          <img key={i} src={snap.image_url} alt="capture incident"
+                            onClick={() => setZoomed(snap)}
+                            title={snap.timestamp ? new Date(snap.timestamp).toLocaleString('fr-FR') : ''}
+                            style={{ width: 64, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)', cursor: 'zoom-in' }}
+                            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '16px 18px', marginTop: 16, fontSize: 13, color: '#0369a1', lineHeight: 1.7 }}>
             <strong><i className="fas fa-circle-info" /> Interprétation du score de risque :</strong><br />
             Le score est calculé à partir du nombre d'avertissements, de changements d'onglet, de détections sans visage et d'autres incidents.{' '}
             <strong>0–30 : Normal · 30–70 : Attention · 70–100 : Risque élevé</strong>
           </div>
         </>
+      )}
+
+      {/* Modal zoom capture incident */}
+      {zoomed && (
+        <div onClick={() => setZoomed(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.88)', zIndex: 99999, display: 'flex',
+            flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, cursor: 'zoom-out' }}>
+          <img src={zoomed.image_url} alt="capture incident"
+            style={{ maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 8, boxShadow: '0 12px 40px rgba(0,0,0,.5)' }} />
+          <div style={{ marginTop: 14, color: 'rgba(255,255,255,.85)', fontSize: 13, display: 'flex', gap: 12, alignItems: 'center' }}>
+            {zoomed.event_type && <span>{EVT_LABELS[zoomed.event_type] || zoomed.event_type}</span>}
+            {zoomed.timestamp && <span>{new Date(zoomed.timestamp).toLocaleString('fr-FR')}</span>}
+          </div>
+        </div>
       )}
 
       {/* Modal photo référence */}
