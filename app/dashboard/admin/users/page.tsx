@@ -59,6 +59,7 @@ export default function AdminUsersPage() {
   const [csvFile, setCsvFile]   = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<any>(null)
+  const [showCodesRef, setShowCodesRef] = useState(false)
 
   useEffect(() => { load(); loadHierarchy() }, [])
 
@@ -588,15 +589,65 @@ export default function AdminUsersPage() {
               <li>Téléchargez le template CSV</li>
               <li>Remplissez-le avec les données (<code>full_name, email, password, role</code>)</li>
               <li>Rôles possibles : <code>student</code>, <code>professor</code>, <code>admin</code></li>
+              <li>
+                Pour les étudiants, ajoutez la colonne <code>formation_code</code> (optionnelle mais
+                recommandée) — c&apos;est elle qui rattache chaque étudiant à la bonne chaîne
+                <strong> Pôle → Niveau → Formation</strong> et l&apos;inscrit automatiquement à
+                toutes les UE de sa formation. Sans elle, l&apos;étudiant est créé sans pôle.
+              </li>
               <li>Uploadez le fichier</li>
             </ol>
           </div>
 
           {/* Bouton télécharger template */}
-          <button onClick={downloadCsvTemplate}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 8, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600, marginBottom: 18 }}>
-            <i className="fas fa-download" /> Télécharger Template CSV
-          </button>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 18 }}>
+            <button onClick={downloadCsvTemplate}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 8, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+              <i className="fas fa-download" /> Télécharger Template CSV
+            </button>
+            <button onClick={() => setShowCodesRef(v => !v)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+              <i className={`fas ${showCodesRef ? 'fa-chevron-up' : 'fa-list'}`} />
+              {showCodesRef ? 'Masquer' : 'Voir'} les codes Formation disponibles
+            </button>
+          </div>
+
+          {/* Référence des codes Pôle → Niveau → Formation — évite de deviner/mélanger
+              un formation_code au moment de remplir le CSV en masse (cause exacte
+              d'une mauvaise inscription vécue précédemment : Formation/Pôle confondus). */}
+          {showCodesRef && (
+            <div style={{ border: '1px solid var(--border)', borderRadius: 8, marginBottom: 18, maxHeight: 260, overflowY: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                <thead style={{ position: 'sticky', top: 0, background: 'var(--surface-alt, #f1f5f9)' }}>
+                  <tr>
+                    <th style={thStyle}>Pôle</th>
+                    <th style={thStyle}>Niveau</th>
+                    <th style={thStyle}>Formation</th>
+                    <th style={thStyle}>formation_code à utiliser</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {formationOpts.length === 0 && (
+                    <tr><td colSpan={4} style={{ padding: 12, textAlign: 'center', color: 'var(--text-muted)' }}>Aucune formation configurée</td></tr>
+                  )}
+                  {[...formationOpts]
+                    .sort((a, b) => (a.pole_id ?? 0) - (b.pole_id ?? 0) || (a.niveau_id ?? 0) - (b.niveau_id ?? 0))
+                    .map(f => {
+                      const pole = poles.find(p => p.id === f.pole_id)
+                      const niveau = niveaux.find(n => n.id === f.niveau_id)
+                      return (
+                        <tr key={f.id} style={{ borderTop: '1px solid var(--border)' }}>
+                          <td style={tdStyle}>{pole ? `${pole.code} — ${pole.name}` : '—'}</td>
+                          <td style={tdStyle}>{niveau?.code || '—'}</td>
+                          <td style={tdStyle}>{f.name}</td>
+                          <td style={{ ...tdStyle, fontFamily: 'monospace', fontWeight: 700 }}>{f.code}</td>
+                        </tr>
+                      )
+                    })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <Fg label="Fichier CSV *">
             <input type="file" accept=".csv" onChange={e => { setCsvFile(e.target.files?.[0] || null); setImportResult(null) }}
@@ -652,6 +703,9 @@ export default function AdminUsersPage() {
     </div>
   )
 }
+
+const thStyle: React.CSSProperties = { textAlign: 'left', padding: '8px 10px', fontWeight: 700, color: 'var(--text-muted)' }
+const tdStyle: React.CSSProperties = { padding: '7px 10px' }
 
 /* ── Helpers internes ─────────────────────────────────────────────────────── */
 function btnStyle(color: string): React.CSSProperties {
