@@ -26,10 +26,15 @@ interface StudentIncidents {
   incidents: EventSummary[]; total_incidents: number
   snapshots: IncidentSnapshot[]
 }
+interface ReferencePhoto {
+  attempt_id: number; student_name: string; exam_title: string
+  timestamp: string | null; image_url: string
+}
 interface SecurityReport {
   event_summary: EventSummary[]
   high_risk: HighRiskAttempt[]
   by_student: StudentIncidents[]
+  reference_photos: ReferencePhoto[]
   banned_count: number
   exam_id?: number | null
   exam_title?: string | null
@@ -160,6 +165,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
   const [exams,     setExams]     = useState<ExamOption[]>([])
   const [examId,    setExamId]    = useState(fixedExamId ? String(fixedExamId) : '')
   const [zoomed,    setZoomed]    = useState<IncidentSnapshot | null>(null)
+  const [showRefGallery, setShowRefGallery] = useState(false)
   const [downloadingPdf, setDownloadingPdf] = useState(false)
 
   useEffect(() => {
@@ -297,6 +303,12 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
                               <i className={`fas ${EVT_ICONS[e.event] || 'fa-circle'}`}
                                 style={{ color: '#94a3b8', marginRight: 8, width: 14, textAlign: 'center' }} />
                               {EVT_LABELS[e.event] || e.event}
+                              {e.event === 'face_reference_captured' && (report?.reference_photos?.length ?? 0) > 0 && (
+                                <button onClick={() => setShowRefGallery(true)}
+                                  style={{ marginLeft: 10, background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', padding: '2px 9px', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>
+                                  <i className="fas fa-camera" /> Photo
+                                </button>
+                              )}
                             </td>
                             <td style={{ fontWeight: 600, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>{e.count}</td>
                           </tr>
@@ -417,6 +429,40 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
             <strong>0–30 : Normal · 30–70 : Attention · 70–100 : Risque élevé</strong>
           </div>
         </>
+      )}
+
+      {/* Modal galerie photos de référence */}
+      {showRefGallery && report && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onClick={() => setShowRefGallery(false)}>
+          <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 24, maxWidth: 700, width: '100%', maxHeight: '85vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <h3 style={{ margin: 0, fontSize: 16 }}><i className="fas fa-camera" style={{ marginRight: 8 }} />Photos de référence</h3>
+              <button onClick={() => setShowRefGallery(false)}
+                style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--text-muted)' }}>
+                <i className="fas fa-times" />
+              </button>
+            </div>
+            <p style={{ margin: '0 0 16px', fontSize: 12, color: 'var(--text-muted)' }}>
+              {report.reference_photos.length} étudiant(s) — capturées au démarrage de l'examen
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14 }}>
+              {report.reference_photos.map(p => (
+                <div key={p.attempt_id} style={{ textAlign: 'center' }}>
+                  <img src={p.image_url} alt={p.student_name}
+                    onClick={() => setZoomed({ image_url: p.image_url, event_type: 'face_reference_captured', timestamp: p.timestamp })}
+                    style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)', cursor: 'zoom-in' }}
+                    onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  <div style={{ fontSize: 12, fontWeight: 600, marginTop: 6 }}>{p.student_name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.exam_title}</div>
+                  {p.timestamp && <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{new Date(p.timestamp).toLocaleString('fr-FR')}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal zoom capture incident */}
