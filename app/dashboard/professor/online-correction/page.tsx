@@ -133,7 +133,7 @@ export default function OnlineCorrectionPage() {
 
   async function exportCSV(examId: number, examTitle: string) {
     try {
-      const blob = await api.blob(`/api/online_exams/${examId}/export/csv`)
+      const blob = await api.blob(`/api/online_exams/${examId}/export-csv`)
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
       a.download = `resultats_${examTitle.replace(/\s+/g, '_')}.csv`
