@@ -186,6 +186,13 @@ export default function ExamPage() {
   const [exam,         setExam]         = useState<ExamData | null>(null)
   const [attempt,      setAttempt]      = useState<Attempt | null>(null)
   const [answers,      setAnswers]      = useState<Record<string, string>>({})
+  // enterExam() n'est appelé qu'une seule fois et y crée les setInterval du
+  // minuteur/autosave — leur callback reste figé sur les valeurs de "answers"
+  // telles qu'elles étaient À CE MOMENT (donc vides), même si l'étudiant
+  // répond ensuite. Une ref toujours à jour évite ce piège de closure figée :
+  // doAutoSave/handleSubmit lisent answersRef.current, jamais answers direct.
+  const answersRef = useRef(answers)
+  useEffect(() => { answersRef.current = answers }, [answers])
   const [parsedBlocks,   setParsedBlocks]   = useState<ParsedBlock[]>([])
   const [mediaMap,       setMediaMap]       = useState<Record<string, string>>({})
   const [shuffledBlocks, setShuffledBlocks] = useState<ParsedBlock[]>([])
@@ -994,7 +1001,7 @@ export default function ExamPage() {
 
   async function doAutoSave(aId:number) {
     try{
-      await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answers)})
+      await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answersRef.current)})
       setLastSaved(new Date())
       saveFailedRef.current=false
     }catch{
@@ -1013,14 +1020,14 @@ export default function ExamPage() {
     screenStream.current?.getTracks().forEach(t=>t.stop())
     if(lkRoomRef.current){try{lkRoomRef.current.disconnect()}catch{}}
     try {
-      await api.post(`/api/exam_attempts/${aId}/submit`,{answers:JSON.stringify(answers),...(signatureData?{signature_data:signatureData}:{})})
+      await api.post(`/api/exam_attempts/${aId}/submit`,{answers:JSON.stringify(answersRef.current),...(signatureData?{signature_data:signatureData}:{})})
       if(!auto) success('Copie soumise avec succès !')
       setPhase('submitted')
     } catch {
-      try{await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answers)});setPhase('submitted')}
+      try{await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answersRef.current)});setPhase('submitted')}
       catch{toastErr('Erreur lors de la soumission');setSubmitting(false);sessionEndedRef.current=false}
     }
-  },[answers,submitting]) // eslint-disable-line
+  },[submitting]) // eslint-disable-line
 
   function sendMsg() {
     if(!msgText.trim()) return
