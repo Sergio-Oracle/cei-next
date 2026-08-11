@@ -49,6 +49,7 @@ export interface UseSuggestionFlowReturn {
   error: string
   generate: (payload: GeneratePayload) => Promise<void>
   reset: () => void
+  restoreResult: (r: SuggestionResult) => void
 }
 
 export function useSuggestionFlow(): UseSuggestionFlowReturn {
@@ -96,5 +97,11 @@ export function useSuggestionFlow(): UseSuggestionFlowReturn {
     }
   }
 
-  return { generating, genElapsed, result, error, generate, reset }
+  // Réhydrate le résultat depuis un brouillon sauvegardé (localStorage) après
+  // une déconnexion/rechargement — sans relancer une génération IA coûteuse.
+  function restoreResult(r: SuggestionResult) {
+    setResult(r)
+  }
+
+  return { generating, genElapsed, result, error, generate, reset, restoreResult }
 }

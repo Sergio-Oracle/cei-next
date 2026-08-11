@@ -124,6 +124,8 @@ export interface OnlineExam {
   max_no_face_count?: number
   ban_on_devtools?: boolean
   auto_correct?: boolean
+  scheduled_correction_at?: string | null
+  correction_triggered_at?: string | null
   results_published?: boolean
   enable_calculator?: boolean
   proctoring_enabled?: boolean

@@ -29,6 +29,7 @@ export default function NewExamPage() {
     enable_right_click: false,
     enable_file_download: false,
     auto_correct:       false,
+    scheduled_correction_at: '',
     enable_calculator:  false,
   })
 
@@ -88,6 +89,7 @@ export default function NewExamPage() {
         enable_right_click: form.enable_right_click,
         enable_file_download: form.enable_file_download,
         auto_correct:      form.auto_correct,
+        scheduled_correction_at: form.scheduled_correction_at ? form.scheduled_correction_at + ':00Z' : null,
         enable_calculator: form.enable_calculator,
       })
       success(`Examen créé — Durée : ${res.exam?.duration_minutes ?? '?'} min`)
@@ -280,6 +282,19 @@ export default function NewExamPage() {
                 <strong>Désactivé par défaut</strong> — vous pouvez toujours réviser ou corriger manuellement après.
               </small>
             </div>
+          </div>
+
+          {/* Correction planifiée à heure précise */}
+          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '16px 18px' }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: '#1e40af', display: 'block', marginBottom: 6 }}>
+              <i className="fas fa-calendar-day" style={{ marginRight: 6 }} />Programmer une correction à heure précise (optionnel)
+            </label>
+            <input type="datetime-local" value={form.scheduled_correction_at}
+              onChange={e => set('scheduled_correction_at', e.target.value)}
+              style={{ width: '100%', padding: '9px 12px', border: '1px solid #bfdbfe', borderRadius: 8, fontSize: 13.5, boxSizing: 'border-box' }} />
+            <small style={{ color: '#64748b', lineHeight: 1.5, display: 'block', marginTop: 6 }}>
+              À l'heure indiquée, toutes les copies soumises et pas encore corrigées de cet examen seront corrigées automatiquement en une fois — utile pour attendre la fin de TOUTES les sessions avant de lancer la correction en bloc, plutôt que copie par copie. Indépendant de la correction automatique immédiate ci-dessus.
+            </small>
           </div>
         </div>
 

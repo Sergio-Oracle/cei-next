@@ -104,6 +104,11 @@ export default function ProfessorSuggestionsPage() {
   const [genFull,        setGenFull]        = useState(false)
   const [genFullElapsed, setGenFullElapsed] = useState(0)
   const genFullTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Empêche l'effet "generate() vient de terminer" de forcer step='results' et
+  // d'afficher un toast trompeur quand `result` est peuplé par la restauration
+  // d'un brouillon (qui peut être au stade 'preview', plus avancé) plutôt que
+  // par une vraie génération.
+  const isRestoringRef = useRef(false)
 
   /* preview */
   const [previewTitle,   setPreviewTitle]   = useState('')
@@ -186,7 +191,75 @@ export default function ProfessorSuggestionsPage() {
     error: suggError,
     generate,
     reset: suggReset,
+    restoreResult,
   } = useSuggestionFlow()
+
+  /* ── Brouillon persistant (localStorage) — Atelier CEI 7/08 : si l'enseignant
+     est au stade des 3 suggestions (ou déjà en aperçu d'un sujet complet) et
+     se déconnecte/recharge la page, il doit retrouver exactement où il en
+     était plutôt que de tout regénérer. Uniquement côté navigateur (comme la
+     sauvegarde locale des réponses étudiant) — pas de perte de session sur ce
+     poste, mais ne survit pas à un changement d'appareil. */
+  const DRAFT_KEY = 'cei_suggestions_draft_professor_v1'
+  const DRAFT_MAX_AGE_MS = 12 * 60 * 60 * 1000 // 12h — au-delà, un brouillon oublié n'a plus de sens
+  const [draftHydrated, setDraftHydrated] = useState(false)
+  const [draftRestoredAt, setDraftRestoredAt] = useState<string | null>(null)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (raw) {
+        const d = JSON.parse(raw)
+        if (d && d.savedAt && Date.now() - d.savedAt < DRAFT_MAX_AGE_MS && d.step && d.step !== 'form') {
+          isRestoringRef.current = true
+          if (d.result) restoreResult(d.result)
+          if (d.ecId != null) setEcId(d.ecId)
+          if (d.level) setLevel(d.level)
+          if (d.difficulty) setDifficulty(d.difficulty)
+          if (d.duration) setDuration(d.duration)
+          if (d.qTypes) setQTypes(d.qTypes)
+          if (d.qcmSingle != null) setQcmSingle(d.qcmSingle)
+          if (d.bloom) setBloom(d.bloom)
+          if (d.questionCount) setQuestionCount(d.questionCount)
+          if (d.previewTitle) setPreviewTitle(d.previewTitle)
+          if (d.previewContent) setPreviewContent(d.previewContent)
+          if (d.previewRubric) setPreviewRubric(d.previewRubric)
+          setStep(d.step)
+          setDraftRestoredAt(new Date(d.savedAt).toLocaleString('fr-FR'))
+          // Filet de sécurité : si `d.result` était absent (brouillon
+          // incohérent), l'effet [result] ne se déclenchera jamais pour
+          // remettre isRestoringRef à false — on le fait donc ici aussi,
+          // après le prochain tour d'event loop.
+          setTimeout(() => { isRestoringRef.current = false }, 0)
+        }
+      }
+    } catch { /* brouillon corrompu — ignorer silencieusement, l'enseignant repart du formulaire */ }
+    setDraftHydrated(true)
+  }, []) // eslint-disable-line
+
+  // Sauvegarde continue du brouillon — uniquement une fois l'hydratation
+  // initiale terminée, sinon on écraserait immédiatement un brouillon tout
+  // juste restauré par l'état vide du tout premier rendu.
+  useEffect(() => {
+    if (!draftHydrated) return
+    try {
+      if (step === 'form' || step === 'created') {
+        localStorage.removeItem(DRAFT_KEY)
+      } else {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          step, result, ecId, level, difficulty, duration, qTypes, qcmSingle, bloom, questionCount,
+          previewTitle, previewContent, previewRubric, savedAt: Date.now(),
+        }))
+      }
+    } catch { /* quota localStorage dépassé — tant pis, pas bloquant */ }
+  }, [draftHydrated, step, result, ecId, level, difficulty, duration, qTypes, qcmSingle, bloom, questionCount, previewTitle, previewContent, previewRubric]) // eslint-disable-line
+
+  function discardDraft() {
+    try { localStorage.removeItem(DRAFT_KEY) } catch {}
+    setDraftRestoredAt(null)
+    setStep('form'); suggReset()
+    setPreviewTitle(''); setPreviewContent(''); setPreviewRubric('')
+  }
 
   useEffect(() => {
     api.get<any>('/api/ecs').then(r => {
@@ -221,6 +294,7 @@ export default function ProfessorSuggestionsPage() {
 
   /* Advance to results when generate completes */
   useEffect(() => {
+    if (isRestoringRef.current) { isRestoringRef.current = false; return }
     if (result?.suggestions?.length) {
       setStep('results')
       success(`${result.suggestions.length} suggestion(s) générée(s) avec succès`)
@@ -542,6 +616,17 @@ export default function ProfessorSuggestionsPage() {
           <p>L'IA a créé un sujet complet avec questions et barème de notation</p>
         </div>
       </div>
+      {draftRestoredAt && (
+        <div style={{ maxWidth:900, margin:'0 auto 16px', display:'flex', alignItems:'center', gap:12, padding:'12px 18px', background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:10 }}>
+          <i className="fas fa-clock-rotate-left" style={{ color:'var(--primary)', fontSize:18 }} />
+          <div style={{ flex:1, fontSize:13 }}>
+            <strong>Session précédente restaurée</strong> — vous avez repris là où vous en étiez le {draftRestoredAt}.
+          </div>
+          <button type="button" onClick={discardDraft} style={{ background:'none', border:'1px solid #bfdbfe', color:'var(--primary)', borderRadius:8, padding:'6px 12px', fontSize:12.5, cursor:'pointer', fontWeight:600 }}>
+            Recommencer à zéro
+          </button>
+        </div>
+      )}
       <div style={{ maxWidth:900, margin:'0 auto' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 18px', background:'var(--surface)', border:'1px solid var(--border)', borderLeft:'4px solid var(--primary)', borderRadius:10, marginBottom:16 }}>
           <i className="fas fa-file-alt" style={{ color:'var(--primary)', fontSize:18 }} />
@@ -888,6 +973,18 @@ export default function ProfessorSuggestionsPage() {
           </button>
         )}
       </div>
+
+      {draftRestoredAt && (
+        <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 18px', background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:10, marginBottom:18 }}>
+          <i className="fas fa-clock-rotate-left" style={{ color:'var(--primary)', fontSize:18 }} />
+          <div style={{ flex:1, fontSize:13 }}>
+            <strong>Session précédente restaurée</strong> — vous avez repris là où vous en étiez le {draftRestoredAt}.
+          </div>
+          <button type="button" onClick={discardDraft} style={{ background:'none', border:'1px solid #bfdbfe', color:'var(--primary)', borderRadius:8, padding:'6px 12px', fontSize:12.5, cursor:'pointer', fontWeight:600 }}>
+            Recommencer à zéro
+          </button>
+        </div>
+      )}
 
       {/* FORM */}
       {step === 'form' && (

@@ -208,7 +208,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 36, height: 36, borderRadius: '50%', background: 'var(--background)',
                 border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)' }}>
-              <i className="fas fa-download" style={{ fontSize: 14 }} />
+              <i className="fas fa-download" style={{ fontSize: 17 }} />
             </button>
           )}
 
@@ -217,7 +217,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: 36, height: 36, borderRadius: '50%', background: 'var(--background)',
               border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)' }}>
-            <i className={`fas ${dark ? 'fa-sun' : 'fa-moon'}`} style={{ fontSize: 14 }} />
+            <i className={`fas ${dark ? 'fa-sun' : 'fa-moon'}`} style={{ fontSize: 17 }} />
           </button>
 
           {/* Notifications */}
@@ -226,7 +226,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 36, height: 36, borderRadius: '50%', background: 'var(--background)',
                 border: '1px solid var(--border)', textDecoration: 'none', color: 'var(--text)' }}>
-              <i className="fas fa-bell" style={{ fontSize: 14 }} />
+              <i className="fas fa-bell" style={{ fontSize: 17 }} />
               {unreadCount > 0 && (
                 <span style={{ position: 'absolute', top: -3, right: -3, background: '#ef4444', color: 'white',
                   borderRadius: '50%', width: 17, height: 17, fontSize: 10, fontWeight: 700,

@@ -457,9 +457,9 @@ body.pwa-banner-visible .app-header {
 }
 
 .nav-tab i {
-    font-size: 15px;
+    font-size: 18px;
     flex-shrink: 0;
-    width: 18px;
+    width: 22px;
     text-align: center;
 }
 
@@ -485,7 +485,7 @@ body.pwa-banner-visible .app-header {
     border-bottom: 3px solid transparent;
 }
 .sidebar.collapsed .nav-tab i {
-    font-size: 17px;
+    font-size: 20px;
     width: auto;
 }
 .sidebar.collapsed .nav-tab.active {
