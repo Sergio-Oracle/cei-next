@@ -55,6 +55,11 @@ export default function AdminCreateSubjectPage() {
   const [filterLevel,     setFilterLevel]     = useState('')
   const [files,           setFiles]           = useState<File[]>([])
   const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false })
+  // Atelier CEI 7/08 — le barème n'est plus laissé entièrement à l'IA :
+  // l'enseignant choisit le total ET peut rédiger le barème lui-même
+  // (mode manuel = squelette vierge à compléter, plutôt que généré par l'IA).
+  const [rubricMode,  setRubricMode]  = useState<'ai' | 'manual'>('ai')
+  const [totalPoints, setTotalPoints] = useState(20)
 
   /* ── basket ── */
   const [basket,      setBasket]      = useState<BasketVersion[]>([])
@@ -154,7 +159,7 @@ export default function AdminCreateSubjectPage() {
     e.preventDefault()
     if (!title.trim())    { toastErr('Le titre est requis'); return }
     if (!files.length)    { toastErr('Sélectionnez au moins un fichier'); return }
-    await upload({ title, ecId, qTypes, files })
+    await upload({ title, ecId, qTypes, files, rubricMode, totalPoints })
   }
 
   /* ── basket ── */
@@ -552,6 +557,38 @@ export default function AdminCreateSubjectPage() {
                 <p style={{ margin:'8px 0 0', fontSize:11.5, color:'var(--text-muted)' }}>
                   <i className="fas fa-circle-info" style={{ marginRight:4 }} />
                   Sert à reconnaître chaque question dans votre fichier (un type non coché ne sera pas détecté même s'il est présent) et à donner à l'IA le bon format de barème pour la noter correctement.
+                </p>
+              </div>
+
+              {/* Barème — Atelier CEI 7/08 : l'enseignant garde la main, l'IA ne
+                  décide plus seule du barème */}
+              <div style={{ marginBottom:22 }}>
+                <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:600, marginBottom:9 }}>
+                  <i className="fas fa-scale-balanced" style={{ color:'#16a34a', width:15 }} />Barème
+                </label>
+                <div style={{ display:'flex', gap:8, marginBottom:12 }}>
+                  <button type="button" onClick={()=>setRubricMode('ai')}
+                    style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'10px 14px', border:`1.5px solid ${rubricMode==='ai'?'#16a34a':'var(--border)'}`, borderRadius:10, cursor:'pointer', background:rubricMode==='ai'?'#f0fdf4':'var(--surface)', fontWeight:rubricMode==='ai'?700:400, fontSize:13, color:rubricMode==='ai'?'#15803d':'var(--text)' }}>
+                    <i className="fas fa-robot" />IA génère le barème
+                  </button>
+                  <button type="button" onClick={()=>setRubricMode('manual')}
+                    style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'10px 14px', border:`1.5px solid ${rubricMode==='manual'?'#16a34a':'var(--border)'}`, borderRadius:10, cursor:'pointer', background:rubricMode==='manual'?'#f0fdf4':'var(--surface)', fontWeight:rubricMode==='manual'?700:400, fontSize:13, color:rubricMode==='manual'?'#15803d':'var(--text)' }}>
+                    <i className="fas fa-pen" />Je rédige moi-même
+                  </button>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ fontSize:13, color:'var(--text-muted)' }}>Note totale sur</span>
+                  <input type="number" min={1} max={200} value={totalPoints}
+                    onChange={e=>setTotalPoints(parseInt(e.target.value,10))}
+                    onBlur={()=>setTotalPoints(v=>Math.max(1,Math.min(200,Number.isNaN(v)?20:v)))}
+                    style={{ width:80, padding:'8px 10px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)' }} />
+                  <span style={{ fontSize:13, color:'var(--text-muted)' }}>points</span>
+                </div>
+                <p style={{ margin:'8px 0 0', fontSize:11.5, color:'var(--text-muted)' }}>
+                  <i className="fas fa-circle-info" style={{ marginRight:4 }} />
+                  {rubricMode==='ai'
+                    ? "L'IA propose un barème détaillé question par question sur ce total — vous pourrez toujours l'ajuster avant publication."
+                    : "Un squelette vierge (une entrée par question détectée, sur ce total) sera créé pour que vous rédigiez vous-même les critères."}
                 </p>
               </div>
 

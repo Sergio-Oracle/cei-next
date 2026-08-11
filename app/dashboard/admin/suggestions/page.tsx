@@ -159,6 +159,14 @@ export default function AdminSuggestionsPage() {
   // réponses" — même mécanisme que le type "Choix multiple" de Moodle
   // (answerhowmany), au lieu de deux boutons QCM / QCM multiple indépendants.
   const [qcmSingle, setQcmSingle] = useState(true)
+  // Atelier CEI 7/08 — barème choisi par l'enseignant AVANT génération,
+  // plutôt qu'imposé à 20 points répartis également par l'IA entre les
+  // types sélectionnés. pointsByType se recalcule en répartition égale par
+  // défaut à chaque changement de types/total, mais reste éditable par
+  // type — l'enseignant peut par ex. mettre plus de poids sur les QCM que
+  // sur les questions ouvertes.
+  const [totalPoints, setTotalPoints] = useState(20)
+  const [pointsByType, setPointsByType] = useState<Record<string, number>>({ qcm: 20 })
   const [bloom,  setBloom]  = useState({
     connaissance: false, comprehension: false,
     application: true,  analyse: true,
@@ -218,6 +226,8 @@ export default function AdminSuggestionsPage() {
           if (d.qcmSingle != null) setQcmSingle(d.qcmSingle)
           if (d.bloom) setBloom(d.bloom)
           if (d.questionCount) setQuestionCount(d.questionCount)
+          if (d.totalPoints) setTotalPoints(d.totalPoints)
+          if (d.pointsByType) setPointsByType(d.pointsByType)
           if (d.previewTitle) setPreviewTitle(d.previewTitle)
           if (d.previewContent) setPreviewContent(d.previewContent)
           if (d.previewRubric) setPreviewRubric(d.previewRubric)
@@ -238,11 +248,11 @@ export default function AdminSuggestionsPage() {
       } else {
         localStorage.setItem(DRAFT_KEY, JSON.stringify({
           step, result, ecId, level, difficulty, duration, qTypes, qcmSingle, bloom, questionCount,
-          previewTitle, previewContent, previewRubric, savedAt: Date.now(),
+          totalPoints, pointsByType, previewTitle, previewContent, previewRubric, savedAt: Date.now(),
         }))
       }
     } catch { /* quota localStorage dépassé — tant pis, pas bloquant */ }
-  }, [draftHydrated, step, result, ecId, level, difficulty, duration, qTypes, qcmSingle, bloom, questionCount, previewTitle, previewContent, previewRubric]) // eslint-disable-line
+  }, [draftHydrated, step, result, ecId, level, difficulty, duration, qTypes, qcmSingle, bloom, questionCount, totalPoints, pointsByType, previewTitle, previewContent, previewRubric]) // eslint-disable-line
 
   function discardDraft() {
     try { localStorage.removeItem(DRAFT_KEY) } catch {}
@@ -265,6 +275,21 @@ export default function AdminSuggestionsPage() {
     if (filterFormation && String(ec.formation_id) !== filterFormation) return false
     return true
   })
+
+  // Répartition égale par défaut entre les types sélectionnés — recalculée
+  // à chaque changement de sélection de types ou de total, mais un
+  // ajustement manuel d'un type précis (via setPointsByType directement,
+  // sans passer par qTypes/totalPoints) n'est pas écrasé entre-temps.
+  useEffect(() => {
+    if (isRestoringRef.current) return // ne pas écraser un points_by_type restauré depuis un brouillon
+    const selected = Object.entries(qTypes).filter(([, v]) => v).map(([k]) => k)
+    if (!selected.length) { setPointsByType({}); return }
+    const base = Math.floor(totalPoints / selected.length)
+    const remainder = totalPoints - base * selected.length
+    const next: Record<string, number> = {}
+    selected.forEach((k, i) => { next[k] = base + (i < remainder ? 1 : 0) })
+    setPointsByType(next)
+  }, [qTypes, totalPoints]) // eslint-disable-line
 
   useEffect(() => () => { if (genFullTimer.current) clearInterval(genFullTimer.current) }, [])
 
@@ -300,6 +325,15 @@ export default function AdminSuggestionsPage() {
 
   /* ── Use suggestion → generate full exam → show preview ── */
   async function useSuggestion(s: Suggestion, i: number) {
+    // Barème — la répartition par type doit totaliser exactement le total
+    // choisi avant de lancer une génération coûteuse (mieux vaut bloquer ici
+    // que de laisser le backend improviser une répartition différente de
+    // celle affichée à l'enseignant).
+    const selectedKeysForCheck = (['qcm','open','vf','appariement','code','subopen'] as const).filter(k => qTypes[k])
+    if (selectedKeysForCheck.length > 1) {
+      const sum = selectedKeysForCheck.reduce((s2,k) => s2 + (pointsByType[k] || 0), 0)
+      if (sum !== totalPoints) { toastErr(`La répartition du barème (${sum} pts) ne correspond pas au total (${totalPoints} pts) — ajustez avant de générer.`); return }
+    }
     // Retour #9 — ne pas perdre un sujet déjà présent dans l'aperçu si on en génère un autre
     if (previewContent.trim()) {
       setBasket(p => p.some(v => v.content === previewContent)
@@ -320,6 +354,8 @@ export default function AdminSuggestionsPage() {
         question_count: questionCount,
         grading_criteria: editedGrading[i] ?? s.grading_criteria,
         media: preGenMedia.map(m => ({ marker: m.marker, instructions: m.instructions, analysis: m.analysis })),
+        total_points: totalPoints,
+        points_by_type: pointsByType,
       }
       const data = await api.post<{ success: boolean; title: string; content: string; rubric: string; duplicates?: { similarity: number }[] }>(
         '/api/subjects/generate-full-exam', { suggestion: suggestionWithTypes }
@@ -402,11 +438,12 @@ export default function AdminSuggestionsPage() {
     try {
       const data = await api.post<{ success: boolean; new_content: string; full_content?: string; full_rubric?: string; count_generated: number; duplicates: { similarity: number }[] }>(
         '/api/subjects/generate-more-questions',
-        { existing_content: previewContent, existing_rubric: previewRubric, count: moreCount, question_type: moreType, title: previewTitle, student_level: level, difficulty }
+        { existing_content: previewContent, existing_rubric: previewRubric, count: moreCount, question_type: moreType, title: previewTitle, student_level: level, difficulty, total_points: totalPoints }
       )
-      // Le backend redistribue les points sur 20 au total (anciennes +
-      // nouvelles questions) et étend le barème — sans ça, les nouvelles
-      // questions n'avaient ni point ni critère et le barème restait figé.
+      // Le backend redistribue les points sur le total choisi par l'enseignant
+      // (anciennes + nouvelles questions) et étend le barème — sans ça, les
+      // nouvelles questions n'avaient ni point ni critère et le barème
+      // restait figé.
       if (data.full_content) setPreviewContent(data.full_content)
       else setPreviewContent(p => `${p.trimEnd()}\n\n${data.new_content}`)
       if (data.full_rubric) setPreviewRubric(data.full_rubric)
@@ -414,7 +451,7 @@ export default function AdminSuggestionsPage() {
       if (data.duplicates && data.duplicates.length > 0) {
         toastErr(`${data.count_generated} question(s) ajoutée(s) — ⚠ ${data.duplicates.length} ressemble(nt) à des questions existantes (${data.duplicates[0].similarity}% similaire)`)
       } else {
-        success(`${data.count_generated} question(s) ajoutée(s) au sujet — points redistribués sur 20`)
+        success(`${data.count_generated} question(s) ajoutée(s) au sujet — points redistribués sur ${totalPoints}`)
       }
     } catch (e: any) {
       toastErr(e.message || 'Erreur lors de la génération des questions supplémentaires')
@@ -1136,6 +1173,53 @@ export default function AdminSuggestionsPage() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Barème — Atelier CEI 7/08 : l'enseignant choisit le total ET
+                    la répartition par type AVANT génération, plutôt que de
+                    laisser l'IA répartir 20 points également entre les types. */}
+                <div>
+                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
+                    <i className="fas fa-scale-balanced" style={{ color:'#16a34a', marginRight:6 }} />Barème
+                  </label>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+                    <span style={{ fontSize:13, color:'var(--text-muted)' }}>Note totale sur</span>
+                    <input type="number" min={1} max={200} value={totalPoints}
+                      onChange={e=>setTotalPoints(parseInt(e.target.value,10))}
+                      onBlur={()=>setTotalPoints(v=>Math.max(1,Math.min(200,Number.isNaN(v)?20:v)))}
+                      style={{ width:80, padding:'8px 10px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)' }} />
+                    <span style={{ fontSize:13, color:'var(--text-muted)' }}>points</span>
+                  </div>
+                  {(() => {
+                    const TYPE_LABELS: Record<string, string> = { qcm:'QCM', open:'Questions ouvertes', vf:'Vrai / Faux', appariement:'Appariement', code:'Maths / Programmation', subopen:'Sous-questions liées' }
+                    const selectedKeys = (['qcm','open','vf','appariement','code','subopen'] as const).filter(k => qTypes[k])
+                    const sum = selectedKeys.reduce((s,k) => s + (pointsByType[k] || 0), 0)
+                    const ok = sum === totalPoints
+                    return selectedKeys.length > 1 ? (
+                      <div style={{ background:'var(--background)', border:'1px solid var(--border)', borderRadius:10, padding:14 }}>
+                        <p style={{ margin:'0 0 10px', fontSize:11.5, color:'var(--text-muted)' }}>
+                          <i className="fas fa-circle-info" style={{ marginRight:4 }} />Répartition par type — ajustez librement, doit totaliser {totalPoints} pts.
+                        </p>
+                        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                          {selectedKeys.map(k => (
+                            <div key={k} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}>
+                              <span style={{ fontSize:13 }}>{TYPE_LABELS[k]}</span>
+                              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                                <input type="number" min={1} max={totalPoints} value={pointsByType[k] ?? ''}
+                                  onChange={e => setPointsByType(p => ({ ...p, [k]: parseInt(e.target.value,10) || 0 }))}
+                                  style={{ width:64, padding:'6px 8px', border:'1.5px solid var(--border)', borderRadius:6, fontSize:13, background:'var(--surface)', color:'var(--text)', textAlign:'center' }} />
+                                <span style={{ fontSize:12, color:'var(--text-muted)' }}>pts</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ marginTop:10, fontSize:12, fontWeight:600, color: ok ? '#15803d' : '#dc2626', display:'flex', alignItems:'center', gap:6 }}>
+                          <i className={`fas ${ok?'fa-check-circle':'fa-triangle-exclamation'}`} />
+                          Réparti : {sum} / {totalPoints} pts{!ok && ' — ajustez avant de générer'}
+                        </div>
+                      </div>
+                    ) : null
+                  })()}
                 </div>
 
                 <div>
