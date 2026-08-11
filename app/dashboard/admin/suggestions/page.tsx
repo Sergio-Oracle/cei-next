@@ -90,6 +90,14 @@ export default function AdminSuggestionsPage() {
   const [step, setStep] = useState<'form' | 'results' | 'preview' | 'created'>('form')
   const [dragOver,  setDragOver]  = useState(false)
   const [creating,  setCreating]  = useState<number | null>(null)
+  /* Affichage des suggestions — index de la carte dont l'aperçu des questions
+     est déplié, pour aider à choisir avant de lancer la génération complète
+     (coûteuse) d'un sujet. */
+  const [expandedSuggestion, setExpandedSuggestion] = useState<number | null>(null)
+  // Retour DFIP #22 — barème visible et adaptable dès le choix entre les 3
+  // suggestions, avant génération complète du sujet.
+  const [expandedGrading, setExpandedGrading] = useState<number | null>(null)
+  const [editedGrading, setEditedGrading] = useState<Record<number, string>>({})
 
   /* full-exam generation loading screen (separate from suggestion generation) */
   const [genFull,        setGenFull]        = useState(false)
@@ -136,12 +144,12 @@ export default function AdminSuggestionsPage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   /* form fields */
-  const [fileName,   setFileName]   = useState('')
-  const [fileSize,   setFileSize]   = useState('')
+  const [courseFiles, setCourseFiles] = useState<File[]>([])
   const [difficulty, setDifficulty] = useState('Moyen')
   const [level,      setLevel]      = useState('Licence 3')
+  const [duration,   setDuration]   = useState(90)
   const [ecId,       setEcId]       = useState('')
-  const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false, appariement: false, code: false })
+  const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false, appariement: false, code: false, subopen: false })
   // QCM = un seul type sélectionnable avec un sous-réglage "une seule / plusieurs
   // réponses" — même mécanisme que le type "Choix multiple" de Moodle
   // (answerhowmany), au lieu de deux boutons QCM / QCM multiple indépendants.
@@ -158,11 +166,11 @@ export default function AdminSuggestionsPage() {
     setSuggestingCount(true)
     try {
       const res = await api.aiPost<{ suggested_count: number }>('/api/subjects/suggest-question-count', {
-        duration: 60, difficulty, student_level: level,
+        duration, difficulty, student_level: level,
         question_types: Object.entries(qTypes).filter(([, v]) => v).map(([k]) => k).join(',') || 'mixte',
       })
       setQuestionCount(res.suggested_count)
-      success(`Suggestion IA : ${res.suggested_count} questions (pour un examen d'~1h, difficulté ${difficulty})`)
+      success(`Suggestion IA : ${res.suggested_count} questions (pour un examen de ${duration} min, difficulté ${difficulty})`)
     } catch (e: any) { toastErr(e.message || 'Erreur de suggestion') }
     finally { setSuggestingCount(false) }
   }
@@ -207,19 +215,22 @@ export default function AdminSuggestionsPage() {
     }
   }, [result]) // eslint-disable-line
 
-  function pickFile(file: File) {
-    const sizeMb = file.size / 1024 / 1024
-    if (sizeMb > MAX_MB) { toastErr(`Fichier trop volumineux : ${sizeMb.toFixed(1)} Mo. Maximum : ${MAX_MB} Mo`); return }
-    if (!fileRef.current) return
-    const dt = new DataTransfer(); dt.items.add(file); fileRef.current.files = dt.files
-    setFileName(file.name); setFileSize(sizeMb.toFixed(2) + ' Mo')
+  function pickFiles(newFiles: File[]) {
+    const combined = [...courseFiles, ...newFiles]
+    const totalMb = combined.reduce((s, f) => s + f.size, 0) / 1024 / 1024
+    if (totalMb > MAX_MB) { toastErr(`Fichiers trop volumineux au total : ${totalMb.toFixed(1)} Mo. Maximum : ${MAX_MB} Mo`); return }
+    setCourseFiles(combined)
+  }
+  function removeCourseFile(idx: number) {
+    setCourseFiles(p => p.filter((_, i) => i !== idx))
+    if (fileRef.current) fileRef.current.value = ''
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const file = fileRef.current?.files?.[0]
-    if (!file) { toastErr('Sélectionnez un fichier de cours'); return }
-    await generate({ courseFile: file, difficulty, studentLevel: level, examType: '', qTypes })
+    if (!courseFiles.length) { toastErr('Sélectionnez au moins un fichier de cours'); return }
+    if (!Object.values(qTypes).some(Boolean)) { toastErr('Sélectionnez au moins un type de question avant de générer'); return }
+    await generate({ courseFiles, difficulty, studentLevel: level, examType: '', qTypes, duration })
   }
 
   /* ── Use suggestion → generate full exam → show preview ── */
@@ -233,7 +244,7 @@ export default function AdminSuggestionsPage() {
     setCreating(i); setGenFull(true); setGenFullElapsed(0)
     genFullTimer.current = setInterval(() => setGenFullElapsed(x => x + 1), 1000)
     try {
-      const qMap: Record<string, string> = { qcm: qcmSingle ? 'QCM (une seule réponse)' : 'QCM (plusieurs réponses)', open:'Questions ouvertes', vf:'Vrai/Faux', appariement:'Appariement', code:'Maths et programmation' }
+      const qMap: Record<string, string> = { qcm: qcmSingle ? 'QCM (une seule réponse)' : 'QCM (plusieurs réponses)', open:'Questions ouvertes', vf:'Vrai/Faux', appariement:'Appariement', code:'Maths et programmation', subopen:'Questions dépendantes (sous-questions liées)' }
       const selectedTypes = Object.entries(qTypes).filter(([,v])=>v).map(([k])=>qMap[k])
       const selectedBloom = Object.entries(bloom).filter(([,v])=>v).map(([k])=>k)
       const suggestionWithTypes = {
@@ -242,6 +253,7 @@ export default function AdminSuggestionsPage() {
         exam_type: selectedTypes.join(',') || s.exam_type,
         bloom_levels: selectedBloom,
         question_count: questionCount,
+        grading_criteria: editedGrading[i] ?? s.grading_criteria,
         media: preGenMedia.map(m => ({ marker: m.marker, instructions: m.instructions, analysis: m.analysis })),
       }
       const data = await api.post<{ success: boolean; title: string; content: string; rubric: string; duplicates?: { similarity: number }[] }>(
@@ -265,6 +277,11 @@ export default function AdminSuggestionsPage() {
 
   /* ── Save to DB ── */
   async function handleSaveSubject() {
+    // Retour DFIP #9 — un sujet sans EC rattaché ne déclenche jamais
+    // l'affectation automatique des groupes de surveillants ; le backend
+    // rejette maintenant aussi cette requête (défense en profondeur), mais
+    // valider ici évite un aller-retour inutile et guide vers le bon champ.
+    if (!ecId) { toastErr("Sélectionnez un EC avant d'enregistrer ce sujet — indispensable pour l'affectation automatique des surveillants."); return }
     setSavingSubject(true)
     try {
       const titleLine = previewContent.split('\n')
@@ -471,7 +488,7 @@ export default function AdminSuggestionsPage() {
       </div>
       <div style={{ textAlign:'center' }}>
         <h3 style={{ margin:'0 0 8px', fontSize:20 }}>Génération du sujet en cours…</h3>
-        <p style={{ margin:0, color:'var(--text-muted)', fontSize:14 }}>L'IA génère les questions et le barème. Cela peut prendre 1 à 2 minutes.</p>
+        <p style={{ margin:0, color:'var(--text-muted)', fontSize:14 }}>L'IA génère les questions et le barème. Cela peut prendre 1 à 5 minutes selon le nombre de questions et de types combinés.</p>
       </div>
       <div style={{ width:320, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 18px', display:'flex', flexDirection:'column', gap:10 }}>
         {[
@@ -702,7 +719,10 @@ export default function AdminSuggestionsPage() {
                   <label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:8 }}>
                     <i className="fas fa-hashtag" style={{ color:'#0369a1', marginRight:6 }} />Nombre de questions
                   </label>
-                  <input type="number" min={1} max={10} value={moreCount} onChange={e => setMoreCount(Math.max(1, Math.min(10, Number(e.target.value))))}
+                  <input type="number" min={1} max={10}
+                    value={Number.isNaN(moreCount) ? '' : moreCount}
+                    onChange={e => setMoreCount(parseInt(e.target.value, 10))}
+                    onBlur={() => setMoreCount(c => Math.max(1, Math.min(10, Number.isNaN(c) ? 3 : c)))}
                     style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }} />
                 </div>
               </div>
@@ -881,43 +901,44 @@ export default function AdminSuggestionsPage() {
               <div style={{ padding:24 }}>
                 <div onClick={() => fileRef.current?.click()}
                   onDragOver={e=>{e.preventDefault();setDragOver(true)}} onDragLeave={()=>setDragOver(false)}
-                  onDrop={e=>{e.preventDefault();setDragOver(false);const f=e.dataTransfer.files[0];if(f)pickFile(f)}}
-                  style={{ border:`2px dashed ${dragOver?'var(--primary)':fileName?'#10b981':'var(--border)'}`, borderRadius:12, padding:'40px 24px', textAlign:'center', cursor:'pointer', background:dragOver?'#eff6ff':fileName?'#f0fdf4':'var(--background)', transition:'all .2s' }}>
-                  {fileName ? (
+                  onDrop={e=>{e.preventDefault();setDragOver(false);const fs=Array.from(e.dataTransfer.files);if(fs.length)pickFiles(fs)}}
+                  style={{ border:`2px dashed ${dragOver?'var(--primary)':courseFiles.length?'#10b981':'var(--border)'}`, borderRadius:12, padding:'40px 24px', textAlign:'center', cursor:'pointer', background:dragOver?'#eff6ff':courseFiles.length?'#f0fdf4':'var(--background)', transition:'all .2s' }}>
+                  {courseFiles.length > 0 ? (
                     <>
                       <div style={{ width:52, height:52, background:'#dcfce7', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
                         <i className="fas fa-file-circle-check" style={{ fontSize:22, color:'#10b981' }} />
                       </div>
-                      <div style={{ fontWeight:700, fontSize:14, color:'#15803d', marginBottom:6 }}>{fileName}</div>
-                      <div style={{ width:220, margin:'0 auto 6px' }}>
-                        <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'#10b981', marginBottom:4 }}>
-                          <span>{fileSize}</span><span>/ {MAX_MB} Mo max</span>
-                        </div>
-                        <div style={{ height:5, background:'#bbf7d0', borderRadius:99, overflow:'hidden' }}>
-                          <div style={{ height:'100%', borderRadius:99, background:'#10b981', width:`${Math.min(100,(parseFloat(fileSize)/MAX_MB)*100)}%`, transition:'width .3s' }} />
-                        </div>
+                      <div style={{ fontWeight:700, fontSize:14, color:'#15803d', marginBottom:10 }}>{courseFiles.length} fichier{courseFiles.length > 1 ? 's' : ''} sélectionné{courseFiles.length > 1 ? 's' : ''}</div>
+                      <div style={{ display:'flex', flexDirection:'column', gap:6, maxWidth:340, margin:'0 auto' }} onClick={e => e.stopPropagation()}>
+                        {courseFiles.map((f, idx) => (
+                          <div key={idx} style={{ display:'flex', alignItems:'center', gap:8, background:'#fff', border:'1px solid #bbf7d0', borderRadius:8, padding:'6px 10px' }}>
+                            <span style={{ flex:1, textAlign:'left', fontSize:12, color:'#15803d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</span>
+                            <span style={{ fontSize:11, color:'#10b981' }}>{(f.size/1024/1024).toFixed(2)} Mo</span>
+                            <button type="button" onClick={() => removeCourseFile(idx)} style={{ background:'none', border:'none', color:'#6b7280', cursor:'pointer', fontSize:14, padding:2 }}><i className="fas fa-times-circle" /></button>
+                          </div>
+                        ))}
                       </div>
-                      <div style={{ fontSize:12, color:'#10b981', marginTop:4 }}>Cliquez pour changer le fichier</div>
+                      <div style={{ fontSize:12, color:'#10b981', marginTop:10 }}>Cliquez pour ajouter d'autres fichiers</div>
                     </>
                   ) : (
                     <>
                       <div style={{ width:52, height:52, background:'#eff6ff', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
                         <i className="fas fa-cloud-upload-alt" style={{ fontSize:22, color:'var(--primary)' }} />
                       </div>
-                      <div style={{ fontWeight:600, fontSize:15, color:'var(--text)', marginBottom:6 }}>Glissez votre fichier ici</div>
+                      <div style={{ fontWeight:600, fontSize:15, color:'var(--text)', marginBottom:6 }}>Glissez un ou plusieurs fichiers ici</div>
                       <div style={{ fontSize:13, color:'var(--text-muted)', marginBottom:16 }}>ou</div>
                       <span style={{ display:'inline-block', background:'var(--primary)', color:'#fff', padding:'9px 22px', borderRadius:8, fontSize:13, fontWeight:600 }}>
                         <i className="fas fa-folder-open" style={{ marginRight:7 }} />Parcourir les fichiers
                       </span>
                       <div style={{ marginTop:14, fontSize:12, color:'var(--text-muted)' }}>
                         <i className="fas fa-info-circle" style={{ marginRight:5 }} />
-                        Taille maximale autorisée : <strong>{MAX_MB} Mo</strong>
+                        Taille maximale autorisée (cumulée) : <strong>{MAX_MB} Mo</strong>
                       </div>
                     </>
                   )}
                 </div>
-                <input ref={fileRef} type="file" accept=".pdf,.docx,.doc,.txt" style={{ display:'none' }}
-                  onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f) }} />
+                <input ref={fileRef} type="file" accept=".pdf,.docx,.doc,.txt" multiple style={{ display:'none' }}
+                  onChange={e => { const fs = Array.from(e.target.files || []); if (fs.length) pickFiles(fs) }} />
               </div>
             </div>
 
@@ -967,6 +988,23 @@ export default function AdminSuggestionsPage() {
 
                 <div>
                   <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
+                    <i className="fas fa-clock" style={{ color:'var(--primary)', marginRight:6 }} />Durée souhaitée de l'examen
+                  </label>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <input type="number" className="form-control" min={15} max={480} step={5}
+                      value={Number.isNaN(duration) ? '' : duration}
+                      onChange={e => setDuration(parseInt(e.target.value, 10))}
+                      onBlur={() => setDuration(d => Math.max(15, Math.min(480, Number.isNaN(d) ? 90 : d)))}
+                      style={{ maxWidth:140 }} />
+                    <span style={{ fontSize:13, color:'var(--text-muted)' }}>minutes</span>
+                  </div>
+                  <p style={{ margin:'6px 0 0', fontSize:11.5, color:'var(--text-muted)' }}>
+                    <i className="fas fa-info-circle" style={{ marginRight:4 }} />Fixée par vous, pas par l'IA — les suggestions générées respecteront exactement cette durée (nombre et complexité des questions adaptés en conséquence).
+                  </p>
+                </div>
+
+                <div>
+                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
                     <i className="fas fa-list-check" style={{ color:'var(--primary)', marginRight:6 }} />Types de questions
                   </label>
                   <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
@@ -977,6 +1015,7 @@ export default function AdminSuggestionsPage() {
                         ['vf','Vrai / Faux','fa-toggle-on','#10b981','#f0fdf4','#bbf7d0'],
                         ['appariement','Appariement','fa-link','#db2777','#fdf2f8','#fbcfe8'],
                         ['code','Maths / Programmation','fa-code','#ea580c','#fff7ed','#fed7aa'],
+                        ['subopen','Sous-questions liées','fa-diagram-project','#0d9488','#f0fdfa','#99f6e4'],
                       ] as const).map(([k,label,icon,color,bg,border]) => (
                         <button key={k} type="button" onClick={() => setQTypes(p => ({...p,[k]:!p[k]}))}
                           style={{ display:'flex', alignItems:'center', gap:9, padding:'10px 18px', border:`1.5px solid ${qTypes[k]?border:'var(--border)'}`, borderRadius:10, cursor:'pointer', background:qTypes[k]?bg:'var(--surface)', transition:'all .15s', fontWeight:qTypes[k]?700:400, fontSize:13, color:qTypes[k]?color:'var(--text)' }}>
@@ -986,6 +1025,11 @@ export default function AdminSuggestionsPage() {
                         </button>
                       ))}
                     </div>
+                    {qTypes.subopen && (
+                      <p style={{ margin:0, fontSize:11.5, color:'var(--text-muted)' }}>
+                        <i className="fas fa-info-circle" style={{ marginRight:4 }} />Exercices en plusieurs parties (a, b, c...) où chaque sous-question s'appuie explicitement sur le résultat de la précédente — la correction applique l'erreur reportée (une erreur en a) n'invalide pas une méthode correcte en b) appliquée à ce résultat).
+                      </p>
+                    )}
                     {qTypes.qcm && (
                       // Sous-réglage du type QCM — même mécanisme que "One answer only" /
                       // "Multiple answers allowed" dans le type "Multiple choice" de Moodle
@@ -1034,8 +1078,11 @@ export default function AdminSuggestionsPage() {
                     Nombre de questions
                   </label>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <input type="number" className="form-control" min={1} max={60} value={questionCount}
-                      onChange={e => setQuestionCount(Math.max(1, Math.min(60, Number(e.target.value) || 20)))} style={{ maxWidth:140 }} />
+                    <input type="number" className="form-control" min={1} max={60}
+                      value={Number.isNaN(questionCount) ? '' : questionCount}
+                      onChange={e => setQuestionCount(parseInt(e.target.value, 10))}
+                      onBlur={() => setQuestionCount(q => Math.max(1, Math.min(60, Number.isNaN(q) ? 20 : q)))}
+                      style={{ maxWidth:140 }} />
                     <button type="button" onClick={suggestQuestionCount} disabled={suggestingCount}
                       title="Suggestion IA basée sur la difficulté et le niveau, pour un examen d'environ 1h"
                       style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:12, fontWeight:600, cursor:suggestingCount?'not-allowed':'pointer' }}>
@@ -1119,12 +1166,12 @@ export default function AdminSuggestionsPage() {
                   <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:8 }}>
                     <i className="fas fa-layer-group" style={{ color:'var(--primary)', marginRight:6 }} />
                     Élément Constitutif
-                    <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:400, marginLeft:6, background:'var(--background)', border:'1px solid var(--border)', padding:'2px 8px', borderRadius:99 }}>optionnel</span>
+                    <span style={{ fontSize:11, color:'#b45309', fontWeight:400, marginLeft:6, background:'var(--background)', border:'1px solid var(--border)', padding:'2px 8px', borderRadius:99 }}>requis pour enregistrer le sujet</span>
                   </label>
                   <SearchableSelect
                     value={ecId} onChange={setEcId}
-                    placeholder="— Lier à un EC (optionnel) —"
-                    emptyLabel="— Lier à un EC (optionnel) —"
+                    placeholder="— Lier à un EC —"
+                    emptyLabel="— Lier à un EC —"
                     options={filteredEcs.map(ec => ({ value: String(ec.id), label: `${ec.ue_code ? ec.ue_code + ' - ' : ''}${ec.code}: ${ec.name}` }))} />
                 </div>
               </div>
@@ -1250,57 +1297,111 @@ export default function AdminSuggestionsPage() {
             </button>
           </div>
 
-          {result.suggestions.map((s, i) => {
-            const diffStyle = DIFF_STYLE[s.difficulty] ?? DIFF_STYLE['Moyen']
-            return (
-              <div key={i} className="card" style={{ padding:0, overflow:'hidden' }}>
-                <div style={{ height:3, background:'var(--primary)' }} />
-                <div style={{ padding:'20px 24px' }}>
-                  <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:20, flexWrap:'wrap' }}>
-                    <div style={{ flex:1, minWidth:260 }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
-                        <div style={{ width:30, height:30, background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                          <span style={{ fontWeight:800, color:'#2563eb', fontSize:13 }}>{i + 1}</span>
-                        </div>
-                        <h4 style={{ margin:0, fontSize:15, fontWeight:700 }}>{s.title}</h4>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(380px, 1fr))', gap:16 }}>
+            {result.suggestions.map((s, i) => {
+              const diffStyle = DIFF_STYLE[s.difficulty] ?? DIFF_STYLE['Moyen']
+              const examples = s.questions_examples
+              const expanded = expandedSuggestion === i
+              return (
+                <div key={i} className="card" style={{ padding:0, overflow:'hidden', display:'flex', flexDirection:'column' }}>
+                  <div style={{ height:3, background:'var(--primary)' }} />
+                  <div style={{ padding:'20px 24px', display:'flex', flexDirection:'column', flex:1 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+                      <div style={{ width:30, height:30, background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                        <span style={{ fontWeight:800, color:'#2563eb', fontSize:13 }}>{i + 1}</span>
                       </div>
-                      <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:14 }}>
+                      <h4 style={{ margin:0, fontSize:15, fontWeight:700, lineHeight:1.3 }}>{s.title}</h4>
+                    </div>
+
+                    <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:14 }}>
+                      <span style={{ background:diffStyle.bg, color:diffStyle.color, border:`1px solid ${diffStyle.border}`, borderRadius:99, padding:'3px 12px', fontSize:12, fontWeight:600 }}>
+                        <i className="fas fa-signal" style={{ marginRight:5 }} />{s.difficulty}
+                      </span>
+                      <span className="status-badge secondary" style={{ fontSize:12 }}>
+                        <i className="fas fa-clock" /> {s.duration} min
+                      </span>
+                      <span className="status-badge secondary" style={{ fontSize:12 }}>
+                        <i className="fas fa-book" /> {s.exam_type}
+                      </span>
+                      {s.detected_domain && (
                         <span className="status-badge secondary" style={{ fontSize:12 }}>
-                          <i className="fas fa-book" /> {s.exam_type}
+                          <i className="fas fa-graduation-cap" /> {s.detected_domain}
                         </span>
-                        <span style={{ background:diffStyle.bg, color:diffStyle.color, border:`1px solid ${diffStyle.border}`, borderRadius:99, padding:'3px 12px', fontSize:12, fontWeight:600 }}>
-                          <i className="fas fa-signal" style={{ marginRight:5 }} />{s.difficulty}
-                        </span>
+                      )}
+                      {s.student_level && (
                         <span className="status-badge secondary" style={{ fontSize:12 }}>
-                          <i className="fas fa-clock" /> {s.duration} min
+                          <i className="fas fa-user" /> {s.student_level}
                         </span>
-                      </div>
-                      <p style={{ margin:'0 0 16px', color:'var(--text-muted)', fontSize:14, lineHeight:1.7 }}>{s.description}</p>
-                      {s.key_points?.length > 0 && (
-                        <div style={{ background:'var(--background)', borderRadius:10, padding:'12px 16px' }}>
-                          <div style={{ fontSize:12, fontWeight:700, color:'var(--text-muted)', marginBottom:8 }}>
-                            <i className="fas fa-list-check" style={{ color:'var(--primary)', marginRight:6 }} />Points clés du cours
-                          </div>
-                          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                            {s.key_points.map((p, j) => (
-                              <div key={j} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:13, color:'var(--text-muted)' }}>
-                                <i className="fas fa-circle" style={{ fontSize:5, color:'var(--primary)', marginTop:7, flexShrink:0 }} />{p}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
                       )}
                     </div>
+
+                    <p style={{ margin:'0 0 16px', color:'var(--text-muted)', fontSize:14, lineHeight:1.7 }}>{s.description}</p>
+
+                    {s.key_points?.length > 0 && (
+                      <div style={{ background:'var(--background)', borderRadius:10, padding:'12px 16px', marginBottom:12 }}>
+                        <div style={{ fontSize:12, fontWeight:700, color:'var(--text-muted)', marginBottom:8 }}>
+                          <i className="fas fa-list-check" style={{ color:'var(--primary)', marginRight:6 }} />Points clés du cours
+                        </div>
+                        <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                          {s.key_points.map((p, j) => (
+                            <div key={j} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:13, color:'var(--text-muted)' }}>
+                              <i className="fas fa-circle" style={{ fontSize:5, color:'var(--primary)', marginTop:7, flexShrink:0 }} />{p}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {examples && examples.length > 0 && (
+                      <div style={{ marginBottom:14 }}>
+                        <button onClick={() => setExpandedSuggestion(expanded ? null : i)}
+                          style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', color:'var(--primary)', fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0 }}>
+                          <i className={`fas ${expanded ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={{ fontSize:10 }} />
+                          {expanded ? 'Masquer' : 'Voir'} un aperçu des questions ({examples.length})
+                        </button>
+                        {expanded && (
+                          <ol style={{ margin:'10px 0 0', paddingLeft:20, display:'flex', flexDirection:'column', gap:8 }}>
+                            {examples.map((q, j) => (
+                              <li key={j} style={{ fontSize:13, color:'#334155', lineHeight:1.6 }}>{q}</li>
+                            ))}
+                          </ol>
+                        )}
+                      </div>
+                    )}
+
+                    {s.grading_criteria && (
+                      <div style={{ marginBottom:14 }}>
+                        <button onClick={() => setExpandedGrading(expandedGrading === i ? null : i)}
+                          style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', color:'#15803d', fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0 }}>
+                          <i className={`fas ${expandedGrading === i ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={{ fontSize:10 }} />
+                          {expandedGrading === i ? 'Masquer' : 'Voir'} le barème proposé
+                        </button>
+                        {expandedGrading === i && (
+                          <div style={{ marginTop:10 }}>
+                            <textarea
+                              value={editedGrading[i] ?? s.grading_criteria}
+                              onChange={e => setEditedGrading(p => ({ ...p, [i]: e.target.value }))}
+                              rows={4}
+                              style={{ width:'100%', padding:10, background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, fontSize:12.5, lineHeight:1.6, fontFamily:'monospace', resize:'vertical', boxSizing:'border-box', color:'var(--text)', outline:'none' }}
+                            />
+                            <p style={{ margin:'6px 0 0', fontSize:11, color:'var(--text-muted)' }}>
+                              <i className="fas fa-pencil-alt" style={{ marginRight:4 }} />Modifiable — le barème détaillé sera généré en respectant cette répartition
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <button onClick={() => useSuggestion(s, i)} disabled={creating !== null}
-                      className="btn btn-primary" style={{ flexShrink:0, padding:'12px 22px', fontSize:14, fontWeight:700 }}>
+                      className="btn btn-primary" style={{ marginTop:'auto', width:'100%', padding:'12px 22px', fontSize:14, fontWeight:700 }}>
                       <i className={`fas ${creating === i ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`} />
                       {creating === i ? 'Génération…' : 'Utiliser ce Sujet'}
                     </button>
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       )}
     </div>

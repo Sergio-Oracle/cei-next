@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
+import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam, ExamAttempt, ExamStatus } from '@/types'
 import SecurityReportPanel from '@/components/shared/SecurityReportPanel'
@@ -31,82 +32,6 @@ interface AttemptWithMeta extends ExamAttempt {
   student_email?: string
 }
 
-interface SigResponse { data: string | null; meta: string | null }
-
-function SignaturesModal({ attempt, onClose }: { attempt: AttemptWithMeta; onClose: () => void }) {
-  const [loading, setLoading] = useState(true)
-  const [pre, setPre] = useState<SigResponse | null>(null)
-  const [post, setPost] = useState<SigResponse | null>(null)
-
-  useEffect(() => {
-    Promise.all([
-      api.get<SigResponse>(`/api/exam_attempts/${attempt.id}/signature/pre`).catch(() => null),
-      api.get<SigResponse>(`/api/exam_attempts/${attempt.id}/signature/post`).catch(() => null),
-    ]).then(([p, s]) => { setPre(p); setPost(s) }).finally(() => setLoading(false))
-  }, [attempt.id])
-
-  let preMeta: { strokes?: number; path_length?: number; duration_ms?: number; signed_at?: string } | null = null
-  try { preMeta = pre?.meta ? JSON.parse(pre.meta) : null } catch { preMeta = null }
-
-  const isAutoSubmitted = attempt.status === 'auto_submitted'
-
-  function Panel({ title, sig, emptyReason }: { title: string; sig: SigResponse | null; emptyReason: string }) {
-    return (
-      <div style={{ flex: 1, minWidth: 220 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: .04, marginBottom: 8 }}>{title}</div>
-        {sig?.data ? (
-          <img src={sig.data} alt={title}
-            style={{ width: '100%', height: 130, objectFit: 'contain', background: '#fafafa', border: '1px solid var(--border)', borderRadius: 8 }} />
-        ) : (
-          <div style={{ width: '100%', height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--background)', border: '1px dashed var(--border)', borderRadius: 8, color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', padding: 12 }}>
-            <span><i className="fa-solid fa-file-circle-xmark" style={{ display: 'block', fontSize: 20, marginBottom: 6, opacity: .6 }} />{emptyReason}</span>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 24, width: '100%', maxWidth: 560, boxShadow: '0 20px 60px rgba(0,0,0,.2)' }}>
-        <h3 style={{ marginBottom: 4 }}>
-          <i className="fa-solid fa-file-signature" style={{ color: 'var(--primary)', marginRight: 8 }} />
-          Signatures — {attempt.student_name ?? `Étudiant #${attempt.student_id}`}
-        </h3>
-        <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 18px' }}>Comparaison de l&apos;attestation signée avant composition et de la signature de remise.</p>
-
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <i className="fa-solid fa-spinner spin" style={{ fontSize: 24, color: 'var(--primary)' }} />
-          </div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              <Panel title="Pré-examen (attestation)" sig={pre} emptyReason="Aucune signature enregistrée" />
-              <Panel title="Fin de composition" sig={post}
-                emptyReason={isAutoSubmitted
-                  ? 'Soumis automatiquement — signature finale non disponible (temps écoulé ou déconnexion)'
-                  : 'Signature finale non disponible'} />
-            </div>
-            {preMeta && (
-              <p style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 14 }}>
-                <i className="fa-solid fa-circle-info" style={{ marginRight: 5 }} />
-                Attestation : {preMeta.strokes ?? '?'} trait(s) · {preMeta.duration_ms ? Math.round(preMeta.duration_ms / 100) / 10 : '?'}s ·
-                {' '}signée {preMeta.signed_at ? new Date(preMeta.signed_at).toLocaleString('fr-FR') : '—'}
-              </p>
-            )}
-          </>
-        )}
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
-          <button className="btn btn-secondary" onClick={onClose}>Fermer</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function ProfessorExamDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
@@ -123,17 +48,20 @@ export default function ProfessorExamDetailPage() {
   const [downloading, setDownloading] = useState(false)
   const [downloadingSecurity, setDownloadingSecurity] = useState(false)
   const [importingGrades, setImportingGrades] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const gradesFileRef = useRef<HTMLInputElement | null>(null)
   const [rescheduleModal, setRescheduleModal] = useState(false)
   const [rescheduleForm, setRescheduleForm] = useState({ start_time: '', end_time: '' })
   const [rescheduling, setRescheduling] = useState(false)
+  const [compositionModal, setCompositionModal] = useState(false)
+  const [compositionForm, setCompositionForm] = useState({ questions_per_page: 5, randomize_questions: false })
+  const [savingComposition, setSavingComposition] = useState(false)
   const [extraModal, setExtraModal]   = useState<AttemptWithMeta | null>(null)
   const [extraMin, setExtraMin]       = useState(10)
   const [addingExtra, setAddingExtra] = useState(false)
   const [banModal, setBanModal]       = useState<AttemptWithMeta | null>(null)
   const [banReason, setBanReason]     = useState('')
   const [banning, setBanning]         = useState(false)
-  const [sigModal, setSigModal]       = useState<AttemptWithMeta | null>(null)
 
   useEffect(() => { load() }, [id])
 
@@ -210,6 +138,45 @@ export default function ProfessorExamDetailPage() {
       setExam(e => e && res.exam ? { ...e, ...res.exam } : e)
       setRescheduleModal(false)
     } catch (e: any) { error(e.message) } finally { setRescheduling(false) }
+  }
+
+  function openCompositionModal() {
+    if (!exam) return
+    setCompositionForm({
+      questions_per_page: exam.questions_per_page ?? 5,
+      randomize_questions: !!exam.randomize_questions,
+    })
+    setCompositionModal(true)
+  }
+  async function handleSaveComposition() {
+    setSavingComposition(true)
+    try {
+      const res = await api.put<{ success: boolean; exam: OnlineExam }>(`/api/admin/online_exams/${id}`, {
+        questions_per_page: compositionForm.questions_per_page,
+        randomize_questions: compositionForm.randomize_questions,
+      })
+      success('Paramètres de composition enregistrés')
+      setExam(e => e && res.exam ? { ...e, ...res.exam } : e)
+      setCompositionModal(false)
+    } catch (e: any) { error(e.message) } finally { setSavingComposition(false) }
+  }
+
+  // Point 19 / Retour #29 — les notes restent invisibles aux étudiants tant
+  // que l'enseignant n'a pas cliqué ici (après correction/délibération).
+  // Simple confirmation, sans mot de passe : action réservée aux enseignants.
+  async function handlePublishResults() {
+    if (!exam) return
+    const next = !exam.results_published
+    const msg = next
+      ? 'Publier les résultats ? Les étudiants pourront immédiatement voir leur note et feedback.'
+      : 'Dépublier les résultats ? Les étudiants ne verront plus leur note tant que vous ne republiez pas.'
+    if (!confirm(msg)) return
+    setPublishing(true)
+    try {
+      const res = await api.put<{ success: boolean; results_published: boolean }>(`/api/online_exams/${id}/publish-results`, { published: next })
+      setExam(e => e ? { ...e, results_published: res.results_published } : e)
+      success(res.results_published ? 'Résultats publiés' : 'Résultats dépubliés')
+    } catch (e: any) { error(e.message) } finally { setPublishing(false) }
   }
 
   async function openGradeModal(a: AttemptWithMeta) {
@@ -366,11 +333,28 @@ export default function ProfessorExamDetailPage() {
               <i className="fa-solid fa-calendar-days" /> Reprogrammer
             </button>
           )}
+          {(exam.status === 'draft' || exam.status === 'scheduled') && (
+            <button className="btn btn-secondary" onClick={openCompositionModal} title="Pagination et ordre aléatoire des questions">
+              <i className="fa-solid fa-random" /> Composition
+            </button>
+          )}
           {exam.status === 'active' && (
             <button className="btn btn-warning" onClick={handleClose} disabled={actioning}>
               <i className="fa-solid fa-stop" /> Clôturer
             </button>
           )}
+          <button
+            className={exam.results_published ? 'btn btn-secondary' : 'btn btn-success'}
+            onClick={handlePublishResults}
+            disabled={publishing}
+            title={exam.results_published ? 'Masquer à nouveau les notes aux étudiants' : "Rendre les notes visibles aux étudiants"}
+          >
+            {publishing
+              ? <><i className="fa-solid fa-spinner spin" /> ...</>
+              : exam.results_published
+                ? <><i className="fa-solid fa-eye-slash" /> Dépublier les résultats</>
+                : <><i className="fa-solid fa-bullhorn" /> Publier les résultats</>}
+          </button>
 
           <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)', margin: '0 2px' }} />
 
@@ -516,7 +500,7 @@ export default function ProfessorExamDetailPage() {
                   <td style={{ fontSize: 13 }}>{a.submitted_at ? fmt(a.submitted_at) : '—'}</td>
                   <td>
                     {a.score != null
-                      ? <strong style={{ color: a.score >= 10 ? 'var(--success)' : 'var(--danger)' }}>{a.score}/20</strong>
+                      ? <strong style={{ color: a.score >= 10 ? 'var(--success)' : 'var(--danger)' }}>{fmtScore(a.score)}/20</strong>
                       : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                   </td>
                   <td>
@@ -563,12 +547,6 @@ export default function ProfessorExamDetailPage() {
                           <i className="fa-solid fa-undo" /> Réintégrer
                         </button>
                       )}
-                      {a.status !== 'in_progress' && (
-                        <button onClick={() => setSigModal(a)} title="Voir les signatures pré/post-examen"
-                          style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#64748b20', color: '#475569', border: '1px solid #64748b40', borderRadius: 6, cursor: 'pointer' }}>
-                          <i className="fa-solid fa-file-signature" /> Signatures
-                        </button>
-                      )}
                     </div>
                   </td>
                 </tr>
@@ -598,6 +576,38 @@ export default function ProfessorExamDetailPage() {
               <button onClick={() => setRescheduleModal(false)} className="btn btn-secondary">Annuler</button>
               <button onClick={handleReschedule} disabled={rescheduling || !rescheduleForm.start_time} className="btn btn-success">
                 <i className={`fas ${rescheduling ? 'fa-spinner fa-spin' : 'fa-check'}`} /> {rescheduling ? 'Enregistrement…' : 'Reprogrammer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Composition (pagination + ordre aléatoire) */}
+      {compositionModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 28, width: 420, maxWidth: '95vw' }}>
+            <h3 style={{ marginBottom: 20 }}><i className="fas fa-random" /> Composition de l'examen</h3>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Questions par page</label>
+              <input type="number" min={0} max={50} className="form-control"
+                value={Number.isNaN(compositionForm.questions_per_page) ? '' : compositionForm.questions_per_page}
+                onChange={e => setCompositionForm(f => ({ ...f, questions_per_page: parseInt(e.target.value, 10) }))}
+                onBlur={() => setCompositionForm(f => ({ ...f, questions_per_page: Math.max(0, Math.min(50, Number.isNaN(f.questions_per_page) ? 5 : f.questions_per_page)) }))} />
+              <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>0 = tout sur une page</small>
+            </div>
+            <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <input type="checkbox" id="comp_randomize" checked={compositionForm.randomize_questions}
+                onChange={e => setCompositionForm(f => ({ ...f, randomize_questions: e.target.checked }))}
+                style={{ width: 'auto', marginTop: 3, flexShrink: 0 }} />
+              <div>
+                <label htmlFor="comp_randomize" style={{ fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Ordre des questions aléatoire</label>
+                <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block' }}>Chaque étudiant reçoit un ordre différent, stable une fois l'examen commencé</small>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => setCompositionModal(false)} className="btn btn-secondary">Annuler</button>
+              <button onClick={handleSaveComposition} disabled={savingComposition} className="btn btn-success">
+                <i className={`fas ${savingComposition ? 'fa-spinner fa-spin' : 'fa-check'}`} /> {savingComposition ? 'Enregistrement…' : 'Enregistrer'}
               </button>
             </div>
           </div>
@@ -689,8 +699,6 @@ export default function ProfessorExamDetailPage() {
         </div>
       )}
 
-      {/* Modal signatures pré/post-examen */}
-      {sigModal && <SignaturesModal attempt={sigModal} onClose={() => setSigModal(null)} />}
     </div>
   )
 }

@@ -3,14 +3,14 @@
 import React, { createContext, useContext, useState, useCallback } from 'react'
 
 type ToastType = 'success' | 'error' | 'warning' | 'info'
-interface Toast { id: number; type: ToastType; message: string }
+interface Toast { id: number; type: ToastType; message: string; onClick?: () => void }
 
 interface ToastCtx {
   toasts: Toast[]
-  showToast: (msg: string, type?: ToastType, duration?: number) => void
+  showToast: (msg: string, type?: ToastType, duration?: number, onClick?: () => void) => void
   success: (msg: string) => void
   error:   (msg: string) => void
-  warning: (msg: string) => void
+  warning: (msg: string, onClick?: () => void) => void
   info:    (msg: string) => void
 }
 
@@ -24,15 +24,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts(prev => prev.filter(t => t.id !== id))
   }, [])
 
-  const showToast = useCallback((message: string, type: ToastType = 'info', duration = 4000) => {
+  const showToast = useCallback((message: string, type: ToastType = 'info', duration = 4000, onClick?: () => void) => {
     const id = ++_id
-    setToasts(prev => [...prev, { id, type, message }])
+    setToasts(prev => [...prev, { id, type, message, onClick }])
     setTimeout(() => dismiss(id), duration)
   }, [dismiss])
 
   const success = useCallback((msg: string) => showToast(msg, 'success'), [showToast])
   const error   = useCallback((msg: string) => showToast(msg, 'error', 5000), [showToast])
-  const warning = useCallback((msg: string) => showToast(msg, 'warning'), [showToast])
+  const warning = useCallback((msg: string, onClick?: () => void) => showToast(msg, 'warning', onClick ? 8000 : 4000, onClick), [showToast])
   const info    = useCallback((msg: string) => showToast(msg, 'info'), [showToast])
 
   return (
@@ -41,7 +41,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {/* Toast container */}
       <div className="toast-container">
         {toasts.map(t => (
-          <div key={t.id} className={`toast ${t.type}`} onClick={() => dismiss(t.id)}>
+          <div key={t.id} className={`toast ${t.type}`} onClick={() => { t.onClick?.(); dismiss(t.id) }} style={t.onClick ? { cursor: 'pointer' } : undefined}>
             <i className={`fa-solid fa-${t.type === 'success' ? 'check-circle' : t.type === 'error' ? 'circle-xmark' : t.type === 'warning' ? 'triangle-exclamation' : 'circle-info'}`} />
             {t.message}
           </div>

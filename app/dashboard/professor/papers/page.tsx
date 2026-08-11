@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import api, { AI_TIMEOUT_MS } from '@/lib/api'
+import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 
 interface Subject {
@@ -487,7 +488,7 @@ export default function ProfessorPapersPage() {
                 <div style={{ padding: 14, background: singleResult.score >= 10 ? '#dcfce7' : '#fee2e2', borderRadius: 10, textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: singleResult.score >= 10 ? '#15803d' : '#991b1b', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 4, fontWeight: 600 }}>Note</div>
                   <div style={{ fontWeight: 800, fontSize: 28, color: singleResult.score >= 10 ? '#10b981' : '#ef4444', lineHeight: 1 }}>
-                    {singleResult.score}<span style={{ fontSize: 13, fontWeight: 500 }}>/20</span>
+                    {fmtScore(singleResult.score)}<span style={{ fontSize: 13, fontWeight: 500 }}>/20</span>
                   </div>
                 </div>
                 <div style={{ padding: 14, background: '#f8fafc', borderRadius: 10, textAlign: 'center' }}>
@@ -568,7 +569,7 @@ export default function ProfessorPapersPage() {
                           <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{r.student_name || '—'}</td>
                           <td style={{ padding: '10px 14px', textAlign: 'center' }}>
                             {typeof r.score === 'number'
-                              ? <span style={{ fontWeight: 700, fontSize: 15, color: r.score >= 10 ? '#10b981' : '#ef4444' }}>{r.score}/20</span>
+                              ? <span style={{ fontWeight: 700, fontSize: 15, color: r.score >= 10 ? '#10b981' : '#ef4444' }}>{fmtScore(r.score)}/20</span>
                               : <span style={{ color: '#94a3b8', fontSize: 13 }}>—</span>}
                           </td>
                           <td style={{ padding: '10px 14px', textAlign: 'center' }}>

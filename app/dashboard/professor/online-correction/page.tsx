@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
+import { fmtScore } from '@/lib/format'
 
 interface Attempt {
   id: number
@@ -99,7 +100,7 @@ export default function OnlineCorrectionPage() {
     startTimer()
     try {
       const res = await api.aiPost<{ success: boolean; attempt: { score: number } }>(`/api/exam_attempts/${attempt.id}/correct`, {})
-      success(`Correction terminée — ${attempt.student_name} : ${res.attempt.score}/20`)
+      success(`Correction terminée — ${attempt.student_name} : ${fmtScore(res.attempt.score)}/20`)
       load()
     } catch (e: any) { error(e.message || 'Erreur de correction') }
     finally { setCorrecting(null); setProgress(null); stopTimer() }
@@ -252,7 +253,7 @@ export default function OnlineCorrectionPage() {
                         </td>
                         <td style={{ padding: '12px 16px' }}>
                           {attempt.score !== null
-                            ? <strong style={{ color: attempt.score >= 10 ? '#10b981' : '#ef4444', fontSize: 16 }}>{attempt.score}/20</strong>
+                            ? <strong style={{ color: attempt.score >= 10 ? '#10b981' : '#ef4444', fontSize: 16 }}>{fmtScore(attempt.score)}/20</strong>
                             : <span style={{ color: '#94a3b8', fontSize: 13 }}>Non corrigé</span>}
                         </td>
                         <td style={{ padding: '12px 16px' }}>
@@ -340,7 +341,7 @@ export default function OnlineCorrectionPage() {
                   {it.student_name}
                 </span>
                 {it.success
-                  ? <strong style={{ color: (it.score ?? 0) >= 10 ? '#10b981' : '#ef4444' }}>{it.score}/20</strong>
+                  ? <strong style={{ color: (it.score ?? 0) >= 10 ? '#10b981' : '#ef4444' }}>{fmtScore(it.score ?? 0)}/20</strong>
                   : <span style={{ color: '#ef4444', fontSize: 12 }}>Échec</span>}
               </div>
             ))}

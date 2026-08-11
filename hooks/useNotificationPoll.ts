@@ -36,11 +36,27 @@ async function tryRefresh(): Promise<boolean> {
       const data = await res.json()
       if (data?.access_token) {
         localStorage.setItem('token', data.access_token)
+        if (data.expires_in) localStorage.setItem('token_expires_at', String(Date.now() + data.expires_in * 1000))
         return true
       }
     }
   } catch {}
   return false
+}
+
+// Le token PASETO expire toutes les 15 min (ACCESS_TTL côté serveur) ; sans ça,
+// le long-polling — qui tourne en continu tant que l'onglet reste ouvert —
+// finit *systématiquement* par présenter un token expiré au serveur, provoquant
+// un 401 visible dans la console à chaque cycle d'expiration. Le code gère déjà
+// ce cas proprement (refresh + retry, cf. plus bas), mais le 401 reste visible
+// dans les DevTools même quand il est intercepté côté JS. On rafraîchit donc le
+// token *avant* qu'il n'expire quand on le peut, pour que ce cas attendu ne
+// génère plus jamais de requête en échec.
+function tokenExpiringSoon(): boolean {
+  const raw = typeof window === 'undefined' ? null : localStorage.getItem('token_expires_at')
+  if (!raw) return false   // pas d'info d'expiration connue (ancien login) — laisser le repli réactif faire son travail
+  const expiresAt = Number(raw)
+  return Number.isFinite(expiresAt) && expiresAt - Date.now() < POLL_MS
 }
 
 /**
@@ -62,12 +78,18 @@ export function useNotificationPoll(
     async function poll(): Promise<void> {
       if (!activeRef.current) return
 
-      const token = getToken()
+      let token = getToken()
       if (!token) {
         // Pas encore authentifié — réessayer après un délai
         await new Promise(r => setTimeout(r, 5_000))
         if (activeRef.current) poll()
         return
+      }
+
+      if (tokenExpiringSoon()) {
+        await tryRefresh()
+        if (!activeRef.current) return
+        token = getToken()
       }
 
       const controller = new AbortController()

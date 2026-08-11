@@ -9,6 +9,8 @@ import { useToast } from '@/contexts/ToastContext'
 interface ProfDashboardAPI {
   my_subjects:      number
   papers_corrected: number
+  total_surveillants?: number
+  active_surveillants?: number
 }
 
 export default function ProfessorDashboard() {
@@ -56,6 +58,20 @@ export default function ProfessorDashboard() {
           value={loading ? '…' : (data?.papers_corrected ?? 0)}
           color="#10b981"
           href="/dashboard/professor/papers"
+        />
+        <StatTile
+          icon="fa-user-shield"
+          label="Surveillants affectés"
+          value={loading ? '…' : (data?.total_surveillants ?? 0)}
+          color="#f59e0b"
+          href="/dashboard/professor/proctor-groups"
+        />
+        <StatTile
+          icon="fa-circle-check"
+          label="Surveillants actifs"
+          value={loading ? '…' : (data?.active_surveillants ?? 0)}
+          color="#0d9488"
+          href="/dashboard/professor/proctor-groups"
         />
       </div>
 

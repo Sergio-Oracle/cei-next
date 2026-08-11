@@ -1,5 +1,5 @@
 // ── Utilisateurs ─────────────────────────────────────────────────────────────
-export type UserRole = 'admin' | 'professor' | 'student' | 'surveillant'
+export type UserRole = 'admin' | 'professor' | 'student' | 'surveillant' | 'superviseur'
 
 export interface User {
   id: number
@@ -96,6 +96,8 @@ export interface StudentPaper {
   reclamation_window_end?: string
   has_reclamation?: boolean
   reclamation_status?: string
+  is_published?: boolean
+  pending_publication?: boolean
   created_at: string
 }
 
@@ -115,11 +117,15 @@ export interface OnlineExam {
   max_tab_switches?: number
   enable_copy_paste?: boolean
   enable_right_click?: boolean
+  enable_file_download?: boolean
   randomize_questions?: boolean
+  questions_per_page?: number
+  time_per_question_seconds?: number | null
   max_no_face_count?: number
   ban_on_devtools?: boolean
   auto_correct?: boolean
   results_published?: boolean
+  enable_calculator?: boolean
   proctoring_enabled?: boolean
   camera_required?: boolean
   status: ExamStatus
@@ -138,6 +144,7 @@ export interface OnlineExam {
     feedback?: string | null
     corrected_at?: string | null
     submitted_at?: string | null
+    pending_publication?: boolean
   } | null
 }
 
@@ -195,6 +202,27 @@ export interface Reclamation {
   updated_at?: string
 }
 
+// ── Restitution (copies-exemples anonymisées) ──────────────────────────────────
+export type ExampleLabel = 'best' | 'improve'
+
+export interface RestitutionExample {
+  id: number
+  paper_id?: number
+  attempt_id?: number
+  subject_id?: number
+  subject_title?: string
+  label: ExampleLabel
+  anonymized_content: string
+  anonymized_feedback?: string
+  score?: number
+  max_score?: number
+  is_published: boolean
+  created_by_id: number
+  creator_name?: string
+  created_at: string
+  published_at?: string
+}
+
 // ── Transcripts ───────────────────────────────────────────────────────────────
 export interface GradeTranscript {
   id: number
@@ -241,6 +269,7 @@ export interface AdminStats {
   total_exams?: number
   active_exams?: number
   total_formations?: number
+  active_surveillants?: number
 }
 
 export interface ExamStats {

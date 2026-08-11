@@ -22,12 +22,16 @@ export default function NewExamPage() {
     end_time:        '',
     max_tab_switches:  2,
     questions_per_page: 5,
+    time_per_question_seconds: 0,
+    randomize_questions: false,
     max_no_face_count: 10,
     ban_on_devtools:   true,
     auto_ban_enabled:  false,
     enable_copy_paste: false,
     enable_right_click: false,
+    enable_file_download: false,
     auto_correct:      false,
+    enable_calculator: false,
   })
 
   useEffect(() => {
@@ -39,6 +43,10 @@ export default function NewExamPage() {
   function set(key: string, val: any) {
     setForm(f => ({ ...f, [key]: val }))
   }
+
+  // Tampon texte dédié pour max_no_face_count : seul champ à autoriser une
+  // valeur négative (-1 = désactivé) — voir explication dans la page prof.
+  const [noFaceRaw, setNoFaceRaw] = useState(String(form.max_no_face_count))
 
   function calcDuration() {
     if (!form.start_time || !form.end_time) return null
@@ -66,12 +74,16 @@ export default function NewExamPage() {
         end_time:          endTime,
         max_tab_switches:  form.max_tab_switches,
         questions_per_page: form.questions_per_page,
+        time_per_question_seconds: form.time_per_question_seconds || null,
+        randomize_questions: form.randomize_questions,
         max_no_face_count: form.max_no_face_count,
         ban_on_devtools:   form.ban_on_devtools,
         auto_ban_enabled:  form.auto_ban_enabled,
         enable_copy_paste: form.enable_copy_paste,
         enable_right_click: form.enable_right_click,
+        enable_file_download: form.enable_file_download,
         auto_correct:      form.auto_correct,
+        enable_calculator: form.enable_calculator,
       })
       success(`Examen créé — Durée : ${res.exam?.duration_minutes ?? '?'} min`)
       router.push('/dashboard/admin/exams')
@@ -149,8 +161,32 @@ export default function NewExamPage() {
             {/* Questions par page */}
             <div style={{ marginBottom: 4 }}>
               <label style={lbl}><i className="fas fa-book-open" /> Questions par page</label>
-              <input type="number" min={0} max={50} value={form.questions_per_page} onChange={e => set('questions_per_page', Number(e.target.value))} style={inp} />
+              <input type="number" min={0} max={50}
+                value={Number.isNaN(form.questions_per_page) ? '' : form.questions_per_page}
+                onChange={e => set('questions_per_page', parseInt(e.target.value, 10))}
+                onBlur={() => set('questions_per_page', Math.max(0, Math.min(50, Number.isNaN(form.questions_per_page) ? 5 : form.questions_per_page)))}
+                style={inp} />
               <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>Évite le défilement long (0 = tout sur une page)</small>
+            </div>
+
+            <div style={{ marginBottom: 18 }}>
+              <label style={lbl}><i className="fas fa-hourglass-half" /> Minuteur par page (QCM/Vrai-Faux)</label>
+              <input type="number" min={0} max={3600}
+                value={Number.isNaN(form.time_per_question_seconds) ? '' : form.time_per_question_seconds}
+                onChange={e => set('time_per_question_seconds', parseInt(e.target.value, 10))}
+                onBlur={() => set('time_per_question_seconds', Math.max(0, Math.min(3600, Number.isNaN(form.time_per_question_seconds) ? 0 : form.time_per_question_seconds)))}
+                style={inp} />
+              <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>
+                Secondes avant avance automatique à la page suivante — QCM/Vrai-Faux uniquement, jamais les questions ouvertes (0 = désactivé)
+              </small>
+            </div>
+
+            <div style={{ marginBottom: 4, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <input type="checkbox" id="a_randomize" checked={form.randomize_questions} onChange={e => set('randomize_questions', e.target.checked)} style={{ width: 'auto', marginTop: 3, flexShrink: 0 }} />
+              <div>
+                <label htmlFor="a_randomize" style={lbl}><i className="fas fa-random" /> Ordre des questions aléatoire</label>
+                <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block' }}>Chaque étudiant reçoit un ordre différent (QCM/Vrai-Faux/Appariement et leurs choix) — stable une fois l'examen commencé</small>
+              </div>
             </div>
           </div>
 
@@ -180,12 +216,27 @@ export default function NewExamPage() {
             <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
               <div style={{ marginBottom: 16 }}>
                 <label style={{ ...lbl, fontSize: 13 }}><i className="fas fa-exchange-alt" style={{ color: '#f59e0b' }} /> Seuil — changements de fenêtre</label>
-                <input type="number" min={0} max={20} value={form.max_tab_switches} onChange={e => set('max_tab_switches', Number(e.target.value))} style={inp} />
+                <input type="number" min={0} max={20}
+                  value={Number.isNaN(form.max_tab_switches) ? '' : form.max_tab_switches}
+                  onChange={e => set('max_tab_switches', parseInt(e.target.value, 10))}
+                  onBlur={() => set('max_tab_switches', Math.max(0, Math.min(20, Number.isNaN(form.max_tab_switches) ? 2 : form.max_tab_switches)))}
+                  style={inp} />
                 <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>{form.auto_ban_enabled ? 'Bannissement' : 'Alerte'} après ce nombre (0 = aucun toléré)</small>
               </div>
               <div style={{ marginBottom: 16 }}>
                 <label style={{ ...lbl, fontSize: 13 }}><i className="fas fa-eye-slash" style={{ color: '#ef4444' }} /> Seuil — visage absent (caméra)</label>
-                <input type="number" min={-1} max={100} value={form.max_no_face_count} onChange={e => set('max_no_face_count', Number(e.target.value))} style={inp} />
+                <input type="number" min={-1} max={100}
+                  value={noFaceRaw}
+                  onChange={e => {
+                    setNoFaceRaw(e.target.value)
+                    const n = parseInt(e.target.value, 10)
+                    if (!Number.isNaN(n)) set('max_no_face_count', n)
+                  }}
+                  onBlur={() => {
+                    const n = Math.max(-1, Math.min(100, parseInt(noFaceRaw, 10) || 10))
+                    set('max_no_face_count', n); setNoFaceRaw(String(n))
+                  }}
+                  style={inp} />
                 <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>{form.auto_ban_enabled ? 'Bannissement' : 'Alerte'} après N détections sans visage (-1 = désactivé)</small>
               </div>
             </div>
@@ -202,7 +253,7 @@ export default function NewExamPage() {
             </div>
 
             {/* Copy-paste + Right-click */}
-            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 16 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#475569' }}>
                 <input type="checkbox" checked={form.enable_copy_paste} onChange={e => set('enable_copy_paste', e.target.checked)} style={{ width: 'auto' }} />
                 <span>Autoriser Copier/Coller</span>
@@ -211,7 +262,21 @@ export default function NewExamPage() {
                 <input type="checkbox" checked={form.enable_right_click} onChange={e => set('enable_right_click', e.target.checked)} style={{ width: 'auto' }} />
                 <span>Autoriser Clic Droit</span>
               </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#475569' }}>
+                <input type="checkbox" checked={form.enable_file_download} onChange={e => set('enable_file_download', e.target.checked)} style={{ width: 'auto' }} />
+                <span>Autoriser le téléchargement des fichiers du sujet</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#475569' }}>
+                <input type="checkbox" checked={form.enable_calculator} onChange={e => set('enable_calculator', e.target.checked)} style={{ width: 'auto' }} />
+                <span><i className="fas fa-calculator" style={{ marginRight: 4 }} />Activer la calculatrice intégrée</span>
+              </label>
             </div>
+            {form.enable_calculator && (
+              <p style={{ margin: '-8px 0 16px', fontSize: 11.5, color: '#64748b' }}>
+                <i className="fas fa-info-circle" style={{ marginRight: 4 }} />Les étudiants pourront utiliser une calculatrice scientifique directement sur la page d'examen — utile pour éviter le recours à une calculatrice physique ou un téléphone pendant la composition.
+              </p>
+            )}
+
           </div>
 
           {/* Correction IA */}

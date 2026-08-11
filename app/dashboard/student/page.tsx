@@ -6,6 +6,7 @@ import api from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import type { StudentPaper, OnlineExam } from '@/types'
+import CallSurveillantModal from '@/components/exam/CallSurveillantModal'
 
 interface OnlineResult {
   attempt_id: number
@@ -73,7 +74,9 @@ export default function StudentDashboard() {
   const [papers,      setPapers]      = useState<StudentPaper[]>([])
   const [online,      setOnline]      = useState<OnlineResult[]>([])
   const [activeExams, setActiveExams] = useState<OnlineExam[]>([])
+  const [inProgressExams, setInProgressExams] = useState<OnlineExam[]>([])
   const [loading,     setLoading]     = useState(true)
+  const [callExam, setCallExam] = useState<OnlineExam | null>(null)
 
   useEffect(() => { load() }, []) // eslint-disable-line
 
@@ -110,6 +113,10 @@ export default function StudentDashboard() {
           return now >= start && now <= end
         })
         setActiveExams(active)
+        // Examen quitté en cours de composition (tentative IN_PROGRESS en
+        // base alors que l'étudiant n'est plus sur la page) — un code de
+        // reprise personnel s'affiche automatiquement sur la page d'examen.
+        setInProgressExams(list.filter(e => e.my_attempt?.status === 'in_progress'))
       }
     } catch { error('Erreur de chargement') }
     finally { setLoading(false) }
@@ -178,6 +185,29 @@ export default function StudentDashboard() {
             </Link>
           )}
 
+          {/* ── Alerte : examen quitté en cours, code de reprise requis ────── */}
+          {inProgressExams.map(e => (
+            <div key={e.id} style={{ background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+              <i className="fas fa-triangle-exclamation" style={{ color: '#d97706', fontSize: 16, flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <span style={{ fontWeight: 700, color: '#92400e', fontSize: 13 }}>Examen en cours : {e.title}</span>
+                <div style={{ fontSize: 12, color: '#b45309', marginTop: 2 }}>
+                  Vous avez quitté cet examen — cliquez sur « Reprendre » pour retrouver votre code personnel et continuer.
+                </div>
+              </div>
+              <button onClick={() => setCallExam(e)} title="Besoin d'aide ? Appeler votre surveillant" style={{ fontSize: 12, fontWeight: 700, color: '#b45309', background: 'white', border: '1.5px solid #fbbf24', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <i className="fas fa-phone-volume" /> Besoin d'aide ?
+              </button>
+              <Link href={`/exam/${e.id}`} style={{ fontSize: 12, fontWeight: 700, color: 'white', background: '#d97706', border: 'none', borderRadius: 8, padding: '8px 14px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <i className="fas fa-arrow-right" /> Reprendre
+              </Link>
+            </div>
+          ))}
+
+          {callExam && (
+            <CallSurveillantModal attemptId={callExam.my_attempt!.id} examTitle={callExam.title} onClose={() => setCallExam(null)} />
+          )}
+
           {/* ── Tuiles stats ────────────────────────────────────────────────── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginBottom: 28 }}>
             <StatTile icon="fa-file" label="Évaluations" value={totalCount} color="#0f172a" />
@@ -227,7 +257,7 @@ export default function StudentDashboard() {
                           <span style={{ fontSize: 11, background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 99 }}>Copie</span>
                         </td>
                         <td style={{ padding: '10px 14px' }}>
-                          <ScoreBadge score={p.score} />
+                          <ScoreBadge score={p.score} pendingPublication={p.pending_publication} />
                         </td>
                         <td style={{ padding: '10px 14px', fontSize: 12, color: '#64748b' }}>
                           {fmtDate(p.corrected_at || p.created_at)}

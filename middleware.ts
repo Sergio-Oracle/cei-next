@@ -6,6 +6,7 @@ const PUBLIC_PATHS = new Set([
   '/forgot-password',
   '/conditions',
   '/',
+  '/robots.txt',
 ])
 
 // Préfixes publics (assets, guide public, etc.)
@@ -16,6 +17,12 @@ const PUBLIC_PREFIXES = [
   '/screenshots/',  // captures d'écran produit sur la page d'accueil publique
   '/icons/',        // icônes PWA (manifest.json) — doivent rester accessibles sans authentification
   '/brand/',        // logos partenaires (ex. UNCHK) affichés sur les pages publiques
+  '/models/',       // modèles IA (face-api.js, MediaPipe) hébergés localement — fichiers
+                     // génériques sans donnée utilisateur ; un cookie manquant/expiré ne doit
+                     // jamais faire échouer silencieusement le chargement de la surveillance
+                     // (redirigeait vers /login, un HTML reçu à la place du modèle attendu)
+  '/mediapipe/',    // runtime WASM MediaPipe, même raison
+  '/vendor/',       // bibliothèques JS tierces hébergées localement (face-api.js), même raison
   '/favicon',
   '/manifest.json',
   '/sw.js',
@@ -23,6 +30,7 @@ const PUBLIC_PREFIXES = [
   '/guide-etudiant',
   '/guide-enseignant',
   '/guide-surveillant',
+  '/guide-superviseur',
 ]
 
 export function middleware(request: NextRequest) {

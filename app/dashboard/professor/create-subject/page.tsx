@@ -53,7 +53,7 @@ export default function ProfessorCreateSubjectPage() {
   const [filterPole,      setFilterPole]      = useState('')
   const [filterFormation, setFilterFormation] = useState('')
   const [filterLevel,     setFilterLevel]     = useState('')
-  const [file,            setFile]            = useState<File | null>(null)
+  const [files,           setFiles]           = useState<File[]>([])
   const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false })
 
   /* ── basket ── */
@@ -156,14 +156,15 @@ export default function ProfessorCreateSubjectPage() {
   }
 
   /* ── file handlers ── */
-  function handleDrop(e: React.DragEvent) { e.preventDefault(); setDragOver(false); const f=e.dataTransfer.files[0]; if(f) setFile(f) }
-  function clearFile() { setFile(null); if (fileRef.current) fileRef.current.value = '' }
+  function handleDrop(e: React.DragEvent) { e.preventDefault(); setDragOver(false); const fs=Array.from(e.dataTransfer.files); if(fs.length) setFiles(p=>[...p,...fs]) }
+  function removeFile(idx: number) { setFiles(p => p.filter((_, i) => i !== idx)); if (fileRef.current) fileRef.current.value = '' }
+  function clearFile() { setFiles([]); if (fileRef.current) fileRef.current.value = '' }
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault()
-    if (!title.trim()) { toastErr('Le titre est requis'); return }
-    if (!file)         { toastErr('Sélectionnez un fichier'); return }
-    await upload({ title, ecId, qTypes, file })
+    if (!title.trim())    { toastErr('Le titre est requis'); return }
+    if (!files.length)    { toastErr('Sélectionnez au moins un fichier'); return }
+    await upload({ title, ecId, qTypes, files })
   }
 
   /* ── basket ── */
@@ -342,7 +343,7 @@ export default function ProfessorCreateSubjectPage() {
             <button onClick={() => router.push('/dashboard/professor/subjects')} className="btn btn-secondary" style={{ fontSize:12 }}>
               <i className="fas fa-list" /> Voir les sujets
             </button>
-            <button onClick={() => { setCreated(null); setTitle(''); setFile(null); setEcId(''); setEditContent(''); setEditRubric('') }} className="btn btn-primary" style={{ fontSize:12 }}>
+            <button onClick={() => { setCreated(null); setTitle(''); setFiles([]); setEcId(''); setEditContent(''); setEditRubric('') }} className="btn btn-primary" style={{ fontSize:12 }}>
               <i className="fas fa-plus" /> Créer un autre
             </button>
           </div>
@@ -395,7 +396,7 @@ export default function ProfessorCreateSubjectPage() {
         </div>
 
         <div style={{ display:'flex', gap:10, justifyContent:'flex-end', flexWrap:'wrap' }}>
-          <button onClick={() => { setCreated(null); setTitle(''); setFile(null); setEcId('') }} className="btn btn-secondary" style={{ fontSize:13 }}>
+          <button onClick={() => { setCreated(null); setTitle(''); setFiles([]); setEcId('') }} className="btn btn-secondary" style={{ fontSize:13 }}>
             <i className="fas fa-arrow-left" /> Retour
           </button>
           <button onClick={addToBasket} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bbf7d0', background:'#f0fdf4', color:'#15803d', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', position:'relative' }}>
@@ -619,29 +620,32 @@ export default function ProfessorCreateSubjectPage() {
                 )}
               </div>
 
-              {/* File */}
+              {/* Files */}
               <div style={{ marginBottom:22 }}>
                 <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:600, marginBottom:7 }}>
-                  <i className="fas fa-file-arrow-up" style={{ color:'#16a34a', width:15 }} />Fichier <span style={{ color:'#ef4444', fontSize:11 }}>*</span>
+                  <i className="fas fa-file-arrow-up" style={{ color:'#16a34a', width:15 }} />Fichier(s) <span style={{ color:'#ef4444', fontSize:11 }}>*</span>
                 </label>
-                {!file?(
-                  <label style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:10, padding:'28px 20px', border:`2px dashed ${dragOver?'#16a34a':'var(--border)'}`, borderRadius:12, cursor:'pointer', background:dragOver?'#f0fdf4':'var(--background)', transition:'all .2s', textAlign:'center' }}
-                    onDragOver={e=>{e.preventDefault();setDragOver(true)}} onDragLeave={()=>setDragOver(false)} onDrop={handleDrop}>
-                    <i className="fas fa-cloud-arrow-up" style={{ fontSize:34, color:'var(--text-muted)' }} />
-                    <div><div style={{ fontWeight:600, fontSize:14 }}>Glissez votre fichier ici</div><div style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>ou cliquez pour parcourir</div></div>
-                    <div style={{ display:'flex', gap:6 }}>
-                      {[{l:'PDF',bg:'#dbeafe',fg:'#1d4ed8'},{l:'DOCX',bg:'#dcfce7',fg:'#15803d'},{l:'TXT',bg:'#fef9c3',fg:'#854d0e'}].map(b=><span key={b.l} style={{ background:b.bg,color:b.fg,padding:'2px 9px',borderRadius:99,fontSize:11,fontWeight:700 }}>{b.l}</span>)}
-                    </div>
-                    <input ref={fileRef} type="file" accept=".pdf,.docx,.doc,.txt" style={{ display:'none' }} onChange={e=>{if(e.target.files?.[0]) setFile(e.target.files[0])}} />
-                  </label>
-                ):(
-                  <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', background:'#f0fdf4', border:'1px solid #86efac', borderRadius:10 }}>
-                    <i className="fas fa-file-check" style={{ color:'#16a34a', fontSize:20, flexShrink:0 }} />
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontWeight:600, color:'#15803d', fontSize:13 }}>{file.name}</div>
-                      <div style={{ fontSize:12, color:'var(--text-muted)' }}>{(file.size/1024/1024).toFixed(2)} Mo</div>
-                    </div>
-                    <button type="button" onClick={clearFile} style={{ background:'none', border:'none', color:'var(--text-muted)', cursor:'pointer', fontSize:16, padding:4 }}><i className="fas fa-times-circle" /></button>
+                <label style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:10, padding:'28px 20px', border:`2px dashed ${dragOver?'#16a34a':'var(--border)'}`, borderRadius:12, cursor:'pointer', background:dragOver?'#f0fdf4':'var(--background)', transition:'all .2s', textAlign:'center' }}
+                  onDragOver={e=>{e.preventDefault();setDragOver(true)}} onDragLeave={()=>setDragOver(false)} onDrop={handleDrop}>
+                  <i className="fas fa-cloud-arrow-up" style={{ fontSize:34, color:'var(--text-muted)' }} />
+                  <div><div style={{ fontWeight:600, fontSize:14 }}>Glissez un ou plusieurs fichiers ici</div><div style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>ou cliquez pour parcourir</div></div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {[{l:'PDF',bg:'#dbeafe',fg:'#1d4ed8'},{l:'DOCX',bg:'#dcfce7',fg:'#15803d'},{l:'TXT',bg:'#fef9c3',fg:'#854d0e'}].map(b=><span key={b.l} style={{ background:b.bg,color:b.fg,padding:'2px 9px',borderRadius:99,fontSize:11,fontWeight:700 }}>{b.l}</span>)}
+                  </div>
+                  <input ref={fileRef} type="file" accept=".pdf,.docx,.doc,.txt" multiple style={{ display:'none' }} onChange={e=>{const fs=Array.from(e.target.files||[]); if(fs.length) setFiles(p=>[...p,...fs])}} />
+                </label>
+                {files.length > 0 && (
+                  <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:10 }}>
+                    {files.map((f, idx) => (
+                      <div key={idx} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'#f0fdf4', border:'1px solid #86efac', borderRadius:10 }}>
+                        <i className="fas fa-file-check" style={{ color:'#16a34a', fontSize:18, flexShrink:0 }} />
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontWeight:600, color:'#15803d', fontSize:13 }}>{f.name}</div>
+                          <div style={{ fontSize:12, color:'var(--text-muted)' }}>{(f.size/1024/1024).toFixed(2)} Mo</div>
+                        </div>
+                        <button type="button" onClick={() => removeFile(idx)} style={{ background:'none', border:'none', color:'var(--text-muted)', cursor:'pointer', fontSize:16, padding:4 }}><i className="fas fa-times-circle" /></button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

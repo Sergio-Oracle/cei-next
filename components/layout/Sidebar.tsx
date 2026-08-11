@@ -55,6 +55,7 @@ const professorNav: NavEntry[] = [
   { label: 'Corriger Copies',             href: '/dashboard/professor/papers',             icon: 'fa-pencil-alt' },
   { label: 'Copies Corrigées',          href: '/dashboard/professor/corrected',          icon: 'fa-check-circle' },
   { label: 'Corriger Examens en Ligne', href: '/dashboard/professor/online-correction',  icon: 'fa-check-double' },
+  { label: 'Restitution',               href: '/dashboard/professor/restitution',        icon: 'fa-people-group' },
   { divider: 'Ressources' },
   { label: 'Banque de Questions',  href: '/dashboard/professor/questions',      icon: 'fa-database' },
   { label: 'Calendrier',           href: '/dashboard/professor/calendar',       icon: 'fa-calendar-alt' },
@@ -67,6 +68,10 @@ const professorNav: NavEntry[] = [
   { label: 'Réclamations',         href: '/dashboard/professor/reclamations',   icon: 'fa-exclamation-triangle' },
   { label: 'Sécurité',             href: '/dashboard/professor/security',       icon: 'fa-shield-alt' },
   { label: 'Notifications',        href: '/dashboard/professor/notifications',  icon: 'fa-bell' },
+]
+
+const superviseurNav: NavEntry[] = [
+  { label: 'Dashboard',    href: '/dashboard/superviseur', icon: 'fa-user-shield', exact: true },
 ]
 
 const surveillantNav: NavEntry[] = [
@@ -83,6 +88,7 @@ const studentNav: NavEntry[] = [
   { label: 'Planning',             href: '/dashboard/student/planning',       icon: 'fa-calendar-alt' },
   { divider: 'Résultats' },
   { label: 'Mes Relevés',          href: '/dashboard/student/transcripts',    icon: 'fa-file-alt' },
+  { label: 'Copies-exemples',      href: '/dashboard/student/exemples',       icon: 'fa-people-group' },
   { label: 'Mes Réclamations',     href: '/dashboard/student/reclamations',   icon: 'fa-exclamation-circle' },
   { divider: 'Aide' },
   { label: 'Aide',                 href: '/dashboard/student/aide',           icon: 'fa-question-circle' },
@@ -148,6 +154,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
     user?.role === 'admin'       ? adminNav :
     user?.role === 'professor'   ? professorNav :
     user?.role === 'surveillant' ? surveillantNav :
+    user?.role === 'superviseur' ? superviseurNav :
     studentNav
 
   return (

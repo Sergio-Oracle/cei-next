@@ -8,8 +8,11 @@
  */
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dev-cei.ddns.net'
 
-const DEFAULT_TIMEOUT_MS = 600_000   // 10 min pour les routes normales
-export const AI_TIMEOUT_MS = 600_000  // 10 min pour les routes IA
+// 10 min pour les routes normales laissait une page figée en silence jusqu'à
+// 10 minutes en cas de surcharge serveur (constaté le 07/08) — échec rapide
+// avec message clair plutôt qu'un chargement qui semble bloqué indéfiniment.
+const DEFAULT_TIMEOUT_MS = 25_000    // 25s pour les routes normales
+export const AI_TIMEOUT_MS = 600_000  // 10 min pour les routes IA (génération/correction)
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getToken(): string | null {
@@ -35,22 +38,34 @@ let _refreshing: Promise<string | null> | null = null
 async function tryRefresh(): Promise<string | null> {
   if (_refreshing) return _refreshing
   _refreshing = (async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-      })
-      if (!res.ok) return null
-      const json = await res.json()
-      const token = json.access_token
-      if (token) localStorage.setItem('token', token)
-      return token ?? null
-    } catch {
-      return null
-    } finally {
-      _refreshing = null
+    // Un seul aléa réseau/serveur transitoire (surcharge, timeout) ne doit pas
+    // déconnecter l'utilisateur — une tentative supplémentaire avant d'abandonner
+    // (constaté le 07/08 : des utilisateurs déconnectés par un simple pic de charge).
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await fetchWithTimeout(`${API_URL}/api/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+        }, 15_000)
+        if (!res.ok) {
+          if (attempt === 0) { await sleep(800); continue }
+          return null
+        }
+        const json = await res.json()
+        const token = json.access_token
+        if (token) {
+          localStorage.setItem('token', token)
+          if (json.expires_in) localStorage.setItem('token_expires_at', String(Date.now() + json.expires_in * 1000))
+        }
+        return token ?? null
+      } catch {
+        if (attempt === 0) { await sleep(800); continue }
+        return null
+      }
     }
+    return null
   })()
+  _refreshing.finally(() => { _refreshing = null })
   return _refreshing
 }
 
@@ -144,6 +159,29 @@ async function _request<T = any>(
   return json as T
 }
 
+// ── Envoi "fire-and-forget" garanti même en cas de fermeture brutale de page ──
+// Retour DFIP #10 — un onglet fermé/quitté abruptement (Alt+F4, fermeture
+// pendant l'examen) peut annuler une requête fetch() normale avant qu'elle
+// n'atteigne le serveur : le navigateur coupe les requêtes en vol au
+// déchargement de la page. `keepalive: true` est prévu spécifiquement pour
+// ça — la requête survit au déchargement. navigator.sendBeacon() ferait la
+// même chose mais ne permet pas d'en-tête Authorization personnalisé, or
+// l'API PASETO en a besoin ; fetch+keepalive supporte les deux.
+function postBeacon(path: string, data?: any): void {
+  const token = getToken()
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  try {
+    fetch(`${API_URL}${path}`, {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      keepalive: true,
+      body: data ? JSON.stringify(data) : undefined,
+    }).catch(() => {})
+  } catch {}
+}
+
 // ── GET avec déduplication ─────────────────────────────────────────────────────
 function _get<T = any>(path: string): Promise<T> {
   if (_inflight.has(path)) return _inflight.get(path)!
@@ -164,6 +202,7 @@ export const api = {
     _request<Blob>('GET', path, undefined, { blob: true }),
   aiPost: <T = any>(path: string, data?: any)                                  =>
     _request<T>('POST', path, data, { timeoutMs: AI_TIMEOUT_MS }),
+  postBeacon,
 }
 
 export default api

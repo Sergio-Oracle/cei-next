@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Ne pas révéler la techno derrière la plateforme (en-tête X-Powered-By:
+  // Next.js sinon envoyé sur chaque réponse) — les en-têtes X-Nextjs-*
+  // restants (cache/prerender/stale-time) sont retirés côté nginx, ce
+  // flag ne les couvre pas.
+  poweredByHeader: false,
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "https://dev-cei.ddns.net",
   },

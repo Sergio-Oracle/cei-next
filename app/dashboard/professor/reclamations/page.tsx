@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import api from '@/lib/api'
+import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 import type { Reclamation, ReclamationStatus } from '@/types'
@@ -45,6 +46,8 @@ export default function ProfessorReclamationsPage() {
   const [aiElapsed, setAiElapsed] = useState(0)
   const [aiResult, setAiResult] = useState<Reclamation | null>(null)
   const aiTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => { load() }, [])
   useEffect(() => () => { if (aiTimerRef.current) clearInterval(aiTimerRef.current) }, [])
@@ -64,7 +67,7 @@ export default function ProfessorReclamationsPage() {
     setSelected(r)
     setResponse(r.response ?? r.ia_proposed_reason ?? '')
     setRespondStatus(r.ia_proposed_status === 'resolved' ? 'resolved' : r.ia_proposed_status === 'rejected' ? 'rejected' : '')
-    setNewScore(r.ia_proposed_score != null ? String(r.ia_proposed_score) : '')
+    setNewScore(r.ia_proposed_score != null ? String(fmtScore(r.ia_proposed_score)) : '')
   }
 
   async function handleRespond() {
@@ -85,6 +88,7 @@ export default function ProfessorReclamationsPage() {
   }
 
   async function analyzeAI(id: number, studentName: string) {
+    if (actioning) return // évite un double-clic/double-soumission avant le re-render du disabled
     setActioning(id)
     setAiElapsed(0)
     setAiModal({ id, studentName })
@@ -96,11 +100,51 @@ export default function ProfessorReclamationsPage() {
       setAiModal(null)
       if (updated) setAiResult(updated)
       success('Analyse IA terminée')
-    } catch (e: any) { error(e.message || 'Erreur'); setAiModal(null) }
+    } catch (e: any) {
+      error(e.message || 'Erreur'); setAiModal(null)
+      load() // état potentiellement périmé (déjà traitée entretemps) — resynchroniser la liste
+    }
     finally {
       setActioning(null)
       if (aiTimerRef.current) { clearInterval(aiTimerRef.current); aiTimerRef.current = null }
     }
+  }
+
+  function toggleSelect(id: number) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds(prev => prev.size === reclamations.length ? new Set() : new Set(reclamations.map(r => r.id)))
+  }
+
+  async function deleteOne(id: number) {
+    if (!confirm('Supprimer définitivement cette réclamation ?')) return
+    try {
+      await api.delete(`/api/reclamations/${id}`)
+      success('Réclamation supprimée')
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n })
+      load()
+    } catch (e: any) { error(e.message || 'Erreur') }
+  }
+
+  async function deleteSelected() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Supprimer définitivement ${selectedIds.size} réclamation${selectedIds.size > 1 ? 's' : ''} sélectionnée${selectedIds.size > 1 ? 's' : ''} ?`)) return
+    setDeleting(true)
+    try {
+      const res = await api.post<{ success: boolean; deleted: number; skipped: number }>('/api/reclamations/bulk_delete', {
+        reclamation_ids: Array.from(selectedIds),
+      })
+      success(`${res.deleted} réclamation${res.deleted > 1 ? 's' : ''} supprimée${res.deleted > 1 ? 's' : ''}${res.skipped ? ` — ${res.skipped} ignorée${res.skipped > 1 ? 's' : ''} (non autorisée${res.skipped > 1 ? 's' : ''})` : ''}`)
+      setSelectedIds(new Set())
+      load()
+    } catch (e: any) { error(e.message || 'Erreur lors de la suppression') }
+    finally { setDeleting(false) }
   }
 
   return (
@@ -112,21 +156,37 @@ export default function ProfessorReclamationsPage() {
         </div>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginBottom: 14 }}>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{selectedIds.size} sélectionnée{selectedIds.size > 1 ? 's' : ''}</span>
+          <button className="btn btn-sm btn-danger" onClick={deleteSelected} disabled={deleting}>
+            {deleting ? <><i className="fa-solid fa-spinner spin" /> Suppression...</> : <><i className="fa-solid fa-trash" /> Supprimer la sélection</>}
+          </button>
+          <button className="btn btn-sm btn-secondary" onClick={() => setSelectedIds(new Set())}>Annuler</button>
+        </div>
+      )}
+
       <div className="card">
         <div className="table-responsive">
           <table>
             <thead>
-              <tr><th>Étudiant</th><th>Sujet</th><th>Statut</th><th>Date</th><th>Actions</th></tr>
+              <tr>
+                <th style={{ width: 32 }}>
+                  <input type="checkbox" checked={reclamations.length > 0 && selectedIds.size === reclamations.length} onChange={toggleSelectAll} />
+                </th>
+                <th>Étudiant</th><th>Sujet</th><th>Statut</th><th>Date</th><th>Actions</th>
+              </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40 }}><i className="fa-solid fa-spinner spin" /></td></tr>
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40 }}><i className="fa-solid fa-spinner spin" /></td></tr>
               ) : reclamations.length === 0 ? (
-                <tr><td colSpan={5} className="empty-message">Aucune réclamation</td></tr>
+                <tr><td colSpan={6} className="empty-message">Aucune réclamation</td></tr>
               ) : reclamations.map(r => {
                 const hasProposal = !!r.ia_proposed_status && r.status === 'pending'
                 return (
                 <tr key={r.id}>
+                  <td><input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} /></td>
                   <td>
                     {r.student_name ?? `Étudiant #${r.student_id}`}
                     {hasProposal && (
@@ -141,11 +201,14 @@ export default function ProfessorReclamationsPage() {
                   <td>
                     <div style={{ display: 'flex', gap: 4 }}>
                       <button className="btn btn-sm btn-primary" onClick={() => openRespond(r)} title="Répondre"><i className="fa-solid fa-reply" /></button>
-                      {(r.status === 'pending' || r.status === 'in_review') && (
-                        <button className="btn btn-sm btn-info" onClick={() => analyzeAI(r.id, r.student_name ?? `Étudiant #${r.student_id}`)} disabled={actioning === r.id} title="Analyser avec IA">
+                      {(r.status === 'pending' || r.status === 'in_review') && (r.paper_id || r.attempt_id) && (
+                        <button className="btn btn-sm btn-info" onClick={() => analyzeAI(r.id, r.student_name ?? `Étudiant #${r.student_id}`)} disabled={!!actioning} title="Analyser avec IA">
                           {actioning === r.id ? <i className="fa-solid fa-spinner spin" /> : <i className="fa-solid fa-wand-magic-sparkles" />}
                         </button>
                       )}
+                      <button className="btn btn-sm btn-danger" onClick={() => deleteOne(r.id)} title="Supprimer">
+                        <i className="fa-solid fa-trash" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -168,7 +231,7 @@ export default function ProfessorReclamationsPage() {
             <div className="alert alert-warning">
               <i className="fa-solid fa-robot" /> <strong>Proposition IA :</strong>{' '}
               {selected.ia_proposed_status === 'resolved' ? '✅ Accepter' : '❌ Rejeter'}
-              {selected.ia_proposed_score != null && ` — Note proposée : ${selected.ia_proposed_score}/20`}
+              {selected.ia_proposed_score != null && ` — Note proposée : ${fmtScore(selected.ia_proposed_score)}/20`}
               {selected.ia_proposed_reason && <div style={{ marginTop: 4, fontSize: 13 }}>{selected.ia_proposed_reason}</div>}
               <div style={{ marginTop: 6, fontSize: 12, opacity: .8 }}>Pré-remplie ci-dessous — modifiez-la si vous n'êtes pas d'accord.</div>
             </div>
@@ -184,7 +247,7 @@ export default function ProfessorReclamationsPage() {
           {respondStatus === 'resolved' && (
             <div className="form-group">
               <label>Nouvelle note (sur 20)</label>
-              {selected.attempt_score != null && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Note actuelle : {selected.attempt_score}/20</div>}
+              {selected.attempt_score != null && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Note actuelle : {fmtScore(selected.attempt_score)}/20</div>}
               <input className="form-control" type="number" min={0} max={20} step={0.5} value={newScore} onChange={e => setNewScore(e.target.value)} />
             </div>
           )}
@@ -258,8 +321,8 @@ export default function ProfessorReclamationsPage() {
           {accepted && aiResult.ia_proposed_score != null && (
             <div style={{ textAlign: 'center', padding: '14px 16px', background: 'rgba(16,185,129,.08)', border: '1px solid rgba(16,185,129,.25)', borderRadius: 'var(--radius)', marginBottom: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Note proposée</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: tint, margin: '2px 0' }}>{aiResult.ia_proposed_score}/20</div>
-              {aiResult.attempt_score != null && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Note actuelle : {aiResult.attempt_score}/20</div>}
+              <div style={{ fontSize: 28, fontWeight: 700, color: tint, margin: '2px 0' }}>{fmtScore(aiResult.ia_proposed_score)}/20</div>
+              {aiResult.attempt_score != null && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Note actuelle : {fmtScore(aiResult.attempt_score)}/20</div>}
             </div>
           )}
 

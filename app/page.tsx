@@ -344,10 +344,9 @@ export default function LandingPage() {
               { icon: 'fa-robot', id: 'feature-ai', title: 'Correction IA Avancée', desc: "Moteur IA configurable par examen, déclenché automatiquement à la soumission et révisable par le professeur à tout moment.", items: ['Activable examen par examen', 'Correction dès la soumission (arrière-plan)', 'Feedback détaillé par réponse', 'Révision et ajustement par le prof'] },
               { icon: 'fa-shield-alt', id: 'feature-anticheat', title: 'Surveillance Anti-Triche Active', desc: "Surveillance multi-couches pendant toute la durée de l'examen. Chaque événement est horodaté et archivé pour consultation ultérieure.", items: ['Détection faciale par caméra (IA)', 'Détection changement de fenêtre / onglet', 'Snapshots caméra horodatés', 'Score de risque calculé en temps réel'] },
               { icon: 'fa-award', id: 'feature-transcripts', title: 'Relevés de Notes Officiels', desc: "Génération automatique de relevés semestriels au format PDF. Gestion des droits de suppression par rôle (admin / professeur générateur).", items: ['Calcul automatique du GPA', 'Validation semestrielle des crédits', 'Export PDF professionnel', 'Gestion avec droits admin / prof'] },
-              { icon: 'fa-pen-nib', title: 'Signature Électronique', desc: "À la soumission de chaque examen, l'étudiant signe sur un canvas interactif (souris ou tactile), valisant son engagement de non-fraude.", items: ['Canvas signature souris & tactile', 'Engagement de non-fraude affiché', 'Signature archivée avec la copie', 'Obligatoire avant envoi définitif'] },
               { icon: 'fa-sitemap', title: 'Maquette Pédagogique Complète', desc: "Hiérarchie académique intégrale : Formations → Semestres → UEs → ECs. Affectation des professeurs aux UEs et inscription des étudiants par formation.", items: ['Gestion Formations & Semestres', 'Gestion UEs & ECs (coefficients)', 'Affectation professeurs aux UEs', 'Inscription & gestion étudiants'] },
               { icon: 'fa-chart-pie', title: 'Statistiques & Analyses', desc: "Tableaux de bord avec moyennes, médianes, taux de réussite et distributions. Export Excel pour traitements externes.", items: ['Moyennes, médianes, taux réussite', 'Distributions de notes par examen', 'Graphiques interactifs', 'Export Excel des résultats'] },
-              { icon: 'fa-users-gear', title: 'Gestion Multi-Rôles', desc: "Quatre profils utilisateur avec interfaces et permissions distincts. Chaque rôle accède uniquement aux fonctions qui lui sont dédiées.", items: ['Admin : gestion globale & sécurité', 'Professeur : examens, correction, relevés', 'Surveillant : supervision groupe assigné', 'Étudiant : tableau de bord unifié'] },
+              { icon: 'fa-users-gear', title: 'Gestion Multi-Rôles', desc: "Cinq profils utilisateur avec interfaces et permissions distincts. Chaque rôle accède uniquement aux fonctions qui lui sont dédiées.", items: ['Admin : gestion globale & sécurité', 'Professeur : examens, correction, relevés', 'Surveillant : supervision groupe assigné', 'Superviseur : supervision des surveillants', 'Étudiant : tableau de bord unifié'] },
               { icon: 'fa-comment-dots', title: 'Système de Réclamations IA', desc: "Contestation de notes en ligne avec analyse IA des arguments. L'étudiant suit l'état de sa réclamation en temps réel jusqu'à la décision finale.", items: ['Soumission en ligne (copies & examens)', 'Analyse IA des arguments étudiant', 'Workflow approbation / rejet / ajustement', 'Suivi de statut en temps réel'] },
               { icon: 'fa-bell', id: 'feature-notifications', title: 'Notifications In-App & Email', desc: "Cloche de notification intégrée au tableau de bord avec badge de non-lus. Emails automatiques pour tous les événements critiques.", items: ['Cloche in-app avec badge non-lus', 'Email : correction publiée', 'Email : incident anti-triche', 'Email : réclamation traitée'] },
               { icon: 'fa-shield-virus', title: 'Rapport de Sécurité', desc: "Tableau de bord dédié à la sécurité des examens pour l'admin et les professeurs. Visualisation complète des tentatives suspectes et des bannissements.", items: ['Synthèse des événements par type', 'Étudiants à haut risque identifiés', 'Compteur et liste des bannissements', 'Accessible admin & professeur'] },
@@ -372,7 +371,7 @@ export default function LandingPage() {
           <div style={{ textAlign: 'center', maxWidth: 700, margin: '0 auto 72px' }}>
             <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 16 }}>Aperçu de la plateforme</span>
             <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 16, lineHeight: 1.25 }}>Le CEI en action</h2>
-            <p style={{ color: 'var(--gray-500)', fontSize: '1.05rem', lineHeight: 1.7 }}>Quatre rôles, quatre interfaces dédiées — enseignant, étudiant, surveillant et administrateur, chacun avec les outils qui lui reviennent.</p>
+            <p style={{ color: 'var(--gray-500)', fontSize: '1.05rem', lineHeight: 1.7 }}>Cinq rôles, cinq interfaces dédiées — enseignant, étudiant, surveillant, superviseur et administrateur, chacun avec les outils qui lui reviennent.</p>
           </div>
 
           {[
@@ -397,18 +396,17 @@ export default function LandingPage() {
               heading: 'Pendant l\'examen — côté étudiant',
               items: [
                 { img: '/screenshots/capture-8.jpg', badge: '8', title: 'L\'étudiant retrouve son examen', desc: "Dès l'activation, le bouton Composer apparaît sur le tableau de bord étudiant avec les créneaux et paramètres de sécurité affichés." },
-                { img: '/screenshots/capture-11.jpg', badge: '9', title: 'Signature de l\'engagement anti-fraude', desc: "Avant de démarrer, l'étudiant lit les conditions de surveillance et signe une attestation sur l'honneur — archivée avec sa copie." },
-                { img: '/screenshots/capture-12.jpg', badge: '10', title: 'Autorisation caméra, micro et écran', desc: "Les trois accès sont vérifiés un par un avant de pouvoir commencer — rien n'est laissé au hasard." },
-                { img: '/screenshots/capture-13.jpg', badge: '11', title: 'Partage d\'écran complet obligatoire', desc: "Le navigateur impose le choix explicite \"Tout l'écran\" — le partage de fenêtre ou d'onglet seul est refusé par la plateforme." },
-                { img: '/screenshots/capture-14.jpg', badge: '12', title: 'Composition sous surveillance IA en temps réel', desc: "Caméra, micro et écran actifs, score de risque visible, messagerie directe avec l'enseignant — tout est réuni dans une seule interface." },
+                { img: '/screenshots/capture-12.jpg', badge: '9', title: 'Autorisation caméra, micro et écran', desc: "Les trois accès sont vérifiés un par un avant de pouvoir commencer — rien n'est laissé au hasard." },
+                { img: '/screenshots/capture-13.jpg', badge: '10', title: 'Partage d\'écran complet obligatoire', desc: "Le navigateur impose le choix explicite \"Tout l'écran\" — le partage de fenêtre ou d'onglet seul est refusé par la plateforme." },
+                { img: '/screenshots/capture-14.jpg', badge: '11', title: 'Composition sous surveillance IA en temps réel', desc: "Caméra, micro et écran actifs, score de risque visible, messagerie directe avec l'enseignant — tout est réuni dans une seule interface." },
               ],
             },
             {
               heading: 'Le tableau de bord dédié au surveillant',
               items: [
-                { img: '/screenshots/capture-9.jpg', badge: '13', title: 'Un tableau de bord qui lui est propre', desc: "Le surveillant a sa propre interface, distincte de celle du professeur : nombre d'étudiants qui lui sont assignés, examens en cours, accès direct à sa surveillance." },
-                { img: '/screenshots/capture-10.jpg', badge: '14', title: 'Détail des étudiants de son groupe', desc: "Liste des étudiants qui lui sont attribués (pas l'ensemble de la promotion), avec statut de composition et score de risque en direct." },
-                { img: '/screenshots/capture-15.jpg', badge: '15', title: 'Supervision vidéo de son groupe', desc: "Flux caméra, alertes, appel et bannissement — limités aux étudiants qui lui ont été attribués par le professeur. Le professeur, lui, voit tous les surveillants et tous les groupes depuis sa propre vue d'ensemble." },
+                { img: '/screenshots/capture-9.jpg', badge: '12', title: 'Un tableau de bord qui lui est propre', desc: "Le surveillant a sa propre interface, distincte de celle du professeur : nombre d'étudiants qui lui sont assignés, examens en cours, accès direct à sa surveillance." },
+                { img: '/screenshots/capture-10.jpg', badge: '13', title: 'Détail des étudiants de son groupe', desc: "Liste des étudiants qui lui sont attribués (pas l'ensemble de la promotion), avec statut de composition et score de risque en direct." },
+                { img: '/screenshots/capture-15.jpg', badge: '14', title: 'Supervision vidéo de son groupe', desc: "Flux caméra, alertes, appel et bannissement — limités aux étudiants qui lui ont été attribués par le professeur. Le professeur, lui, voit tous les surveillants et tous les groupes depuis sa propre vue d'ensemble." },
               ],
             },
           ].map((group, g) => (
@@ -716,6 +714,7 @@ export default function LandingPage() {
             <a href="/guide-enseignant"><i className="fas fa-chalkboard-teacher" style={{ width: 16, marginRight: 6 }} />{t.guide_teacher}</a>
             <a href="/guide-etudiant"><i className="fas fa-user-graduate" style={{ width: 16, marginRight: 6 }} />{t.guide_student}</a>
             <a href="/guide-surveillant"><i className="fas fa-eye" style={{ width: 16, marginRight: 6 }} />Guide Surveillant</a>
+            <a href="/guide-superviseur"><i className="fas fa-user-shield" style={{ width: 16, marginRight: 6 }} />Guide Superviseur</a>
             <a href="/conditions"><i className="fas fa-file-contract" style={{ width: 16, marginRight: 6 }} />Conditions d&apos;Utilisation</a>
             <a href="#comment-ca-marche"><i className="fas fa-question-circle" style={{ width: 16, marginRight: 6 }} />Comment ça marche ?</a>
           </div>

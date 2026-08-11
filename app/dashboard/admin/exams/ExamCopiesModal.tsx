@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import type { ExamAttempt } from '@/types'
 import { StatsModal, PlagiatModal, BilanModal } from './ExamToolbarModals'
@@ -11,9 +12,6 @@ type RichAttempt = ExamAttempt & {
   student_email?: string
   has_incidents?: boolean
   needs_correction?: boolean
-  pre_exam_signature_data?: string
-  pre_exam_signature_meta?: string
-  signature_data?: string
   ban_reason?: string
 }
 
@@ -402,17 +400,17 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                 </Section>
 
                 {/* TERMINÉS */}
-                <Section title={`TERMINÉS (${done.length})`} color="#2563eb" subtitle="Pré = signature avant exam · Post = signature à la soumission">
+                <Section title={`TERMINÉS (${done.length})`} color="#2563eb">
                   <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: 8 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr style={{ background: '#f8fafc' }}>
-                          <TH label="Étudiant" /><TH label="Statut" /><TH label="Soumis le" /><TH label="Signatures" /><TH label="Note" /><TH label="Action" />
+                          <TH label="Étudiant" /><TH label="Statut" /><TH label="Soumis le" /><TH label="Note" /><TH label="Action" />
                         </tr>
                       </thead>
                       <tbody>
                         {done.length === 0
-                          ? <tr><td colSpan={6} style={{ padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>Aucune copie soumise</td></tr>
+                          ? <tr><td colSpan={5} style={{ padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>Aucune copie soumise</td></tr>
                           : done.map(a => {
                             const isAuto = a.status === 'auto_submitted'
                             const busy   = acting === a.id
@@ -435,24 +433,8 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                                   {a.submitted_at ? fmtDT(a.submitted_at) : '—'}
                                 </td>
                                 <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
-                                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    {(a as any).pre_exam_signature_data
-                                      ? <span style={{ background: 'rgba(16,185,129,.1)', color: '#059669', border: '1px solid rgba(16,185,129,.3)', borderRadius: 5, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>
-                                          <i className="fas fa-check-circle" style={{ marginRight: 2 }} />Pré
-                                        </span>
-                                      : <span style={{ color: '#94a3b8', fontSize: 10 }}><i className="fas fa-times-circle" style={{ marginRight: 2 }} />Pré absent</span>}
-                                    {(a as any).signature_data
-                                      ? <span style={{ background: 'rgba(37,99,235,.1)', color: '#2563eb', border: '1px solid rgba(37,99,235,.3)', borderRadius: 5, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>
-                                          <i className="fas fa-check-circle" style={{ marginRight: 2 }} />Post
-                                        </span>
-                                      : <span style={{ color: isAuto ? '#f59e0b' : '#94a3b8', fontSize: 10 }}>
-                                          <i className={`fas fa-${isAuto ? 'clock' : 'times-circle'}`} style={{ marginRight: 2 }} />{isAuto ? 'Auto' : 'Post absent'}
-                                        </span>}
-                                  </div>
-                                </td>
-                                <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
                                   {a.score !== null && a.score !== undefined
-                                    ? <strong style={{ color: (a.score ?? 0) >= 10 ? '#10b981' : '#ef4444', fontSize: 15 }}>{a.score}/20</strong>
+                                    ? <strong style={{ color: (a.score ?? 0) >= 10 ? '#10b981' : '#ef4444', fontSize: 15 }}>{fmtScore(a.score ?? 0)}/20</strong>
                                     : <span style={{ color: '#94a3b8', fontSize: 12 }}>Non corrigé</span>}
                                 </td>
                                 <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
@@ -587,6 +569,13 @@ const INCIDENT_FR: Record<string, string> = {
   teacher_private_call: 'Appel privé lancé', teacher_end_call: 'Appel privé terminé',
   teacher_ban: "Exclusion par l'enseignant", proctor_ban: 'Exclusion par le surveillant', ban: 'Exclusion',
   unknown: 'Événement non catégorisé',
+  no_face_low_light: 'Visage non détecté (éclairage faible)', face_covered: 'Visage partiellement masqué',
+  camera_blocked: 'Caméra obstruée', audio_suspicious: 'Bruit suspect détecté', session_end: 'Fin de session',
+  tab_closed: 'Onglet/navigateur fermé pendant la composition', env_scan_completed: 'Scan environnement effectué',
+  env_scan_person_detected: 'Personne détectée dans la pièce', env_scan_unavailable: 'Scan environnement indisponible',
+  gaze_away: "Regard détourné de l'écran", head_turned: 'Tête tournée', talking_detected: 'Parole détectée',
+  suspect_object_detected: 'Objet suspect détecté', liveness_check_failed: 'Contrôle de vivacité échoué (aucun clignement détecté)',
+  sustained_audio_detected: 'Bruit prolongé détecté', multi_screen_detected: 'Plusieurs écrans détectés',
 }
 
 function renderAnswers(rawAnswers?: string): React.ReactNode {
@@ -720,7 +709,7 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
               {data.score != null && (
                 <ReviewCard title="Résultat" icon="fa-star">
                   <InfoRow label="Note">
-                    <span style={{ fontSize: 22, fontWeight: 800, color: (data.score ?? 0) >= 10 ? '#10b981' : '#ef4444' }}>{data.score}/20</span>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: (data.score ?? 0) >= 10 ? '#10b981' : '#ef4444' }}>{fmtScore(data.score ?? 0)}/20</span>
                   </InfoRow>
                   <InfoRow label="Corrigé par">{data.corrector_name || 'Système'}</InfoRow>
                   <InfoRow label="Corrigé le">{fmt(data.corrected_at)}</InfoRow>

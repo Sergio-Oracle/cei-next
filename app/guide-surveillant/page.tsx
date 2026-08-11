@@ -79,6 +79,8 @@ export default function GuideSurveillant() {
             <li><a href="#actions"><i className="fas fa-tools" /> 6. Actions disponibles</a></li>
             <li><a href="#appel"><i className="fas fa-phone" /> 7. Appel privé avec un étudiant</a></li>
             <li><a href="#bannissement"><i className="fas fa-ban" /> 8. Bannissement et notification à l&apos;enseignant</a></li>
+            <li><a href="#vigilance"><i className="fas fa-shield-halved" /> 9. Niveau de vigilance — comment votre engagement est mesuré</a></li>
+            <li><a href="#reprise"><i className="fas fa-key" /> 10. Reprise après déconnexion — répondre à un appel étudiant</a></li>
           </ul>
         </div>
 
@@ -93,6 +95,7 @@ export default function GuideSurveillant() {
               <div className="feature-item"><i className="fas fa-filter" /><h5>Vue filtrée</h5><p>Vous ne voyez que les étudiants qui vous sont attribués — pas l&apos;ensemble de la promotion. Cela facilite une surveillance attentive.</p></div>
               <div className="feature-item"><i className="fas fa-bolt" /><h5>Action directe</h5><p>Vous pouvez avertir, envoyer un message ou bannir immédiatement un étudiant qui vous est attribué. L&apos;enseignant est notifié de vos actions.</p></div>
               <div className="feature-item"><i className="fas fa-phone" /><h5>Appel privé</h5><p>Vous pouvez ouvrir un appel audio/vidéo privé avec l&apos;un de vos étudiants à tout moment pendant l&apos;examen.</p></div>
+              <div className="feature-item"><i className="fas fa-shield-halved" /><h5>Niveau de vigilance</h5><p>Votre engagement pendant une surveillance est suivi (interaction réelle, consultation d&apos;étudiants, et parfois vérification caméra) — voir la section 9 pour le détail.</p></div>
             </div>
             <div className="tip"><i className="fas fa-lightbulb" /> Un enseignant peut aussi se désigner lui-même comme surveillant en s&apos;ajoutant à un groupe.</div>
           </div>
@@ -202,10 +205,37 @@ export default function GuideSurveillant() {
           </div>
         </div>
 
+        {/* 9. Vigilance */}
+        <div className="section" id="vigilance">
+          <div className="section-header"><div className="section-icon"><i className="fas fa-shield-halved" /></div><h2>9. Niveau de vigilance — comment votre engagement est mesuré</h2></div>
+          <div className="section-body">
+            <p style={{color:'#475569',marginBottom:20}}>Un superviseur (s&apos;il en existe un pour votre groupe) suit votre engagement réel pendant une surveillance — pas seulement si votre onglet est ouvert. Le niveau exigé dépend du réglage choisi pour votre groupe par l&apos;enseignant/administrateur :</p>
+            <div className="feature-grid">
+              <div className="feature-item"><i className="fas fa-mouse-pointer" /><h5>Niveau A — Interaction</h5><p>Vous devez interagir réellement (souris, clavier) sur la page, visible et au premier plan.</p></div>
+              <div className="feature-item"><i className="fas fa-user-check" /><h5>Niveau B — + Suivi réel</h5><p>Vous devez aussi avoir consulté un étudiant précis récemment (message, écran, logs…).</p></div>
+              <div className="feature-item"><i className="fas fa-video" /><h5>Niveau C — + Présence caméra</h5><p>Une vérification périodique confirme qu&apos;un visage est présent devant votre caméra.</p></div>
+            </div>
+            <div className="info"><i className="fas fa-info-circle" /> Si le niveau C est actif, un bandeau visible sur votre interface vous en informe. <strong>Aucune image de votre caméra n&apos;est jamais transmise ni stockée</strong> — seul un résultat oui/non (visage détecté) est envoyé.</div>
+          </div>
+        </div>
+
+        {/* 10. Reprise après déconnexion */}
+        <div className="section" id="reprise">
+          <div className="section-header"><div className="section-icon" style={{background:'#059669'}}><i className="fas fa-key" /></div><h2>10. Reprise après déconnexion — répondre à un appel étudiant</h2></div>
+          <div className="section-body">
+            <p style={{color:'#475569',marginBottom:20}}>Si un étudiant qui vous est assigné se déconnecte de son examen, il doit obtenir un <strong>code de reprise à usage unique</strong> avant de pouvoir continuer — et ce code ne s&apos;obtient qu&apos;après un appel vocal/vidéo avec vous, pour vérifier son identité. C&apos;est différent de l&apos;appel privé de la section 7 : ici, c&apos;est l&apos;étudiant qui vous appelle depuis son propre tableau de bord (hors de la page d&apos;examen).</p>
+            <div className="steps">
+              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Repérer la demande</h4><p>Un message distinct (fond orange, icône téléphone) apparaît dans votre panneau de messages avec un bouton <strong>&quot;Rejoindre l&apos;appel&quot;</strong>.</p></div></div>
+              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Vérifier l&apos;identité</h4><p>Répondez à l&apos;appel et vérifiez qu&apos;il s&apos;agit bien du bon étudiant, comme vous le feriez pour tout contrôle d&apos;identité.</p></div></div>
+              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Générer le code</h4><p>Cliquez sur <strong>&quot;Générer un code de reprise&quot;</strong> dans la fenêtre d&apos;appel. Un code à 6 chiffres s&apos;affiche, valable <strong>10 minutes</strong> et à usage unique — communiquez-le oralement à l&apos;étudiant.</p><div className="tip"><i className="fas fa-lightbulb" /> Vous êtes le premier interlocuteur habilité pour vos propres étudiants — le superviseur ou l&apos;enseignant ne prennent le relais que si aucun surveillant ne leur est assigné.</div></div></div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <footer className="doc-footer">
-        <p>Centre d&apos;Examen Intelligent — <a href="/">Retour à l&apos;accueil</a> · <a href="/guide-enseignant">Guide Enseignant</a> · <a href="/guide-etudiant">Guide Étudiant</a> · <a href="/conditions">Conditions d&apos;Utilisation</a></p>
+        <p>Centre d&apos;Examen Intelligent — <a href="/">Retour à l&apos;accueil</a> · <a href="/guide-enseignant">Guide Enseignant</a> · <a href="/guide-etudiant">Guide Étudiant</a> · <a href="/guide-superviseur">Guide Superviseur</a> · <a href="/conditions">Conditions d&apos;Utilisation</a></p>
         <p style={{marginTop:16,fontSize:12,opacity:.8,fontWeight:600}}>Contact</p>
         <p style={{marginTop:6,fontSize:12,opacity:.6}}><i className="fas fa-map-marker-alt" /> Cité du Savoir – Diamniadio, Castors, avenue Bourguiba, rue n°13<br /><i className="fas fa-phone" /> +221 30 108 41 53<br /><i className="fas fa-envelope" /> visioplus@unchk.edu.sn</p>
         <p style={{marginTop:12,opacity:.6}}>© 2026 CEI — Université Cheikh Hamidou Kane (UNCHK)</p>

@@ -63,9 +63,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await api.post<{ access_token: string; user: User }>('/api/auth/login', { email, password })
+    const res = await api.post<{ access_token: string; user: User; expires_in?: number }>('/api/auth/login', { email, password })
     const t = res.access_token
     localStorage.setItem('token', t)
+    if (res.expires_in) localStorage.setItem('token_expires_at', String(Date.now() + res.expires_in * 1000))
     setAuthCookie(t)
     if (mounted.current) { setToken(t); setUser(res.user) }
     const role = res.user.role
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     else if (role === 'professor')   router.push('/dashboard/professor')
     else if (role === 'student')     router.push('/dashboard/student')
     else if (role === 'surveillant') router.push('/dashboard/surveillant')
+    else if (role === 'superviseur') router.push('/dashboard/superviseur')
     else router.push('/dashboard')
   }, [router])
 

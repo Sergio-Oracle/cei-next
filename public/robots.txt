@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /$
+Allow: /guide-etudiant
+Allow: /guide-enseignant
+Allow: /guide-surveillant
+Allow: /guide-superviseur
+Disallow: /dashboard
+Disallow: /exam
+Disallow: /proctor
+Disallow: /api

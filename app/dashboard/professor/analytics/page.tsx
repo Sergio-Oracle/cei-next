@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 
 interface ExamStat { title: string; avg_score: number; pass_rate: number; corrected: number }
@@ -84,7 +85,7 @@ export default function ProfessorAnalyticsPage() {
               { icon: 'fa-users',            label: 'Tentatives',       value: data.total_attempts ?? 0,   color: '#0ea5e9', bg: '#e0f2fe' },
               { icon: 'fa-paper-plane',      label: 'Soumissions',      value: data.total_submitted ?? 0,  color: '#2563eb', bg: '#dbeafe' },
               { icon: 'fa-clipboard-check',  label: 'Copies corrigées', value: data.total_corrected ?? 0,  color: '#10b981', bg: '#d1fae5' },
-              { icon: 'fa-star',             label: 'Moyenne globale',  value: data.overall_avg != null ? `${data.overall_avg}/20` : '—', color: sc(data.overall_avg), bg: '#fef3c7' },
+              { icon: 'fa-star',             label: 'Moyenne globale',  value: data.overall_avg != null ? `${fmtScore(data.overall_avg)}/20` : '—', color: sc(data.overall_avg), bg: '#fef3c7' },
               { icon: 'fa-trophy',           label: 'Taux de réussite', value: data.overall_pass_rate != null ? `${data.overall_pass_rate}%` : '—', color: passRate >= 50 ? '#10b981' : '#f59e0b', bg: '#d1fae5' },
             ].map(({ icon, label, value, color, bg }) => (
               <div key={label} style={{ flex: '1 1 130px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px' }}>
@@ -207,7 +208,7 @@ export default function ProfessorAnalyticsPage() {
                     {(data.top_exams ?? []).map((exam, i) => (
                       <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
                         <td style={{ padding: '8px 10px', fontSize: 13 }}><span style={{ marginRight: 6 }}>{['🥇','🥈','🥉'][i] ?? '•'}</span>{exam.title}</td>
-                        <td style={{ padding: '8px 10px', fontWeight: 700, fontSize: 13, color: sc(exam.avg_score), whiteSpace: 'nowrap' }}>{exam.avg_score}/20</td>
+                        <td style={{ padding: '8px 10px', fontWeight: 700, fontSize: 13, color: sc(exam.avg_score), whiteSpace: 'nowrap' }}>{fmtScore(exam.avg_score)}/20</td>
                         <td style={{ padding: '8px 10px', fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>{exam.pass_rate}%</td>
                       </tr>
                     ))}
@@ -223,7 +224,7 @@ export default function ProfessorAnalyticsPage() {
                     {(data.bottom_exams ?? []).map((exam, i) => (
                       <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
                         <td style={{ padding: '8px 10px', fontSize: 13 }}><i className="fas fa-arrow-down" style={{ color: '#ef4444', marginRight: 6, fontSize: 10 }} />{exam.title}</td>
-                        <td style={{ padding: '8px 10px', fontWeight: 700, fontSize: 13, color: sc(exam.avg_score), whiteSpace: 'nowrap' }}>{exam.avg_score}/20</td>
+                        <td style={{ padding: '8px 10px', fontWeight: 700, fontSize: 13, color: sc(exam.avg_score), whiteSpace: 'nowrap' }}>{fmtScore(exam.avg_score)}/20</td>
                         <td style={{ padding: '8px 10px', fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>{exam.pass_rate}%</td>
                       </tr>
                     ))}
@@ -250,7 +251,7 @@ export default function ProfessorAnalyticsPage() {
                       <td style={{ padding: '7px 10px', fontSize: 13, fontWeight: 600 }}>{c.student_name}</td>
                       <td style={{ padding: '7px 10px', fontSize: 13, color: '#64748b' }}>{c.exam_title}</td>
                       <td style={{ padding: '7px 10px', fontSize: 13, fontWeight: 700, color: sc(c.score) }}>
-                        {c.score != null ? `${c.score}/20` : <span style={{ color: '#94a3b8', fontWeight: 400 }}>—</span>}
+                        {c.score != null ? `${fmtScore(c.score)}/20` : <span style={{ color: '#94a3b8', fontWeight: 400 }}>—</span>}
                       </td>
                       <td style={{ padding: '7px 10px', fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap' }}>
                         {c.corrected_at ? new Date(c.corrected_at).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—'}

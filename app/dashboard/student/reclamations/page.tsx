@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import api from '@/lib/api'
+import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 
@@ -138,7 +139,7 @@ function ReclamationsContent() {
                   </td>
                   <td>
                     {r.attempt_score != null
-                      ? <strong style={{ color: r.attempt_score >= 10 ? 'var(--success)' : 'var(--danger)' }}>{r.attempt_score}/20</strong>
+                      ? <strong style={{ color: r.attempt_score >= 10 ? 'var(--success)' : 'var(--danger)' }}>{fmtScore(r.attempt_score)}/20</strong>
                       : '—'}
                   </td>
                   <td><StatusBadge status={r.status} /></td>
@@ -219,7 +220,7 @@ function ReclamationsContent() {
             <div className="alert alert-info">
               <i className="fa-solid fa-star" /> Note initiale :
               <strong style={{ marginLeft: 4, color: viewItem.attempt_score >= 10 ? 'var(--success)' : 'var(--danger)' }}>
-                {viewItem.attempt_score}/20
+                {fmtScore(viewItem.attempt_score)}/20
               </strong>
             </div>
           )}

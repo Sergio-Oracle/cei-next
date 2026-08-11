@@ -5,14 +5,16 @@ import { useParams, useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
+import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObjects, countPeople } from '@/lib/proctoring-vision'
+import Calculator from '@/components/exam/Calculator'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 interface ExamData {
   id: number; title: string; instructions?: string; duration_minutes: number
   start_time: string; end_time: string; subject_title?: string
-  max_tab_switches?: number; enable_copy_paste?: boolean; enable_right_click?: boolean
-  camera_required?: boolean; ban_on_devtools?: boolean; auto_correct?: boolean
-  questions_per_page?: number; randomize_questions?: boolean
+  max_tab_switches?: number; enable_copy_paste?: boolean; enable_right_click?: boolean; enable_file_download?: boolean
+  camera_required?: boolean; ban_on_devtools?: boolean; auto_correct?: boolean; enable_calculator?: boolean
+  questions_per_page?: number; randomize_questions?: boolean; time_per_question_seconds?: number | null
   status: string; questions?: Question[]
   subject_content?: { id: number; title: string; content: string } | string | null
 }
@@ -30,7 +32,7 @@ interface ParsedBlock {
   pairs?: { left: string; right: string }[]
   media?: { type: 'image' | 'audio' | 'video'; filename: string }[]
 }
-type Phase = 'loading' | 'instructions' | 'permissions' | 'exam' | 'submitted' | 'unsupported'
+type Phase = 'loading' | 'instructions' | 'permissions' | 'env_scan' | 'exam' | 'submitted' | 'unsupported'
 interface ServerPaginated {
   questions_per_page: number
   p1_blocks: ParsedBlock[]; p2_items: ParsedBlock[]
@@ -48,6 +50,25 @@ function isDeviceSupported(): boolean {
 }
 type PermStatus = 'pending' | 'loading' | 'ok' | 'error'
 declare global { interface Window { LivekitClient: any } }
+
+/* Seuils de luminosité (0-255) en deçà/au-delà desquels la détection faciale
+   n'est plus fiable — mêmes bornes utilisées pour l'avertissement étudiant et
+   pour disculper une absence de visage détectée par l'IA (voir faceDetectionTick). */
+const BRIGHTNESS_LOW = 40, BRIGHTNESS_HIGH = 235
+
+/* Luminosité moyenne (0-255) d'une frame vidéo, échantillonnée 1 pixel sur 10
+   (suffisant pour une moyenne stable à faible coût sur une capture 320x240). */
+function sampleBrightness(vid: HTMLVideoElement): number | null {
+  try {
+    const c = document.createElement('canvas'); c.width = 320; c.height = 240
+    const ctx = c.getContext('2d'); if (!ctx) return null
+    ctx.drawImage(vid, 0, 0, 320, 240)
+    const { data } = ctx.getImageData(0, 0, 320, 240)
+    let sum = 0, count = 0
+    for (let i = 0; i < data.length; i += 40) { sum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]; count++ }
+    return count ? Math.round(sum / count) : null
+  } catch { return null }
+}
 
 /* Couleur neutre unique pour toute réponse sélectionnée (QCM/QCU/VF) — évite toute
    association implicite type "vert=bonne réponse / rouge=mauvaise" pendant que
@@ -204,14 +225,48 @@ export default function ExamPage() {
   const [qcmIdx,         setQcmIdx]         = useState(0)   // page courante — Partie 1 (QCM/VF)
   const [p2PageIdx,      setP2PageIdx]      = useState(0)   // page courante — Partie 2 (ouvertes)
   const [showPart2,      setShowPart2]      = useState(false)
+  // Minuteur par page pour la Partie 1 (QCM/Vrai-Faux/Appariement) — jamais
+  // les questions ouvertes. Distinct du minuteur global de l'examen : se
+  // réinitialise à chaque changement de page, avance automatiquement à la
+  // page suivante (ou verrouille la Partie 1 sur la dernière page) à
+  // expiration, sans exiger que toutes les questions soient répondues.
+  const [pageTimeLeft,   setPageTimeLeft]   = useState<number|null>(null)
+  const pageTimerRef     = useRef<ReturnType<typeof setInterval>|null>(null)
   const [phase,        setPhase]        = useState<Phase>('loading')
   const [timeLeft,     setTimeLeft]     = useState(0)
   const [tabCount,     setTabCount]     = useState(0)
   const [riskScore,    setRiskScore]    = useState(0)
+  const [focusLost,    setFocusLost]    = useState(false)
+  const [networkOffline, setNetworkOffline] = useState(false)
+  /* Adaptation à une connexion faible : la surveillance (vidéo continue,
+     captures, analyses IA) ne doit jamais faire perdre à l'étudiant la
+     bande passante dont il a besoin pour simplement composer/enregistrer
+     ses réponses. Surveillé en continu (pas juste une fois au moment des
+     permissions) via l'API Network Information, avec repli si absente
+     (Firefox/Safari) sur le comportement normal. */
+  const [networkQuality, setNetworkQuality] = useState<'good'|'poor'>('good')
+  const networkQualityRef = useRef<'good'|'poor'>('good')
+  const saveBackoffRef = useRef(0)
+  const saveRetryTimerRef = useRef<ReturnType<typeof setTimeout>|null>(null)
+  const submitRetryTimerRef = useRef<ReturnType<typeof setTimeout>|null>(null)
+  const mainCamTrackRef = useRef<any>(null)
+  const mainScreenTrackRef = useRef<any>(null)
+
+  /* ── Surveillance renforcée par vision par ordinateur (MediaPipe) ────────
+     Phase 1 : scan environnement 360° avant l'examen. */
+  const [envScanStatus, setEnvScanStatus] = useState<'idle'|'loading_ai'|'scanning'|'blocked'|'ok'|'degraded'>('idle')
+  const [envScanProgress, setEnvScanProgress] = useState(0)
+  const [envScanMaxPeople, setEnvScanMaxPeople] = useState(0)
+  const scanVideoRef = useRef<HTMLVideoElement|null>(null)
+  /* Phase 7 : contrôle de vivacité à la capture de référence faciale. */
+  const [livenessStatus, setLivenessStatus] = useState<'idle'|'waiting_blink'|'ok'>('idle')
   const [alerts,       setAlerts]       = useState<{type:string;msg:string;at:string}[]>([])
   const [lastSaved,    setLastSaved]    = useState<Date|null>(null)
   const [submitting,   setSubmitting]   = useState(false)
-  const [showFinalSig, setShowFinalSig] = useState(false)
+  /* Relecture des réponses — obligatoire avant de pouvoir soumettre : le
+     bouton "Soumettre" ouvre d'abord cet écran de relecture. */
+  const [showReview, setShowReview] = useState(false)
+  const [showCalculator, setShowCalculator] = useState(false)
   const [msgText,      setMsgText]      = useState('')
   const [msgSent,      setMsgSent]      = useState<{text:string;time:string}[]>([])
   const [camOn,        setCamOn]        = useState(false)
@@ -230,6 +285,14 @@ export default function ExamPage() {
   const [teacherActive,setTeacherActive]= useState(false)
   // showConsent supprimé — attestation affichée directement en phase 'instructions'
   const [starting,     setStarting]     = useState(false)
+  /* Code de reprise — exigé quand une tentative IN_PROGRESS existe déjà et
+     que l'étudiant revient sur la page (déconnexion réelle, pas un simple
+     blip réseau qui laisse l'onglet ouvert). Généré automatiquement côté
+     backend et renvoyé directement dans la réponse 403 (voir doStartExam) —
+     self-service, plus besoin d'appeler le surveillant au préalable. */
+  const [codeRequired,   setCodeRequired]   = useState(false)
+  const [accessCode,     setAccessCode]     = useState('')
+  const [submittingCode, setSubmittingCode] = useState(false)
   const [permCam,      setPermCam]      = useState<PermStatus>('pending')
   const [permMic,      setPermMic]      = useState<PermStatus>('pending')
   const [permScreen,   setPermScreen]   = useState<PermStatus>('pending')
@@ -242,6 +305,8 @@ export default function ExamPage() {
   const msgPollRef      = useRef<ReturnType<typeof setInterval>|null>(null)
   const snapshotRef     = useRef<ReturnType<typeof setInterval>|null>(null)
   const extraPollRef    = useRef<ReturnType<typeof setInterval>|null>(null)
+  const multiScreenIntervalRef = useRef<ReturnType<typeof setInterval>|null>(null)
+  const heartbeatRef    = useRef<ReturnType<typeof setInterval>|null>(null)
   const attemptRef      = useRef<number|null>(null)
   const examRef         = useRef<ExamData|null>(null)
   const videoRef        = useRef<HTMLVideoElement|null>(null)
@@ -259,16 +324,46 @@ export default function ExamPage() {
   const privateTeacherAudRef= useRef<HTMLAudioElement|null>(null)
   const lastMsgTsRef    = useRef<string|null>(null)
   const sessionEndedRef = useRef(false)
+  // Filet de sécurité PWA/standalone : les événements fullscreenchange/blur
+  // ne sont pas garantis de se déclencher de façon fiable dans une fenêtre
+  // d'app installée (pas d'onglet à quitter, comportement plein écran /
+  // focus différent selon plateforme) — ces refs empêchent la détection
+  // périodique ci-dessous de re-signaler en boucle tant que l'étudiant n'a
+  // pas cliqué "Revenir à l'examen", sans dépendre uniquement des events.
+  const fsPollGuardRef    = useRef(false)
+  const focusPollGuardRef = useRef(false)
   const extraMinRef     = useRef(0)
   const lastSnapRef     = useRef(0)
-  const canvasRef       = useRef<HTMLCanvasElement|null>(null)
-  const sigMeta         = useRef({strokes:0,pathLength:0,startTime:0,endTime:0})
-  const drawing         = useRef(false)
-  const lastPos         = useRef([0,0])
-  const finalSigCanvasRef = useRef<HTMLCanvasElement|null>(null)
-  const finalSigMeta      = useRef({strokes:0,pathLength:0,startTime:0,endTime:0})
-  const finalDrawing      = useRef(false)
-  const finalLastPos      = useRef([0,0])
+  const lastLightWarnRef = useRef(0)
+  /* Compteurs de vérifications consécutives — même logique que le reste de
+     l'anti-fraude (CONSEC_ALERT) : n'alerter que sur une déviation soutenue,
+     pas un mouvement bref et normal. */
+  const consGazeAwayRef  = useRef(0)
+  const consHeadTurnRef  = useRef(0)
+  const consMouthRef     = useRef(0)
+  const lastVisionAlertRef = useRef<Record<string, number>>({})
+  /* Étalonnage individuel du regard/de l'orientation de la tête, mesuré
+     pendant la capture de la photo de référence (l'étudiant regarde déjà la
+     caméra à ce moment). MediaPipe ne peut pas détecter "porte des lunettes"
+     directement (pas de classe dédiée) — mais les reflets/déformations des
+     verres provoquent un bruit de mesure mesurable sur la position de
+     l'iris, propre à chaque étudiant. Comparer à SON écart-type plutôt qu'à
+     un seuil fixe absorbe ce bruit (lunettes, strabisme léger, etc.) sans
+     perdre en sensibilité sur un vrai détournement du regard, qui reste une
+     déviation large et soutenue même après cette marge personnalisée. */
+  const gazeBaselineRef = useRef<{ x: number; y: number; spreadX: number; spreadY: number; yaw: number; spreadYaw: number } | null>(null)
+  const objectTickCountRef = useRef(0)
+  // Exige le MÊME type d'objet sur 2 vérifications consécutives (~20s, un
+  // tick sur deux) avant d'alerter — un objet réellement présent (téléphone,
+  // livre, écran) reste visible sur la durée ; une image isolée mal
+  // classifiée (reflet, objet du décor confondu un instant) ne se répète pas.
+  const consObjectRef = useRef<{ what: string | null; count: number }>({ what: null, count: 0 })
+  /* Phase 6 — détection audio légère (énergie RMS du signal, pas de
+     transcription : plus respectueux de la vie privée et bien moins coûteux
+     qu'une reconnaissance vocale continue). */
+  const audioAnalyserRef = useRef<AnalyserNode|null>(null)
+  const audioCtxRef = useRef<AudioContext|null>(null)
+  const consAudioRef = useRef(0)
   const faceIntervalRef = useRef<ReturnType<typeof setInterval>|null>(null)
   const lastFaceAlertRef= useRef<{no_face:number;multiple:number;mismatch:number}>({no_face:0,multiple:0,mismatch:0})
   const consNoFaceRef   = useRef(0)
@@ -356,6 +451,48 @@ export default function ExamPage() {
       .catch(() => {}) // repli silencieux sur le calcul client (parsedBlocks + paginateBlocks)
   }, [phase])
 
+  /* ── Reprise après déconnexion : atterrir sur la première page non
+     terminée plutôt que de tout recommencer depuis la page 1 — les réponses
+     déjà données (answers) étaient déjà restaurées, mais l'index de page
+     revenait toujours à 0, forçant l'étudiant à recliquer sur tout ce qu'il
+     avait déjà fait (perte de temps, et paradoxalement une occasion de plus
+     de revoir/modifier une partie déjà verrouillée en repassant par "Suiv."). */
+  const jumpedToUnansweredRef = useRef(false)
+  useEffect(() => {
+    if (phase !== 'exam' || jumpedToUnansweredRef.current) return
+    // Laisser un court délai pour que la pagination serveur arrive (sinon
+    // repli sur le calcul client, déjà disponible synchroniquement).
+    const t = setTimeout(() => {
+      if (jumpedToUnansweredRef.current) return
+      jumpedToUnansweredRef.current = true
+      if (!exam) return
+      const displayBlocks = shuffledBlocks.length > 0 ? shuffledBlocks : parsedBlocks
+      const structuredQs  = shuffledQs.length > 0 ? shuffledQs : (exam.questions ?? [])
+      if (structuredQs.length > 0 || displayBlocks.length === 0) return // pas de pagination dans ce cas
+
+      const p1Blocks = serverPages?.p1_blocks ?? displayBlocks.filter(b => b.type==='qcm'||b.type==='qcm_multi'||b.type==='vf'||b.type==='appariement')
+      const p2Items  = serverPages?.p2_items  ?? displayBlocks.filter(b => b.type==='section'||b.type==='open'||b.type==='subopen'||b.type==='code')
+      const perPage  = exam.questions_per_page && exam.questions_per_page > 0 ? exam.questions_per_page : Infinity
+      const p1Pages  = serverPages?.p1_pages ?? paginateBlocks(p1Blocks, perPage)
+      const p2Pages  = serverPages?.p2_pages ?? paginateBlocks(p2Items, perPage)
+
+      function isAnswered(b: ParsedBlock) {
+        if (b.type === 'subopen') return b.choices?.some(c => (answers[`pq_${b.num}_${c.letter}`] ?? '').trim() !== '') ?? false
+        if (b.type === 'appariement') return b.pairs?.every((_, i) => (answers[`pq_${b.num}_${i}`] ?? '').trim() !== '') ?? false
+        return (answers[`pq_${b.num}`] ?? '').trim() !== ''
+      }
+
+      if (!showPart2) {
+        const idx = p1Pages.findIndex(page => page.some(b => !isAnswered(b)))
+        if (idx > 0) setQcmIdx(idx)
+      } else {
+        const idx = p2Pages.findIndex(page => page.some(b => b.type !== 'section' && !isAnswered(b)))
+        if (idx > 0) setP2PageIdx(idx)
+      }
+    }, 900)
+    return () => clearTimeout(t)
+  }, [phase]) // eslint-disable-line
+
   /* ── Attacher la caméra quand la vidéo est montée ────────────────────── */
   useEffect(() => {
     if (phase !== 'exam') return
@@ -369,6 +506,7 @@ export default function ExamPage() {
   /* ── Nettoyage ────────────────────────────────────────────────────────── */
   useEffect(() => () => {
     ;[timerRef,saveRef,msgPollRef,snapshotRef,extraPollRef,faceIntervalRef].forEach(r => { if (r.current) clearInterval(r.current) })
+    ;[saveRetryTimerRef,submitRetryTimerRef].forEach(r => { if (r.current) clearTimeout(r.current) })
     camStream.current?.getTracks().forEach(t => t.stop())
     screenStream.current?.getTracks().forEach(t => t.stop())
     if (lkRoomRef.current) { try { lkRoomRef.current.disconnect() } catch {} }
@@ -383,6 +521,7 @@ export default function ExamPage() {
       setRiskScore(r => Math.min(r + 10, 100))
       setAlerts(a => [{type:'tab',msg:`Changement d'onglet (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
       warning(`Attention : changement d'onglet détecté (${next}/${examRef.current?.max_tab_switches??3})`)
+      setFocusLost(true)
       const aId = attemptRef.current
       if (aId) {
         // Le serveur décide seul de bannir ou non (selon auto_ban_enabled) —
@@ -390,6 +529,24 @@ export default function ExamPage() {
         // compteur local : ça bannissait même quand le prof n'avait rien activé.
         try { await logActivity(aId,'tab_switch',`Changement onglet ${next}`) } catch {}
         try { await logProctoring(aId,'tab_switch',`Changement onglet ${next}`) } catch {}
+      }
+    }
+    const onBlur = async () => {
+      // Filet de sécurité pour un basculement trop rapide (bascule OS,
+      // fenêtre partiellement recouverte) : visibilitychange ne se déclenche
+      // pas toujours dans ces cas alors que le focus de la fenêtre, lui,
+      // est perdu immédiatement. Le backend reconnaît déjà 'window_blur'
+      // dans ses seuils (severity_tab_events) — seul l'envoi manquait ici.
+      if (sessionEndedRef.current) return
+      const next = tabCount + 1; setTabCount(next)
+      setRiskScore(r => Math.min(r + 10, 100))
+      setAlerts(a => [{type:'blur',msg:`Perte de focus détectée (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
+      warning(`Attention : perte de focus détectée (${next}/${examRef.current?.max_tab_switches??3})`)
+      setFocusLost(true)
+      const aId = attemptRef.current
+      if (aId) {
+        try { await logActivity(aId,'window_blur','Perte de focus fenêtre') } catch {}
+        try { await logProctoring(aId,'window_blur','Perte de focus fenêtre') } catch {}
       }
     }
     const noCtx  = (e:MouseEvent)     => { if (!examRef.current?.enable_right_click) e.preventDefault() }
@@ -404,129 +561,234 @@ export default function ExamPage() {
     }
     const onFs = () => {
       if (!document.fullscreenElement && !sessionEndedRef.current) {
+        if (fsPollGuardRef.current) return // déjà signalé, en attente du clic "Revenir à l'examen"
+        fsPollGuardRef.current = true
+        setRiskScore(r => Math.min(r + 10, 100))
+        setFocusLost(true)
         const aId = attemptRef.current
-        if (aId) { logActivity(aId,'fullscreen_exit','Plein écran quitté').catch(()=>{}) }
+        if (aId) {
+          logActivity(aId,'fullscreen_exit','Plein écran quitté').catch(()=>{})
+          // Manquait auparavant : seul tab_switch alimentait le score de
+          // risque, une sortie de plein écran ne comptait pas dessus.
+          logProctoring(aId,'fullscreen_exit','Plein écran quitté').catch(()=>{})
+        }
         setAlerts(a => [{type:'fs',msg:'Plein écran quitté',at:new Date().toLocaleTimeString('fr-FR')},...a])
+      } else if (document.fullscreenElement) {
+        fsPollGuardRef.current = false
       }
+    }
+    // Filet de sécurité — une PWA installée (fenêtre autonome, sans onglet)
+    // ne déclenche pas toujours fullscreenchange/blur de façon fiable selon
+    // le navigateur/OS (constaté : élèves en PWA échappant à la détection
+    // alors que le même examen dans un onglet de navigateur normal est bien
+    // surveillé). Contrairement aux events ci-dessus qui ne réagissent qu'à
+    // un CHANGEMENT d'état, ce sondage vérifie l'état RÉEL toutes les 4s —
+    // il détecte donc aussi le cas où le plein écran n'a jamais été atteint
+    // du tout (échec silencieux de requestFullscreen), pas seulement une
+    // sortie après coup.
+    const pollState = () => {
+      if (sessionEndedRef.current) return
+      onFs()
+      if (!document.hasFocus()) {
+        if (focusPollGuardRef.current) return
+        focusPollGuardRef.current = true
+        const next = tabCount + 1; setTabCount(next)
+        setRiskScore(r => Math.min(r + 10, 100))
+        setAlerts(a => [{type:'blur',msg:`Perte de focus détectée (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
+        warning(`Attention : perte de focus détectée (${next}/${examRef.current?.max_tab_switches??3})`)
+        setFocusLost(true)
+        const aId = attemptRef.current
+        if (aId) {
+          logActivity(aId,'window_blur','Perte de focus fenêtre (détection périodique)').catch(()=>{})
+          logProctoring(aId,'window_blur','Perte de focus fenêtre (détection périodique)').catch(()=>{})
+        }
+      } else {
+        focusPollGuardRef.current = false
+      }
+    }
+    const pollTimer = setInterval(pollState, 4000)
+    // Dissuasion à la fermeture d'onglet/navigation — c'est la limite dure du
+    // navigateur : AUCUN site web ne peut techniquement empêcher un onglet de
+    // se fermer (restriction de sécurité volontaire, valable pour Chrome,
+    // Firefox, Safari, Edge — sinon un site malveillant pourrait piéger un
+    // visiteur). Le seul mécanisme que le web autorise est cette boîte de
+    // dialogue native, non stylable et non contournable par le site, que le
+    // navigateur affiche lui-même et que l'étudiant peut toujours choisir de
+    // confirmer pour partir quand même. La dissuasion réelle contre une sortie
+    // volontaire reste donc procédurale : détection (tab_switch/window_blur/
+    // fullscreen_exit ci-dessus) + comptage des violations + bannissement
+    // selon le seuil fixé par l'enseignant — pas un verrou technique.
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (sessionEndedRef.current) return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    // Retour DFIP #10 — "mouvement brusque" : si l'étudiant confirme la
+    // fermeture malgré l'avertissement ci-dessus (ou ferme trop vite pour
+    // qu'un fetch() normal aboutisse — Alt+F4, fermeture de la fenêtre),
+    // pagehide est le signal le plus fiable qu'une page est réellement en
+    // train de se décharger. L'appel passe par postBeacon (fetch keepalive)
+    // plutôt que logActivity/logProctoring habituels : une requête fetch()
+    // normale est annulée par le navigateur au déchargement de page, donc le
+    // signal serait silencieusement perdu sans ce canal dédié.
+    const onPageHide = () => {
+      if (sessionEndedRef.current) return
+      const aId = attemptRef.current
+      if (!aId) return
+      api.postBeacon(`/api/exam_attempts/${aId}/log_activity`,{event_type:'tab_closed',event_data:'Page fermée/quittée pendant la composition'})
+      api.postBeacon(`/api/exam_attempts/${aId}/proctoring_event`,{event_type:'tab_closed',event_data:'Page fermée/quittée pendant la composition'})
     }
     document.addEventListener('visibilitychange',onVis); document.addEventListener('contextmenu',noCtx)
     document.addEventListener('copy',noCopy); document.addEventListener('paste',noCopy)
     document.addEventListener('keydown',noKey); document.addEventListener('fullscreenchange',onFs)
+    window.addEventListener('blur',onBlur); window.addEventListener('beforeunload',onBeforeUnload)
+    window.addEventListener('pagehide',onPageHide)
     return () => {
       document.removeEventListener('visibilitychange',onVis); document.removeEventListener('contextmenu',noCtx)
       document.removeEventListener('copy',noCopy); document.removeEventListener('paste',noCopy)
       document.removeEventListener('keydown',noKey); document.removeEventListener('fullscreenchange',onFs)
+      window.removeEventListener('blur',onBlur); window.removeEventListener('beforeunload',onBeforeUnload)
+      window.removeEventListener('pagehide',onPageHide)
+      clearInterval(pollTimer)
     }
   }, [phase,tabCount]) // eslint-disable-line
 
-  /* ── Signature ────────────────────────────────────────────────────────── */
-  useEffect(() => { if (phase === 'instructions') requestAnimationFrame(() => initSig()) }, [phase])
-  function initSig() {
-    const c = canvasRef.current; if (!c) return
-    const r = c.getBoundingClientRect(); c.width = Math.round(r.width)||480; c.height = 130
-    const ctx = c.getContext('2d')!; drawWm(ctx,c.width,c.height)
-    sigMeta.current = {strokes:0,pathLength:0,startTime:0,endTime:0}
-  }
-  function drawWm(ctx:CanvasRenderingContext2D,w:number,h:number) {
-    ctx.save(); ctx.globalAlpha=0.06; ctx.font=`bold ${Math.max(14,Math.floor(h/4))}px Arial`
-    ctx.fillStyle='#1e293b'; ctx.textAlign='center'; ctx.textBaseline='middle'
-    ctx.translate(w/2,h/2); ctx.rotate(-18*Math.PI/180); ctx.fillText('CEI — ATTESTATION',0,0); ctx.restore()
-    ctx.save(); ctx.globalAlpha=0.18; ctx.font='9px monospace'; ctx.fillStyle='#475569'
-    ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText(user?.full_name?.toUpperCase()??'',8,5)
-    ctx.textAlign='right'; ctx.textBaseline='bottom'; ctx.fillText(new Date().toLocaleDateString('fr-FR'),w-8,h-5); ctx.restore()
-    ctx.save(); ctx.globalAlpha=0.15; ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1; ctx.setLineDash([4,6])
-    ctx.beginPath(); ctx.moveTo(10,h*0.72); ctx.lineTo(w-10,h*0.72); ctx.stroke(); ctx.restore()
-  }
-  function clearSig() {
-    const c = canvasRef.current; if (!c) return
-    const ctx = c.getContext('2d')!; ctx.clearRect(0,0,c.width,c.height); drawWm(ctx,c.width,c.height)
-    sigMeta.current = {strokes:0,pathLength:0,startTime:0,endTime:0}
-    c.style.border='2px solid #e2e8f0'; c.style.background='#fafafa'
-  }
-  function getSigPos(e:React.MouseEvent|React.TouchEvent) {
-    const c=canvasRef.current!; const r=c.getBoundingClientRect()
-    const s='touches' in e?e.touches[0]:e as any
-    return [(s.clientX-r.left)*(c.width/r.width),(s.clientY-r.top)*(c.height/r.height)]
-  }
-  function onSigStart(e:React.MouseEvent|React.TouchEvent) {
-    e.preventDefault(); drawing.current=true; const [x,y]=getSigPos(e); lastPos.current=[x,y]
-    const m=sigMeta.current; if(!m.startTime) m.startTime=Date.now(); m.strokes++
-  }
-  function onSigMove(e:React.MouseEvent|React.TouchEvent) {
-    e.preventDefault(); if(!drawing.current) return
-    const [x,y]=getSigPos(e); const [lx,ly]=lastPos.current
-    const ctx=canvasRef.current!.getContext('2d')!
-    ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(x,y)
-    ctx.strokeStyle='#1e293b'; ctx.lineWidth=2.2; ctx.lineCap='round'; ctx.stroke()
-    const m=sigMeta.current; m.pathLength+=Math.sqrt((x-lx)**2+(y-ly)**2); m.endTime=Date.now(); lastPos.current=[x,y]
-  }
-  function onSigEnd() { drawing.current=false }
+  /* ── Connectivité réseau ──────────────────────────────────────────────────
+     Signalement informatif (jamais compté comme suspect — une coupure
+     réseau n'est pas une tentative de fraude) : bannière rassurante côté
+     étudiant, log pour que le professeur voie qu'une éventuelle alerte
+     concomitante peut avoir une cause réseau plutôt qu'une triche, et
+     relance immédiate de la sauvegarde dès le retour de connexion plutôt
+     que d'attendre le prochain cycle de 30s. */
+  useEffect(() => {
+    if (phase !== 'exam') return
+    const onOffline = () => {
+      setNetworkOffline(true)
+      const aId = attemptRef.current
+      if (aId) logActivity(aId,'network_disconnected','Connexion réseau perdue').catch(()=>{})
+    }
+    const onOnline = () => {
+      setNetworkOffline(false)
+      const aId = attemptRef.current
+      if (aId) {
+        logActivity(aId,'network_reconnected','Connexion réseau rétablie').catch(()=>{})
+        doAutoSave(aId)
+      }
+    }
+    if (!navigator.onLine) onOffline()
+    window.addEventListener('offline',onOffline)
+    window.addEventListener('online',onOnline)
+    return () => {
+      window.removeEventListener('offline',onOffline)
+      window.removeEventListener('online',onOnline)
+    }
+  }, [phase]) // eslint-disable-line
 
-  /* ── Signature de fin de composition (soumission manuelle uniquement — pas
-     en cas de soumission automatique par expiration du temps ou déconnexion) ── */
-  function initFinalSig() {
-    const c = finalSigCanvasRef.current; if (!c) return
-    const r = c.getBoundingClientRect(); c.width = Math.round(r.width)||480; c.height = 130
-    const ctx = c.getContext('2d')!; drawWm(ctx,c.width,c.height)
-    finalSigMeta.current = {strokes:0,pathLength:0,startTime:0,endTime:0}
-  }
-  function clearFinalSig() {
-    const c = finalSigCanvasRef.current; if (!c) return
-    const ctx = c.getContext('2d')!; ctx.clearRect(0,0,c.width,c.height); drawWm(ctx,c.width,c.height)
-    finalSigMeta.current = {strokes:0,pathLength:0,startTime:0,endTime:0}
-    c.style.border='2px solid #e2e8f0'; c.style.background='#fafafa'
-  }
-  function getFinalSigPos(e:React.MouseEvent|React.TouchEvent) {
-    const c=finalSigCanvasRef.current!; const r=c.getBoundingClientRect()
-    const s='touches' in e?e.touches[0]:e as any
-    return [(s.clientX-r.left)*(c.width/r.width),(s.clientY-r.top)*(c.height/r.height)]
-  }
-  function onFinalSigStart(e:React.MouseEvent|React.TouchEvent) {
-    e.preventDefault(); finalDrawing.current=true; const [x,y]=getFinalSigPos(e); finalLastPos.current=[x,y]
-    const m=finalSigMeta.current; if(!m.startTime) m.startTime=Date.now(); m.strokes++
-  }
-  function onFinalSigMove(e:React.MouseEvent|React.TouchEvent) {
-    e.preventDefault(); if(!finalDrawing.current) return
-    const [x,y]=getFinalSigPos(e); const [lx,ly]=finalLastPos.current
-    const ctx=finalSigCanvasRef.current!.getContext('2d')!
-    ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(x,y)
-    ctx.strokeStyle='#1e293b'; ctx.lineWidth=2.2; ctx.lineCap='round'; ctx.stroke()
-    const m=finalSigMeta.current; m.pathLength+=Math.sqrt((x-lx)**2+(y-ly)**2); m.endTime=Date.now(); finalLastPos.current=[x,y]
-  }
-  function onFinalSigEnd() { finalDrawing.current=false }
-  function openFinalSigModal() {
-    setShowFinalSig(true)
-    requestAnimationFrame(()=>initFinalSig())
-  }
-  function confirmFinalSubmit() {
-    const c = finalSigCanvasRef.current; if (!c) return
-    const m = finalSigMeta.current
-    if (m.strokes===0) { c.style.border='2px solid #ef4444'; c.style.background='#fef2f2'; toastErr('Vous devez signer pour confirmer la remise.'); return }
-    if (m.pathLength<100) { toastErr('Signature trop courte — tracez un trait plus long.'); return }
-    if ((m.endTime-m.startTime)<800) { toastErr('Signature trop rapide — signez normalement.'); return }
-    setShowFinalSig(false)
-    handleSubmit(false, c.toDataURL('image/png'))
-  }
+  /* Sauvegarde locale (localStorage) en complément de l'auto-save serveur —
+     si la connexion tombe assez longtemps pour qu'aucune sauvegarde serveur
+     n'aboutisse ET que l'onglet se ferme/plante dans cet intervalle, ce
+     brouillon local reste le seul filet de récupération. Restauré et fusionné
+     au retour dans doStartExam/submitAccessCode (voir restoreAnswersWithLocalDraft). */
+  useEffect(() => {
+    const aId = attemptRef.current
+    if (!aId || phase !== 'exam') return
+    const t = setTimeout(() => {
+      try { localStorage.setItem(`cei_exam_draft_${aId}`, JSON.stringify({ answers: answersRef.current, ts: Date.now() })) } catch {}
+    }, 1000)
+    return () => clearTimeout(t)
+  }, [answers, phase])
+
+  /* Surveillance CONTINUE (pas juste au moment des permissions) de la
+     qualité réseau — dès qu'elle se dégrade, on réduit la charge que la
+     plateforme fait elle-même peser sur la bande passante de l'étudiant
+     (vidéo de surveillance, captures) pour ne jamais entraver sa capacité
+     à simplement enregistrer/soumettre ses réponses, qui reste toujours
+     prioritaire sur la fidélité de la surveillance. */
+  useEffect(() => {
+    if (phase !== 'exam') return
+    const conn = (navigator as any).connection
+    if (!conn) return // API absente (Firefox/Safari) — comportement normal, pas de dégradation possible à détecter
+    function evaluate() {
+      const poor = conn.downlink < 0.5 || ['slow-2g','2g'].includes(conn.effectiveType) || !!conn.saveData
+      const next: 'good'|'poor' = poor ? 'poor' : 'good'
+      if (next === networkQualityRef.current) return
+      networkQualityRef.current = next
+      setNetworkQuality(next)
+      const aId = attemptRef.current
+      if (next === 'poor') {
+        warning('Connexion lente détectée — qualité vidéo réduite pour préserver votre bande passante')
+        if (aId) logActivity(aId,'low_bandwidth_mode','Mode basse bande passante activé').catch(()=>{})
+      } else if (aId) {
+        logActivity(aId,'low_bandwidth_mode_ended','Connexion redevenue correcte — qualité normale rétablie').catch(()=>{})
+      }
+      applyBandwidthMode()
+    }
+    evaluate()
+    conn.addEventListener?.('change', evaluate)
+    return () => conn.removeEventListener?.('change', evaluate)
+  }, [phase]) // eslint-disable-line
 
   /* ── Démarrer ─────────────────────────────────────────────────────────── */
+  /* Restaure les réponses serveur puis fusionne un éventuel brouillon local
+     plus récent (localStorage) — protège contre le cas où la dernière
+     sauvegarde serveur a échoué (coupure réseau) et où l'onglet a ensuite
+     été fermé/a planté avant de pouvoir réessayer : sans ce filet, ces
+     réponses seraient silencieusement perdues à la reprise. Le brouillon
+     local est toujours prioritaire (il reflète la frappe la plus récente),
+     et une sauvegarde est immédiatement retentée pour que le serveur
+     rattrape l'écart dès que possible. */
+  function restoreAnswersWithLocalDraft(attemptId:number, rawAnswers:any) {
+    let serverAnswers:Record<string,string> = {}
+    try { const p = typeof rawAnswers==='string'?JSON.parse(rawAnswers):rawAnswers; serverAnswers = p||{} } catch {}
+    let merged = serverAnswers
+    try {
+      const draft = localStorage.getItem(`cei_exam_draft_${attemptId}`)
+      if (draft) {
+        const { answers: localAnswers } = JSON.parse(draft)
+        if (localAnswers && typeof localAnswers==='object') {
+          merged = { ...serverAnswers, ...localAnswers }
+          if (JSON.stringify(merged)!==JSON.stringify(serverAnswers)) {
+            setTimeout(()=>doAutoSave(attemptId), 500)
+          }
+        }
+      }
+    } catch {}
+    setAnswers(merged)
+    if (merged.__qcm_locked==='1') setShowPart2(true)
+  }
+
   async function doStartExam() {
-    const c = canvasRef.current; if (!c) return
-    const m = sigMeta.current
-    if (m.strokes===0) { c.style.border='2px solid #ef4444'; c.style.background='#fef2f2'; toastErr('Vous devez signer avant de démarrer.'); return }
-    if (m.pathLength<100) { toastErr('Signature trop courte — tracez un trait plus long.'); return }
-    if ((m.endTime-m.startTime)<800) { toastErr('Signature trop rapide — signez normalement.'); return }
     setStarting(true)
     try {
-      const res = await api.post<{attempt:Attempt}>(`/api/online_exams/${id}/start`,{
-        pre_exam_signature: c.toDataURL('image/png'),
-        pre_exam_signature_meta: {strokes:m.strokes,path_length:Math.round(m.pathLength),duration_ms:m.endTime-m.startTime,signed_at:new Date().toISOString()}
-      })
+      const res = await api.post<{attempt:Attempt}>(`/api/online_exams/${id}/start`,{})
       const att=res.attempt; setAttempt(att); attemptRef.current=att.id
       extraMinRef.current=att.extra_minutes??0
-      if (att.answers) { try { const p=typeof att.answers==='string'?JSON.parse(att.answers):att.answers; setAnswers(p||{}); if(p?.__qcm_locked==='1') setShowPart2(true) } catch {} }
+      if (att.answers) restoreAnswersWithLocalDraft(att.id, att.answers)
       setPhase('permissions')
-    } catch (e:any) { toastErr(e.message||"Impossible de démarrer l'examen") }
+    } catch (e:any) {
+      if (e?.data?.code_required) {
+        setCodeRequired(true)
+        if (e.data.code) setAccessCode(e.data.code)
+      } else toastErr(e.message||"Impossible de démarrer l'examen")
+    }
     finally { setStarting(false) }
+  }
+
+  async function submitAccessCode() {
+    if (!accessCode.trim()) { toastErr('Saisissez le code fourni par votre surveillant.'); return }
+    setSubmittingCode(true)
+    try {
+      const res = await api.post<{attempt:Attempt}>(`/api/online_exams/${id}/start`, { access_code: accessCode.trim() })
+      const att=res.attempt; setAttempt(att); attemptRef.current=att.id
+      extraMinRef.current=att.extra_minutes??0
+      if (att.answers) restoreAnswersWithLocalDraft(att.id, att.answers)
+      setCodeRequired(false)
+      setPhase('permissions')
+    } catch (e:any) {
+      if (e?.data?.code) setAccessCode(e.data.code)
+      toastErr(e.message||'Code invalide')
+    }
+    finally { setSubmittingCode(false) }
   }
 
   /* ── Permissions ──────────────────────────────────────────────────────── */
@@ -534,8 +796,33 @@ export default function ExamPage() {
     setPermError(''); setPermBusy(true)
     setPermCam('loading'); setPermMic('loading')
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true})
+      // Contrainte "ideal" (souple) plutôt que "min" (stricte) : une exigence
+      // stricte ferait échouer getUserMedia avec OverconstrainedError sur
+      // les webcams bas de gamme incapables de l'atteindre, alors que le
+      // besoin réel est de signaler une qualité insuffisante, pas de
+      // bloquer l'accès à l'examen pour une contrainte matérielle.
+      const stream = await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640},height:{ideal:480}},audio:true})
       camStream.current=stream; setCamOn(true); setMicOn(true); setPermCam('ok'); setPermMic('ok')
+      const track = stream.getVideoTracks()[0]
+      const settings = track?.getSettings?.()
+      if(settings?.width && settings?.height && (settings.width<480||settings.height<360)) {
+        setAlerts(a=>[{type:'camera_quality',msg:`Résolution caméra faible (${settings.width}×${settings.height})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
+        const aId = attemptRef.current
+        if(aId) {
+          logActivity(aId,'low_camera_quality',`Résolution caméra faible: ${settings.width}x${settings.height}`).catch(()=>{})
+          logProctoring(aId,'low_camera_quality',`Résolution caméra faible: ${settings.width}x${settings.height}`).catch(()=>{})
+        }
+      }
+      // Bande passante minimale : l'API Network Information (non
+      // universelle — absente sur Firefox/Safari, d'où la vérification
+      // optionnelle) donne une estimation grossière mais suffisante pour
+      // avertir avant le début de l'examen plutôt que de découvrir le
+      // problème pendant l'épreuve.
+      const conn = (navigator as any).connection
+      if (conn && (conn.downlink < 0.5 || ['slow-2g','2g'].includes(conn.effectiveType))) {
+        setAlerts(a=>[{type:'network_quality',msg:`Connexion lente détectée (${conn.effectiveType}, ${conn.downlink} Mbps)`,at:new Date().toLocaleTimeString('fr-FR')},...a])
+        warning('Connexion Internet lente détectée — cela peut ralentir la sauvegarde de vos réponses.')
+      }
     } catch {
       setPermCam('error'); setPermMic('error')
       setPermError('La caméra et le microphone sont obligatoires. Autorisez-les puis réessayez.')
@@ -561,13 +848,100 @@ export default function ExamPage() {
       setPermError("Le partage de l'écran complet est obligatoire.")
       setPermBusy(false); return
     }
-    setPermBusy(false); enterExam()
+    setPermBusy(false); setPhase('env_scan')
+  }
+
+  /* ── Phase 1 : scan environnement 360° ────────────────────────────────────
+     Avant d'entrer dans l'examen, demande à l'étudiant de balayer lentement
+     la pièce à la caméra pour vérifier l'absence d'une autre personne —
+     pratique standard chez les plateformes commerciales de surveillance
+     (confirmé chez Evaluo : "le candidat est invité à réaliser une courte
+     vidéo de son environnement"). */
+  const SCAN_DURATION_MS = 8000
+  async function runEnvironmentScan() {
+    setEnvScanStatus('loading_ai'); setEnvScanProgress(0); setEnvScanMaxPeople(0)
+    const ready = await initProctoringVision()
+    if (!ready) {
+      // Dégradé : impossible de vérifier par IA, mais on ne bloque pas un
+      // étudiant pour une limitation technique hors de son contrôle — on
+      // journalise l'indisponibilité pour que le surveillant en soit informé.
+      const aId = attemptRef.current
+      if (aId) logActivity(aId,'env_scan_unavailable',"Scan environnement impossible — moteur IA indisponible").catch(()=>{})
+      setEnvScanStatus('degraded')
+      return
+    }
+    const vid = scanVideoRef.current
+    if (!vid || vid.readyState < 2) { setEnvScanStatus('degraded'); return }
+
+    setEnvScanStatus('scanning')
+    const start = Date.now()
+    let maxPeople = 0
+    while (Date.now() - start < SCAN_DURATION_MS) {
+      const n = countPeople(vid, Date.now())
+      if (n !== null && n > maxPeople) { maxPeople = n; setEnvScanMaxPeople(n) }
+      setEnvScanProgress(Math.min(100, Math.round(((Date.now()-start)/SCAN_DURATION_MS)*100)))
+      await new Promise(r => setTimeout(r, 700))
+    }
+    setEnvScanProgress(100)
+
+    const aId = attemptRef.current
+    if (maxPeople > 1) {
+      setEnvScanStatus('blocked')
+      if (aId) {
+        logActivity(aId,'env_scan_person_detected',`${maxPeople} personnes détectées pendant le scan`).catch(()=>{})
+        logProctoring(aId,'env_scan_person_detected',`${maxPeople} personnes détectées`).catch(()=>{})
+      }
+    } else {
+      setEnvScanStatus('ok')
+      if (aId) logActivity(aId,'env_scan_completed','Scan environnement validé — aucune personne supplémentaire détectée').catch(()=>{})
+      // Pas d'enchaînement automatique vers enterExam() ici : requestFullscreen()
+      // exige un geste utilisateur DIRECT (clic) pour aboutir dans la plupart des
+      // navigateurs — un appel différé (même via setTimeout) rompt cette chaîne et
+      // le plein écran échoue silencieusement. Constaté en conditions réelles :
+      // l'étudiant se retrouvait immédiatement signalé "plein écran quitté" /
+      // "perte de focus" en boucle dès le début de l'examen, sans rien avoir fait
+      // — le plein écran n'avait en réalité jamais pu s'activer. Un bouton "Continuer"
+      // (comme déjà pour les statuts 'blocked'/'degraded' ci-dessous) règle ça.
+    }
+  }
+  useEffect(() => {
+    if (phase === 'env_scan') runEnvironmentScan()
+  }, [phase]) // eslint-disable-line
+
+  // Keyboard Lock API (Chrome/Edge uniquement, ignorée ailleurs) : tant
+  // qu'active, un simple appui sur Echap ne quitte plus le plein écran —
+  // le navigateur affiche à la place "Maintenez Echap pour quitter" et
+  // n'obéit qu'après ~1-2s d'appui maintenu. C'est une garantie du
+  // navigateur lui-même (aucun site ne peut la désactiver) : ça bloque les
+  // appuis accidentels/rapides, mais un étudiant qui sait qu'il doit
+  // maintenir Echap peut toujours sortir — aucune API web ne permet de
+  // rendre la sortie réellement impossible (restriction volontaire des
+  // navigateurs). Seul un navigateur verrouillé type Safe Exam Browser (hors
+  // périmètre actuel) empêche Echap au niveau du système d'exploitation.
+  function lockEscapeKey() {
+    try { (navigator as any).keyboard?.lock?.(['Escape']).catch(()=>{}) } catch {}
+  }
+
+  // Filet de sécurité — jusqu'ici un échec de requestFullscreen() était
+  // avalé en silence (.catch(()=>{})) : l'examen continuait sans qu'aucune
+  // trace ne signale que le plein écran n'a en réalité jamais été activé.
+  // Constaté notamment en PWA installée (fenêtre autonome sans onglet, où
+  // requestFullscreen() peut échouer ou ne rien faire selon navigateur/OS)
+  // — l'étudiant n'était alors surveillé par aucun des mécanismes liés au
+  // plein écran, sans que ce soit visible côté surveillant/professeur. On
+  // journalise maintenant explicitement cet échec au lieu de le taire.
+  function reportFullscreenUnavailable() {
+    const aId = attemptRef.current
+    if (aId) {
+      logActivity(aId,'fullscreen_exit','Plein écran indisponible ou refusé (navigateur/OS)').catch(()=>{})
+      logProctoring(aId,'fullscreen_exit','Plein écran indisponible ou refusé (navigateur/OS)').catch(()=>{})
+    }
   }
 
   /* ── Entrer dans l'examen ─────────────────────────────────────────────── */
   function enterExam() {
     if (!exam||!attempt) return
-    document.documentElement.requestFullscreen?.().catch(()=>{})
+    document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
     const totalSec   = exam.duration_minutes*60+extraMinRef.current*60
     const elapsedSec = Math.floor((Date.now()-new Date(attempt.started_at).getTime())/1000)
     setTimeLeft(Math.max(totalSec-elapsedSec,0))
@@ -584,9 +958,160 @@ export default function ExamPage() {
     msgPollRef.current  = setInterval(()=>pollTeacherMessages(attempt.id),8000)
     snapshotRef.current = setInterval(()=>captureSnapshot('periodic',attempt.id),120_000)
     extraPollRef.current= setInterval(()=>pollExtraTime(attempt.id),30000)
+    // Heartbeat léger — alimente ExamAttempt.last_seen_at côté serveur pour
+    // le badge "hors ligne" du surveillant. Volontairement silencieux en cas
+    // d'échec (navigator.onLine false ou requête qui échoue) : ne doit jamais
+    // impacter le déroulement de l'examen ni compter comme une violation.
+    const sendHeartbeat = () => {
+      const aId = attemptRef.current
+      if (aId && navigator.onLine) api.post(`/api/exam_attempts/${aId}/heartbeat`, {}).catch(()=>{})
+    }
+    sendHeartbeat()
+    heartbeatRef.current = setInterval(sendHeartbeat, 20000)
     initLiveKit(attempt.id)
     setPhase('exam')
     setTimeout(()=>initFaceDetection(attempt.id),500)
+    initAudioMonitoring()
+    checkMultiScreen(attempt.id)
+    multiScreenIntervalRef.current = setInterval(()=>{
+      if(sessionEndedRef.current){if(multiScreenIntervalRef.current)clearInterval(multiScreenIntervalRef.current);return}
+      const aId=attemptRef.current; if(aId) checkMultiScreen(aId)
+    },60_000)
+  }
+
+  // ── Minuteur par page (Partie 1 uniquement) ─────────────────────────────
+  // Recalcul léger du nombre de pages QCM/VF et de la présence de questions
+  // ouvertes — miroir de la logique de pagination du bloc de rendu 'exam',
+  // nécessaire ici car les hooks ne peuvent pas être appelés à l'intérieur
+  // d'un rendu conditionnel par phase.
+  const p1PageCount = useMemo(() => {
+    if (!exam) return 0
+    const displayBlocks = shuffledBlocks.length > 0 ? shuffledBlocks : parsedBlocks
+    const p1Blocks = serverPages?.p1_blocks ?? displayBlocks.filter(b=>b.type==='qcm'||b.type==='qcm_multi'||b.type==='vf'||b.type==='appariement')
+    const perPage = exam.questions_per_page && exam.questions_per_page>0 ? exam.questions_per_page : Infinity
+    const p1Pages = serverPages?.p1_pages ?? paginateBlocks(p1Blocks, perPage)
+    return p1Pages.length
+  }, [exam, shuffledBlocks, parsedBlocks, serverPages])
+
+  const p2HasBlocks = useMemo(() => {
+    if (!exam) return false
+    const displayBlocks = shuffledBlocks.length > 0 ? shuffledBlocks : parsedBlocks
+    const p2Items = serverPages?.p2_items ?? displayBlocks.filter(b=>b.type==='section'||b.type==='open'||b.type==='subopen'||b.type==='code')
+    return p2Items.some(b=>b.type!=='section')
+  }, [exam, shuffledBlocks, parsedBlocks, serverPages])
+
+  useEffect(() => {
+    if (pageTimerRef.current) { clearInterval(pageTimerRef.current); pageTimerRef.current = null }
+    const perQ = exam?.time_per_question_seconds
+    if (phase !== 'exam' || !perQ || showPart2 || p1PageCount === 0) { setPageTimeLeft(null); return }
+    setPageTimeLeft(perQ)
+    pageTimerRef.current = setInterval(() => {
+      setPageTimeLeft(t => {
+        if (t === null) return null
+        if (t <= 1) {
+          if (qcmIdx < p1PageCount - 1) {
+            setQcmIdx(i => i + 1)
+            if (attemptRef.current) doAutoSave(attemptRef.current)
+          } else if (p2HasBlocks) {
+            setShowPart2(true)
+            setAnswers(p => ({ ...p, __qcm_locked: '1' }))
+            if (attemptRef.current) doAutoSave(attemptRef.current)
+          }
+          return perQ
+        }
+        return t - 1
+      })
+    }, 1000)
+    return () => { if (pageTimerRef.current) clearInterval(pageTimerRef.current) }
+  }, [qcmIdx, phase, exam?.time_per_question_seconds, showPart2, p1PageCount, p2HasBlocks])
+
+  /* ── Phase 8 : détection multi-écran (best-effort) ────────────────────────
+     Window Management API — uniquement disponible sur Chrome/Edge et
+     seulement après octroi d'une permission dédiée par l'étudiant.
+     Dégradation silencieuse ailleurs (Firefox/Safari) : ce n'est qu'un
+     signal supplémentaire, pas une garantie universelle. */
+  async function checkMultiScreen(aId:number) {
+    try {
+      const getScreenDetails = (window as any).getScreenDetails
+      if (typeof getScreenDetails !== 'function') return
+      const details = await getScreenDetails()
+      const count = details?.screens?.length ?? 1
+      if (count > 1) {
+        const now = Date.now()
+        if (now-(lastVisionAlertRef.current.multiscreen||0) > 60_000) {
+          lastVisionAlertRef.current.multiscreen = now
+          warning(`${count} écrans détectés — un seul écran est autorisé pendant l'examen`)
+          logActivity(aId,'multi_screen_detected',`${count} écrans détectés`).catch(()=>{})
+          logProctoring(aId,'multi_screen_detected',`${count} écrans détectés`).catch(()=>{})
+        }
+      }
+    } catch {}
+  }
+
+  /* ── Phase 6 : détection audio légère (énergie RMS, pas de transcription) ── */
+  function initAudioMonitoring() {
+    try {
+      const stream = camStream.current; if (!stream) return
+      if (!stream.getAudioTracks().length) return
+      const AudioContextCls = window.AudioContext || (window as any).webkitAudioContext
+      if (!AudioContextCls) return
+      const ctx = new AudioContextCls()
+      const source = ctx.createMediaStreamSource(stream)
+      const analyser = ctx.createAnalyser()
+      analyser.fftSize = 2048
+      source.connect(analyser)
+      audioCtxRef.current = ctx
+      audioAnalyserRef.current = analyser
+      const data = new Uint8Array(analyser.fftSize)
+      const CONSEC_ALERT_AUDIO = 3
+      // Un seuil absolu unique ne convient à aucune pièce en particulier —
+      // une chambre avec ventilateur/rue bruyante déclenche en continu,
+      // tandis qu'une pièce très calme laisserait passer des niveaux qu'un
+      // seuil fixe plus haut aurait dû capter. On calibre à la place sur le
+      // bruit ambiant RÉEL de cet étudiant pendant les 5 premières secondes
+      // (aucune alerte pendant cette fenêtre), puis on ne signale qu'un
+      // dépassement net de SA propre référence — plancher à 0.05 pour éviter
+      // un seuil absurdement bas dans une pièce quasi silencieuse.
+      const CALIBRATION_MS = 5_000
+      const calibrationStart = Date.now()
+      let calibSamples: number[] = []
+      let ambientBaseline: number | null = null
+      const tick = () => {
+        if (sessionEndedRef.current) return
+        const an = audioAnalyserRef.current
+        if (an) {
+          an.getByteTimeDomainData(data)
+          let sum = 0
+          for (let i=0;i<data.length;i++) { const v=(data[i]-128)/128; sum += v*v }
+          const rms = Math.sqrt(sum/data.length)
+          if (ambientBaseline===null) {
+            calibSamples.push(rms)
+            if (Date.now()-calibrationStart >= CALIBRATION_MS) {
+              const avg = calibSamples.reduce((s,v)=>s+v,0)/calibSamples.length
+              ambientBaseline = avg
+            }
+            setTimeout(tick, 2000)
+            return
+          }
+          const threshold = Math.max(0.05, ambientBaseline*2.5)
+          const talking = rms > threshold
+          consAudioRef.current = talking ? consAudioRef.current+1 : 0
+          if (consAudioRef.current >= CONSEC_ALERT_AUDIO) {
+            const now = Date.now()
+            if (now-(lastVisionAlertRef.current.audio||0) > 30_000) {
+              lastVisionAlertRef.current.audio = now
+              const aId = attemptRef.current
+              if (aId) {
+                logActivity(aId,'sustained_audio_detected',`Activité audio soutenue (niveau=${rms.toFixed(3)})`).catch(()=>{})
+                logProctoring(aId,'sustained_audio_detected','Activité audio soutenue détectée').catch(()=>{})
+              }
+            }
+          }
+        }
+        setTimeout(tick, 2000)
+      }
+      tick()
+    } catch {}
   }
 
   /* ── LiveKit ──────────────────────────────────────────────────────────── */
@@ -607,9 +1132,14 @@ export default function ExamPage() {
      alors "en ligne" côté surveillance mais l'écran reste noir en
      permanence, sans qu'aucune erreur ne remonte à personne. */
   async function publishLocalTracks(room:any,LK:any) {
+    const low = networkQualityRef.current==='poor'
     const camTracks=camStream.current?.getVideoTracks()
     if(camTracks?.length){
-      try{const vt=new LK.LocalVideoTrack(camTracks[0].clone(),undefined,false);await room.localParticipant.publishTrack(vt,{simulcast:true,videoEncoding:{maxBitrate:300_000,maxFramerate:15}})}
+      try{
+        const vt=new LK.LocalVideoTrack(camTracks[0].clone(),undefined,false)
+        await room.localParticipant.publishTrack(vt,{simulcast:!low,videoEncoding:low?{maxBitrate:100_000,maxFramerate:8}:{maxBitrate:300_000,maxFramerate:15}})
+        mainCamTrackRef.current=vt
+      }
       catch(e){console.warn('[LiveKit] échec publication caméra:',e)}
     }
     const micTracks=camStream.current?.getAudioTracks()
@@ -619,9 +1149,33 @@ export default function ExamPage() {
     }
     const screenTracks=screenStream.current?.getVideoTracks()
     if(screenTracks?.length&&screenTracks[0].readyState!=='ended'){
-      try{const st=new LK.LocalVideoTrack(screenTracks[0],undefined,false);await room.localParticipant.publishTrack(st,{source:LK.Track.Source.ScreenShare,name:'screen',screenShareEncoding:{maxBitrate:500_000,maxFramerate:5}})}
+      try{
+        const st=new LK.LocalVideoTrack(screenTracks[0],undefined,false)
+        await room.localParticipant.publishTrack(st,{source:LK.Track.Source.ScreenShare,name:'screen',screenShareEncoding:low?{maxBitrate:150_000,maxFramerate:2}:{maxBitrate:500_000,maxFramerate:5}})
+        mainScreenTrackRef.current=st
+      }
       catch(e){console.warn('[LiveKit] échec publication écran:',e)}
     }
+  }
+
+  /* Rebascule le débit vidéo caméra à chaud (sans déconnecter la room) dès
+     que la qualité réseau change en cours d'examen — republie juste la
+     piste caméra avec un encodage adapté. Ne touche jamais à l'écran
+     partagé une fois publié (le republier interromprait le partage en
+     cours, plus perturbant que le gain de bande passante). */
+  async function applyBandwidthMode() {
+    const room=lkRoomRef.current; const LK=(window as any).LivekitClient
+    if(!room||!LK||!mainCamTrackRef.current) return
+    const low=networkQualityRef.current==='poor'
+    try{ await room.localParticipant.unpublishTrack(mainCamTrackRef.current); mainCamTrackRef.current.stop() }catch{}
+    mainCamTrackRef.current=null
+    const camTracks=camStream.current?.getVideoTracks()
+    if(!camTracks?.length) return
+    try{
+      const vt=new LK.LocalVideoTrack(camTracks[0].clone(),undefined,false)
+      await room.localParticipant.publishTrack(vt,{simulcast:!low,videoEncoding:low?{maxBitrate:100_000,maxFramerate:8}:{maxBitrate:300_000,maxFramerate:15}})
+      mainCamTrackRef.current=vt
+    }catch(e){console.warn('[LiveKit] échec republication adaptative caméra:',e)}
   }
 
   async function connectLiveKit(aId:number) {
@@ -849,14 +1403,69 @@ export default function ExamPage() {
 
   async function captureSnapshot(eventType:string,aId:number,faceDetected=true,facesCount=1,confidenceScore:number|null=null,minCooldown=30_000) {
     if(sessionEndedRef.current) return
+    // Connexion faible : espacer davantage les captures (elles concurrencent
+    // la bande passante nécessaire à l'enregistrement des réponses).
+    if(networkQualityRef.current==='poor') minCooldown*=2
     const now=Date.now(); if(now-lastSnapRef.current<minCooldown) return
     const vid=videoRef.current; if(!vid||vid.readyState<2||vid.videoWidth===0) return
     try {
       lastSnapRef.current=now
       const c=document.createElement('canvas'); c.width=320; c.height=240
-      c.getContext('2d')!.drawImage(vid,0,0,320,240)
-      await api.post(`/api/exam_attempts/${aId}/camera_snapshot`,{event_type:eventType,image_data:c.toDataURL('image/jpeg',0.55),face_detected:faceDetected,faces_count:facesCount,confidence_score:confidenceScore})
+      const ctx=c.getContext('2d')!
+      ctx.drawImage(vid,0,0,320,240)
+      // Luminosité moyenne (0-255), échantillonnée sur l'image capturée —
+      // signale à l'IA/au surveillant une caméra/éclairage insuffisant
+      // (colonne frame_analysis déjà présente en base mais jamais alimentée
+      // jusqu'ici).
+      const brightness = sampleBrightness(vid)
+      if(brightness!==null && (brightness<BRIGHTNESS_LOW||brightness>BRIGHTNESS_HIGH) && now-lastLightWarnRef.current>60_000) {
+        lastLightWarnRef.current=now
+        warning(brightness<BRIGHTNESS_LOW ? "Éclairage insuffisant détecté — rapprochez-vous d'une source de lumière." : 'Éclairage trop fort détecté — évitez un contre-jour direct.')
+      }
+      const frameAnalysis = brightness!==null ? JSON.stringify({brightness,width:vid.videoWidth,height:vid.videoHeight}) : null
+      await api.post(`/api/exam_attempts/${aId}/camera_snapshot`,{event_type:eventType,image_data:c.toDataURL('image/jpeg',0.55),face_detected:faceDetected,faces_count:facesCount,confidence_score:confidenceScore,frame_analysis:frameAnalysis})
     } catch {}
+  }
+
+  /* Phase 7 — contrôle de vivacité : une photo/vidéo tenue devant la caméra
+     ne peut pas cligner des yeux sur commande. Signal fort (journalisé,
+     alimente le score de risque) plutôt que blocage strict de l'examen —
+     un faux négatif (clignement manqué pour une vraie personne : éclairage,
+     vitesse) ne doit pas empêcher un étudiant légitime de composer. */
+  async function runLivenessCheck(aId:number): Promise<boolean> {
+    if (!isProctoringVisionReady()) return true
+    const vid = videoRef.current; if (!vid) return true
+    setLivenessStatus('waiting_blink')
+    // La concentration sur un écran réduit documentairement le rythme de
+    // clignement (parfois 1 toutes les 8-10s) — une fenêtre unique de 6s
+    // pénalisait des étudiants légitimes qui n'avaient simplement pas encore
+    // cligné. Fenêtre élargie à 8s + une seconde tentative avant de conclure
+    // à un échec, plutôt qu'un seul essai sec.
+    async function attempt(windowMs:number): Promise<boolean> {
+      const deadline = Date.now() + windowMs
+      let sawOpenEyes = false
+      while (Date.now() < deadline) {
+        const sig = analyzeFace(vid!, Date.now())
+        if (sig && sig.faceCount === 1) {
+          const blink = Math.max(sig.blinkLeft ?? 0, sig.blinkRight ?? 0)
+          if (blink < 0.3) sawOpenEyes = true
+          if (sawOpenEyes && blink > 0.6) return true
+        }
+        await new Promise(r => setTimeout(r, 300))
+      }
+      return false
+    }
+    let sawBlink = await attempt(8000)
+    if (!sawBlink) {
+      await new Promise(r => setTimeout(r, 1000))
+      sawBlink = await attempt(8000)
+    }
+    setLivenessStatus('ok')
+    if (!sawBlink) {
+      logActivity(aId,'liveness_check_failed','Aucun clignement détecté lors de la capture de référence (2 tentatives)').catch(()=>{})
+      logProctoring(aId,'liveness_check_failed','Aucun clignement détecté').catch(()=>{})
+    }
+    return sawBlink
   }
 
   function initFaceDetection(aId:number) {
@@ -874,13 +1483,32 @@ export default function ExamPage() {
       refCapturing=true; refDescRef.current=null; const captured:Float32Array[]=[]
       setFaceStatus('warn')
       const opts=new fa.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.55})
+      // Échantillons regard/tête pendant que l'étudiant regarde déjà la
+      // caméra pour la photo — sert d'étalonnage individuel (voir gazeBaselineRef).
+      const gazeSamples:{x:number|null;y:number|null;yaw:number|null}[]=[]
       for(let i=0;i<3;i++){
         if(i>0) await new Promise(r=>setTimeout(r,1500))
         try{
           const det=await fa.detectSingleFace(vid,opts).withFaceLandmarks().withFaceDescriptor()
           if(det){captured.push(det.descriptor)}
           else{refCapturing=false;setTimeout(captureReference,4000);return}
+          if(isProctoringVisionReady()){
+            const sig=analyzeFace(vid,Date.now())
+            if(sig&&sig.faceCount===1) gazeSamples.push({x:sig.gazeX,y:sig.gazeY,yaw:sig.headYaw})
+          }
         }catch{refCapturing=false;setTimeout(captureReference,4000);return}
+      }
+      runLivenessCheck(attemptRef.current||aId).catch(()=>{})
+      {
+        const xs=gazeSamples.map(s=>s.x).filter((v):v is number=>v!==null)
+        const ys=gazeSamples.map(s=>s.y).filter((v):v is number=>v!==null)
+        const yaws=gazeSamples.map(s=>s.yaw).filter((v):v is number=>v!==null)
+        const mean=(a:number[])=>a.reduce((s,v)=>s+v,0)/a.length
+        const spread=(a:number[],m:number)=>Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/a.length)
+        if(xs.length>=2&&ys.length>=2&&yaws.length>=2){
+          const mx=mean(xs), my=mean(ys), myaw=mean(yaws)
+          gazeBaselineRef.current={x:mx,y:my,spreadX:spread(xs,mx),spreadY:spread(ys,my),yaw:myaw,spreadYaw:spread(yaws,myaw)}
+        }
       }
       if(captured.length===3){
         const size=captured[0].length; const avg=new Float32Array(size)
@@ -915,10 +1543,22 @@ export default function ExamPage() {
             setFaceStatus('bad')
             if(now-lastFaceAlertRef.current.no_face>ALERT_COOLDOWN){
               lastFaceAlertRef.current.no_face=now
-              warning('Aucun visage détecté — repositionnez-vous face à la caméra')
-              logActivity(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
-              logProctoring(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
-              captureSnapshot('no_face_detected',curAId,false,0,null,5_000)
+              // Retour DFIP — une luminosité insuffisante/excessive rend la
+              // détection faciale peu fiable ; dans ce cas on ne pénalise pas
+              // l'étudiant comme une vraie absence (event à risque nul,
+              // purement informatif), on l'invite plutôt à corriger l'éclairage.
+              const brightness = sampleBrightness(vid)
+              const poorLight = brightness!==null && (brightness<BRIGHTNESS_LOW||brightness>BRIGHTNESS_HIGH)
+              if(poorLight){
+                warning("Éclairage insuffisant — l'IA ne peut pas vérifier votre présence de façon fiable, améliorez la luminosité")
+                logActivity(curAId,'no_face_low_light',`Absent ${consNoFaceRef.current} vérifications consécutives (luminosité=${brightness})`).catch(()=>{})
+                logProctoring(curAId,'no_face_low_light',`Absent ${consNoFaceRef.current} vérifications consécutives (luminosité=${brightness})`).catch(()=>{})
+              } else {
+                warning('Aucun visage détecté — repositionnez-vous face à la caméra')
+                logActivity(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
+                logProctoring(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
+              }
+              captureSnapshot(poorLight?'no_face_low_light':'no_face_detected',curAId,false,0,null,5_000)
             }
           } else setFaceStatus('warn')
         } else if(count>1){
@@ -962,9 +1602,88 @@ export default function ExamPage() {
           } else { setFaceStatus('ok'); consGood++ }
         }
       }catch{}
+      visionEnrichedTick(curAId, now)
+    }
+
+    // Phases 3+4+5 — regard, orientation de la tête, parole, objets suspects
+    // (MediaPipe, en complément de face-api.js ci-dessus qui reste
+    // responsable du comptage/de la reconnaissance faciale). Seuils fixés à
+    // des valeurs raisonnables mais non calibrées en conditions réelles —
+    // aucune caméra/visage disponible pour un test visuel en dehors du
+    // navigateur de l'étudiant ; à ajuster après un premier retour d'usage.
+    function visionEnrichedTick(curAId:number, now:number) {
+      if (!isProctoringVisionReady()) return
+      const vid=videoRef.current; if(!vid||vid.readyState<2) return
+      const COOLDOWN=30_000
+      // Seuil élargi sur le regard/la tête + davantage de vérifications
+      // consécutives exigées (vs CONSEC_ALERT=3 pour le reste) : les
+      // reflets sur des verres de lunettes provoquent des sauts brefs de la
+      // position mesurée de l'iris, qu'un seuil serré confondrait avec un
+      // détournement du regard. Un vrai détournement reste large et soutenu,
+      // donc cette marge ne réduit pas la détection réelle.
+      const CONSEC_ALERT_GAZE = 4
+
+      const sig = analyzeFace(vid, now)
+      if (sig && sig.faceCount === 1) {
+        const baseline = gazeBaselineRef.current
+        const gazeAway = baseline
+          ? (sig.gazeX!==null && Math.abs(sig.gazeX-baseline.x)>Math.max(0.28, baseline.spreadX*3))
+            || (sig.gazeY!==null && Math.abs(sig.gazeY-baseline.y)>Math.max(0.24, baseline.spreadY*3))
+          : (sig.gazeX!==null && (sig.gazeX<0.20||sig.gazeX>0.80)) || (sig.gazeY!==null && (sig.gazeY<0.15||sig.gazeY>0.85))
+        consGazeAwayRef.current = gazeAway ? consGazeAwayRef.current+1 : 0
+        if (consGazeAwayRef.current>=CONSEC_ALERT_GAZE && now-(lastVisionAlertRef.current.gaze||0)>COOLDOWN) {
+          lastVisionAlertRef.current.gaze=now
+          warning('Regard détourné de l\'écran de façon prolongée')
+          logActivity(curAId,'gaze_away',`Regard détourné (${consGazeAwayRef.current} vérifications consécutives)`).catch(()=>{})
+          logProctoring(curAId,'gaze_away','Regard détourné de façon prolongée').catch(()=>{})
+        }
+
+        const headTurned = baseline
+          ? sig.headYaw!==null && Math.abs(sig.headYaw-baseline.yaw)>Math.max(0.35, baseline.spreadYaw*3)
+          : sig.headYaw!==null && Math.abs(sig.headYaw)>0.6
+        consHeadTurnRef.current = headTurned ? consHeadTurnRef.current+1 : 0
+        if (consHeadTurnRef.current>=CONSEC_ALERT_GAZE && now-(lastVisionAlertRef.current.head||0)>COOLDOWN) {
+          lastVisionAlertRef.current.head=now
+          warning('Tête tournée hors de l\'écran de façon prolongée')
+          logActivity(curAId,'head_turned',`Tête tournée (yaw=${sig.headYaw?.toFixed(2)})`).catch(()=>{})
+          logProctoring(curAId,'head_turned','Tête tournée de façon prolongée').catch(()=>{})
+        }
+
+        const talking = sig.mouthOpen!==null && sig.mouthOpen>0.4
+        consMouthRef.current = talking ? consMouthRef.current+1 : 0
+        if (consMouthRef.current>=CONSEC_ALERT && now-(lastVisionAlertRef.current.mouth||0)>COOLDOWN) {
+          lastVisionAlertRef.current.mouth=now
+          logActivity(curAId,'talking_detected','Bouche ouverte de façon prolongée — parole probable').catch(()=>{})
+          logProctoring(curAId,'talking_detected','Parole probable détectée').catch(()=>{})
+        }
+      } else {
+        consGazeAwayRef.current=0; consHeadTurnRef.current=0; consMouthRef.current=0
+      }
+
+      // Détection d'objets : un tick sur deux (~10s) pour limiter le coût CPU.
+      objectTickCountRef.current++
+      if (objectTickCountRef.current%2===0) {
+        const obj = analyzeObjects(vid, now)
+        const what = obj?.phoneDetected?'téléphone':obj?.bookDetected?'livre/document':obj?.otherScreenDetected?'écran supplémentaire':null
+        if (what && what===consObjectRef.current.what) {
+          consObjectRef.current.count++
+        } else {
+          consObjectRef.current = { what, count: what ? 1 : 0 }
+        }
+        if (what && consObjectRef.current.count>=2 && now-(lastVisionAlertRef.current.object||0)>COOLDOWN) {
+          lastVisionAlertRef.current.object=now
+          warning(`Objet suspect détecté : ${what}`)
+          logActivity(curAId,'suspect_object_detected',`Objets détectés : ${obj!.labels.join(', ')}`).catch(()=>{})
+          logProctoring(curAId,'suspect_object_detected',`Objets détectés : ${obj!.labels.join(', ')}`).catch(()=>{})
+          captureSnapshot('suspect_object_detected',curAId,true,1,null,5_000)
+        }
+      }
     }
 
     function loadAndStart() {
+      // Généralement déjà chargé pendant le scan environnement (Phase 1) —
+      // appel idempotent ici en filet de sécurité si ce n'est pas le cas.
+      initProctoringVision().catch(()=>{})
       const fa=(window as any).faceapi
       if(!fa){setTimeout(loadAndStart,500);return}
       fa.nets.tinyFaceDetector.loadFromUri(FACEAPI_MODEL_URL)
@@ -979,13 +1698,21 @@ export default function ExamPage() {
         .catch(()=>{ setFaceStatus('ok') }) // dégradé: pas de modèles → indicateur OK simple
     }
 
-    // Charger face-api.js si pas encore chargé
+    // Charger face-api.js si pas encore chargé — hébergé localement en
+    // priorité (l'examen ne doit pas dépendre d'un CDN externe), CDN en
+    // secours automatique si le fichier local est absent/inaccessible.
     if((window as any).faceapi){
       loadAndStart()
     } else {
       const s=document.createElement('script')
-      s.src='https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js'
-      s.crossOrigin='anonymous'; s.onload=loadAndStart; s.onerror=()=>setFaceStatus('ok')
+      s.src='/vendor/face-api.js'
+      s.onload=loadAndStart
+      s.onerror=()=>{
+        const cdn=document.createElement('script')
+        cdn.src='https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js'
+        cdn.crossOrigin='anonymous'; cdn.onload=loadAndStart; cdn.onerror=()=>setFaceStatus('ok')
+        document.head.appendChild(cdn)
+      }
       document.head.appendChild(s)
     }
   }
@@ -1004,28 +1731,64 @@ export default function ExamPage() {
       await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answersRef.current)})
       setLastSaved(new Date())
       saveFailedRef.current=false
+      saveBackoffRef.current=0
+      if(saveRetryTimerRef.current){clearTimeout(saveRetryTimerRef.current);saveRetryTimerRef.current=null}
     }catch{
       // n'alerter qu'une fois par série d'échecs (auto-save toutes les 30s) —
-      // éviter de spammer l'étudiant si la coupure réseau dure plusieurs minutes
-      if(!saveFailedRef.current){saveFailedRef.current=true;warning('Sauvegarde automatique impossible — vérifiez votre connexion')}
+      // éviter de spammer l'étudiant si la coupure réseau dure plusieurs minutes.
+      // Les réponses restent sécurisées localement (voir localStorage
+      // cei_exam_draft_*) pendant que ces tentatives échouent.
+      if(!saveFailedRef.current){saveFailedRef.current=true;warning('Sauvegarde automatique impossible — vos réponses restent enregistrées sur cet appareil, nouvelle tentative en cours…')}
+      // Réessaye plus vite qu'attendre le prochain cycle de 30s (5s, 10s, 20s, plafonné) —
+      // une coupure brève doit se rattraper vite, pas après un cycle complet.
+      if(saveRetryTimerRef.current) clearTimeout(saveRetryTimerRef.current)
+      const delay=Math.min(5000*Math.pow(2,saveBackoffRef.current),20000)
+      saveBackoffRef.current++
+      saveRetryTimerRef.current=setTimeout(()=>{if(!sessionEndedRef.current)doAutoSave(aId)},delay)
     }
   }
 
-  const handleSubmit = useCallback(async(auto=false,signatureData?:string)=>{
+  const handleSubmit = useCallback(async(auto=false)=>{
     const aId=attemptRef.current; if(!aId||submitting||sessionEndedRef.current) return
     sessionEndedRef.current=true; setSubmitting(true)
     ;[timerRef,saveRef,msgPollRef,snapshotRef,extraPollRef].forEach(r=>{if(r.current)clearInterval(r.current)})
+    if(saveRetryTimerRef.current){clearTimeout(saveRetryTimerRef.current);saveRetryTimerRef.current=null}
+    try { (navigator as any).keyboard?.unlock?.() } catch {}
     document.exitFullscreen?.().catch(()=>{})
     camStream.current?.getTracks().forEach(t=>t.stop())
     screenStream.current?.getTracks().forEach(t=>t.stop())
     if(lkRoomRef.current){try{lkRoomRef.current.disconnect()}catch{}}
-    try {
-      await api.post(`/api/exam_attempts/${aId}/submit`,{answers:JSON.stringify(answersRef.current),...(signatureData?{signature_data:signatureData}:{})})
+
+    async function trySubmit(): Promise<boolean> {
+      try {
+        await api.post(`/api/exam_attempts/${aId}/submit`,{answers:JSON.stringify(answersRef.current)})
+        return true
+      } catch {
+        try{ await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answersRef.current)}); return true }
+        catch { return false }
+      }
+    }
+
+    const ok = await trySubmit()
+    if (ok) {
+      try{ localStorage.removeItem(`cei_exam_draft_${aId}`) }catch{}
       if(!auto) success('Copie soumise avec succès !')
       setPhase('submitted')
-    } catch {
-      try{await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answersRef.current)});setPhase('submitted')}
-      catch{toastErr('Erreur lors de la soumission');setSubmitting(false);sessionEndedRef.current=false}
+    } else {
+      // Ni soumission ni sauvegarde n'ont abouti — connexion probablement
+      // coupée. Les réponses restent en sécurité localement ; on continue de
+      // réessayer automatiquement en arrière-plan plutôt que de laisser
+      // l'étudiant bloqué avec juste un message d'erreur.
+      warning('Connexion indisponible — vos réponses restent sauvegardées sur cet appareil, nouvelle tentative automatique en cours…')
+      const retry = async () => {
+        if (await trySubmit()) {
+          try{ localStorage.removeItem(`cei_exam_draft_${aId}`) }catch{}
+          setPhase('submitted')
+          return
+        }
+        submitRetryTimerRef.current = setTimeout(retry, 8000)
+      }
+      submitRetryTimerRef.current = setTimeout(retry, 8000)
     }
   },[submitting]) // eslint-disable-line
 
@@ -1084,6 +1847,45 @@ export default function ExamPage() {
   )
 
   /* ── INSTRUCTIONS + ATTESTATION (thème clair, identique à l'originale) ── */
+  if(phase==='instructions'&&exam&&codeRequired) return(
+    <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+      <div style={{background:'white',borderRadius:16,boxShadow:'0 8px 32px rgba(0,0,0,.12)',maxWidth:440,width:'100%',padding:'28px 32px'}}>
+        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:18}}>
+          <div style={{width:52,height:52,background:'rgba(245,158,11,.12)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,color:'#d97706',flexShrink:0}}>
+            <i className="fas fa-key"/>
+          </div>
+          <div>
+            <h2 style={{margin:'0 0 3px',fontSize:18,fontWeight:700,color:'#1e293b'}}>Reprise de l'examen</h2>
+            <p style={{margin:0,color:'#64748b',fontSize:13}}>Vous avez quitté l'examen — voici votre code personnel pour continuer</p>
+          </div>
+        </div>
+        <div style={{background:'#fff8ed',border:'1px solid #f59e0b',borderRadius:10,padding:'14px 16px',marginBottom:18,fontSize:13,color:'#78350f',lineHeight:1.6}}>
+          Ce code vous est propre — copiez-le et cliquez sur « Reprendre ». Votre surveillant sera automatiquement informé de votre retour.
+        </div>
+        <label style={{fontSize:12,fontWeight:700,color:'#334155',display:'block',marginBottom:8}}>Votre code</label>
+        <div style={{display:'flex',gap:8,marginBottom:18}}>
+          <input value={accessCode} onChange={e=>setAccessCode(e.target.value.replace(/\D/g,'').slice(0,6))}
+            placeholder="000000" maxLength={6} inputMode="numeric" readOnly
+            style={{flex:1,padding:'12px 14px',fontSize:20,letterSpacing:6,textAlign:'center',border:'2px solid #e2e8f0',borderRadius:8,fontWeight:700,color:'#1e293b',background:'#f8fafc'}}
+            onKeyDown={e=>{ if(e.key==='Enter') submitAccessCode() }} />
+          <button type="button" onClick={()=>{ if(accessCode) navigator.clipboard?.writeText(accessCode) }} title="Copier"
+            style={{width:44,border:'2px solid #e2e8f0',borderRadius:8,background:'white',color:'#475569',cursor:'pointer'}}>
+            <i className="fas fa-copy"/>
+          </button>
+        </div>
+        <div style={{display:'flex',gap:10}}>
+          <button onClick={()=>router.push('/dashboard/student')} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:14}}>
+            <i className="fas fa-arrow-left" style={{marginRight:6}}/>Retour au tableau de bord
+          </button>
+          <button onClick={submitAccessCode} disabled={submittingCode || accessCode.length!==6}
+            style={{flex:1,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:(submittingCode||accessCode.length!==6)?'not-allowed':'pointer',opacity:(submittingCode||accessCode.length!==6)?.6:1,fontSize:14}}>
+            {submittingCode ? <><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Vérification…</> : 'Reprendre'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
   if(phase==='instructions'&&exam) return(
     <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
       <div style={{background:'white',borderRadius:16,boxShadow:'0 8px 32px rgba(0,0,0,.12)',maxWidth:580,width:'100%',padding:'28px 32px'}}>
@@ -1095,7 +1897,7 @@ export default function ExamPage() {
           </div>
           <div>
             <h2 style={{margin:'0 0 3px',fontSize:18,fontWeight:700,color:'#1e293b'}}>Examen Surveillé — Attestation d'honneur</h2>
-            <p style={{margin:0,color:'#64748b',fontSize:13}}>Lisez les conditions et signez avant de démarrer</p>
+            <p style={{margin:0,color:'#64748b',fontSize:13}}>Lisez les conditions avant de démarrer</p>
           </div>
         </div>
 
@@ -1128,23 +1930,6 @@ export default function ExamPage() {
           </p>
         </div>
 
-        {/* Zone de signature */}
-        <div style={{marginBottom:18}}>
-          <label style={{fontSize:12,fontWeight:700,color:'#334155',display:'block',marginBottom:8}}>
-            <i className="fas fa-pen-nib" style={{color:'#2563eb',marginRight:5}}/>
-            Signez ci-dessous pour confirmer votre engagement <span style={{color:'#ef4444'}}>*</span>
-          </label>
-          <canvas ref={canvasRef}
-            style={{border:'2px solid #e2e8f0',borderRadius:8,display:'block',cursor:'crosshair',background:'#fafafa',touchAction:'none',width:'100%',height:130}}
-            onMouseDown={onSigStart as any} onMouseMove={onSigMove as any} onMouseUp={onSigEnd} onMouseLeave={onSigEnd}
-            onTouchStart={onSigStart as any} onTouchMove={onSigMove as any} onTouchEnd={onSigEnd}/>
-          <div style={{display:'flex',justifyContent:'flex-end',marginTop:6}}>
-            <button onClick={clearSig} style={{background:'none',border:'none',color:'#94a3b8',fontSize:12,cursor:'pointer'}}>
-              <i className="fas fa-eraser"/> Effacer
-            </button>
-          </div>
-        </div>
-
         {/* Boutons */}
         <div style={{display:'flex',gap:10}}>
           <button onClick={()=>router.back()} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:14}}>
@@ -1154,7 +1939,7 @@ export default function ExamPage() {
             style={{flex:2,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:starting?'not-allowed':'pointer',opacity:starting?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:14}}>
             {starting
               ?<><i className="fas fa-spinner fa-spin"/>Démarrage en cours…</>
-              :<><i className="fas fa-pen-nib"/>Signer et démarrer l'examen</>}
+              :<><i className="fas fa-check"/>J'accepte et je démarre l'examen</>}
           </button>
         </div>
       </div>
@@ -1195,6 +1980,77 @@ export default function ExamPage() {
           {permError&&<div style={{marginTop:16,background:'rgba(239,68,68,.12)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:'12px 14px',fontSize:13,color:'#fca5a5',lineHeight:1.6}}>
             <i className="fas fa-exclamation-triangle" style={{marginRight:6}}/>{permError}
           </div>}
+        </div>
+      </div>
+    )
+  }
+
+  /* ── Phase 1 : scan environnement 360° ────────────────────────────────── */
+  if(phase==='env_scan') {
+    return(
+      <div style={{minHeight:'100vh',background:'#0f172a',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+        <div style={{background:'#1e293b',border:'1px solid #334155',borderRadius:20,padding:'32px 32px',maxWidth:520,width:'100%',color:'white'}}>
+          <h2 style={{fontSize:20,fontWeight:800,margin:'0 0 8px',display:'flex',alignItems:'center',gap:10}}>
+            <i className="fas fa-house-signal" style={{color:'#3b82f6'}}/> Vérification de votre environnement
+          </h2>
+          <p style={{fontSize:13,color:'#94a3b8',lineHeight:1.6,marginBottom:20}}>
+            Tournez lentement votre caméra (ou votre ordinateur) pour montrer l'ensemble de la pièce autour de vous,
+            afin de confirmer qu'aucune autre personne n'est présente.
+          </p>
+          <div style={{borderRadius:14,overflow:'hidden',background:'#000',position:'relative',aspectRatio:'4/3',marginBottom:18}}>
+            <video ref={el=>{scanVideoRef.current=el;if(el&&camStream.current&&el.srcObject!==camStream.current)el.srcObject=camStream.current}}
+              autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)'}}/>
+          </div>
+
+          {envScanStatus==='loading_ai' && (
+            <div style={{display:'flex',alignItems:'center',gap:10,color:'#94a3b8',fontSize:13,marginBottom:8}}>
+              <i className="fas fa-spinner fa-spin"/> Chargement du moteur de vérification…
+            </div>
+          )}
+
+          {envScanStatus==='scanning' && (
+            <>
+              <div style={{height:8,borderRadius:4,background:'#334155',overflow:'hidden',marginBottom:8}}>
+                <div style={{height:'100%',width:`${envScanProgress}%`,background:'#3b82f6',transition:'width .3s'}}/>
+              </div>
+              <div style={{fontSize:13,color:'#94a3b8'}}>Analyse en cours… continuez à balayer la pièce</div>
+            </>
+          )}
+
+          {envScanStatus==='blocked' && (
+            <div style={{background:'rgba(239,68,68,.12)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:'14px 16px',marginBottom:16}}>
+              <div style={{fontSize:14,fontWeight:700,color:'#fca5a5',marginBottom:6}}>
+                <i className="fas fa-triangle-exclamation" style={{marginRight:6}}/>
+                {envScanMaxPeople} personnes détectées dans la pièce
+              </div>
+              <p style={{fontSize:13,color:'#fca5a5',margin:0,lineHeight:1.5}}>
+                Assurez-vous d'être seul(e) dans la pièce avant de commencer l'examen, puis relancez la vérification.
+              </p>
+            </div>
+          )}
+
+          {envScanStatus==='degraded' && (
+            <div style={{background:'rgba(245,158,11,.12)',border:'1px solid rgba(245,158,11,.3)',borderRadius:10,padding:'14px 16px',marginBottom:16}}>
+              <p style={{fontSize:13,color:'#fcd34d',margin:0,lineHeight:1.5}}>
+                <i className="fas fa-info-circle" style={{marginRight:6}}/>
+                Vérification automatique indisponible sur cet appareil/navigateur — vous pouvez continuer, le surveillant en a été informé.
+              </p>
+            </div>
+          )}
+
+          {envScanStatus==='ok' && (
+            <div style={{display:'flex',alignItems:'center',gap:10,color:'#10b981',fontSize:14,fontWeight:700,marginBottom:8}}>
+              <i className="fas fa-check-circle"/> Vérifié — cliquez pour démarrer l'examen en plein écran
+            </div>
+          )}
+
+          {(envScanStatus==='ok' || envScanStatus==='blocked' || envScanStatus==='degraded') && (
+            <button onClick={envScanStatus==='blocked' ? runEnvironmentScan : enterExam}
+              style={{width:'100%',padding:14,background:'#2563eb',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+              <i className={`fas ${envScanStatus==='blocked'?'fa-rotate':'fa-arrow-right'}`}/>
+              {envScanStatus==='blocked' ? 'Relancer la vérification' : "Continuer vers l'examen"}
+            </button>
+          )}
         </div>
       </div>
     )
@@ -1270,6 +2126,50 @@ export default function ExamPage() {
     return(
       <div className="exam-shell" style={{display:'flex',height:'100vh',width:'100%',overflow:'hidden',fontFamily:"-apple-system,'Segoe UI',Roboto,sans-serif"}}>
         <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes agP{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}50%{box-shadow:0 0 0 5px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}`}</style>
+
+        {/* Blocage actif (et non plus seulement un log passif) tant que
+            l'étudiant n'a pas explicitement confirmé son retour — le clic
+            sert aussi de geste utilisateur valide pour redemander le plein
+            écran (requestFullscreen échoue silencieusement hors interaction
+            directe). */}
+        {focusLost && (
+          <div style={{position:'fixed',inset:0,zIndex:10000,background:'rgba(15,23,42,.94)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,color:'#fff',textAlign:'center',padding:24}}>
+            <i className="fas fa-triangle-exclamation" style={{fontSize:44,color:'#f59e0b'}} />
+            <h2 style={{fontSize:20,fontWeight:700,margin:0}}>Vous avez quitté l&apos;examen</h2>
+            <p style={{maxWidth:420,color:'#cbd5e1',margin:0,fontSize:14,lineHeight:1.5}}>
+              Un changement d&apos;onglet, une perte de focus ou une sortie du plein écran a été détectée et enregistrée.
+              Revenez à l&apos;examen pour continuer à composer.
+            </p>
+            <button onClick={() => {
+              setFocusLost(false)
+              fsPollGuardRef.current = false; focusPollGuardRef.current = false
+              document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
+            }}
+              style={{padding:'12px 30px',borderRadius:8,border:'none',background:'#3b82f6',color:'#fff',fontWeight:600,cursor:'pointer',fontSize:15}}>
+              Revenir à l&apos;examen
+            </button>
+          </div>
+        )}
+
+        {/* Bannière non bloquante — une coupure réseau n'est pas suspecte,
+            l'étudiant continue de composer (réponses en mémoire locale) et
+            la sauvegarde reprend automatiquement au retour de connexion. */}
+        {networkOffline && (
+          <div style={{position:'fixed',top:0,left:0,right:0,zIndex:9998,background:'#f59e0b',color:'#fff',padding:'8px 16px',textAlign:'center',fontSize:13,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            <i className="fas fa-wifi" style={{opacity:.85}} />
+            Connexion Internet perdue — vos réponses restent conservées, la sauvegarde reprendra automatiquement dès le retour de la connexion.
+          </div>
+        )}
+        {/* Connexion faible (mais pas coupée) : informe sans inquiéter — la
+            qualité vidéo de surveillance est réduite automatiquement pour
+            préserver la bande passante nécessaire à l'enregistrement des
+            réponses, qui reste toujours prioritaire. */}
+        {!networkOffline && networkQuality==='poor' && (
+          <div style={{position:'fixed',top:0,left:0,right:0,zIndex:9998,background:'#fef3c7',color:'#92400e',padding:'6px 16px',textAlign:'center',fontSize:12,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            <i className="fas fa-signal" style={{opacity:.85}} />
+            Connexion lente détectée — qualité vidéo réduite automatiquement pour préserver l'enregistrement de vos réponses.
+          </div>
+        )}
 
         {/* ═══ PANNEAU SURVEILLANCE ═══ */}
         <div className="exam-proctor-panel" style={{width:280,minWidth:280,background:'white',display:'flex',flexDirection:'column',borderRight:'1px solid #e2e8f0',boxShadow:'2px 0 8px rgba(0,0,0,.08)',overflowY:'auto',zIndex:100}}>
@@ -1371,18 +2271,26 @@ export default function ExamPage() {
 
         {/* ═══ PANNEAU EXAMEN ═══ */}
         <div className="exam-main-content" style={{flex:1,background:'#f8fafc',overflowY:'auto',display:'flex',flexDirection:'column'}}>
-          {/* Header */}
-          <div style={{background:'white',padding:'16px 24px',borderBottom:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0,boxShadow:'0 2px 4px rgba(0,0,0,.04)'}}>
+          {/* Header — fixe en haut de la zone de contenu pendant le défilement
+              des questions (position:sticky sur son conteneur scrollable
+              .exam-main-content, pas la fenêtre entière). */}
+          <div style={{position:'sticky',top:0,zIndex:50,background:'white',padding:'16px 24px',borderBottom:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0,boxShadow:'0 2px 4px rgba(0,0,0,.04)'}}>
             <div>
               <h1 style={{fontSize:18,fontWeight:700,color:'#0f172a',margin:0}}>{exam.title}</h1>
               <p style={{fontSize:12,color:'#64748b',margin:'2px 0 0'}}>Durée : {exam.duration_minutes} min · Commencé à {attempt?.started_at?new Date(attempt.started_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'—'}</p>
             </div>
             <div style={{display:'flex',alignItems:'center',gap:12}}>
               {lastSaved&&<span style={{fontSize:11,color:'#10b981'}}><i className="fas fa-cloud-arrow-up" style={{marginRight:4}}/>Sauvegardé {lastSaved.toLocaleTimeString('fr-FR')}</span>}
+              {exam.enable_calculator&&(
+                <button onClick={()=>setShowCalculator(s=>!s)} title="Calculatrice"
+                  style={{padding:'9px 14px',background:showCalculator?'#1e293b':'#f1f5f9',color:showCalculator?'white':'#334155',border:'none',borderRadius:8,fontWeight:600,fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',gap:7}}>
+                  <i className="fas fa-calculator"/> Calculatrice
+                </button>
+              )}
               <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 16px',background:timerColor,color:'white',borderRadius:8,fontSize:20,fontWeight:700,fontVariantNumeric:'tabular-nums'}}>
                 <i className="fas fa-clock" style={{fontSize:16}}/> {fmtTimer(timeLeft)}
               </div>
-              <button onClick={openFinalSigModal} disabled={submitting}
+              <button onClick={()=>setShowReview(true)} disabled={submitting}
                 style={{padding:'10px 20px',background:'#10b981',color:'white',border:'none',borderRadius:8,fontWeight:700,fontSize:14,cursor:submitting?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:7}}>
                 {submitting?<><i className="fas fa-spinner fa-spin"/>Soumission…</>:<><i className="fas fa-paper-plane"/>Soumettre</>}
               </button>
@@ -1421,6 +2329,12 @@ export default function ExamPage() {
                   {p1Blocks.length>0&&!showPart2&&(
                     <div>
                       <SecHead icon="fa-check-square" color="#3b82f6" bg="#eff6ff" tc="#1e40af" title="Partie 1 — Questions à Choix Multiples" sub={`${p1Blocks.length} question${p1Blocks.length>1?'s':''}${isFinite(perPage)?` • ${perPage} par page`:''}`}/>
+                      {pageTimeLeft!==null&&(
+                        <div style={{display:'flex',alignItems:'center',gap:8,background:pageTimeLeft<=10?'#fef2f2':'#fffbeb',border:`1px solid ${pageTimeLeft<=10?'#fca5a5':'#fde68a'}`,borderRadius:8,padding:'8px 14px',marginBottom:12,fontSize:13,fontWeight:700,color:pageTimeLeft<=10?'#b91c1c':'#92400e'}}>
+                          <i className="fas fa-hourglass-half" style={{animation:pageTimeLeft<=10?'pulse 1s infinite':'none'}}/>
+                          Passage automatique à la page suivante dans {fmtTimer(pageTimeLeft)}
+                        </div>
+                      )}
                       {p1Pages.length>1&&(
                         <div style={{background:'#1e293b',borderRadius:12,padding:'12px 16px',marginBottom:16}}>
                           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
@@ -1454,7 +2368,7 @@ export default function ExamPage() {
                           </div>
                         </div>
                       )}
-                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} onAnswer={checkAutoAdvance} mediaMap={mediaMap}/>)}
+                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} onAnswer={checkAutoAdvance} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>)}
                       {p1Pages.length<=1&&p2Blocks.length>0&&(
                         <button onClick={confirmAndLockQcm} style={{marginTop:8,background:'#10b981',border:'none',color:'#fff',borderRadius:8,padding:'10px 18px',cursor:'pointer',fontSize:13,fontWeight:600}}>
                           <i className="fas fa-arrow-right"/> Passer aux questions ouvertes
@@ -1475,7 +2389,7 @@ export default function ExamPage() {
                       </div>
                       {(p2Pages[p2PageIdx]??p2Items).map((b,i)=>{
                         if(b.type==='section') return <div key={i} style={{margin:'18px 0 10px',padding:'10px 16px',background:'#f1f5f9',borderRadius:8,fontWeight:700,fontSize:14,color:'#334155',borderLeft:'4px solid #94a3b8'}}><i className="fas fa-layer-group" style={{color:'#64748b',marginRight:8}}/>{b.title}</div>
-                        return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers} mediaMap={mediaMap}/>
+                        return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>
                       })}
                       {p2Pages.length>1&&(
                         <div style={{display:'flex',alignItems:'center',gap:10,marginTop:16}}>
@@ -1509,7 +2423,7 @@ export default function ExamPage() {
               style={{padding:'10px 20px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',gap:7}}>
               <i className="fas fa-save"/> Sauvegarder brouillon
             </button>
-            <button onClick={openFinalSigModal} disabled={submitting}
+            <button onClick={()=>setShowReview(true)} disabled={submitting}
               style={{padding:'10px 24px',background:'#10b981',color:'white',border:'none',borderRadius:8,fontWeight:700,fontSize:14,cursor:submitting?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:7}}>
               <i className="fas fa-paper-plane"/> Soumettre l'examen
             </button>
@@ -1526,6 +2440,9 @@ export default function ExamPage() {
             <button onClick={()=>setProctorActive(false)} style={{marginLeft:'auto',background:'none',border:'none',color:'rgba(255,255,255,.5)',fontSize:14,cursor:'pointer'}}>✕</button>
           </div>
         </div>
+
+        {/* Calculatrice intégrée (Retour DFIP — évite la calculatrice physique/téléphone) */}
+        {exam.enable_calculator&&showCalculator&&<Calculator onClose={()=>setShowCalculator(false)}/>}
 
         {/* Modal appel privé entrant */}
         {showPrivateCallModal&&(
@@ -1552,36 +2469,43 @@ export default function ExamPage() {
           </div>
         )}
 
-        {/* Modal signature de fin de composition */}
-        {showFinalSig&&(
-          <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
-            <div style={{background:'white',borderRadius:12,overflow:'hidden',maxWidth:460,width:'100%',boxShadow:'0 20px 40px rgba(0,0,0,.3)',borderTop:'4px solid #10b981'}}>
-              <div style={{padding:'22px 26px'}}>
-                <h3 style={{fontSize:16,fontWeight:700,marginBottom:6,color:'#065f46',display:'flex',alignItems:'center',gap:8}}>
-                  <i className="fas fa-file-signature"/> Signature de fin de composition
+        {/* Relecture des réponses — passage obligatoire avant la soumission
+            finale (déclenchée uniquement par le clic sur "Soumettre", jamais
+            accessible autrement) : lecture seule (setAnswers no-op) pour ne
+            pas permettre de modification accidentelle pendant la relecture —
+            "Modifier mes réponses" ramène explicitement à l'examen pour ça. */}
+        {showReview&&(
+          <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
+            <div style={{background:'white',borderRadius:12,overflow:'hidden',maxWidth:760,width:'100%',maxHeight:'88vh',display:'flex',flexDirection:'column',boxShadow:'0 20px 40px rgba(0,0,0,.3)'}}>
+              <div style={{padding:'18px 26px',borderBottom:'1px solid #e2e8f0',flexShrink:0}}>
+                <h3 style={{fontSize:16,fontWeight:700,margin:'0 0 4px',color:'#0f172a',display:'flex',alignItems:'center',gap:8}}>
+                  <i className="fas fa-list-check" style={{color:'#10b981'}}/> Relisez vos réponses avant de soumettre
                 </h3>
-                <p style={{fontSize:12.5,color:'#475569',marginBottom:14,lineHeight:1.6}}>
-                  Signez pour confirmer la remise de votre copie. Cette action est <strong>irréversible</strong>.
+                <p style={{fontSize:12.5,color:'#64748b',margin:0}}>
+                  {structuredQs.length>0
+                    ? `${structAnswered} / ${structuredQs.length} question(s) répondue(s)`
+                    : `${parsedAnswered} / ${allQBlocks.length} question(s) répondue(s)`}
+                  {' '}— vérifiez qu'aucune réponse n'a été oubliée avant de confirmer.
                 </p>
-                <canvas ref={finalSigCanvasRef}
-                  style={{border:'2px solid #e2e8f0',borderRadius:8,display:'block',cursor:'crosshair',background:'#fafafa',touchAction:'none',width:'100%',height:130}}
-                  onMouseDown={onFinalSigStart as any} onMouseMove={onFinalSigMove as any} onMouseUp={onFinalSigEnd} onMouseLeave={onFinalSigEnd}
-                  onTouchStart={onFinalSigStart as any} onTouchMove={onFinalSigMove as any} onTouchEnd={onFinalSigEnd}/>
-                <div style={{display:'flex',justifyContent:'flex-end',marginTop:6,marginBottom:14}}>
-                  <button onClick={clearFinalSig} style={{background:'none',border:'none',color:'#94a3b8',fontSize:12,cursor:'pointer'}}>
-                    <i className="fas fa-eraser"/> Effacer
-                  </button>
-                </div>
-                <div style={{display:'flex',gap:10}}>
-                  <button onClick={()=>setShowFinalSig(false)} disabled={submitting}
-                    style={{flex:1,padding:'10px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:13}}>
-                    <i className="fas fa-times" style={{marginRight:6}}/>Annuler
-                  </button>
-                  <button onClick={confirmFinalSubmit} disabled={submitting}
-                    style={{flex:2,padding:'10px',background:'#10b981',color:'white',border:'none',borderRadius:8,fontWeight:700,cursor:submitting?'not-allowed':'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:7}}>
-                    {submitting?<><i className="fas fa-spinner fa-spin"/>Soumission…</>:<><i className="fas fa-paper-plane"/>Confirmer et soumettre</>}
-                  </button>
-                </div>
+              </div>
+              <div style={{overflowY:'auto',flex:1,padding:'20px 26px',background:'#f8fafc'}}>
+                {structuredQs.length>0 ? (
+                  structuredQs.map((q,i)=><SQ key={q.id} q={q} idx={i} answers={answers} setAnswers={()=>{}}/>)
+                ) : hasParsed ? (
+                  allQBlocks.map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={()=>{}} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>)
+                ) : (
+                  <p style={{color:'#94a3b8',fontSize:13}}>Aucune question détectée.</p>
+                )}
+              </div>
+              <div style={{padding:'16px 26px',borderTop:'1px solid #e2e8f0',display:'flex',justifyContent:'flex-end',gap:10,flexShrink:0}}>
+                <button onClick={()=>setShowReview(false)}
+                  style={{padding:'10px 20px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',gap:7}}>
+                  <i className="fas fa-pen"/> Modifier mes réponses
+                </button>
+                <button onClick={()=>{setShowReview(false);handleSubmit(false)}} disabled={submitting}
+                  style={{padding:'10px 24px',background:'#10b981',color:'white',border:'none',borderRadius:8,fontWeight:700,fontSize:14,cursor:submitting?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:7}}>
+                  {submitting?<><i className="fas fa-spinner fa-spin"/>Soumission…</>:<><i className="fas fa-check"/>Confirmer et soumettre</>}
+                </button>
               </div>
             </div>
           </div>
@@ -1711,7 +2635,7 @@ function SQ({q,idx,answers,setAnswers}:{q:Question;idx:number;answers:Record<str
 }
 
 /* Question parsée (contenu brut) */
-function PQ({block,answers,setAnswers,onAnswer,mediaMap}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:(key:string,blockType:string)=>void;mediaMap?:Record<string,string>}) {
+function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:(key:string,blockType:string)=>void;mediaMap?:Record<string,string>;blockDownload?:boolean}) {
   const isOpen=block.type==='open'||block.type==='subopen'||block.type==='code'
   const key=`pq_${block.num}`
   // Mélange stable (par instance de bloc) des choix de droite de l'appariement,
@@ -1744,11 +2668,16 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap}:{block:ParsedBlock;answ
             const url=mediaMap?.[m.filename]
             if(!url) return null
             return m.type==='image'?(
-              <img key={i} src={url} alt={m.filename} style={{maxWidth:'100%',maxHeight:360,borderRadius:10,border:'1px solid #e2e8f0',objectFit:'contain'}}/>
+              <img key={i} src={url} alt={m.filename} draggable={!blockDownload}
+                onDragStart={blockDownload?(e)=>e.preventDefault():undefined}
+                style={{maxWidth:'100%',maxHeight:360,borderRadius:10,border:'1px solid #e2e8f0',objectFit:'contain'}}/>
             ):m.type==='video'?(
-              <video key={i} src={url} controls style={{width:'100%',maxHeight:400,borderRadius:10,border:'1px solid #e2e8f0',background:'#000'}}/>
+              <video key={i} src={url} controls controlsList={blockDownload?'nodownload noremoteplayback':undefined}
+                disablePictureInPicture={blockDownload} onContextMenu={blockDownload?(e)=>e.preventDefault():undefined}
+                style={{width:'100%',maxHeight:400,borderRadius:10,border:'1px solid #e2e8f0',background:'#000'}}/>
             ):(
-              <audio key={i} src={url} controls style={{width:'100%'}}/>
+              <audio key={i} src={url} controls controlsList={blockDownload?'nodownload noremoteplayback':undefined}
+                onContextMenu={blockDownload?(e)=>e.preventDefault():undefined} style={{width:'100%'}}/>
             )
           })}
         </div>

@@ -5,8 +5,16 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 
 interface Member { id: number; proctor_id: number; proctor_name: string; proctor_email: string; proctor_last_login?: string | null }
-interface Group { id: number; name: string; created_by?: string; created_at?: string; members: Member[]; ec_ids: number[] }
+interface SupervisorLink { id: number; supervisor_id: number; supervisor_name: string; supervisor_email: string }
+interface Group { id: number; name: string; created_by?: string; created_at?: string; members: Member[]; ec_ids: number[]; supervisors: SupervisorLink[]; vigilance_level?: 'A' | 'B' | 'C' }
+
+const VIGILANCE_META: Record<'A' | 'B' | 'C', { label: string; hint: string }> = {
+  A: { label: 'Niveau A — Interaction', hint: 'Actif si le surveillant interagit réellement (souris/clavier) sur un onglet visible et au premier plan.' },
+  B: { label: 'Niveau B — Interaction + suivi', hint: 'Niveau A, et le surveillant doit aussi avoir consulté un flux étudiant récemment.' },
+  C: { label: 'Niveau C — + Présence caméra', hint: 'Niveau B, et une vérification périodique confirme un visage devant la caméra du surveillant (aucune image transmise ni stockée, juste oui/non).' },
+}
 interface Surveillant { id: number; full_name: string; email: string; last_login?: string | null }
+interface Superviseur { id: number; full_name: string; email: string }
 interface EC { id: number; code: string; name: string; ue_code?: string }
 
 function lastSeenLabel(iso?: string | null) {
@@ -23,8 +31,10 @@ export default function ProctorGroupsPage() {
 
   const [groups, setGroups] = useState<Group[]>([])
   const [surveillants, setSurveillants] = useState<Surveillant[]>([])
+  const [superviseurs, setSuperviseurs] = useState<Superviseur[]>([])
   const [ecs, setEcs] = useState<EC[]>([])
   const [loading, setLoading] = useState(true)
+  const [assigningVigilance, setAssigningVigilance] = useState(false)
 
   const [newName, setNewName] = useState('')
   const [creating, setCreating] = useState(false)
@@ -32,6 +42,8 @@ export default function ProctorGroupsPage() {
   const [manageGroup, setManageGroup] = useState<Group | null>(null)
   const [memberSelected, setMemberSelected] = useState<Set<number>>(new Set())
   const [addingMembers, setAddingMembers] = useState(false)
+  const [supervisorSelected, setSupervisorSelected] = useState<Set<number>>(new Set())
+  const [addingSupervisors, setAddingSupervisors] = useState(false)
   const [ecToLink, setEcToLink] = useState('')
   const [linkingEc, setLinkingEc] = useState(false)
 
@@ -46,6 +58,7 @@ export default function ProctorGroupsPage() {
       setGroups(Array.isArray(groupsRes) ? groupsRes : [])
       const userList: any[] = Array.isArray(usersRes) ? usersRes : usersRes.users ?? []
       setSurveillants(userList.filter((u: any) => u.role === 'surveillant'))
+      setSuperviseurs(userList.filter((u: any) => u.role === 'superviseur'))
       setEcs(Array.isArray(ecsRes) ? ecsRes : ecsRes.ecs ?? [])
     } catch { error('Erreur chargement') }
     finally { setLoading(false) }
@@ -75,11 +88,15 @@ export default function ProctorGroupsPage() {
   }
 
   function openManage(g: Group) {
-    setManageGroup(g); setMemberSelected(new Set()); setEcToLink('')
+    setManageGroup(g); setMemberSelected(new Set()); setSupervisorSelected(new Set()); setEcToLink('')
   }
 
   function toggleMemberSel(id: number) {
     setMemberSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
+  function toggleSupervisorSel(id: number) {
+    setSupervisorSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   }
 
   async function addMembers() {
@@ -102,6 +119,40 @@ export default function ProctorGroupsPage() {
       setManageGroup(g => g ? { ...g, members: g.members.filter(x => x.id !== m.id) } : g)
       load()
     } catch (e: any) { error(e.message || 'Erreur retrait') }
+  }
+
+  async function addSupervisors() {
+    if (!manageGroup || supervisorSelected.size === 0) { error('Sélectionnez au moins un superviseur'); return }
+    setAddingSupervisors(true)
+    try {
+      const res = await api.post<{ group: Group }>(`/api/admin/proctor_groups/${manageGroup.id}/supervisors`, { supervisor_ids: [...supervisorSelected] })
+      success(`${supervisorSelected.size} superviseur(s) ajouté(s)`)
+      setManageGroup(res.group)
+      setSupervisorSelected(new Set())
+      load()
+    } catch (e: any) { error(e.message || 'Erreur ajout') }
+    finally { setAddingSupervisors(false) }
+  }
+
+  async function removeSupervisor(s: SupervisorLink) {
+    if (!manageGroup) return
+    try {
+      await api.delete(`/api/admin/proctor_groups/${manageGroup.id}/supervisors/${s.id}`)
+      setManageGroup(g => g ? { ...g, supervisors: g.supervisors.filter(x => x.id !== s.id) } : g)
+      load()
+    } catch (e: any) { error(e.message || 'Erreur retrait') }
+  }
+
+  async function assignVigilance(level: 'A' | 'B' | 'C') {
+    if (!manageGroup) return
+    setAssigningVigilance(true)
+    try {
+      const res = await api.put<Group>(`/api/admin/proctor_groups/${manageGroup.id}`, { vigilance_level: level })
+      setManageGroup(res)
+      success('Niveau de vigilance mis à jour')
+      load()
+    } catch (e: any) { error(e.message || 'Erreur mise à jour') }
+    finally { setAssigningVigilance(false) }
   }
 
   async function linkEc() {
@@ -128,6 +179,7 @@ export default function ProctorGroupsPage() {
 
   const ecName = (id: number) => { const e = ecs.find(x => x.id === id); return e ? `${e.code} — ${e.name}` : `EC #${id}` }
   const availableSurveillants = manageGroup ? surveillants.filter(s => !manageGroup.members.some(m => m.proctor_id === s.id)) : []
+  const availableSuperviseurs = manageGroup ? superviseurs.filter(s => !manageGroup.supervisors.some(x => x.supervisor_id === s.id)) : []
   const availableEcs = manageGroup ? ecs.filter(e => !manageGroup.ec_ids.includes(e.id)) : []
 
   return (
@@ -174,15 +226,20 @@ export default function ProctorGroupsPage() {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{g.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Créé par {g.created_by || '—'}</div>
+                  <div style={{ fontSize: 12, color: g.supervisors.length > 0 ? '#0891b2' : 'var(--text-muted)' }}>
+                    <i className="fas fa-user-shield" style={{ marginRight: 4 }} />
+                    {g.supervisors.length > 0 ? g.supervisors.map(s => s.supervisor_name).join(', ') : 'Aucun superviseur'}
+                  </div>
                 </div>
                 <button onClick={() => deleteGroup(g)} title="Supprimer"
                   style={{ background: '#fef2f2', border: 'none', color: '#ef4444', padding: '5px 9px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
                   <i className="fas fa-trash" />
                 </button>
               </div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
                 <span className="status-badge secondary" style={{ fontSize: 11 }}><i className="fas fa-users" /> {g.members.length} surveillant(s)</span>
                 <span className="status-badge secondary" style={{ fontSize: 11 }}><i className="fas fa-book" /> {g.ec_ids.length} EC</span>
+                <span className="status-badge secondary" style={{ fontSize: 11 }}><i className="fas fa-shield-halved" /> Vigilance {g.vigilance_level || 'A'}</span>
               </div>
               <button className="btn btn-secondary" style={{ width: '100%', fontSize: 13 }} onClick={() => openManage(g)}>
                 <i className="fas fa-gear" /> Gérer
@@ -208,6 +265,83 @@ export default function ProctorGroupsPage() {
             </div>
 
             <div style={{ overflowY: 'auto', flex: 1, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Superviseurs actuels */}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Superviseurs ({manageGroup.supervisors.length})
+                </div>
+                {manageGroup.supervisors.length === 0 ? (
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Aucun superviseur pour l'instant</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {manageGroup.supervisors.map(s => (
+                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--background)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{s.supervisor_name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.supervisor_email}</div>
+                        </div>
+                        <button onClick={() => removeSupervisor(s)} title="Retirer"
+                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 13 }}>
+                          <i className="fas fa-times" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Ajouter des superviseurs */}
+              {availableSuperviseurs.length > 0 && (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ajouter des superviseurs</div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>
+                      <input type="checkbox"
+                        checked={availableSuperviseurs.length > 0 && availableSuperviseurs.every(s => supervisorSelected.has(s.id))}
+                        onChange={e => setSupervisorSelected(e.target.checked ? new Set(availableSuperviseurs.map(s => s.id)) : new Set())}
+                        style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }} />
+                      Tout cocher
+                    </label>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 180, overflowY: 'auto', marginBottom: 10 }}>
+                    {availableSuperviseurs.map(s => (
+                      <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', border: '1.5px solid var(--border)' }}>
+                        <input type="checkbox" checked={supervisorSelected.has(s.id)} onChange={() => toggleSupervisorSel(s.id)}
+                          style={{ width: 15, height: 15, accentColor: 'var(--primary)' }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 500 }}>{s.full_name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.email}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                  <button className="btn btn-primary" style={{ fontSize: 13 }} onClick={addSupervisors} disabled={addingSupervisors}
+                    title={supervisorSelected.size === 0 ? 'Cochez au moins un superviseur' : undefined}>
+                    <i className={`fas ${addingSupervisors ? 'fa-spinner fa-spin' : 'fa-user-plus'}`} /> Ajouter ({supervisorSelected.size})
+                  </button>
+                </div>
+              )}
+              {superviseurs.length === 0 && (
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '-12px 0 0' }}>
+                  Aucun compte superviseur — créez-en un depuis « Utilisateurs ».
+                </p>
+              )}
+
+              {/* Niveau de vigilance */}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Niveau de vigilance
+                </div>
+                <select value={manageGroup.vigilance_level || 'A'} disabled={assigningVigilance}
+                  onChange={e => assignVigilance(e.target.value as 'A' | 'B' | 'C')}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13 }}>
+                  {(['A', 'B', 'C'] as const).map(l => <option key={l} value={l}>{VIGILANCE_META[l].label}</option>)}
+                </select>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '6px 0 0' }}>
+                  {VIGILANCE_META[manageGroup.vigilance_level || 'A'].hint}
+                </p>
+              </div>
+
               {/* Membres actuels */}
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>

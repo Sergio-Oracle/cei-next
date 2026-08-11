@@ -6,11 +6,11 @@
  *   - API (/api/*) : Network uniquement, jamais de cache (données auth dynamiques)
  */
 
-// __BUILD_ID__ est remplacé par le vrai build ID à chaque déploiement (voir deploy.sh) —
+// N2ey0-gLsGnczQhYDXBd5 est remplacé par le vrai build ID à chaque déploiement (voir deploy.sh) —
 // ça force l'invalidation de TOUS les caches sur chaque nouveau déploiement, pour éviter
 // qu'un client garde en cache une page HTML qui référence des fichiers JS supprimés du
 // serveur par le build suivant (écran blanc / éléments qui ne s'affichent plus).
-const BUILD_ID      = '__BUILD_ID__';
+const BUILD_ID      = '9Qiv-dgUD8CRlF9_tV887';
 const STATIC_CACHE = 'cei-static-' + BUILD_ID;
 const PAGE_CACHE   = 'cei-pages-' + BUILD_ID;
 const ALL_CACHES   = [STATIC_CACHE, PAGE_CACHE];
@@ -57,14 +57,33 @@ self.addEventListener('fetch', event => {
   // requêtes normalement, sans passer par le Service Worker.
   if (!url.protocol.startsWith('http')) return;
 
+  // Ne jamais intercepter les requêtes cross-origin (CDN MediaPipe/face-api.js
+  // pour la surveillance par vision, LiveKit, Google Translate...). Sans ce
+  // filtre, ces requêtes tombaient dans le repli "pages HTML" ci-dessous : un
+  // échec réseau transitoire sur un gros fichier CDN (modèle IA, WASM)
+  // recevait alors la page /login mise en cache à la place du binaire
+  // attendu — échec silencieux de la surveillance IA, le code appelant
+  // avalant l'erreur (try/catch) sans jamais savoir que la réponse reçue
+  // n'avait rien à voir avec ce qui était demandé. Constaté surtout en PWA
+  // installée, où le Service Worker contrôle systématiquement la page dès le
+  // tout premier chargement — contrairement à un onglet de navigateur
+  // classique, où il ne prend le contrôle qu'à partir du second chargement.
+  if (url.origin !== self.location.origin) return;
+
   // Jamais de cache pour l'API (données dynamiques + authentification)
   if (url.pathname.startsWith('/api/')) return;
 
-  // Cache-First pour les assets statiques immuables
+  // Cache-First pour les assets statiques immuables — inclut les modèles de
+  // vision par ordinateur hébergés localement (MediaPipe WASM/modèles,
+  // face-api.js) : gros fichiers versionnés qui ne changent jamais entre
+  // deux déploiements du même build, autant les servir depuis le cache.
   if (
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.startsWith('/fontawesome/')  ||
-    url.pathname.startsWith('/static/')
+    url.pathname.startsWith('/static/')       ||
+    url.pathname.startsWith('/mediapipe/')    ||
+    url.pathname.startsWith('/models/')       ||
+    url.pathname.startsWith('/vendor/')
   ) {
     event.respondWith(
       caches.match(request).then(cached => {

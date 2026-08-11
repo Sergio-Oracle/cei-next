@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import { useNtfy } from '@/hooks/useNtfy'
 
@@ -305,7 +306,7 @@ export default function ProctorPage() {
                         <td className="pc-comp-td">{fmtTime(s.submitted_at)}</td>
                         <td className="pc-comp-td">{s.duration_minutes != null ? `${s.duration_minutes} min${s.extra_minutes ? ` (+${s.extra_minutes})` : ''}` : '—'}</td>
                         <td className="pc-comp-td" style={{ fontWeight: 700, color: s.risk_score >= 70 ? '#ef4444' : s.risk_score >= 40 ? '#d97706' : '#10b981' }}>{s.risk_score}%</td>
-                        <td className="pc-comp-td" style={{ fontWeight: 700, color: s.score != null ? '#93c5fd' : 'rgba(255,255,255,.3)' }}>{s.score != null ? `${s.score}/20` : '—'}</td>
+                        <td className="pc-comp-td" style={{ fontWeight: 700, color: s.score != null ? '#93c5fd' : 'rgba(255,255,255,.3)' }}>{s.score != null ? `${fmtScore(s.score)}/20` : '—'}</td>
                         <td className="pc-comp-td" style={{ color: 'rgba(255,255,255,.5)', fontSize: 11 }}>{s.proctor_name || '—'}</td>
                       </tr>
                     ))}

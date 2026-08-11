@@ -9,11 +9,12 @@ import type { User, UserRole } from '@/types'
 const ROLE_META: Record<string, { label: string; plural: string; color: string; bg: string; icon: string }> = {
   admin:       { label: 'Admin',        plural: 'Administrateurs', color: '#eab308', bg: '#fef9c3', icon: 'fa-crown' },
   professor:   { label: 'Professeur',   plural: 'Professeurs',     color: '#10b981', bg: '#d1fae5', icon: 'fa-chalkboard-teacher' },
+  superviseur: { label: 'Superviseur',  plural: 'Superviseurs',    color: '#0891b2', bg: '#cffafe', icon: 'fa-user-shield' },
   surveillant: { label: 'Surveillant',  plural: 'Surveillants',    color: '#f59e0b', bg: '#fef3c7', icon: 'fa-eye' },
   student:     { label: 'Étudiant',     plural: 'Étudiants',       color: '#3b82f6', bg: '#dbeafe', icon: 'fa-graduation-cap' },
 }
 
-const SECTION_ORDER = ['admin', 'professor', 'surveillant', 'student']
+const SECTION_ORDER = ['admin', 'professor', 'superviseur', 'surveillant', 'student']
 
 interface Pole { id: number; code: string; name: string }
 interface Niveau { id: number; code: string; name: string; pole_id?: number }
@@ -32,6 +33,7 @@ export default function AdminUsersPage() {
   const [search, setSearch]       = useState('')
   const [activeFilter, setActiveFilter] = useState<string>('') // role | 'no_email'
   const [deleting, setDeleting]   = useState<number | null>(null)
+  const [togglingActive, setTogglingActive] = useState<number | null>(null)
 
   /* Modal créer / modifier */
   const [modal, setModal]       = useState<'create' | 'edit' | 'no_email' | 'csv' | null>(null)
@@ -159,6 +161,17 @@ export default function AdminUsersPage() {
     finally { setDeleting(null) }
   }
 
+  async function handleToggleActive(id: number, name: string, currentlyActive: boolean) {
+    if (!confirm(`${currentlyActive ? 'Désactiver' : 'Réactiver'} le compte de ${name} ?${currentlyActive ? ' Il ne pourra plus se connecter tant que le compte reste désactivé.' : ''}`)) return
+    setTogglingActive(id)
+    try {
+      await api.put(`/api/admin/users/${id}`, { is_active: !currentlyActive })
+      setUsers(p => p.map(u => u.id === id ? { ...u, is_active: !currentlyActive } : u))
+      success(currentlyActive ? 'Compte désactivé' : 'Compte réactivé')
+    } catch (e: any) { error(e.message) }
+    finally { setTogglingActive(null) }
+  }
+
   async function handleNoEmail() {
     if (!noEmailForm.full_name.trim()) { error('Nom requis'); return }
     setSaving(true)
@@ -230,6 +243,9 @@ export default function AdminUsersPage() {
           </button>
           <button onClick={() => openCreate('surveillant')} style={btnStyle('#f59e0b')}>
             <i className="fas fa-eye" /> Surveillant
+          </button>
+          <button onClick={() => openCreate('superviseur')} style={btnStyle('#0891b2')}>
+            <i className="fas fa-user-shield" /> Superviseur
           </button>
           <button
             onClick={() => { setModal('no_email'); setNoEmailForm({ full_name: '', formation_id: '' }); setNoEmailResult(null); setNoEmailSelPoleId(''); setNoEmailSelNiveauId('') }}
@@ -344,6 +360,13 @@ export default function AdminUsersPage() {
                     <i className="fas fa-pen" style={{ fontSize: 11 }} /> Modifier
                   </button>
                   {role !== 'admin' && (
+                    <button onClick={() => handleToggleActive(u.id, u.full_name, u.is_active)} disabled={togglingActive === u.id}
+                      title={u.is_active ? 'Désactiver ce compte' : 'Réactiver ce compte'}
+                      style={{ width: 30, height: 30, borderRadius: 7, border: u.is_active ? '1px solid #fde68a' : '1px solid #a7f3d0', background: u.is_active ? '#fffbeb' : '#ecfdf5', cursor: 'pointer', color: u.is_active ? '#d97706' : '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <i className={`fas ${togglingActive === u.id ? 'fa-spinner fa-spin' : u.is_active ? 'fa-lock' : 'fa-lock-open'}`} style={{ fontSize: 11 }} />
+                    </button>
+                  )}
+                  {role !== 'admin' && (
                     <button onClick={() => handleDelete(u.id, u.full_name)} disabled={deleting === u.id}
                       style={{ width: 30, height: 30, borderRadius: 7, border: '1px solid #fca5a5', background: '#fff1f2', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <i className={`fas ${deleting === u.id ? 'fa-spinner fa-spin' : 'fa-trash'}`} style={{ fontSize: 11 }} />
@@ -448,6 +471,7 @@ export default function AdminUsersPage() {
                 <option value="student">Étudiant</option>
                 <option value="professor">Professeur</option>
                 <option value="surveillant">Surveillant</option>
+                <option value="superviseur">Superviseur</option>
                 <option value="admin">Administrateur</option>
               </select>
             )}

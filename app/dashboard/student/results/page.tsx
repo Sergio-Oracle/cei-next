@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 
@@ -17,6 +18,7 @@ interface OnlineResult {
   auto_correct?: boolean
   has_reclamation?: boolean
   reclamation_status?: string
+  pending_publication?: boolean
 }
 
 export default function StudentResultsPage() {
@@ -57,7 +59,9 @@ export default function StudentResultsPage() {
   }
 
   function statusInfo(r: OnlineResult) {
-    if (r.score == null) return { label: 'En correction', cls: 'warning' }
+    if (r.score == null) return r.pending_publication
+      ? { label: 'En attente de délibération', cls: 'secondary' }
+      : { label: 'En correction', cls: 'warning' }
     if ((r.score ?? 0) >= 10) return { label: 'Admis', cls: 'success' }
     return { label: 'Ajourné', cls: 'danger' }
   }
@@ -123,8 +127,10 @@ export default function StudentResultsPage() {
                     <td><span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{r.subject_title ?? '—'}</span></td>
                     <td>
                       {r.score != null
-                        ? <strong style={{ fontSize: 16, color: (r.score ?? 0) >= 10 ? 'var(--success)' : 'var(--danger)' }}>{r.score}/20</strong>
-                        : <span style={{ color: 'var(--text-muted)' }}>—</span>
+                        ? <strong style={{ fontSize: 16, color: (r.score ?? 0) >= 10 ? 'var(--success)' : 'var(--danger)' }}>{fmtScore(r.score ?? 0)}/20</strong>
+                        : r.pending_publication
+                          ? <span style={{ color: '#f59e0b', fontSize: 13 }}><i className="fa-solid fa-gavel" style={{ marginRight: 4 }} />En délibération</span>
+                          : <span style={{ color: 'var(--text-muted)' }}>—</span>
                       }
                     </td>
                     <td>
@@ -170,8 +176,10 @@ export default function StudentResultsPage() {
             <div>
               <strong>Score :</strong>{' '}
               {viewItem.score != null
-                ? <strong style={{ color: (viewItem.score ?? 0) >= 10 ? 'var(--success)' : 'var(--danger)' }}>{viewItem.score}/20</strong>
-                : <span className="status-badge warning">En correction</span>
+                ? <strong style={{ color: (viewItem.score ?? 0) >= 10 ? 'var(--success)' : 'var(--danger)' }}>{fmtScore(viewItem.score ?? 0)}/20</strong>
+                : viewItem.pending_publication
+                  ? <span className="status-badge secondary"><i className="fa-solid fa-gavel" style={{ marginRight: 4 }} />En attente de délibération</span>
+                  : <span className="status-badge warning">En correction</span>
               }
             </div>
           </div>
@@ -213,7 +221,7 @@ export default function StudentResultsPage() {
         <Modal title="Faire une réclamation" onClose={() => { setShowReclamation(false); setReclamationText('') }} maxWidth={600}>
           <div className="alert alert-info" style={{ marginBottom: 12 }}>
             <i className="fa-solid fa-circle-info" /> Réclamation pour : <strong>{viewItem.exam_title}</strong>
-            {viewItem.score != null && <> (Note : {viewItem.score}/20)</>}
+            {viewItem.score != null && <> (Note : {fmtScore(viewItem.score)}/20)</>}
           </div>
           <div className="form-group">
             <label>Motif de la réclamation *</label>

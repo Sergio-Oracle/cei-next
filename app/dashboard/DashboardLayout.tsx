@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Header from '@/components/layout/Header'
 import Sidebar from '@/components/layout/Sidebar'
+import PostSubmitLockGuard from '@/components/layout/PostSubmitLockGuard'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -32,6 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <>
+      <PostSubmitLockGuard />
       <Header onToggleSidebar={() => setSidebarOpen(o => !o)} />
       <div id="app-body">
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />

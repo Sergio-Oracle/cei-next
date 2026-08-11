@@ -34,11 +34,12 @@ export interface SuggestionResult {
 export interface QTypes { qcm: boolean; open: boolean; vf: boolean }
 
 interface GeneratePayload {
-  courseFile: File
+  courseFiles: File[]
   difficulty: string
   studentLevel: string
   examType: string
   qTypes: QTypes
+  duration: number
 }
 
 export interface UseSuggestionFlowReturn {
@@ -63,7 +64,7 @@ export function useSuggestionFlow(): UseSuggestionFlowReturn {
     setGenerating(false); setGenElapsed(0); setResult(null); setError('')
   }
 
-  async function generate({ courseFile, difficulty, studentLevel, examType, qTypes }: GeneratePayload) {
+  async function generate({ courseFiles, difficulty, studentLevel, examType, qTypes, duration }: GeneratePayload) {
     reset()
     setGenerating(true)
     setGenElapsed(0)
@@ -78,9 +79,10 @@ export function useSuggestionFlow(): UseSuggestionFlowReturn {
         .map(k => labelMap[k])
 
       const fd = new FormData()
-      fd.append('course_file', courseFile)
+      courseFiles.forEach(f => fd.append('course_files', f))
       fd.append('difficulty', difficulty)
       fd.append('student_level', studentLevel)
+      fd.append('duration', String(duration))
       if (examType) fd.append('exam_type', examType)
       if (selectedTypes.length) fd.append('question_types', selectedTypes.join(','))
 

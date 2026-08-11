@@ -1,12 +1,15 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import api from '@/lib/api'
-import { useNotificationPoll } from '@/hooks/useNotificationPoll'
+import { useNotificationPoll, type NotifEvent } from '@/hooks/useNotificationPoll'
+import { playAlertBeep } from '@/lib/notifSound'
 import { usePwaInstall } from '@/hooks/usePwaInstall'
 import { useToast } from '@/contexts/ToastContext'
+import AnswerSupervisorCallModal from '@/components/exam/AnswerSupervisorCallModal'
 
 const roleLabel: Record<string, string> = {
   admin: 'Administrateur',
@@ -59,6 +62,7 @@ interface HeaderProps {
 
 export default function Header({ onToggleSidebar }: HeaderProps) {
   const { user, logout } = useAuth()
+  const router = useRouter()
   const { canInstallManually, showIosInstructionsManually, promptInstall } = usePwaInstall()
   const { showToast } = useToast()
   const [unreadCount, setUnreadCount]   = useState(0)
@@ -96,10 +100,33 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
       .catch(() => {})
   }, [user])
 
-  // Long-polling Redis : incrémente le badge dès qu'un événement arrive
-  const handleNotifEvent = useCallback(() => {
+  // Long-polling Redis : incrémente le badge dès qu'un événement arrive.
+  // Cas particulier : une demande d'appel étudiant (reprise après
+  // déconnexion) est urgente — l'étudiant attend activement une réponse,
+  // donc on l'annonce par un toast cliquable en plus du badge, où que
+  // l'utilisateur se trouve dans l'application (pas seulement sur la page
+  // de surveillance où le message finirait par apparaître de toute façon).
+  // Appel entrant d'un superviseur (surveillant uniquement) — géré à part
+  // d'un simple toast car il faut un accepter/refuser explicite, où que le
+  // surveillant se trouve dans l'application (pas seulement sa page de
+  // surveillance, contrairement à l'appel étudiant qui y ramène toujours).
+  const [incomingSupervisorCall, setIncomingSupervisorCall] = useState<{ supervisorId: number; supervisorName: string } | null>(null)
+  const [answeringSupervisorCall, setAnsweringSupervisorCall] = useState(false)
+
+  const handleNotifEvent = useCallback((ev: NotifEvent) => {
     setUnreadCount(c => c + 1)
-  }, [])
+    const anyEv = ev as NotifEvent & { exam_id?: number; supervisor_id?: number; supervisor_name?: string }
+    if (ev.type === 'call_request' && anyEv.exam_id) {
+      showToast(ev.message, 'warning', 10000, () => router.push(`/proctor/monitor/${anyEv.exam_id}`))
+    }
+    if (ev.type === 'supervisor_call_request' && anyEv.supervisor_id) {
+      setIncomingSupervisorCall({ supervisorId: anyEv.supervisor_id, supervisorName: anyEv.supervisor_name || 'Votre superviseur' })
+    }
+    if (ev.type === 'student_resumed' && anyEv.exam_id) {
+      playAlertBeep()
+      showToast(ev.message, 'info', 10000, () => router.push(`/proctor/monitor/${anyEv.exam_id}`))
+    }
+  }, [showToast, router])
 
   useNotificationPoll(!!user, handleNotifEvent)
 
@@ -149,6 +176,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const initials = user?.full_name?.split(' ').slice(0, 2).map(w => w.charAt(0)).join('').toUpperCase() || '?'
 
   return (
+    <>
     <header className="app-header">
       {/* Conteneur pleine largeur sans max-width */}
       <div style={{ width: '100%', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -314,6 +342,35 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         </div>
       </div>
     </header>
+
+    {/* Appel entrant d'un superviseur — bannière accepter/refuser, visible
+        où que le surveillant se trouve dans l'application. */}
+    {incomingSupervisorCall && !answeringSupervisorCall && (
+      <div style={{ position: 'fixed', top: 70, right: 20, zIndex: 9400, background: '#0f172a', color: 'white', borderRadius: 12, padding: '14px 18px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(16,185,129,.4)' }}>
+        <i className="fas fa-phone-volume fa-shake" style={{ color: '#10b981', fontSize: 20 }} />
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 13 }}>Appel entrant</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)' }}>{incomingSupervisorCall.supervisorName}</div>
+        </div>
+        <button onClick={() => setAnsweringSupervisorCall(true)}
+          style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+          <i className="fas fa-phone" /> Répondre
+        </button>
+        <button onClick={() => setIncomingSupervisorCall(null)}
+          style={{ background: 'rgba(239,68,68,.2)', color: '#fca5a5', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+          <i className="fas fa-phone-slash" /> Refuser
+        </button>
+      </div>
+    )}
+
+    {incomingSupervisorCall && answeringSupervisorCall && (
+      <AnswerSupervisorCallModal
+        proctorId={user!.id}
+        supervisorName={incomingSupervisorCall.supervisorName}
+        onClose={() => { setAnsweringSupervisorCall(false); setIncomingSupervisorCall(null) }}
+      />
+    )}
+    </>
   )
 }
 

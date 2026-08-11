@@ -14,6 +14,7 @@ export default function DashboardRoot() {
     else if (user.role === 'professor')   router.replace('/dashboard/professor')
     else if (user.role === 'student')     router.replace('/dashboard/student')
     else if (user.role === 'surveillant') router.replace('/dashboard/surveillant')
+    else if (user.role === 'superviseur') router.replace('/dashboard/superviseur')
   }, [user, router])
 
   return (

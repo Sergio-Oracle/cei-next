@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 import type { StudentPaper } from '@/types'
@@ -82,8 +83,10 @@ export default function StudentPapersPage() {
                   <td>{p.grade ?? '—'}</td>
                   <td>
                     {p.score != null
-                      ? <strong style={{ color: (p.score ?? 0) >= 10 ? 'var(--success)' : 'var(--danger)' }}>{p.score}/20</strong>
-                      : <span className="status-badge warning">En attente</span>
+                      ? <strong style={{ color: (p.score ?? 0) >= 10 ? 'var(--success)' : 'var(--danger)' }}>{fmtScore(p.score ?? 0)}/20</strong>
+                      : p.pending_publication
+                        ? <span className="status-badge secondary" title="Corrigée, en attente de publication par l'enseignant"><i className="fa-solid fa-gavel" style={{ marginRight: 4 }} />En attente de délibération</span>
+                        : <span className="status-badge warning">En attente</span>
                     }
                   </td>
                   <td>{p.corrected_at ? new Date(p.corrected_at).toLocaleDateString('fr-FR') : '—'}</td>
@@ -119,7 +122,7 @@ export default function StudentPapersPage() {
         <Modal title={`Copie – ${selected.subject_title ?? 'Sujet'}`} onClose={() => setSelected(null)} maxWidth={700}>
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 16 }}>
             <div><strong>Note :</strong> {selected.grade ?? '—'}</div>
-            <div><strong>Score :</strong> {selected.score != null ? <strong style={{ color: (selected.score ?? 0) >= 10 ? 'var(--success)' : 'var(--danger)' }}>{selected.score}/20</strong> : '—'}</div>
+            <div><strong>Score :</strong> {selected.score != null ? <strong style={{ color: (selected.score ?? 0) >= 10 ? 'var(--success)' : 'var(--danger)' }}>{fmtScore(selected.score)}/20</strong> : selected.pending_publication ? <span style={{ color: 'var(--text-muted)' }}><i className="fa-solid fa-gavel" style={{ marginRight: 4 }} />En attente de délibération</span> : '—'}</div>
           </div>
           {selected.corrected_at && (
             <div style={{ marginBottom: 16 }}>
@@ -153,7 +156,7 @@ export default function StudentPapersPage() {
       {selected && showReclamation && (
         <Modal title="Faire une réclamation" onClose={() => { setShowReclamation(false); setReclamationText('') }} maxWidth={600}>
           <div className="alert alert-info" style={{ marginBottom: 12 }}>
-            <i className="fa-solid fa-circle-info" /> Réclamation pour : <strong>{selected.subject_title}</strong> (Note : {selected.score}/20)
+            <i className="fa-solid fa-circle-info" /> Réclamation pour : <strong>{selected.subject_title}</strong> (Note : {selected.score != null ? fmtScore(selected.score) : '—'}/20)
           </div>
           <div className="form-group">
             <label>Motif de la réclamation *</label>

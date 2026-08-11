@@ -145,6 +145,12 @@ function ExamCard({ exam }: { exam: OnlineExam }) {
           </Link>
         </div>
       )
+    } else if (att.pending_publication) {
+      actionNode = (
+        <span style={{ color: '#f59e0b', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <i className="fas fa-gavel" /> En délibération
+        </span>
+      )
     } else if (att.status === 'banned') {
       actionNode = (
         <span style={{ color: '#ef4444', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>

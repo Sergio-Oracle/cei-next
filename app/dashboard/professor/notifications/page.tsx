@@ -58,6 +58,22 @@ const EVENT_LABELS: Record<string, string> = {
   exam_started:            'Examen démarré',
   exam_submitted:          'Examen soumis',
   auto_submitted:          'Soumission automatique',
+  no_face_low_light:       'Visage non détecté (éclairage faible)',
+  face_covered:            'Visage partiellement masqué',
+  camera_blocked:          'Caméra obstruée',
+  audio_suspicious:        'Bruit suspect détecté',
+  session_end:             'Fin de session',
+  tab_closed:              'Onglet/navigateur fermé pendant la composition',
+  env_scan_completed:      'Scan environnement effectué',
+  env_scan_person_detected:'Personne détectée dans la pièce',
+  env_scan_unavailable:    'Scan environnement indisponible',
+  gaze_away:               "Regard détourné de l'écran",
+  head_turned:             'Tête tournée',
+  talking_detected:        'Parole détectée',
+  suspect_object_detected: 'Objet suspect détecté',
+  liveness_check_failed:   'Contrôle de vivacité échoué (aucun clignement détecté)',
+  sustained_audio_detected:'Bruit prolongé détecté',
+  multi_screen_detected:   'Plusieurs écrans détectés',
 }
 
 function getLabel(event_type: string): string {

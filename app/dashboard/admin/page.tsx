@@ -23,6 +23,7 @@ export default function AdminDashboard() {
     { label: 'Étudiants',       value: stats.total_students,        icon: 'fa-graduation-cap',     color: '#10b981' },
     { label: 'Professeurs',     value: stats.total_professors,      icon: 'fa-chalkboard-teacher', color: '#3b82f6' },
     { label: 'Surveillants',    value: stats.total_surveillants,    icon: 'fa-eye',                color: '#f59e0b' },
+    { label: 'Surveillants actifs', value: stats.active_surveillants ?? 0, icon: 'fa-circle-check',  color: '#10b981' },
     { label: 'Sujets',          value: stats.total_subjects,        icon: 'fa-file-lines',         color: '#06b6d4' },
     { label: 'Copies totales',  value: stats.total_papers,          icon: 'fa-copy',               color: '#0891b2' },
     { label: 'Réclamations',    value: stats.pending_reclamations,  icon: 'fa-triangle-exclamation',color: '#dc2626' },
@@ -91,7 +92,7 @@ export default function AdminDashboard() {
           <div style={{ padding: '0 24px' }}>
             {[
               { label: 'API Backend',      value: 'En ligne',   badge: 'success' },
-              { label: 'Authentification', value: 'PASETO v4',  badge: 'info' },
+              { label: 'Authentification', value: 'Sécurisée',  badge: 'info' },
               { label: 'IA',               value: 'Disponible', badge: 'success' },
               { label: 'Surveillance',     value: 'Active',     badge: 'success' },
               { label: 'Stockage',         value: 'Configuré',  badge: 'secondary' },

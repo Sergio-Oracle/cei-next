@@ -73,7 +73,7 @@ export default function GuideEnseignant() {
             <li><a href="#enregistrements"><i className="fas fa-film" /> 6. Accéder aux enregistrements</a></li>
             <li><a href="#appel-prive"><i className="fas fa-phone" /> 6b. Appel privé étudiant</a></li>
             <li><a href="#notes"><i className="fas fa-star" /> 7. Publier les notes</a></li>
-            <li><a href="#surveillants"><i className="fas fa-user-shield" /> 8. Groupes Surveillants — affectation automatique</a></li>
+            <li><a href="#surveillants"><i className="fas fa-user-shield" /> 8. Groupes Surveillants — affectation automatique, vigilance et reprise</a></li>
           </ul>
         </div>
 
@@ -99,9 +99,11 @@ export default function GuideEnseignant() {
                   <p>Deux méthodes disponibles :</p>
                   <ul>
                     <li><strong>Téléversement</strong> : importez un fichier PDF ou Word — l&apos;IA analyse automatiquement le contenu et génère un barème de notation correspondant.</li>
-                    <li><strong>Génération IA</strong> : choisissez un EC (Élément Constitutif) et cliquez sur &quot;Générer des Suggestions d&apos;Examen avec IA&quot;. Sélectionnez une suggestion pour générer un examen complet avec questions numérotées et points.</li>
+                    <li><strong>Génération IA</strong> : choisissez un EC (Élément Constitutif), la difficulté, le niveau et la <strong>durée souhaitée de l&apos;examen</strong>, puis cliquez sur &quot;Générer des Suggestions d&apos;Examen avec IA&quot;. Sélectionnez une suggestion pour générer un examen complet avec questions numérotées et points.</li>
                   </ul>
-                  <div className="tip"><i className="fas fa-lightbulb" /> Après création, un aperçu du sujet ET du barème généré s&apos;affiche pour validation avant utilisation.</div>
+                  <div className="tip"><i className="fas fa-lightbulb" /> Après création, un aperçu du sujet ET du barème généré s&apos;affiche pour validation avant utilisation — le contenu généré par l&apos;IA reste entièrement modifiable dans cet aperçu, rien n&apos;est jamais enregistré sans votre validation.</div>
+                  <div className="info"><i className="fas fa-info-circle" /> Les suggestions générées affichent désormais le domaine et le niveau détectés par l&apos;IA, ainsi qu&apos;un aperçu dépliable des questions type — utile pour comparer plusieurs suggestions avant de lancer la génération complète du sujet.</div>
+                  <div className="info"><i className="fas fa-shield-halved" /> La difficulté et la durée que vous choisissez sont des contraintes imposées à l&apos;IA, jamais laissées à sa discrétion : les 3 suggestions générées respectent toujours exactement vos réglages (l&apos;IA adapte le nombre et la complexité des questions à la durée demandée, sans jamais en proposer une autre).</div>
                   <img className="guide-img" src="/screenshots/capture-4.jpg" alt="Suggestions de sujets générées par l'IA, avec bouton Utiliser ce Sujet" />
                 </div>
               </div>
@@ -149,7 +151,10 @@ export default function GuideEnseignant() {
                     <div className="feature-item"><i className="fas fa-ban" /><h5>Copier/Coller</h5><p>Activer/désactiver le presse-papier</p></div>
                     <div className="feature-item"><i className="fas fa-mouse-pointer" /><h5>Clic droit</h5><p>Bloquer le menu contextuel</p></div>
                     <div className="feature-item"><i className="fas fa-terminal" /><h5>Outils Dev</h5><p>Bannir si outils développeur détectés</p></div>
+                    <div className="feature-item"><i className="fas fa-file-download" /><h5>Téléchargement des fichiers</h5><p>Interdit par défaut — bloque notamment le bouton de téléchargement natif des vidéos/audios du sujet, indépendamment du clic droit</p></div>
+                    <div className="feature-item"><i className="fas fa-calculator" /><h5>Calculatrice intégrée</h5><p>Désactivée par défaut — activez-la pour les examens qui en ont besoin (maths, sciences, finance...). Calculatrice scientifique accessible directement sur la page de composition, pour éviter que l&apos;étudiant sorte une calculatrice physique ou un téléphone, du matériel que le surveillant ne peut pas vérifier</p></div>
                   </div>
+                  <div className="info"><i className="fas fa-info-circle" /> Aucun site web ne peut techniquement empêcher la fermeture d&apos;un onglet — c&apos;est une restriction de sécurité de tous les navigateurs.</div>
                 </div>
               </div>
             </div>
@@ -241,8 +246,20 @@ export default function GuideEnseignant() {
               <div className="step">
                 <div className="step-num">3</div>
                 <div className="step-content">
-                  <h4>Réviser et publier les résultats</h4>
-                  <p>Vérifiez les notes proposées par l&apos;IA, ajustez si nécessaire. <strong>Tant que vous n&apos;avez pas cliqué sur &quot;Publier les notes&quot;</strong> (sur la page de détail de l&apos;examen), les étudiants ne voient aucune note ni feedback — même si la copie est déjà corrigée. Vous, en revanche, voyez toujours les notes.</p>
+                  <h4>Revoir la correction — question par question si besoin</h4>
+                  <p>CEI utilise l&apos;IA pour aller plus vite sur les tâches de correction, mais vous gardez toujours la main. Sur la page de détail d&apos;une copie corrigée, deux niveaux de révision sont possibles :</p>
+                  <ul>
+                    <li><strong>Note globale</strong> : remplace intégralement la note et le commentaire.</li>
+                    <li><strong>Détail par question</strong> (nouveau) : ajustez le score et le commentaire d&apos;une seule question précise — la note totale se recalcule automatiquement comme la somme, sans avoir à tout renoter.</li>
+                  </ul>
+                  <div className="tip"><i className="fas fa-lightbulb" /> Le détail par question n&apos;est disponible que pour les copies corrigées après cette mise à jour — les copies plus anciennes n&apos;ont que la révision globale.</div>
+                </div>
+              </div>
+              <div className="step">
+                <div className="step-num">4</div>
+                <div className="step-content">
+                  <h4>Publier les résultats</h4>
+                  <p><strong>Tant que vous n&apos;avez pas cliqué sur &quot;Publier les notes&quot;</strong> (sur la page de détail de l&apos;examen), les étudiants ne voient aucune note ni feedback — même si la copie est déjà corrigée. Vous, en revanche, voyez toujours les notes.</p>
                   <div className="info"><i className="fas fa-info-circle" /> La publication n&apos;envoie pas d&apos;email automatique — les étudiants voient simplement leur note apparaître dans &quot;Mes Copies&quot; dès que vous publiez, ou &quot;En attente de publication&quot; avant.</div>
                 </div>
               </div>
@@ -348,7 +365,7 @@ export default function GuideEnseignant() {
         <div className="section" id="surveillants">
           <div className="section-header">
             <div className="section-icon" style={{background:'#d97706'}}><i className="fas fa-user-shield" /></div>
-            <h2>8. Groupes Surveillants — affectation 100% automatique</h2>
+            <h2>8. Groupes Surveillants — affectation, vigilance et reprise</h2>
           </div>
           <div className="section-body">
             <p style={{color:'#475569',marginBottom:20}}>La surveillance ne se gère plus examen par examen : vous créez des <strong>Groupes Surveillants</strong>, les rattachez aux EC dont vous avez la charge, et tout le reste — affectation aux examens, répartition des étudiants — se fait automatiquement.</p>
@@ -396,6 +413,26 @@ export default function GuideEnseignant() {
                   <p>Quand un surveillant bannit un étudiant, vous recevez automatiquement une notification dans votre dashboard : le nom du surveillant, le nom de l&apos;étudiant et le motif saisi. Vous restez informé de toutes les actions disciplinaires.</p>
                 </div>
               </div>
+              <div className="step">
+                <div className="step-num">7</div>
+                <div className="step-content">
+                  <h4>Régler le niveau de vigilance du groupe</h4>
+                  <p>Depuis la page de gestion du groupe, choisissez le <strong>niveau de vigilance (A, B ou C)</strong> exigé de ses membres pour être comptés comme réellement actifs — pas seulement &quot;onglet ouvert&quot; :</p>
+                  <ul>
+                    <li><strong>A</strong> — interaction réelle (souris/clavier) sur un onglet visible</li>
+                    <li><strong>B</strong> — A + a effectivement consulté un étudiant récemment</li>
+                    <li><strong>C</strong> — B + vérification périodique de présence par la caméra du surveillant (aucune image transmise ni stockée)</li>
+                  </ul>
+                  <div className="info"><i className="fas fa-info-circle" /> Ce niveau est visible et exploité par le <strong>superviseur</strong> rattaché au groupe (s&apos;il y en a un) — c&apos;est lui qui suit l&apos;engagement réel des surveillants au quotidien. Le rattachement d&apos;un superviseur à un groupe reste réservé à l&apos;administrateur.</div>
+                </div>
+              </div>
+              <div className="step">
+                <div className="step-num">8</div>
+                <div className="step-content">
+                  <h4>Reprise après déconnexion — votre rôle de dernier recours</h4>
+                  <p>Si un étudiant se déconnecte pendant l&apos;examen, il doit obtenir un code de reprise à usage unique par appel vocal/vidéo avant de pouvoir continuer. L&apos;ordre de priorité pour répondre à cet appel est : <strong>surveillant assigné</strong> → <strong>superviseur du groupe</strong> → <strong>vous (enseignant), en tout dernier recours</strong>, si ni l&apos;un ni l&apos;autre n&apos;est disponible.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -403,7 +440,7 @@ export default function GuideEnseignant() {
       </div>
 
       <footer className="doc-footer">
-        <p>Centre d&apos;Examen Intelligent — <a href="/">Retour à l&apos;accueil</a> · <a href="/guide-etudiant">Guide Étudiant</a> · <a href="/guide-surveillant">Guide Surveillant</a> · <a href="/conditions">Conditions d&apos;Utilisation</a></p>
+        <p>Centre d&apos;Examen Intelligent — <a href="/">Retour à l&apos;accueil</a> · <a href="/guide-etudiant">Guide Étudiant</a> · <a href="/guide-surveillant">Guide Surveillant</a> · <a href="/guide-superviseur">Guide Superviseur</a> · <a href="/conditions">Conditions d&apos;Utilisation</a></p>
         <p style={{marginTop:16,fontSize:12,opacity:.8,fontWeight:600}}>Contact</p>
         <p style={{marginTop:6,fontSize:12,opacity:.6}}>
           <i className="fas fa-map-marker-alt" /> Cité du Savoir – Diamniadio, Castors, avenue Bourguiba, rue n°13<br />

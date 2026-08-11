@@ -3,7 +3,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
+import { initProctoringVision, analyzeFace } from '@/lib/proctoring-vision'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 
@@ -18,6 +20,7 @@ interface Student {
   no_face_count:     number
   started_at:        string | null
   submitted_at:      string | null
+  last_seen_at:      string | null
   score:             number | null
   ban_reason:        string | null
   duration_minutes:  number | null
@@ -25,9 +28,6 @@ interface Student {
   proctor_id:        number | null
   proctor_name:      string | null
   livekit_identity:  string
-  has_pre_sig:       boolean
-  has_post_sig:      boolean
-  pre_sig_meta?:     any
   current_egress_id?: string | null
 }
 
@@ -82,6 +82,68 @@ function riskCls(s: number) { return s >= 70 ? 'high' : s >= 40 ? 'medium' : 'lo
 const RC = { low: '#10b981', medium: '#f59e0b', high: '#ef4444' } as const
 const RB = { low: 'rgba(16,185,129,.2)', medium: 'rgba(245,158,11,.2)', high: 'rgba(239,68,68,.2)' } as const
 
+// Seuil au-delà duquel l'absence de heartbeat affiche un badge "hors ligne".
+// Purement informatif pour le surveillant — n'affecte jamais le risk_score ni les violations.
+const OFFLINE_THRESHOLD_SEC = 60
+
+function offlineSince(iso: string | null): number | null {
+  if (!iso) return null
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  return d >= OFFLINE_THRESHOLD_SEC ? d : null
+}
+
+// Traduction des event_type (stockés en anglais côté backend/agent de vision)
+// — utilisée à la fois par le panneau de logs et la grille de snapshots, qui
+// affichait auparavant la valeur brute ("face reference captured") faute de
+// passer par cette table.
+const EVENT_LABEL_MAP: Record<string, string> = {
+  tab_switch:              "Changement d'onglet",
+  copy_attempt:            'Tentative de copie',
+  paste_attempt:           'Tentative de collage',
+  right_click:             'Clic droit bloqué',
+  devtools_attempt:        "Tentative d'ouverture DevTools",
+  fullscreen_exit:         'Plein écran quitté',
+  tab_closed:              'Onglet/navigateur fermé pendant la composition',
+  periodic:                'Capture périodique',
+  no_face_detected:        'Aucun visage détecté',
+  no_face_low_light:       'Visage non détecté (éclairage insuffisant — non pénalisant)',
+  no_face:                 'Aucun visage détecté',
+  multiple_faces:          'Plusieurs visages détectés',
+  camera_blocked:          'Caméra bloquée',
+  face_covered:            'Visage couvert',
+  face_mismatch:           'Visage non reconnu',
+  face_reference_captured: 'Référence faciale capturée',
+  window_blur:             'Fenêtre mise en arrière-plan',
+  teacher_warning:         "Avertissement de l'enseignant",
+  teacher_message:         "Message de l'enseignant",
+  student_message:         "Message de l'étudiant",
+  teacher_ban:             "Exclusion par l'enseignant",
+  proctor_note:            'Note de surveillance',
+  'proctor note':          'Note de surveillance',
+  proctor_ban:             'Exclusion par le surveillant',
+  session_end:             'Fin de session',
+  extra_time:              'Temps supplémentaire accordé',
+  private_call:            'Appel privé',
+  teacher_private_call:    'Appel privé enseignant',
+  'teacher private call':  'Appel privé enseignant',
+  end_call:                "Fin d'appel",
+  teacher_end_call:        "Fin d'appel enseignant",
+  'teacher end call':      "Fin d'appel enseignant",
+  unban:                   'Débannissement',
+  warning_issued:          'Avertissement émis',
+  audio_suspicious:        'Bruit suspect détecté',
+  env_scan_completed:      'Scan environnement effectué',
+  env_scan_person_detected:'Personne détectée dans la pièce',
+  env_scan_unavailable:    'Scan environnement indisponible',
+  gaze_away:               "Regard détourné de l'écran",
+  head_turned:             'Tête tournée',
+  talking_detected:        'Parole détectée',
+  suspect_object_detected: 'Objet suspect détecté',
+  liveness_check_failed:   'Contrôle de vivacité échoué (aucun clignement détecté)',
+  sustained_audio_detected:'Bruit prolongé détecté',
+  multi_screen_detected:   'Plusieurs écrans détectés',
+}
+
 /* ── Page ────────────────────────────────────────────────────────────────── */
 
 type Filter = 'all' | 'in_progress' | 'high_risk' | 'banned'
@@ -89,7 +151,7 @@ type Filter = 'all' | 'in_progress' | 'high_risk' | 'banned'
 export default function ProctorMonitorPage() {
   const { id } = useParams<{ id: string }>()
   const router  = useRouter()
-  const { success, error: toastErr } = useToast()
+  const { success, error: toastErr, warning } = useToast()
 
   const [data,       setData]       = useState<ProctorData | null>(null)
   const [agent,      setAgent]      = useState<AgentStatus | null>(null)
@@ -168,6 +230,12 @@ export default function ProctorMonitorPage() {
   const privateCamRef   = useRef<any>(null)
   const privateMicRef   = useRef<any>(null)
 
+  /* code de reprise à usage unique — généré pendant l'appel privé, après
+     vérification d'identité, pour permettre à l'étudiant de rouvrir sa
+     tentative depuis son dashboard */
+  const [accessCode, setAccessCode] = useState<{ code: string; expires_at: string } | null>(null)
+  const [generatingCode, setGeneratingCode] = useState(false)
+
   /* LiveKit */
   const roomRef         = useRef<any>(null)
   const videoTracksRef  = useRef<Map<string, any>>(new Map())
@@ -178,7 +246,24 @@ export default function ProctorMonitorPage() {
 
   const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null)
   const agentPoll = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Alertes déjà notifiées (popup navigateur) — sans ce suivi, chaque
+  // interrogation (15s) réémettait une notification pour TOUTE alerte URGENT
+  // encore non lue, y compris celles déjà affichées à l'interrogation
+  // précédente, donnant l'impression d'un flot de notifications répétitives.
+  const notifiedAlertsRef = useRef<Set<string>>(new Set())
   const dataRef   = useRef<ProctorData | null>(null)
+
+  /* ── Vigilance superviseur (A/B/C) — voir proctor_heartbeat côté backend ───
+     Tier A : interaction réelle (souris/clavier) + onglet visible au premier plan
+     Tier B : A + a consulté un élément lié à un étudiant précis récemment
+     Tier C : B + présence caméra du surveillant vérifiée périodiquement */
+  const [vigilanceLevel, setVigilanceLevel] = useState<'A' | 'B' | 'C'>('A')
+  const vigilanceLevelRef = useRef<'A' | 'B' | 'C'>('A')
+  const lastInteractionRef = useRef<number>(Date.now())
+  const lastStudentViewRef = useRef<number>(0)
+  const facePresentRef = useRef(false)
+  const [cameraCheckActive, setCameraCheckActive] = useState(false)
+  const visionCamStreamRef = useRef<MediaStream | null>(null)
 
   /* ── Chargement données ─────────────────────────────────────────────────── */
 
@@ -225,6 +310,12 @@ export default function ProctorMonitorPage() {
         lastMsgTsRef.current = newMsgs[0].timestamp
         setStudentMsgs(prev => [...newMsgs, ...prev].slice(0, 100))
         setNewMsgCount(prev => prev + newMsgs.length)
+        // Une demande d'appel est plus urgente qu'un simple message — l'étudiant
+        // attend activement, donc on le signale immédiatement plutôt que de
+        // laisser découvrir la demande en ouvrant le panneau de messages.
+        newMsgs.filter(m => m.type === 'call_request').forEach(m => {
+          warning(`${m.student_name} demande un appel — reprise après déconnexion`)
+        })
       }
     } catch {}
   }, [id]) // eslint-disable-line
@@ -236,9 +327,13 @@ export default function ProctorMonitorPage() {
       const count: number = data.total_unread || 0
       setAgentAlerts(alerts)
       setAlertBadge(count)
-      // Notifications navigateur pour les alertes URGENT
+      // Notifications navigateur pour les alertes URGENT — une seule fois par
+      // alerte (voir notifiedAlertsRef), pas à chaque interrogation.
       if (typeof window !== 'undefined' && Notification.permission === 'granted') {
         alerts.filter((a: any) => a.level === 'URGENT').forEach((a: any) => {
+          const alertKey = `${a.attempt_id}-${a.timestamp || ''}`
+          if (notifiedAlertsRef.current.has(alertKey)) return
+          notifiedAlertsRef.current.add(alertKey)
           new Notification('URGENT — CEI Surveillance', {
             body: `${a.student_name} — Risque ${a.risk_score}/100`,
           })
@@ -276,11 +371,103 @@ export default function ProctorMonitorPage() {
      point 11 — bascule dynamique en cas de déconnexion). */
   useEffect(() => {
     if (data?.my_role !== 'surveillant') return
-    const send = () => { api.post(`/api/online_exams/${id}/proctor_heartbeat`, {}).catch(() => {}) }
+    const send = async () => {
+      const now = Date.now()
+      const interacting = (now - lastInteractionRef.current < 45_000)
+        && typeof document !== 'undefined' && document.visibilityState === 'visible' && document.hasFocus()
+      // Fenêtre un peu sous VIEWED_TTL (300s) côté serveur pour ne jamais
+      // paraître "engagé" sur la base d'un signal déjà expiré au moment où
+      // le serveur le reçoit.
+      const viewed_student = (now - lastStudentViewRef.current < 240_000)
+      const face_present = facePresentRef.current
+      try {
+        const res = await api.post<{ vigilance_level?: 'A' | 'B' | 'C' }>(
+          `/api/online_exams/${id}/proctor_heartbeat`,
+          { interacting, viewed_student, face_present }
+        )
+        if (res?.vigilance_level && res.vigilance_level !== vigilanceLevelRef.current) {
+          vigilanceLevelRef.current = res.vigilance_level
+          setVigilanceLevel(res.vigilance_level)
+        }
+      } catch {}
+    }
     send()
     const hb = setInterval(send, 30_000)
     return () => clearInterval(hb)
   }, [data?.my_role, id])
+
+  /* Tier A — capte toute interaction réelle (souris/clavier/scroll/tactile),
+     indépendamment du focus/visibilité qui sont vérifiés séparément ci-dessus. */
+  useEffect(() => {
+    if (data?.my_role !== 'surveillant') return
+    const mark = () => { lastInteractionRef.current = Date.now() }
+    const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']
+    events.forEach(ev => window.addEventListener(ev, mark, { passive: true }))
+    return () => events.forEach(ev => window.removeEventListener(ev, mark))
+  }, [data?.my_role])
+
+  /* Tier B — "a réellement consulté un étudiant précis", pas juste bougé la
+     souris sur la page : on considère qu'ouvrir n'importe laquelle de ces
+     vues ciblées sur un étudiant compte comme un signal de suivi réel. */
+  useEffect(() => {
+    if (msgModal || banModal || extraModal || noteModal || screenModal || logsPanel || zoomedSnapshot) {
+      lastStudentViewRef.current = Date.now()
+    }
+  }, [msgModal, banModal, extraModal, noteModal, screenModal, logsPanel, zoomedSnapshot])
+
+  /* Tier C — vérification périodique de présence par la caméra du
+     surveillant : uniquement un booléen "visage détecté", jamais d'image
+     transmise ni stockée. Caméra dédiée à cette vérification, indépendante
+     de celle utilisée pour un éventuel appel LiveKit (camOn/myLocalCamRef),
+     pour que le signal reste valable même hors appel. Se déclenche seulement
+     si le groupe du surveillant exige le niveau C — jamais par défaut. */
+  useEffect(() => {
+    if (data?.my_role !== 'surveillant' || vigilanceLevel !== 'C') return
+    let cancelled = false
+    let tickTimer: ReturnType<typeof setTimeout> | null = null
+    let video: HTMLVideoElement | null = null
+
+    async function setup() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 320 }, height: { ideal: 240 } }, audio: false,
+        })
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return }
+        visionCamStreamRef.current = stream
+        video = document.createElement('video')
+        video.srcObject = stream
+        video.muted = true
+        video.playsInline = true
+        await video.play().catch(() => {})
+        const ok = await initProctoringVision()
+        if (cancelled) return
+        setCameraCheckActive(ok)
+        if (!ok) return
+        const tick = () => {
+          if (cancelled || !video) return
+          try {
+            const sig = analyzeFace(video, Date.now())
+            facePresentRef.current = !!(sig && sig.faceCount >= 1)
+          } catch { facePresentRef.current = false }
+          tickTimer = setTimeout(tick, 20_000)
+        }
+        tick()
+      } catch {
+        // Permission caméra refusée ou indisponible : dégradation silencieuse
+        // — ce signal manquera simplement, le surveillant plafonnera à "idle"
+        // pour ce palier, il n'est jamais bloqué par cette vérification.
+        setCameraCheckActive(false)
+      }
+    }
+    setup()
+    return () => {
+      cancelled = true
+      if (tickTimer) clearTimeout(tickTimer)
+      visionCamStreamRef.current?.getTracks().forEach(t => t.stop())
+      visionCamStreamRef.current = null
+      facePresentRef.current = false
+    }
+  }, [data?.my_role, vigilanceLevel])
 
   /* ── LiveKit ────────────────────────────────────────────────────────────── */
 
@@ -703,6 +890,13 @@ export default function ProctorMonitorPage() {
     return true
   }).sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0))
 
+  /* Étudiants en cours d'examen dont le heartbeat n'a pas été reçu depuis le
+     seuil défini — souvent absents de la grille "Vues en direct" (déconnectés
+     de LiveKit) et donc auparavant invisibles sans cette liste explicite. */
+  const offlineInProgress = inProgress
+    .filter(s => offlineSince(s.last_seen_at) != null)
+    .sort((a, b) => (offlineSince(b.last_seen_at) ?? 0) - (offlineSince(a.last_seen_at) ?? 0))
+
   /* ── Actions communes sur les cartes ──────────────────────────────────────── */
   function openMsg(s: Student, type: 'message' | 'warning') {
     setMsgModal({ attemptId: s.attempt_id, name: s.student_name, type }); setMsgText('')
@@ -794,7 +988,18 @@ export default function ProctorMonitorPage() {
     }
   }
 
+  async function generateAccessCode() {
+    if (!privateCall) return
+    setGeneratingCode(true)
+    try {
+      const res = await api.post<{ code: string; expires_at: string }>(`/api/exam_attempts/${privateCall.attemptId}/access_code`, {})
+      setAccessCode({ code: res.code, expires_at: res.expires_at })
+    } catch (e: any) { toastErr(e.message || 'Erreur génération du code') }
+    finally { setGeneratingCode(false) }
+  }
+
   async function endPrivateCall() {
+    setAccessCode(null)
     if (privateCall) {
       try { await api.post(`/api/exam_attempts/${privateCall.attemptId}/send_warning`, { message: 'Appel privé terminé', type: 'end_call' }) } catch {}
     }
@@ -899,10 +1104,6 @@ export default function ProctorMonitorPage() {
         .hdr-btn:hover { filter:brightness(1.15); }
         .video-card { background:#1e293b;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.08);transition:transform .2s,box-shadow .2s; }
         .video-card:hover { transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3); }
-        .tv-sig-btn { display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:5px;font-size:10px;cursor:pointer;font-weight:600; }
-        .tv-sig-btn.pre  { background:rgba(16,185,129,.15);color:#6ee7b7;border:1px solid rgba(16,185,129,.3); }
-        .tv-sig-btn.post { background:rgba(37,99,235,.15);color:#93c5fd;border:1px solid rgba(37,99,235,.3); }
-        .tv-sig-btn.absent { background:rgba(255,255,255,.05);color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.1);cursor:default; }
         .tv-risk-badge { padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700; }
         .tv-risk-badge.high { background:rgba(239,68,68,.2);color:#ef4444; }
         .tv-risk-badge.medium { background:rgba(245,158,11,.2);color:#f59e0b; }
@@ -966,6 +1167,14 @@ export default function ProctorMonitorPage() {
             {Math.max(msgsCount, studentMsgs.length)} message(s)
             {newMsgCount > 0 && <span style={{ background: '#ef4444', borderRadius: '50%', width: 16, height: 16, fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{newMsgCount}</span>}
           </button>
+          {/* Niveau de vigilance superviseur (surveillant seulement) */}
+          {isSurveillant && vigilanceLevel === 'C' && (
+            <div title="Une vérification périodique de présence par votre caméra est active pour ce groupe — aucune image n'est transmise ni stockée, seule une détection de présence (oui/non) est envoyée."
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: cameraCheckActive ? 'rgba(16,185,129,.25)' : 'rgba(245,158,11,.25)', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'help' }}>
+              <i className={`fas ${cameraCheckActive ? 'fa-video' : 'fa-video-slash'}`} />
+              {cameraCheckActive ? 'Vérification présence active' : 'Caméra de vérification indisponible'}
+            </div>
+          )}
           {/* Terminés (enseignant seulement) — toujours visible */}
           {!isSurveillant && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(16,185,129,.3)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
@@ -1024,7 +1233,7 @@ export default function ProctorMonitorPage() {
                 const col = a.level === 'URGENT' ? '#ef4444' : '#f59e0b'
                 const ts  = a.timestamp ? new Date(a.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''
                 return (
-                  <div key={i} style={{ padding: '12px 16px', borderBottom: '1px solid #1e293b' }}>
+                  <div key={`${a.attempt_id}-${a.timestamp || i}`} style={{ padding: '12px 16px', borderBottom: '1px solid #1e293b' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ background: col, color: '#fff', padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 700 }}>{a.level}</span>
@@ -1236,10 +1445,17 @@ export default function ProctorMonitorPage() {
                       .sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0))
                       .map(s => {
                         const rc = riskCls(s.risk_score)
+                        const offSec = offlineSince(s.last_seen_at)
                         return (
                           <tr key={s.attempt_id}>
                             <td>
                               <strong style={{ color: 'rgba(255,255,255,.9)' }}>{s.student_name}</strong>
+                              {offSec != null && (
+                                <span title="Aucun signal du navigateur depuis ce délai — n'affecte pas le score de risque"
+                                  style={{ marginLeft: 8, fontSize: 9.5, fontWeight: 800, color: '#fcd34d', background: 'rgba(245,158,11,.15)', border: '1px solid rgba(245,158,11,.4)', borderRadius: 4, padding: '1px 6px', letterSpacing: '.03em' }}>
+                                  <i className="fas fa-wifi" style={{ marginRight: 3 }} />HORS LIGNE {elapsed(s.last_seen_at)}
+                                </span>
+                              )}
                               <br /><span style={{ color: 'rgba(255,255,255,.35)', fontSize: 10 }}>{s.student_email}</span>
                             </td>
                             <td>{fmtTime(s.started_at)}</td>
@@ -1283,24 +1499,16 @@ export default function ProctorMonitorPage() {
                   <thead>
                     <tr>
                       <th>Étudiant</th><th>Statut</th><th>Soumis à</th><th>Durée</th>
-                      <th>Note</th><th>Risque</th><th>Sig. pré</th><th>Sig. post</th><th>Surveillant</th>
+                      <th>Note</th><th>Risque</th><th>Surveillant</th>
                     </tr>
                   </thead>
                   <tbody>
                     {completed.length === 0 ? (
-                      <tr><td colSpan={9} style={{ textAlign: 'center', padding: 20, color: 'rgba(255,255,255,.3)' }}>Aucune copie soumise</td></tr>
+                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20, color: 'rgba(255,255,255,.3)' }}>Aucune copie soumise</td></tr>
                     ) : completed.map(s => {
                       const rc    = riskCls(s.risk_score)
                       const isAuto = s.status === 'auto_submitted'
                       const dur   = s.duration_minutes != null ? `${s.duration_minutes} min` : '—'
-                      const preSigEl = s.has_pre_sig
-                        ? <span className="tv-sig-btn pre"><i className="fas fa-signature" /> Voir</span>
-                        : <span className="tv-sig-btn absent"><i className="fas fa-times-circle" /> Absente</span>
-                      const postSigEl = isAuto
-                        ? <span className="tv-sig-btn absent"><i className="fas fa-robot" /> Auto</span>
-                        : s.has_post_sig
-                          ? <span className="tv-sig-btn post"><i className="fas fa-signature" /> Voir</span>
-                          : <span className="tv-sig-btn absent"><i className="fas fa-times-circle" /> Absente</span>
                       return (
                         <tr key={s.attempt_id}>
                           <td>
@@ -1315,11 +1523,9 @@ export default function ProctorMonitorPage() {
                           <td>{fmtTime(s.submitted_at)}</td>
                           <td>{dur}</td>
                           <td style={{ fontWeight: 700, color: s.score != null ? '#93c5fd' : 'rgba(255,255,255,.35)' }}>
-                            {s.score != null ? `${s.score}/20` : '—'}
+                            {s.score != null ? `${fmtScore(s.score)}/20` : '—'}
                           </td>
                           <td><span className={`tv-risk-badge ${rc}`}>{s.risk_score || 0}%</span></td>
-                          <td>{preSigEl}</td>
-                          <td>{postSigEl}</td>
                           <td style={{ color: 'rgba(255,255,255,.55)' }}>{s.proctor_name || '—'}</td>
                         </tr>
                       )
@@ -1355,6 +1561,31 @@ export default function ProctorMonitorPage() {
               </Section>
             )}
           </>
+        )}
+
+        {/* ═══════════ ÉTUDIANTS HORS LIGNE — signal heartbeat perdu ═══ */}
+        {offlineInProgress.length > 0 && (
+          <div style={{ marginTop: !isSurveillant ? 24 : 0, marginBottom: 18, padding: '12px 16px', background: 'rgba(245,158,11,.08)', border: '1px solid rgba(245,158,11,.25)', borderRadius: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#fcd34d', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <i className="fas fa-wifi-slash" />
+              {offlineInProgress.length} étudiant{offlineInProgress.length > 1 ? 's' : ''} hors ligne (examen toujours en cours)
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {offlineInProgress.map(s => (
+                <div key={s.attempt_id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.05)', borderRadius: 8, padding: '6px 12px' }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,.85)' }}>{s.student_name}</span>
+                  <span style={{ fontSize: 10.5, color: '#fcd34d' }}>hors ligne depuis {elapsed(s.last_seen_at)}</span>
+                  <button className="mon-act" style={{ background: 'rgba(37,99,235,.2)', color: '#93c5fd', fontSize: 10.5 }}
+                    onClick={() => startPrivateCall(s.attempt_id, s.student_name)}>
+                    <i className="fas fa-phone" /> Appeler
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', marginTop: 8 }}>
+              Une déconnexion ne compte jamais comme une violation — l'étudiant conserve son code de reprise et sera signalé à sa reconnexion.
+            </div>
+          </div>
         )}
 
         {/* ═══════════ GRILLE VIDÉO — uniquement les étudiants connectés (LiveKit) ═══ */}
@@ -1532,19 +1763,26 @@ export default function ProctorMonitorPage() {
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,.4)' }}>
                   <i className="fas fa-comments" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />Aucun message reçu
                 </div>
-              ) : studentMsgs.map((m: any, i: number) => (
-                <div key={i} style={{ background: 'rgba(37,99,235,.12)', borderLeft: '3px solid #3b82f6', borderRadius: 4, padding: '10px 12px', marginBottom: 8 }}>
+              ) : studentMsgs.map((m: any, i: number) => {
+                const isCallRequest = m.type === 'call_request' || (m.message && m.message.includes('[DEMANDE_APPEL]'))
+                return (
+                <div key={i} style={{ background: isCallRequest ? 'rgba(217,119,6,.15)' : 'rgba(37,99,235,.12)', borderLeft: `3px solid ${isCallRequest ? '#f59e0b' : '#3b82f6'}`, borderRadius: 4, padding: '10px 12px', marginBottom: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <strong style={{ color: '#93c5fd', fontSize: 13 }}><i className="fas fa-user-graduate" style={{ marginRight: 5 }} />{m.student_name}</strong>
+                    <strong style={{ color: isCallRequest ? '#fcd34d' : '#93c5fd', fontSize: 13 }}>
+                      {isCallRequest && <i className="fas fa-phone-volume" style={{ marginRight: 5, animation: 'pulse 1.5s infinite' }} />}
+                      <i className="fas fa-user-graduate" style={{ marginRight: 5 }} />{m.student_name}
+                    </strong>
                     <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{m.timestamp ? new Date(m.timestamp).toLocaleTimeString('fr-FR') : ''}</span>
                   </div>
                   <div style={{ fontSize: 13, color: 'white', marginBottom: 6 }}>{m.message}</div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    <button onClick={() => { setStudentMsgsModal(false); setMsgModal({ attemptId: m.attempt_id, name: m.student_name, type: 'message' }); setMsgText('') }}
-                      style={{ fontSize: 11, background: 'rgba(37,99,235,.3)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
-                      <i className="fas fa-reply" /> Répondre
-                    </button>
-                    {m.message && m.message.includes('[DEMANDE_APPEL]') && (
+                    {!isCallRequest && (
+                      <button onClick={() => { setStudentMsgsModal(false); setMsgModal({ attemptId: m.attempt_id, name: m.student_name, type: 'message' }); setMsgText('') }}
+                        style={{ fontSize: 11, background: 'rgba(37,99,235,.3)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
+                        <i className="fas fa-reply" /> Répondre
+                      </button>
+                    )}
+                    {isCallRequest && (
                       <button onClick={() => { setStudentMsgsModal(false); startPrivateCall(m.attempt_id, m.student_name) }}
                         style={{ fontSize: 11, background: 'rgba(16,185,129,.4)', color: '#a7f3d0', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
                         <i className="fas fa-phone" /> Rejoindre l'appel
@@ -1552,7 +1790,7 @@ export default function ProctorMonitorPage() {
                     )}
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
         </div>
@@ -1780,7 +2018,10 @@ export default function ProctorMonitorPage() {
                                 {(curSnap.snapshots || []).filter((s: any) => s.image_data || s.image_url).map((snap: any, j: number) => {
                                   const src = snap.image_url || (snap.image_data.startsWith('data:') ? snap.image_data : `data:image/jpeg;base64,${snap.image_data}`)
                                   const ts  = snap.timestamp ? new Date(snap.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''
-                                  const et  = snap.event_type ? snap.event_type.replace(/_/g, ' ') : ''
+                                  const et  = snap.event_type ? (EVENT_LABEL_MAP[snap.event_type] || snap.event_type.replace(/_/g, ' ')) : ''
+                                  let brightness: number | null = null
+                                  try { brightness = snap.frame_analysis ? JSON.parse(snap.frame_analysis).brightness ?? null : null } catch {}
+                                  const poorLight = brightness !== null && (brightness < 40 || brightness > 235)
                                   return (
                                     <div key={j} style={{ background: 'rgba(0,0,0,.35)', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,.09)' }}>
                                       <img src={src} alt="snapshot" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block', cursor: 'zoom-in' }}
@@ -1789,6 +2030,11 @@ export default function ProctorMonitorPage() {
                                       <div style={{ padding: '5px 8px' }}>
                                         <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)' }}>{ts}</div>
                                         {et && <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 1 }}>{et}</div>}
+                                        {brightness !== null && (
+                                          <div style={{ fontSize: 9.5, color: poorLight ? '#f59e0b' : 'rgba(255,255,255,.35)', marginTop: 1 }}>
+                                            <i className="fas fa-lightbulb" style={{ marginRight: 3 }} />{brightness}/255{poorLight ? ' — faible' : ''}
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   )
@@ -1868,6 +2114,44 @@ export default function ProctorMonitorPage() {
               <div style={{ fontSize: 10, color: '#64748b', textAlign: 'center', marginTop: 4 }}>{privateStatus}</div>
             </div>
           </div>
+          {/* Code de reprise — à générer après vérification d'identité de
+              l'étudiant pendant l'appel, puis à lui communiquer oralement.
+              Réservé au surveillant assigné quand il y en a un (repli
+              professeur seulement en son absence) — évite qu'un surveillant
+              ET le professeur génèrent chacun un code en croyant être seul
+              à le faire (le second invaliderait silencieusement le premier). */}
+          {(() => {
+            const studentRow = data?.attempts?.find(s => s.attempt_id === privateCall?.attemptId)
+            const hasOtherProctor = !isSurveillant && !!studentRow?.proctor_id
+            if (hasOtherProctor) return (
+              <div style={{ padding: '12px 16px', borderTop: '1px solid #334155', background: '#0b1220', fontSize: 12, color: '#94a3b8' }}>
+                <i className="fas fa-circle-info" style={{ marginRight: 6 }} />
+                Un surveillant ({studentRow?.proctor_name}) est assigné à cet étudiant — seul lui peut générer le code de reprise.
+              </div>
+            )
+            return (
+          <div style={{ padding: '12px 16px', borderTop: '1px solid #334155', background: '#0b1220' }}>
+            {accessCode ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>Code de reprise — à communiquer à l'étudiant</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, color: '#fbbf24', letterSpacing: 6 }}>{accessCode.code}</div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>Expire à {new Date(accessCode.expires_at).toLocaleTimeString('fr-FR')} — usage unique</div>
+                </div>
+                <button onClick={generateAccessCode} disabled={generatingCode}
+                  style={{ fontSize: 11, background: 'rgba(255,255,255,.1)', color: 'white', border: 'none', padding: '7px 12px', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
+                  <i className={`fas ${generatingCode ? 'fa-spinner fa-spin' : 'fa-rotate'}`} /> Régénérer
+                </button>
+              </div>
+            ) : (
+              <button onClick={generateAccessCode} disabled={generatingCode}
+                style={{ width: '100%', background: 'rgba(217,119,6,.25)', color: '#fcd34d', border: '1px solid rgba(217,119,6,.4)', borderRadius: 8, padding: '9px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>
+                <i className={`fas ${generatingCode ? 'fa-spinner fa-spin' : 'fa-key'}`} /> Générer un code de reprise (après vérification d'identité)
+              </button>
+            )}
+          </div>
+            )
+          })()}
         </div>
       </div>
 
@@ -1892,42 +2176,12 @@ export default function ProctorMonitorPage() {
               ) : logsPanel.logs.length === 0 ? (
                 <p style={{ color: 'rgba(255,255,255,.35)', fontSize: 13, textAlign: 'center', padding: 24 }}>Aucun log disponible</p>
               ) : logsPanel.logs.map((log: any, i: number) => {
-                const labelMap: Record<string, string> = {
-                  tab_switch:              "Changement d'onglet",
-                  copy_attempt:            'Tentative de copie',
-                  paste_attempt:           'Tentative de collage',
-                  right_click:             'Clic droit bloqué',
-                  devtools_attempt:        "Tentative d'ouverture DevTools",
-                  fullscreen_exit:         'Plein écran quitté',
-                  no_face_detected:        'Aucun visage détecté',
-                  no_face:                 'Aucun visage détecté',
-                  multiple_faces:          'Plusieurs visages détectés',
-                  camera_blocked:          'Caméra bloquée',
-                  face_covered:            'Visage couvert',
-                  face_mismatch:           'Visage non reconnu',
-                  face_reference_captured: 'Référence faciale capturée',
-                  window_blur:             'Fenêtre mise en arrière-plan',
-                  teacher_warning:         "Avertissement de l'enseignant",
-                  teacher_message:         "Message de l'enseignant",
-                  student_message:         "Message de l'étudiant",
-                  teacher_ban:             "Exclusion par l'enseignant",
-                  proctor_note:            'Note de surveillance',
-                  'proctor note':          'Note de surveillance',
-                  proctor_ban:             'Exclusion par le surveillant',
-                  session_end:             'Fin de session',
-                  extra_time:              'Temps supplémentaire accordé',
-                  private_call:            'Appel privé',
-                  teacher_private_call:    'Appel privé enseignant',
-                  'teacher private call':  'Appel privé enseignant',
-                  end_call:                "Fin d'appel",
-                  teacher_end_call:        "Fin d'appel enseignant",
-                  'teacher end call':      "Fin d'appel enseignant",
-                  unban:                   'Débannissement',
-                  warning_issued:          'Avertissement émis',
-                }
+                const labelMap = EVENT_LABEL_MAP
                 const iconMap: Record<string, { icon: string; color: string }> = {
                   tab_switch:             { icon: 'exchange-alt',        color: '#f59e0b' },
+                  tab_closed:             { icon: 'door-open',           color: '#ef4444' },
                   no_face_detected:       { icon: 'user-slash',          color: '#ef4444' },
+                  no_face_low_light:      { icon: 'lightbulb',           color: '#f59e0b' },
                   no_face:                { icon: 'user-slash',          color: '#ef4444' },
                   multiple_faces:         { icon: 'users',               color: '#ef4444' },
                   teacher_warning:        { icon: 'exclamation-triangle', color: '#f59e0b' },
@@ -1946,6 +2200,17 @@ export default function ProctorMonitorPage() {
                   'teacher end call':     { icon: 'phone-slash',         color: '#94a3b8' },
                   unban:                  { icon: 'unlock',              color: '#10b981' },
                   warning_issued:         { icon: 'exclamation-circle',  color: '#f59e0b' },
+                  audio_suspicious:       { icon: 'volume-high',         color: '#f59e0b' },
+                  env_scan_completed:     { icon: 'street-view',         color: '#10b981' },
+                  env_scan_person_detected: { icon: 'user-group',        color: '#ef4444' },
+                  env_scan_unavailable:   { icon: 'street-view',         color: '#94a3b8' },
+                  gaze_away:              { icon: 'eye',                 color: '#f59e0b' },
+                  head_turned:            { icon: 'rotate',              color: '#f59e0b' },
+                  talking_detected:       { icon: 'comment-dots',        color: '#f59e0b' },
+                  suspect_object_detected:{ icon: 'triangle-exclamation',color: '#ef4444' },
+                  liveness_check_failed:  { icon: 'fingerprint',         color: '#f59e0b' },
+                  sustained_audio_detected: { icon: 'microphone-lines',  color: '#f59e0b' },
+                  multi_screen_detected:  { icon: 'display',             color: '#ef4444' },
                 }
                 const et = log.event_type || log.type || 'event'
                 const label = labelMap[et] || et.replace(/_/g, ' ')
