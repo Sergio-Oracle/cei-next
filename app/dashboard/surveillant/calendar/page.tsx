@@ -31,10 +31,10 @@ export default function SurveillantCalendarPage() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 60 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 32 }} /></div>
+        <div style={{ textAlign: 'center', padding: 60 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 35 }} /></div>
       ) : sorted.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-          <i className="fas fa-calendar-check" style={{ fontSize: 48, color: 'var(--text-muted)', display: 'block', marginBottom: 16 }} />
+          <i className="fas fa-calendar-check" style={{ fontSize: 53, color: 'var(--text-muted)', display: 'block', marginBottom: 16 }} />
           <h3>Aucun examen planifié</h3>
         </div>
       ) : (

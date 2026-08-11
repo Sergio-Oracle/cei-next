@@ -104,7 +104,7 @@ export default function AdminHistoryPage() {
       {/* Main table card */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <i className="fas fa-list" style={{ color: 'var(--text-muted)', fontSize: 13 }} />
+          <i className="fas fa-list" style={{ color: 'var(--text-muted)', fontSize: 16 }} />
           <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--text)' }}>Liste des examens</span>
           <span style={{ background: 'var(--background)', color: 'var(--text-muted)', padding: '1px 8px', borderRadius: 99, fontSize: 12, marginLeft: 4 }}>{exams.length}</span>
         </div>
@@ -121,11 +121,11 @@ export default function AdminHistoryPage() {
             <tbody>
               {loading ? (
                 <tr><td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  <i className="fas fa-spinner fa-spin" style={{ fontSize: 22 }} />
+                  <i className="fas fa-spinner fa-spin" style={{ fontSize: 24 }} />
                 </td></tr>
               ) : exams.length === 0 ? (
                 <tr><td colSpan={7} style={{ padding: '56px', textAlign: 'center' }}>
-                  <i className="fas fa-folder-open" style={{ fontSize: 48, color: 'var(--text-muted)', display: 'block', marginBottom: 14 }} />
+                  <i className="fas fa-folder-open" style={{ fontSize: 53, color: 'var(--text-muted)', display: 'block', marginBottom: 14 }} />
                   <h3 style={{ color: 'var(--text)', margin: '0 0 8px' }}>Aucun examen terminé</h3>
                   <p style={{ color: 'var(--text-muted)', margin: 0 }}>L'historique s'alimentera automatiquement dès qu'un examen sera clôturé.</p>
                 </td></tr>
@@ -156,7 +156,7 @@ export default function AdminHistoryPage() {
                     {/* Date de clôture */}
                     <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)' }}>
-                        <i className="fas fa-calendar-day" style={{ color: 'var(--text-muted)', fontSize: 11 }} />
+                        <i className="fas fa-calendar-day" style={{ color: 'var(--text-muted)', fontSize: 13 }} />
                         {fmtDate(exam.end_time)}
                       </div>
                     </td>
@@ -181,10 +181,10 @@ export default function AdminHistoryPage() {
                     <td style={{ padding: '14px 16px', textAlign: 'center' }}>
                       {exam.incidents_count > 0
                         ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fee2e2', color: '#991b1b', padding: '3px 9px', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
-                            <i className="fas fa-triangle-exclamation" style={{ fontSize: 10 }} />{exam.incidents_count}
+                            <i className="fas fa-triangle-exclamation" style={{ fontSize: 12 }} />{exam.incidents_count}
                           </span>
                         : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#dcfce7', color: '#15803d', padding: '3px 9px', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
-                            <i className="fas fa-check" style={{ fontSize: 10 }} />Aucun
+                            <i className="fas fa-check" style={{ fontSize: 12 }} />Aucun
                           </span>}
                     </td>
 
@@ -251,7 +251,7 @@ function KpiCard({ icon, iconColor, bg, label, value }: { icon: string; iconColo
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
       <div style={{ width: 40, height: 40, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <i className={`fas ${icon}`} style={{ color: iconColor, fontSize: 16 }} />
+        <i className={`fas ${icon}`} style={{ color: iconColor, fontSize: 19 }} />
       </div>
       <div>
         <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>{value}</p>

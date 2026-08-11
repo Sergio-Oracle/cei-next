@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ width: 64, height: 64, background: 'var(--primary)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <i className="fa-solid fa-lock" style={{ fontSize: 28, color: 'white' }} />
+            <i className="fa-solid fa-lock" style={{ fontSize: 31, color: 'white' }} />
           </div>
           <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Mot de passe oublié</h1>
           <p style={{ color: 'var(--text-muted)' }}>CEI – Centre d'Examen Intelligent</p>
@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
         <div className="card" style={{ padding: 32 }}>
           {sent ? (
             <div style={{ textAlign: 'center' }}>
-              <i className="fa-solid fa-envelope-circle-check" style={{ fontSize: 48, color: 'var(--success)', marginBottom: 16, display: 'block' }} />
+              <i className="fa-solid fa-envelope-circle-check" style={{ fontSize: 53, color: 'var(--success)', marginBottom: 16, display: 'block' }} />
               <h3 style={{ marginBottom: 8 }}>Email envoyé !</h3>
               <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: 14 }}>
                 Si un compte existe avec l'adresse <strong>{email}</strong>, vous recevrez un email avec les instructions de réinitialisation.

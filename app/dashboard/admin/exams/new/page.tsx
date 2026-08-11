@@ -104,7 +104,7 @@ export default function NewExamPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ background: '#3b82f6', width: 42, height: 42, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className="fas fa-plus" style={{ color: 'white', fontSize: 16 }} />
+            <i className="fas fa-plus" style={{ color: 'white', fontSize: 19 }} />
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Créer un Examen en Ligne</h2>
@@ -195,7 +195,7 @@ export default function NewExamPage() {
           {/* Paramètres de Sécurité */}
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '16px 18px', marginTop: 18, marginBottom: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <i className="fas fa-shield-alt" style={{ color: '#1d4ed8', fontSize: 15 }} />
+              <i className="fas fa-shield-alt" style={{ color: '#1d4ed8', fontSize: 18 }} />
               <span style={{ fontWeight: 700, color: '#0f172a', fontSize: 14 }}>Paramètres de Sécurité</span>
             </div>
 

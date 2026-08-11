@@ -266,7 +266,7 @@ export default function AdminUsersPage() {
             <div key={role} className="card" onClick={() => setActiveFilter(activeFilter === role ? '' : role)}
               style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', border: activeFilter === role ? `2px solid ${m.color}` : '2px solid transparent', transition: 'all .15s' }}>
               <div style={{ width: 48, height: 48, borderRadius: '50%', background: m.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <i className={`fas ${m.icon}`} style={{ color: m.color, fontSize: 20 }} />
+                <i className={`fas ${m.icon}`} style={{ color: m.color, fontSize: 24 }} />
               </div>
               <div>
                 <div style={{ fontSize: 28, fontWeight: 800, color: m.color, lineHeight: 1 }}>{count}</div>
@@ -280,7 +280,7 @@ export default function AdminUsersPage() {
       {/* Barre de recherche + filtre Sans Email */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
-          <i className="fas fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 13 }} />
+          <i className="fas fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 16 }} />
           <input type="text" placeholder="Rechercher un utilisateur…" value={search} onChange={e => setSearch(e.target.value)}
             autoComplete="off" name="cei-admin-users-search" data-lpignore="true" data-1p-ignore
             style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }} />
@@ -300,11 +300,11 @@ export default function AdminUsersPage() {
       {/* Sections par rôle */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: 60 }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: 32, color: 'var(--primary)' }} />
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 35, color: 'var(--primary)' }} />
         </div>
       ) : sections.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
-          <i className="fas fa-users" style={{ fontSize: 40, display: 'block', marginBottom: 12 }} />
+          <i className="fas fa-users" style={{ fontSize: 44, display: 'block', marginBottom: 12 }} />
           Aucun utilisateur trouvé
         </div>
       ) : (
@@ -357,19 +357,19 @@ export default function AdminUsersPage() {
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <button onClick={() => openEdit(u)}
                     style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', fontSize: 13, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', color: 'var(--text)' }}>
-                    <i className="fas fa-pen" style={{ fontSize: 11 }} /> Modifier
+                    <i className="fas fa-pen" style={{ fontSize: 13 }} /> Modifier
                   </button>
                   {role !== 'admin' && (
                     <button onClick={() => handleToggleActive(u.id, u.full_name, u.is_active)} disabled={togglingActive === u.id}
                       title={u.is_active ? 'Désactiver ce compte' : 'Réactiver ce compte'}
                       style={{ width: 30, height: 30, borderRadius: 7, border: u.is_active ? '1px solid #fde68a' : '1px solid #a7f3d0', background: u.is_active ? '#fffbeb' : '#ecfdf5', cursor: 'pointer', color: u.is_active ? '#d97706' : '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <i className={`fas ${togglingActive === u.id ? 'fa-spinner fa-spin' : u.is_active ? 'fa-lock' : 'fa-lock-open'}`} style={{ fontSize: 11 }} />
+                      <i className={`fas ${togglingActive === u.id ? 'fa-spinner fa-spin' : u.is_active ? 'fa-lock' : 'fa-lock-open'}`} style={{ fontSize: 13 }} />
                     </button>
                   )}
                   {role !== 'admin' && (
                     <button onClick={() => handleDelete(u.id, u.full_name)} disabled={deleting === u.id}
                       style={{ width: 30, height: 30, borderRadius: 7, border: '1px solid #fca5a5', background: '#fff1f2', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <i className={`fas ${deleting === u.id ? 'fa-spinner fa-spin' : 'fa-trash'}`} style={{ fontSize: 11 }} />
+                      <i className={`fas ${deleting === u.id ? 'fa-spinner fa-spin' : 'fa-trash'}`} style={{ fontSize: 13 }} />
                     </button>
                   )}
                 </div>
@@ -395,7 +395,7 @@ export default function AdminUsersPage() {
               {/* Section header */}
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: m.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <i className={`fas ${m.icon}`} style={{ color: m.color, fontSize: 16 }} />
+                  <i className={`fas ${m.icon}`} style={{ color: m.color, fontSize: 19 }} />
                 </div>
                 <h3 style={{ margin: 0, fontSize: 16 }}>
                   {m.plural}
@@ -411,7 +411,7 @@ export default function AdminUsersPage() {
                     return (
                       <div key={p.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', minWidth: 320 }}>
                         <div style={{ padding: '10px 14px', background: '#f0fdfa', borderBottom: '1px solid #99f6e4', display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <i className="fas fa-sitemap" style={{ color: '#0d9488', fontSize: 13 }} />
+                          <i className="fas fa-sitemap" style={{ color: '#0d9488', fontSize: 16 }} />
                           <span style={{ fontWeight: 700, fontSize: 13, color: '#0d9488' }}>{p.name}</span>
                           <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#0d9488', background: '#ccfbf1', padding: '2px 8px', borderRadius: 20 }}>{poleUsers.length}</span>
                         </div>

@@ -50,7 +50,7 @@ export default function StudentExemplesPage() {
         <div className="card" style={{ textAlign: 'center', padding: 40 }}><i className="fa-solid fa-spinner spin" /></div>
       ) : examples.length === 0 ? (
         <div className="card empty-message" style={{ textAlign: 'center', padding: 40 }}>
-          <i className="fa-solid fa-inbox" style={{ fontSize: 32, opacity: .4, display: 'block', marginBottom: 12 }} />
+          <i className="fa-solid fa-inbox" style={{ fontSize: 35, opacity: .4, display: 'block', marginBottom: 12 }} />
           Aucune copie-exemple partagée pour l'instant.
         </div>
       ) : (
@@ -70,7 +70,7 @@ export default function StudentExemplesPage() {
                         </span>
                         {e.score != null && <span style={{ fontSize: 13, fontWeight: 700 }}>{fmtScore(e.score)}/{e.max_score ?? 20}</span>}
                       </span>
-                      <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'}`} style={{ color: 'var(--text-muted)', fontSize: 13 }} />
+                      <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'}`} style={{ color: 'var(--text-muted)', fontSize: 16 }} />
                     </button>
                     {isOpen && (
                       <div style={{ padding: '0 18px 18px' }}>

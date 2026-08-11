@@ -60,7 +60,7 @@ export default function SurveillantExamsPage() {
         <div>
           <h2>
             <span style={{ background: '#3b82f6', width: 36, height: 36, borderRadius: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-              <i className="fas fa-clipboard-list" style={{ color: 'white', fontSize: 16 }} />
+              <i className="fas fa-clipboard-list" style={{ color: 'white', fontSize: 19 }} />
             </span>
             Mes Examens
           </h2>
@@ -70,10 +70,10 @@ export default function SurveillantExamsPage() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 60 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 32 }} /></div>
+        <div style={{ textAlign: 'center', padding: 60 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 35 }} /></div>
       ) : exams.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-          <i className="fas fa-clipboard-list" style={{ fontSize: 48, color: 'var(--text-muted)', display: 'block', marginBottom: 16 }} />
+          <i className="fas fa-clipboard-list" style={{ fontSize: 53, color: 'var(--text-muted)', display: 'block', marginBottom: 16 }} />
           <h3>Aucun examen assigné</h3>
           <p style={{ color: 'var(--text-muted)' }}>Vos examens assignés apparaîtront ici.</p>
         </div>

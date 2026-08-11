@@ -295,7 +295,7 @@ export default function AdminReclamationsPage() {
         <Modal title="Analyse IA en cours" onClose={() => setAiModal(null)} maxWidth={440}>
           <div style={{ textAlign: 'center', padding: '8px 4px 4px' }}>
             <div style={{ position: 'relative', width: 64, height: 64, margin: '0 auto 16px' }}>
-              <i className="fa-solid fa-robot" style={{ fontSize: 30, position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--info)' }} />
+              <i className="fa-solid fa-robot" style={{ fontSize: 33, position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--info)' }} />
               <svg width="64" height="64" style={{ transform: 'rotate(-90deg)' }}>
                 <circle cx="32" cy="32" r="28" fill="none" stroke="var(--border)" strokeWidth="4" />
                 <circle cx="32" cy="32" r="28" fill="none" stroke="var(--info)" strokeWidth="4"
@@ -329,7 +329,7 @@ export default function AdminReclamationsPage() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: accepted ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)',
                 }}>
-                  <i className={`fa-solid ${accepted ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ fontSize: 28, color: tint }} />
+                  <i className={`fa-solid ${accepted ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ fontSize: 31, color: tint }} />
                 </div>
                 <div style={{ fontSize: 17, fontWeight: 700, color: tint }}>
                   {accepted ? 'Réclamation à accepter' : 'Réclamation à rejeter'}

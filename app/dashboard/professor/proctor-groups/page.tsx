@@ -223,10 +223,10 @@ export default function ProfessorProctorGroupsPage() {
 
       {/* Liste */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 60 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: 'var(--primary)' }} /></div>
+        <div style={{ textAlign: 'center', padding: 60 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 31, color: 'var(--primary)' }} /></div>
       ) : groups.length === 0 ? (
         <div className="empty-message" style={{ padding: '48px 20px' }}>
-          <i className="fas fa-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />
+          <i className="fas fa-inbox" style={{ fontSize: 35, display: 'block', marginBottom: 10 }} />
           Aucun groupe de surveillants créé
         </div>
       ) : (
@@ -370,7 +370,7 @@ export default function ProfessorProctorGroupsPage() {
                             <div style={{ fontWeight: 600, fontSize: 13 }}>{m.proctor_name}</div>
                             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{m.proctor_email}</div>
                           </div>
-                          <span style={{ fontSize: 11, color: seen.color, whiteSpace: 'nowrap' }}><i className="fas fa-circle" style={{ fontSize: 7, marginRight: 4 }} />{seen.text}</span>
+                          <span style={{ fontSize: 11, color: seen.color, whiteSpace: 'nowrap' }}><i className="fas fa-circle" style={{ fontSize: 8, marginRight: 4 }} />{seen.text}</span>
                           <button onClick={() => removeMember(m)} title="Retirer"
                             style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 13 }}>
                             <i className="fas fa-times" />

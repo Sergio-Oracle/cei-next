@@ -286,13 +286,13 @@ export default function ProfessorExamDetailPage() {
 
   if (loading) return (
     <div style={{ textAlign: 'center', padding: 60 }}>
-      <i className="fa-solid fa-spinner spin" style={{ fontSize: 32, color: 'var(--primary)' }} />
+      <i className="fa-solid fa-spinner spin" style={{ fontSize: 35, color: 'var(--primary)' }} />
     </div>
   )
 
   if (!exam) return (
     <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-      <i className="fa-solid fa-exclamation-triangle" style={{ fontSize: 32, color: 'var(--warning)' }} />
+      <i className="fa-solid fa-exclamation-triangle" style={{ fontSize: 35, color: 'var(--warning)' }} />
       <p style={{ marginTop: 16 }}>Examen introuvable ou accès refusé</p>
       <Link href="/dashboard/professor/exams" className="btn btn-secondary" style={{ marginTop: 16 }}>Retour</Link>
     </div>

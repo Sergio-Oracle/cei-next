@@ -79,7 +79,7 @@ export default function StudentAidePage() {
       {/* Bannière support — fond bleu solide, PAS de gradient */}
       <div style={{ background: '#1e3a8a', borderRadius: 12, padding: '20px 24px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
         <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <i className="fas fa-headset" style={{ fontSize: 22, color: 'white' }} />
+          <i className="fas fa-headset" style={{ fontSize: 24, color: 'white' }} />
         </div>
         <div style={{ flex: 1, minWidth: 180 }}>
           <div style={{ fontWeight: 700, color: 'white', fontSize: 15, marginBottom: 3 }}>Besoin d'une aide personnalisée ?</div>
@@ -87,15 +87,15 @@ export default function StudentAidePage() {
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)', borderRadius: 8, padding: '8px 14px' }}>
-            <i className="fas fa-phone" style={{ color: '#93c5fd', fontSize: 13 }} />
+            <i className="fas fa-phone" style={{ color: '#93c5fd', fontSize: 16 }} />
             <span style={{ color: 'white', fontSize: 13, fontWeight: 600 }}>+221 30 108 41 53</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)', borderRadius: 8, padding: '8px 14px' }}>
-            <i className="fas fa-envelope" style={{ color: '#93c5fd', fontSize: 13 }} />
+            <i className="fas fa-envelope" style={{ color: '#93c5fd', fontSize: 16 }} />
             <span style={{ color: 'white', fontSize: 13, fontWeight: 600 }}>visioplus@unchk.edu.sn</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)', borderRadius: 8, padding: '8px 14px' }}>
-            <i className="fas fa-map-marker-alt" style={{ color: '#93c5fd', fontSize: 13 }} />
+            <i className="fas fa-map-marker-alt" style={{ color: '#93c5fd', fontSize: 16 }} />
             <span style={{ color: 'white', fontSize: 13, fontWeight: 600 }}>Cité du Savoir – Diamniadio</span>
           </div>
         </div>
@@ -146,7 +146,7 @@ export default function StudentAidePage() {
                   >
                     <i className={faq.icon} style={{ fontSize: 14, color: cat.color, flexShrink: 0, width: 18, textAlign: 'center' }} />
                     <span style={{ flex: 1, fontWeight: 600, fontSize: 13.5, color: '#1e293b' }}>{faq.q}</span>
-                    <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'}`} style={{ fontSize: 11, color: '#94a3b8', flexShrink: 0 }} />
+                    <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'}`} style={{ fontSize: 13, color: '#94a3b8', flexShrink: 0 }} />
                   </button>
                   {isOpen && (
                     <div style={{ padding: '0 16px 14px 50px', fontSize: 13.5, color: '#475569', lineHeight: 1.65, background: cat.bg }}>
@@ -163,7 +163,7 @@ export default function StudentAidePage() {
       {/* Règles à respecter */}
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <i className="fas fa-shield-alt" style={{ color: '#2563eb', fontSize: 18 }} />
+          <i className="fas fa-shield-alt" style={{ color: '#2563eb', fontSize: 22 }} />
           <span style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>Règles à respecter pendant l'examen</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>

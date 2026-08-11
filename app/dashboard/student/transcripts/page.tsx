@@ -46,10 +46,10 @@ export default function StudentTranscriptsPage() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 60 }}><i className="fa-solid fa-spinner spin" style={{ fontSize: 32 }} /></div>
+        <div style={{ textAlign: 'center', padding: 60 }}><i className="fa-solid fa-spinner spin" style={{ fontSize: 35 }} /></div>
       ) : transcripts.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-          <i className="fa-solid fa-scroll" style={{ fontSize: 48, color: 'var(--text-muted)', marginBottom: 16, display: 'block' }} />
+          <i className="fa-solid fa-scroll" style={{ fontSize: 53, color: 'var(--text-muted)', marginBottom: 16, display: 'block' }} />
           <h3>Aucun relevé disponible</h3>
           <p style={{ color: 'var(--text-muted)' }}>Vos relevés apparaîtront ici lorsqu'ils seront publiés.</p>
         </div>

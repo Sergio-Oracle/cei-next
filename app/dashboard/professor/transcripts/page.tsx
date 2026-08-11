@@ -225,12 +225,12 @@ export default function ProfessorTranscriptsPage() {
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: 60 }}>
-            <i className="fas fa-spinner fa-spin" style={{ fontSize: 32, color: 'var(--primary)' }} />
+            <i className="fas fa-spinner fa-spin" style={{ fontSize: 35, color: 'var(--primary)' }} />
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: '28px 24px' }}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 10, padding: 20 }}>
-              <i className="fas fa-file-circle-plus" style={{ fontSize: 36, color: '#94a3b8', flexShrink: 0, marginTop: 4 }} />
+              <i className="fas fa-file-circle-plus" style={{ fontSize: 40, color: '#94a3b8', flexShrink: 0, marginTop: 4 }} />
               <div>
                 <strong style={{ fontSize: '1.05em', color: '#334155' }}>Aucun relevé n'a encore été généré</strong>
                 <p style={{ margin: '8px 0 4px', color: '#64748b' }}>Pour créer le premier relevé d'un étudiant, utilisez le formulaire ci-dessous. Assurez-vous que :</p>
@@ -322,7 +322,7 @@ export default function ProfessorTranscriptsPage() {
 
         <div style={{ padding: '0 20px' }}>
           <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '16px 18px', marginBottom: 20 }}>
-            <i className="fas fa-lightbulb" style={{ fontSize: 22, marginTop: 2, flexShrink: 0, color: '#2563eb' }} />
+            <i className="fas fa-lightbulb" style={{ fontSize: 24, marginTop: 2, flexShrink: 0, color: '#2563eb' }} />
             <div style={{ fontSize: '0.93em' }}>
               <strong style={{ color: '#1e40af' }}>Prérequis avant de générer un relevé :</strong>
               <ol style={{ margin: '6px 0 0 18px', lineHeight: 1.8, color: '#3b5998' }}>
@@ -374,7 +374,7 @@ export default function ProfessorTranscriptsPage() {
 
           {formError && (
             <div id="form-error-box" style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '14px 16px', marginBottom: 16 }}>
-              <i className="fas fa-exclamation-circle" style={{ fontSize: 20, color: '#ef4444', flexShrink: 0, marginTop: 2 }} />
+              <i className="fas fa-exclamation-circle" style={{ fontSize: 24, color: '#ef4444', flexShrink: 0, marginTop: 2 }} />
               <div>
                 <strong style={{ color: '#dc2626' }}>Erreur lors de la génération</strong>
                 <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: 13 }}>{formError}</p>
@@ -395,7 +395,7 @@ export default function ProfessorTranscriptsPage() {
           onClick={() => setSuccessModal(null)}>
           <div style={{ background: 'var(--surface)', borderRadius: 14, padding: '32px 28px', maxWidth: 460, width: '90%', textAlign: 'center' }}
             onClick={e => e.stopPropagation()}>
-            <i className="fas fa-check-circle" style={{ fontSize: 56, color: '#10b981', display: 'block', marginBottom: 16 }} />
+            <i className="fas fa-check-circle" style={{ fontSize: 62, color: '#10b981', display: 'block', marginBottom: 16 }} />
             <h2 style={{ marginBottom: 8 }}>Relevé généré avec succès !</h2>
             <p style={{ color: '#64748b', marginBottom: 20 }}>
               Le relevé de <strong>{successModal.name}</strong> pour <strong>{successModal.semName}</strong> a été généré et le téléchargement PDF a démarré automatiquement.

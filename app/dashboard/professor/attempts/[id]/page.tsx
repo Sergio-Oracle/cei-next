@@ -225,7 +225,7 @@ export default function AttemptDetailPage() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
         <div style={{ textAlign: 'center' }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: 36, color: '#2563eb', display: 'block', marginBottom: 16 }} />
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 40, color: '#2563eb', display: 'block', marginBottom: 16 }} />
           <p style={{ color: '#64748b', fontSize: 14 }}>Chargement de la correction…</p>
         </div>
       </div>
@@ -236,7 +236,7 @@ export default function AttemptDetailPage() {
     return (
       <div style={{ textAlign: 'center', padding: '80px 24px' }}>
         <div style={{ width: 64, height: 64, background: '#fef3c7', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-          <i className="fas fa-triangle-exclamation" style={{ fontSize: 28, color: '#d97706' }} />
+          <i className="fas fa-triangle-exclamation" style={{ fontSize: 31, color: '#d97706' }} />
         </div>
         <h3 style={{ margin: '0 0 8px', color: 'var(--text)' }}>Correction introuvable</h3>
         <p style={{ color: '#64748b', marginBottom: 24 }}>Cette tentative n'existe pas ou vous n'y avez pas accès.</p>
@@ -317,9 +317,9 @@ export default function AttemptDetailPage() {
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#2563eb', fontWeight: 600, textDecoration: 'none', padding: '6px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, fontSize: 13 }}>
           <i className="fas fa-arrow-left" />Retour aux copies corrigées
         </Link>
-        <i className="fas fa-chevron-right" style={{ fontSize: 10 }} />
+        <i className="fas fa-chevron-right" style={{ fontSize: 12 }} />
         <span style={{ color: '#94a3b8' }}>Révision de copie</span>
-        <i className="fas fa-chevron-right" style={{ fontSize: 10 }} />
+        <i className="fas fa-chevron-right" style={{ fontSize: 12 }} />
         <span style={{ fontWeight: 600, color: 'var(--text)' }}>{data.student_name}</span>
       </div>
 
@@ -336,7 +336,7 @@ export default function AttemptDetailPage() {
               <h2 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 800, color: 'var(--text)' }}>{data.student_name}</h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 13, color: '#64748b', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <i className="fas fa-laptop-code" style={{ color: '#2563eb', fontSize: 11 }} />
+                  <i className="fas fa-laptop-code" style={{ color: '#2563eb', fontSize: 13 }} />
                   {data.exam_title}
                 </span>
               </div>
@@ -374,8 +374,8 @@ export default function AttemptDetailPage() {
             <button onClick={downloadPDF} disabled={pdfLoading}
               style={{ padding: '14px 20px', background: pdfLoading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: 12, fontWeight: 700, cursor: pdfLoading ? 'not-allowed' : 'pointer', fontSize: 13, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 90 }}>
               {pdfLoading
-                ? <><i className="fas fa-spinner fa-spin" style={{ fontSize: 18 }} /><span style={{ fontSize: 11 }}>Génération…</span></>
-                : <><i className="fas fa-file-pdf" style={{ fontSize: 18 }} /><span style={{ fontSize: 11 }}>Rapport PDF</span></>}
+                ? <><i className="fas fa-spinner fa-spin" style={{ fontSize: 22 }} /><span style={{ fontSize: 11 }}>Génération…</span></>
+                : <><i className="fas fa-file-pdf" style={{ fontSize: 22 }} /><span style={{ fontSize: 11 }}>Rapport PDF</span></>}
             </button>
           </div>
         </div>
@@ -389,14 +389,14 @@ export default function AttemptDetailPage() {
             { label: 'Total incidents',      value: data.incidents.length, icon: 'fa-clipboard-list',   color: data.incidents.length > 0 ? '#ef4444' : '#10b981' },
           ].map(stat => (
             <div key={stat.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <i className={`fas ${stat.icon}`} style={{ color: stat.color, fontSize: 13 }} />
+              <i className={`fas ${stat.icon}`} style={{ color: stat.color, fontSize: 16 }} />
               <span style={{ fontSize: 12, fontWeight: 700, color: stat.color }}>{stat.value}</span>
               <span style={{ fontSize: 12, color: '#64748b' }}>{stat.label}</span>
             </div>
           ))}
           {data.ban_reason && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <i className="fas fa-ban" style={{ color: '#dc2626', fontSize: 13 }} />
+              <i className="fas fa-ban" style={{ color: '#dc2626', fontSize: 16 }} />
               <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626' }}>Exclu : </span>
               <span style={{ fontSize: 12, color: '#64748b' }}>{data.ban_reason}</span>
             </div>
@@ -440,7 +440,7 @@ export default function AttemptDetailPage() {
         {/* Notes surveillant */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
           <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', background: '#fffbeb', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="fas fa-sticky-note" style={{ color: '#f59e0b', fontSize: 14 }} />
+            <i className="fas fa-sticky-note" style={{ color: '#f59e0b', fontSize: 17 }} />
             <span style={{ fontWeight: 700, fontSize: 14, color: '#92400e' }}>
               Notes surveillant ({data.proctor_notes.length})
             </span>
@@ -469,7 +469,7 @@ export default function AttemptDetailPage() {
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', marginBottom: 20 }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 32, height: 32, background: '#f1f5f9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="fas fa-pencil-alt" style={{ color: '#475569', fontSize: 13 }} />
+            <i className="fas fa-pencil-alt" style={{ color: '#475569', fontSize: 16 }} />
           </div>
           <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>Réponse de l'étudiant</span>
         </div>
@@ -493,7 +493,7 @@ export default function AttemptDetailPage() {
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
           <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', background: '#f0fdf4', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ width: 32, height: 32, background: '#dcfce7', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className="fas fa-list-ol" style={{ color: '#059669', fontSize: 13 }} />
+              <i className="fas fa-list-ol" style={{ color: '#059669', fontSize: 16 }} />
             </div>
             <span style={{ fontWeight: 700, fontSize: 14, color: '#065f46' }}>Détail par question</span>
             {!editingQuestions && (
@@ -525,7 +525,7 @@ export default function AttemptDetailPage() {
                     <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>Question {q.num}</span>
                     <span className="status-badge secondary" style={{ fontSize: 11 }}>{Q_TYPE_LABEL[q.type] ?? q.type}</span>
                     {q.correct !== undefined && (
-                      <i className={`fas ${q.correct ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ color: q.correct ? '#10b981' : '#ef4444', fontSize: 13 }} />
+                      <i className={`fas ${q.correct ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ color: q.correct ? '#10b981' : '#ef4444', fontSize: 16 }} />
                     )}
                     {q.given && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Réponse : {q.given}</span>}
                     <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: q.score >= q.max * 0.5 ? '#059669' : '#dc2626' }}>
@@ -578,7 +578,7 @@ export default function AttemptDetailPage() {
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', background: '#f0f9ff', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <div style={{ width: 32, height: 32, background: '#dbeafe', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className={`fas ${data.corrector_name ? 'fa-user-check' : 'fa-robot'}`} style={{ color: '#2563eb', fontSize: 13 }} />
+            <i className={`fas ${data.corrector_name ? 'fa-user-check' : 'fa-robot'}`} style={{ color: '#2563eb', fontSize: 16 }} />
           </div>
           <span style={{ fontWeight: 700, fontSize: 14, color: '#1d4ed8' }}>
             {data.corrector_name ? `Corrigé par ${data.corrector_name}` : 'Correction IA'}

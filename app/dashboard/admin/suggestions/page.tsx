@@ -527,7 +527,7 @@ export default function AdminSuggestionsPage() {
   if (loading) return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'60vh', gap:28 }}>
       <div style={{ width:72, height:72, background:'#eff6ff', borderRadius:20, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 8px 32px rgba(59,130,246,.2)' }}>
-        <i className="fas fa-robot" style={{ fontSize:32, color:'var(--primary)' }} />
+        <i className="fas fa-robot" style={{ fontSize:35, color:'var(--primary)' }} />
       </div>
       <div style={{ textAlign:'center' }}>
         <h3 style={{ margin:'0 0 8px', fontSize:20 }}>Analyse IA en cours…</h3>
@@ -549,7 +549,7 @@ export default function AdminSuggestionsPage() {
   if (genFull) return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'60vh', gap:28 }}>
       <div style={{ width:72, height:72, background:'#eff6ff', borderRadius:20, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 8px 32px rgba(59,130,246,.2)' }}>
-        <i className="fas fa-wand-magic-sparkles" style={{ fontSize:32, color:'var(--primary)' }} />
+        <i className="fas fa-wand-magic-sparkles" style={{ fontSize:35, color:'var(--primary)' }} />
       </div>
       <div style={{ textAlign:'center' }}>
         <h3 style={{ margin:'0 0 8px', fontSize:20 }}>Génération du sujet en cours…</h3>
@@ -564,8 +564,8 @@ export default function AdminSuggestionsPage() {
           <div key={label} style={{ display:'flex', alignItems:'center', gap:10 }}>
             <div style={{ width:28, height:28, borderRadius:8, background: done ? '#f0fdf4' : '#eff6ff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               {done
-                ? <i className="fas fa-check-circle" style={{ color:'#15803d', fontSize:13 }} />
-                : <i className={`fas ${icon} fa-spin`} style={{ color:'var(--primary)', fontSize:12 }} />}
+                ? <i className="fas fa-check-circle" style={{ color:'#15803d', fontSize:16 }} />
+                : <i className={`fas ${icon} fa-spin`} style={{ color:'var(--primary)', fontSize:14 }} />}
             </div>
             <span style={{ fontSize:13, color: done ? '#15803d' : 'var(--text)', fontWeight: done ? 600 : 400 }}>{label}</span>
           </div>
@@ -594,7 +594,7 @@ export default function AdminSuggestionsPage() {
       </div>
       {draftRestoredAt && (
         <div style={{ maxWidth:900, margin:'0 auto 16px', display:'flex', alignItems:'center', gap:12, padding:'12px 18px', background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:10 }}>
-          <i className="fas fa-clock-rotate-left" style={{ color:'var(--primary)', fontSize:18 }} />
+          <i className="fas fa-clock-rotate-left" style={{ color:'var(--primary)', fontSize:22 }} />
           <div style={{ flex:1, fontSize:13 }}>
             <strong>Session précédente restaurée</strong> — vous avez repris là où vous en étiez le {draftRestoredAt}.
           </div>
@@ -605,7 +605,7 @@ export default function AdminSuggestionsPage() {
       )}
       <div style={{ maxWidth:900, margin:'0 auto' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 18px', background:'var(--surface)', border:'1px solid var(--border)', borderLeft:'4px solid var(--primary)', borderRadius:10, marginBottom:16 }}>
-          <i className="fas fa-file-alt" style={{ color:'var(--primary)', fontSize:18 }} />
+          <i className="fas fa-file-alt" style={{ color:'var(--primary)', fontSize:22 }} />
           <div style={{ fontWeight:700, fontSize:15 }}>{previewTitle}</div>
           <span style={{ marginLeft:'auto', background:'#dcfce7', color:'#15803d', padding:'2px 10px', borderRadius:99, fontSize:11, fontWeight:700 }}>
             <i className="fas fa-robot" style={{ marginRight:4 }} />IA — Modifiable
@@ -712,7 +712,7 @@ export default function AdminSuggestionsPage() {
           onClick={e => { if (e.target===e.currentTarget) setShowBankModal(false) }}>
           <div style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:480, boxShadow:'var(--shadow-lg)', overflow:'hidden' }}>
             <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 }}>
-              <i className="fas fa-database" style={{ color:'var(--primary)', fontSize:16 }} />
+              <i className="fas fa-database" style={{ color:'var(--primary)', fontSize:19 }} />
               <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Sauvegarder dans la banque</h3>
               <button onClick={() => setShowBankModal(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
             </div>
@@ -760,13 +760,13 @@ export default function AdminSuggestionsPage() {
           onClick={e => { if (e.target===e.currentTarget && !generatingMore) setShowMoreModal(false) }}>
           <div style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:440, boxShadow:'var(--shadow-lg)', overflow:'hidden' }}>
             <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 }}>
-              <i className="fas fa-wand-magic-sparkles" style={{ color:'#0369a1', fontSize:16 }} />
+              <i className="fas fa-wand-magic-sparkles" style={{ color:'#0369a1', fontSize:19 }} />
               <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Générer d'autres questions</h3>
               {!generatingMore && <button onClick={() => setShowMoreModal(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>}
             </div>
             {generatingMore ? (
               <div style={{ padding:'32px 22px', display:'flex', flexDirection:'column', alignItems:'center', gap:14, textAlign:'center' }}>
-                <i className="fas fa-wand-magic-sparkles fa-spin" style={{ fontSize:28, color:'#0369a1' }} />
+                <i className="fas fa-wand-magic-sparkles fa-spin" style={{ fontSize:31, color:'#0369a1' }} />
                 <div>
                   <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>Génération en cours…</div>
                   <div style={{ fontSize:12, color:'var(--text-muted)' }}>L'IA rédige {moreCount} nouvelle{moreCount>1?'s':''} question{moreCount>1?'s':''} en évitant les doublons avec le sujet existant.</div>
@@ -819,7 +819,7 @@ export default function AdminSuggestionsPage() {
           onClick={e => { if (e.target===e.currentTarget) setShowCompare(false) }}>
           <div style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:Math.min(280*basket.length+80, 1200), boxShadow:'var(--shadow-lg)', overflow:'hidden', maxHeight:'90vh', display:'flex', flexDirection:'column' }}>
             <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9, flexShrink:0 }}>
-              <i className="fas fa-columns" style={{ color:'var(--primary)', fontSize:16 }} />
+              <i className="fas fa-columns" style={{ color:'var(--primary)', fontSize:19 }} />
               <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Comparer les versions ({basket.length})</h3>
               <button onClick={() => setShowCompare(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
             </div>
@@ -866,7 +866,7 @@ export default function AdminSuggestionsPage() {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
           <div style={{ display:'flex', alignItems:'center', gap:14 }}>
             <div style={{ width:48, height:48, background:'#dcfce7', borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <i className="fas fa-check-circle" style={{ fontSize:22, color:'#10b981' }} />
+              <i className="fas fa-check-circle" style={{ fontSize:24, color:'#10b981' }} />
             </div>
             <div>
               <h2 style={{ margin:0, fontSize:20, fontWeight:700 }}>Sujet créé avec succès</h2>
@@ -884,7 +884,7 @@ export default function AdminSuggestionsPage() {
         </div>
 
         <div style={{ display:'flex', alignItems:'center', gap:12, padding:'16px 20px', background:'var(--surface)', border:'1px solid var(--border)', borderLeft:'4px solid var(--primary)', borderRadius:10 }}>
-          <i className="fas fa-file-alt" style={{ fontSize:26, color:'var(--primary)' }} />
+          <i className="fas fa-file-alt" style={{ fontSize:29, color:'var(--primary)' }} />
           <div>
             <h3 style={{ margin:0, fontSize:17 }}>{createdSubject.title}</h3>
             {createdSubject.created_at && <small style={{ color:'var(--text-muted)', fontSize:12 }}><i className="fas fa-calendar" style={{ marginRight:5 }} />Créé le {new Date(createdSubject.created_at).toLocaleString('fr-FR')}</small>}
@@ -952,7 +952,7 @@ export default function AdminSuggestionsPage() {
 
       {draftRestoredAt && (
         <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 18px', background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:10, marginBottom:18 }}>
-          <i className="fas fa-clock-rotate-left" style={{ color:'var(--primary)', fontSize:18 }} />
+          <i className="fas fa-clock-rotate-left" style={{ color:'var(--primary)', fontSize:22 }} />
           <div style={{ flex:1, fontSize:13 }}>
             <strong>Session précédente restaurée</strong> — vous avez repris là où vous en étiez le {draftRestoredAt}.
           </div>
@@ -981,7 +981,7 @@ export default function AdminSuggestionsPage() {
                     </div>
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', borderRadius:8, padding:'5px 12px' }}>
-                    <i className="fas fa-weight-hanging" style={{ color:'#fff', fontSize:12 }} />
+                    <i className="fas fa-weight-hanging" style={{ color:'#fff', fontSize:14 }} />
                     <span style={{ color:'#fff', fontSize:13, fontWeight:700 }}>Max : {MAX_MB} Mo</span>
                   </div>
                 </div>
@@ -994,13 +994,13 @@ export default function AdminSuggestionsPage() {
                   {courseFiles.length > 0 ? (
                     <>
                       <div style={{ width:52, height:52, background:'#dcfce7', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
-                        <i className="fas fa-file-circle-check" style={{ fontSize:22, color:'#10b981' }} />
+                        <i className="fas fa-file-circle-check" style={{ fontSize:24, color:'#10b981' }} />
                       </div>
                       <div style={{ fontWeight:700, fontSize:14, color:'#15803d', marginBottom:10 }}>{courseFiles.length} fichier{courseFiles.length > 1 ? 's' : ''} sélectionné{courseFiles.length > 1 ? 's' : ''}</div>
                       <div style={{ display:'flex', flexDirection:'column', gap:6, maxWidth:340, margin:'0 auto' }} onClick={e => e.stopPropagation()}>
                         {courseFiles.map((f, idx) => (
                           <div key={idx} style={{ display:'flex', alignItems:'center', gap:8, background:'#fff', border:'1px solid #bbf7d0', borderRadius:8, padding:'6px 10px' }}>
-                            <i className="fas fa-file-check" title="Fichier chargé" style={{ color:'#16a34a', fontSize:14, flexShrink:0 }} />
+                            <i className="fas fa-file-check" title="Fichier chargé" style={{ color:'#16a34a', fontSize:17, flexShrink:0 }} />
                             <span style={{ flex:1, textAlign:'left', fontSize:12, color:'#15803d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</span>
                             <span style={{ fontSize:11, color:'#10b981' }}>{(f.size/1024/1024).toFixed(2)} Mo</span>
                             <button type="button" onClick={() => removeCourseFile(idx)} style={{ background:'none', border:'none', color:'#6b7280', cursor:'pointer', fontSize:14, padding:2 }}><i className="fas fa-times-circle" /></button>
@@ -1012,7 +1012,7 @@ export default function AdminSuggestionsPage() {
                   ) : (
                     <>
                       <div style={{ width:52, height:52, background:'#eff6ff', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
-                        <i className="fas fa-cloud-upload-alt" style={{ fontSize:22, color:'var(--primary)' }} />
+                        <i className="fas fa-cloud-upload-alt" style={{ fontSize:24, color:'var(--primary)' }} />
                       </div>
                       <div style={{ fontWeight:600, fontSize:15, color:'var(--text)', marginBottom:6 }}>Glissez un ou plusieurs fichiers ici</div>
                       <div style={{ fontSize:13, color:'var(--text-muted)', marginBottom:16 }}>ou</div>
@@ -1035,7 +1035,7 @@ export default function AdminSuggestionsPage() {
             <div className="card" style={{ padding:0, overflow:'hidden' }}>
               <div className="card-header">
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <i className="fas fa-sliders" style={{ color:'var(--text-muted)', fontSize:14 }} />
+                  <i className="fas fa-sliders" style={{ color:'var(--text-muted)', fontSize:17 }} />
                   <h3 style={{ margin:0, fontSize:15 }}>Options de génération</h3>
                 </div>
               </div>
@@ -1108,9 +1108,9 @@ export default function AdminSuggestionsPage() {
                       ] as const).map(([k,label,icon,color,bg,border]) => (
                         <button key={k} type="button" onClick={() => setQTypes(p => ({...p,[k]:!p[k]}))}
                           style={{ display:'flex', alignItems:'center', gap:9, padding:'10px 18px', border:`1.5px solid ${qTypes[k]?border:'var(--border)'}`, borderRadius:10, cursor:'pointer', background:qTypes[k]?bg:'var(--surface)', transition:'all .15s', fontWeight:qTypes[k]?700:400, fontSize:13, color:qTypes[k]?color:'var(--text)' }}>
-                          <i className={`fas ${icon}`} style={{ fontSize:15, color:qTypes[k]?color:'var(--text-muted)' }} />
+                          <i className={`fas ${icon}`} style={{ fontSize:18, color:qTypes[k]?color:'var(--text-muted)' }} />
                           {label}
-                          {qTypes[k]&&<i className="fas fa-check" style={{ marginLeft:4, fontSize:11, color }} />}
+                          {qTypes[k]&&<i className="fas fa-check" style={{ marginLeft:4, fontSize:13, color }} />}
                         </button>
                       ))}
                     </div>
@@ -1154,7 +1154,7 @@ export default function AdminSuggestionsPage() {
                       return (
                         <button key={k} type="button" onClick={() => setBloom(p => ({...p,[k]:!p[k]}))}
                           style={{ padding:'7px 16px', borderRadius:99, fontSize:13, fontWeight:active?700:400, cursor:'pointer', border:`1.5px solid ${active?c.active:'var(--border)'}`, background:active?c.active:'var(--surface)', color:active?'#fff':'var(--text)', transition:'all .15s' }}>
-                          {active&&<i className="fas fa-check" style={{ marginRight:5, fontSize:10 }} />}{label}
+                          {active&&<i className="fas fa-check" style={{ marginRight:5, fontSize:12 }} />}{label}
                         </button>
                       )
                     })}
@@ -1276,7 +1276,7 @@ export default function AdminSuggestionsPage() {
             <div className="card" style={{ padding:0, overflow:'hidden' }}>
               <div className="card-header">
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <i className="fas fa-circle-info" style={{ color:'var(--primary)', fontSize:14 }} />
+                  <i className="fas fa-circle-info" style={{ color:'var(--primary)', fontSize:17 }} />
                   <h4 style={{ margin:0, fontSize:14 }}>Comment ça marche ?</h4>
                 </div>
               </div>
@@ -1289,7 +1289,7 @@ export default function AdminSuggestionsPage() {
                 ] as const).map(([icon,color,bg,title,sub],i) => (
                   <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
                     <div style={{ width:36, height:36, background:bg, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                      <i className={`fas ${icon}`} style={{ color, fontSize:15 }} />
+                      <i className={`fas ${icon}`} style={{ color, fontSize:18 }} />
                     </div>
                     <div>
                       <div style={{ fontSize:13, fontWeight:700, color:'var(--text)' }}>{title}</div>
@@ -1303,7 +1303,7 @@ export default function AdminSuggestionsPage() {
             <div className="card" style={{ padding:0, overflow:'hidden' }}>
               <div className="card-header">
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <i className="fas fa-paperclip" style={{ color:'var(--text-muted)', fontSize:14 }} />
+                  <i className="fas fa-paperclip" style={{ color:'var(--text-muted)', fontSize:17 }} />
                   <h4 style={{ margin:0, fontSize:14 }}>Formats acceptés</h4>
                 </div>
               </div>
@@ -1314,7 +1314,7 @@ export default function AdminSuggestionsPage() {
                   ['fa-file-alt','#64748b','TXT','.txt — Texte brut'],
                 ] as const).map(([icon,color,type,desc]) => (
                   <div key={type} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:8, background:'var(--background)' }}>
-                    <i className={`fas ${icon}`} style={{ color, fontSize:18, width:22, textAlign:'center' }} />
+                    <i className={`fas ${icon}`} style={{ color, fontSize:22, width:22, textAlign:'center' }} />
                     <div>
                       <div style={{ fontSize:12, fontWeight:700, color:'var(--text)' }}>{type}</div>
                       <div style={{ fontSize:11, color:'var(--text-muted)' }}>{desc}</div>
@@ -1325,7 +1325,7 @@ export default function AdminSuggestionsPage() {
             </div>
 
             <div style={{ background:'#fffbeb', border:'1px solid #fde68a', borderRadius:12, padding:'14px 16px', display:'flex', gap:10 }}>
-              <i className="fas fa-lightbulb" style={{ color:'#f59e0b', fontSize:18, flexShrink:0, marginTop:2 }} />
+              <i className="fas fa-lightbulb" style={{ color:'#f59e0b', fontSize:22, flexShrink:0, marginTop:2 }} />
               <div>
                 <div style={{ fontSize:12, fontWeight:700, color:'#92400e', marginBottom:4 }}>Conseil</div>
                 <div style={{ fontSize:11, color:'#78350f', lineHeight:1.6 }}>
@@ -1344,7 +1344,7 @@ export default function AdminSuggestionsPage() {
             <div className="card-header">
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                 <div style={{ width:34, height:34, background:'#dcfce7', border:'1px solid #bbf7d0', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <i className="fas fa-book-open" style={{ color:'#10b981', fontSize:14 }} />
+                  <i className="fas fa-book-open" style={{ color:'#10b981', fontSize:17 }} />
                 </div>
                 <div>
                   <h3 style={{ margin:0, fontSize:15 }}>Résumé du cours analysé</h3>
@@ -1361,7 +1361,7 @@ export default function AdminSuggestionsPage() {
                   </span>
                   {result.main_topics.map((t, i) => (
                     <span key={i} className="status-badge secondary" style={{ fontSize:12 }}>
-                      <i className="fas fa-bookmark" style={{ fontSize:10 }} /> {t}
+                      <i className="fas fa-bookmark" style={{ fontSize:12 }} /> {t}
                     </span>
                   ))}
                 </div>
@@ -1372,7 +1372,7 @@ export default function AdminSuggestionsPage() {
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <div style={{ display:'flex', alignItems:'center', gap:12 }}>
               <div style={{ width:38, height:38, background:'#fef3c7', border:'1px solid #fde68a', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <i className="fas fa-wand-magic-sparkles" style={{ color:'#d97706', fontSize:16 }} />
+                <i className="fas fa-wand-magic-sparkles" style={{ color:'#d97706', fontSize:19 }} />
               </div>
               <div>
                 <h3 style={{ margin:0 }}>Suggestions de Sujets d'Examen</h3>
@@ -1434,7 +1434,7 @@ export default function AdminSuggestionsPage() {
                         <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                           {s.key_points.map((p, j) => (
                             <div key={j} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:13, color:'var(--text-muted)' }}>
-                              <i className="fas fa-circle" style={{ fontSize:5, color:'var(--primary)', marginTop:7, flexShrink:0 }} />{p}
+                              <i className="fas fa-circle" style={{ fontSize:6, color:'var(--primary)', marginTop:7, flexShrink:0 }} />{p}
                             </div>
                           ))}
                         </div>
@@ -1445,7 +1445,7 @@ export default function AdminSuggestionsPage() {
                       <div style={{ marginBottom:14 }}>
                         <button onClick={() => setExpandedSuggestion(expanded ? null : i)}
                           style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', color:'var(--primary)', fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0 }}>
-                          <i className={`fas ${expanded ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={{ fontSize:10 }} />
+                          <i className={`fas ${expanded ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={{ fontSize:12 }} />
                           {expanded ? 'Masquer' : 'Voir'} un aperçu des questions ({examples.length})
                         </button>
                         {expanded && (
@@ -1462,7 +1462,7 @@ export default function AdminSuggestionsPage() {
                       <div style={{ marginBottom:14 }}>
                         <button onClick={() => setExpandedGrading(expandedGrading === i ? null : i)}
                           style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', color:'#15803d', fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0 }}>
-                          <i className={`fas ${expandedGrading === i ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={{ fontSize:10 }} />
+                          <i className={`fas ${expandedGrading === i ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={{ fontSize:12 }} />
                           {expandedGrading === i ? 'Masquer' : 'Voir'} le barème proposé
                         </button>
                         {expandedGrading === i && (

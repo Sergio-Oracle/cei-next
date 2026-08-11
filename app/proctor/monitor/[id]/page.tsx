@@ -1118,7 +1118,7 @@ export default function ProctorMonitorPage() {
         {/* Gauche : icône + titre */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,.15)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className={`fas ${isSurveillant ? 'fa-user-shield' : 'fa-chalkboard-teacher'}`} style={{ fontSize: 18 }} />
+            <i className={`fas ${isSurveillant ? 'fa-user-shield' : 'fa-chalkboard-teacher'}`} style={{ fontSize: 22 }} />
           </div>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.2 }}>{examTitle}</div>
@@ -1227,7 +1227,7 @@ export default function ProctorMonitorPage() {
               </div>
               {agentAlerts.length === 0 ? (
                 <div style={{ padding: '20px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
-                  <i className="fas fa-shield-check" style={{ fontSize: 24, display: 'block', marginBottom: 8 }} />Aucune alerte active
+                  <i className="fas fa-shield-check" style={{ fontSize: 26, display: 'block', marginBottom: 8 }} />Aucune alerte active
                 </div>
               ) : agentAlerts.map((a: any, i: number) => {
                 const col = a.level === 'URGENT' ? '#ef4444' : '#f59e0b'
@@ -1351,14 +1351,14 @@ export default function ProctorMonitorPage() {
                     {/* Groupe(s) Surveillants d'origine */}
                     {!!p.group_names?.length && (
                       <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,.45)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        <i className="fas fa-user-shield" style={{ fontSize: 9 }} />
+                        <i className="fas fa-user-shield" style={{ fontSize: 11 }} />
                         {p.group_names.join(', ')}
                       </div>
                     )}
                     {/* Icônes cam/mic + count */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: groupStudents.length > 0 ? 8 : 0 }}>
-                      <i className={`fas fa-video`} style={{ fontSize: 11, color: st.camOn ? '#10b981' : 'rgba(255,255,255,.25)' }} />
-                      <i className={`fas fa-microphone`} style={{ fontSize: 11, color: st.micOn ? '#10b981' : 'rgba(255,255,255,.25)' }} />
+                      <i className={`fas fa-video`} style={{ fontSize: 13, color: st.camOn ? '#10b981' : 'rgba(255,255,255,.25)' }} />
+                      <i className={`fas fa-microphone`} style={{ fontSize: 13, color: st.micOn ? '#10b981' : 'rgba(255,255,255,.25)' }} />
                       <span style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', marginLeft: 'auto' }}>
                         {groupStudents.length} étud.
                       </span>
@@ -1614,12 +1614,12 @@ export default function ProctorMonitorPage() {
           </div>
           {liveSet.size === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 24px', color: 'rgba(255,255,255,.25)' }}>
-              <i className="fas fa-hourglass-half" style={{ fontSize: 48, display: 'block', marginBottom: 14 }} />
+              <i className="fas fa-hourglass-half" style={{ fontSize: 53, display: 'block', marginBottom: 14 }} />
               En attente de connexion des étudiants
             </div>
           ) : liveStudents.length === 0 && filter !== 'all' ? (
             <div style={{ textAlign: 'center', padding: '40px 24px', color: 'rgba(255,255,255,.25)' }}>
-              <i className="fas fa-filter" style={{ fontSize: 32, display: 'block', marginBottom: 12 }} />
+              <i className="fas fa-filter" style={{ fontSize: 35, display: 'block', marginBottom: 12 }} />
               Aucun étudiant connecté correspondant à ce filtre
             </div>
           ) : null}
@@ -1735,7 +1735,7 @@ export default function ProctorMonitorPage() {
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               {!screenTracksRef.current.has(screenModal.identity) && (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.4)', gap: 10 }}>
-                  <i className="fas fa-desktop" style={{ fontSize: 48 }} />
+                  <i className="fas fa-desktop" style={{ fontSize: 53 }} />
                   <span style={{ fontSize: 13 }}>Partage d'écran non disponible</span>
                 </div>
               )}
@@ -1761,7 +1761,7 @@ export default function ProctorMonitorPage() {
             <div style={{ overflowY: 'auto', flex: 1, padding: 18 }}>
               {studentMsgs.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,.4)' }}>
-                  <i className="fas fa-comments" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />Aucun message reçu
+                  <i className="fas fa-comments" style={{ fontSize: 35, display: 'block', marginBottom: 10 }} />Aucun message reçu
                 </div>
               ) : studentMsgs.map((m: any, i: number) => {
                 const isCallRequest = m.type === 'call_request' || (m.message && m.message.includes('[DEMANDE_APPEL]'))
@@ -1839,7 +1839,7 @@ export default function ProctorMonitorPage() {
               <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 {loadingRecs ? (
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.4)' }}>
-                    <i className="fas fa-spinner fa-spin" style={{ fontSize: 32 }} />
+                    <i className="fas fa-spinner fa-spin" style={{ fontSize: 35 }} />
                   </div>
 
                 ) : recTab === 'videos' ? (
@@ -1847,7 +1847,7 @@ export default function ProctorMonitorPage() {
                   <div style={{ overflowY: 'auto', flex: 1, padding: 18 }}>
                     {!videoRecs || (videoRecs.videos || []).length === 0 ? (
                       <div style={{ textAlign: 'center', padding: '30px 20px', color: 'rgba(255,255,255,.5)' }}>
-                        <i className="fas fa-video-slash" style={{ fontSize: 36, display: 'block', marginBottom: 14, opacity: .4 }} />
+                        <i className="fas fa-video-slash" style={{ fontSize: 40, display: 'block', marginBottom: 14, opacity: .4 }} />
                         <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, color: 'rgba(255,255,255,.7)' }}>
                           {videoRecs?.error || 'Aucun enregistrement vidéo pour cet examen'}
                         </div>
@@ -1905,12 +1905,12 @@ export default function ProctorMonitorPage() {
                             <div key={i} style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.09)', borderRadius: 10, padding: '14px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
                               {/* Icône type */}
                               <div style={{ width: 44, height: 44, background: `${rt.color}22`, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                <i className={`fas ${rt.icon}`} style={{ color: rt.color, fontSize: 18 }} />
+                                <i className={`fas ${rt.icon}`} style={{ color: rt.color, fontSize: 22 }} />
                               </div>
                               {/* Infos */}
                               <div style={{ flex: 1, minWidth: 180 }}>
                                 <div style={{ fontSize: 14, fontWeight: 700, color: 'white', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                                  <i className="fas fa-user-graduate" style={{ color: '#60a5fa', fontSize: 12 }} />
+                                  <i className="fas fa-user-graduate" style={{ color: '#60a5fa', fontSize: 14 }} />
                                   {v.student_name}
                                   <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: `${rt.color}22`, color: rt.color, fontWeight: 700 }}>{rt.label}</span>
                                 </div>
@@ -1952,7 +1952,7 @@ export default function ProctorMonitorPage() {
                   /* ── ONGLET SNAPSHOTS ──────────────────────────────── */
                   !snapRecs || snapStudents.length === 0 ? (
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, color: 'rgba(255,255,255,.4)' }}>
-                      <i className="fas fa-camera-slash" style={{ fontSize: 40 }} />
+                      <i className="fas fa-camera-slash" style={{ fontSize: 44 }} />
                       {snapRecs?.error || 'Aucun snapshot disponible'}
                     </div>
                   ) : (
@@ -1970,7 +1970,7 @@ export default function ProctorMonitorPage() {
                             <div key={i} onClick={() => setSelectedSnapIdx(i)}
                               style={{ padding: '9px 10px', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 9, marginBottom: 3, background: active ? 'rgba(59,130,246,.2)' : 'transparent', border: `1px solid ${active ? 'rgba(59,130,246,.4)' : 'transparent'}` }}>
                               <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                <i className="fas fa-user" style={{ fontSize: 13 }} />
+                                <i className="fas fa-user" style={{ fontSize: 16 }} />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 12, fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stu.student_name}</div>
@@ -2010,7 +2010,7 @@ export default function ProctorMonitorPage() {
                             {/* Grille snapshots */}
                             {(curSnap.snapshots || []).filter((s: any) => s.image_data || s.image_url).length === 0 ? (
                               <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,.4)' }}>
-                                <i className="fas fa-camera-slash" style={{ fontSize: 28, display: 'block', marginBottom: 8 }} />
+                                <i className="fas fa-camera-slash" style={{ fontSize: 31, display: 'block', marginBottom: 8 }} />
                                 Aucun snapshot disponible
                               </div>
                             ) : (
@@ -2091,7 +2091,7 @@ export default function ProctorMonitorPage() {
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
               <audio id="private-student-audio" autoPlay style={{ display: 'none' }} />
               <div id="private-student-placeholder" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, color: 'rgba(255,255,255,.25)', pointerEvents: 'none' }}>
-                <i className="fas fa-user" style={{ fontSize: 40 }} />
+                <i className="fas fa-user" style={{ fontSize: 44 }} />
                 <span style={{ fontSize: 10, letterSpacing: '.06em', textTransform: 'uppercase' }}>Étudiant</span>
               </div>
             </div>
@@ -2101,7 +2101,7 @@ export default function ProctorMonitorPage() {
               <div style={{ width: 140, height: 90, borderRadius: 8, background: '#1e293b', overflow: 'hidden', border: '1px solid #334155', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <video id="private-my-preview" autoPlay playsInline muted
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                {!privateCamOn && <i className="fas fa-video-slash" style={{ position: 'absolute', color: 'rgba(255,255,255,.25)', fontSize: 20 }} />}
+                {!privateCamOn && <i className="fas fa-video-slash" style={{ position: 'absolute', color: 'rgba(255,255,255,.25)', fontSize: 24 }} />}
               </div>
               <button onClick={togglePrivateCam}
                 style={{ width: 140, background: privateCamOn ? 'rgba(37,99,235,.5)' : 'rgba(37,99,235,.2)', color: privateCamOn ? '#bfdbfe' : '#93c5fd', border: `1px solid ${privateCamOn ? 'rgba(37,99,235,.6)' : 'rgba(37,99,235,.3)'}`, borderRadius: 8, padding: 7, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
@@ -2171,7 +2171,7 @@ export default function ProctorMonitorPage() {
             <div style={{ overflowY: 'auto', flex: 1, padding: '12px 18px' }}>
               {loadingLogs ? (
                 <div style={{ textAlign: 'center', padding: 32, color: 'rgba(255,255,255,.4)' }}>
-                  <i className="fas fa-spinner fa-spin" style={{ fontSize: 24 }} />
+                  <i className="fas fa-spinner fa-spin" style={{ fontSize: 26 }} />
                 </div>
               ) : logsPanel.logs.length === 0 ? (
                 <p style={{ color: 'rgba(255,255,255,.35)', fontSize: 13, textAlign: 'center', padding: 24 }}>Aucun log disponible</p>
@@ -2278,7 +2278,7 @@ function Section({ title, count, dot, icon, iconColor, badgeBg, badgeColor, chil
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0 8px' }}>
         {dot
           ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, display: 'inline-block' }} />
-          : <i className={`fas ${icon}`} style={{ color: iconColor, fontSize: 13 }} />}
+          : <i className={`fas ${icon}`} style={{ color: iconColor, fontSize: 16 }} />}
         <h3 style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.4)' }}>{title}</h3>
         <span style={{ background: badgeBg, color: badgeColor, borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{count}</span>
       </div>
@@ -2300,7 +2300,7 @@ function AgentBanner({ agent, lastCheck, studentsCount }: { agent: AgentStatus |
   return (
     <div style={{ background: bgColor, border: `1px solid ${border}`, borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18, flexWrap: 'wrap' }}>
       <div style={{ width: 36, height: 36, background: alive ? 'rgba(16,185,129,.15)' : 'rgba(239,68,68,.1)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <i className="fas fa-robot" style={{ color: alive ? '#6ee7b7' : '#fca5a5', fontSize: 16 }} />
+        <i className="fas fa-robot" style={{ color: alive ? '#6ee7b7' : '#fca5a5', fontSize: 19 }} />
       </div>
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
@@ -2358,7 +2358,7 @@ function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, o
       <div style={{ aspectRatio: '16/9', background: '#000', position: 'relative', overflow: 'hidden' }}>
         <div id={`ph-${s.livekit_identity}`}
           style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <i className="fas fa-video-slash" style={{ fontSize: 26, color: 'rgba(255,255,255,.18)' }} />
+          <i className="fas fa-video-slash" style={{ fontSize: 29, color: 'rgba(255,255,255,.18)' }} />
           <span style={{ fontSize: 10, color: 'rgba(255,255,255,.18)' }}>Flux vidéo</span>
         </div>
         <video id={`video-${s.livekit_identity}`} autoPlay playsInline
@@ -2367,7 +2367,7 @@ function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, o
         {/* Overlay exclu */}
         {isBanned && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(239,68,68,.55)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, color: 'white', fontWeight: 700, zIndex: 2 }}>
-            <i className="fas fa-ban" style={{ fontSize: 22 }} />EXCLU
+            <i className="fas fa-ban" style={{ fontSize: 24 }} />EXCLU
             {s.ban_reason && <span style={{ fontSize: 10, fontWeight: 400, textAlign: 'center', maxWidth: 140 }}>{s.ban_reason}</span>}
           </div>
         )}
@@ -2375,7 +2375,7 @@ function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, o
         {/* Overlay soumis */}
         {isSubmitted && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, zIndex: 2 }}>
-            <i className="fas fa-check-circle" style={{ fontSize: 30, color: '#10b981' }} />
+            <i className="fas fa-check-circle" style={{ fontSize: 33, color: '#10b981' }} />
             <span style={{ fontSize: 11, fontWeight: 700, color: '#10b981', letterSpacing: '.05em', textTransform: 'uppercase' }}>{statusLabel}</span>
             {s.submitted_at && <span style={{ fontSize: 10, color: 'rgba(255,255,255,.4)' }}>{fmtTime(s.submitted_at)}</span>}
           </div>
@@ -2413,17 +2413,17 @@ function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, o
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
           {s.tab_switches > 0 && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: s.tab_switches > 2 ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.06)', color: s.tab_switches > 2 ? '#f59e0b' : 'rgba(255,255,255,.5)', borderRadius: 5, fontSize: 10 }}>
-              <i className="fas fa-exchange-alt" style={{ fontSize: 9 }} />{s.tab_switches} onglets
+              <i className="fas fa-exchange-alt" style={{ fontSize: 11 }} />{s.tab_switches} onglets
             </span>
           )}
           {s.warnings_count > 0 && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: 'rgba(239,68,68,.12)', color: '#ef4444', borderRadius: 5, fontSize: 10 }}>
-              <i className="fas fa-exclamation-triangle" style={{ fontSize: 9 }} />{s.warnings_count} alertes
+              <i className="fas fa-exclamation-triangle" style={{ fontSize: 11 }} />{s.warnings_count} alertes
             </span>
           )}
           {s.no_face_count > 0 && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: 'rgba(245,158,11,.12)', color: '#f59e0b', borderRadius: 5, fontSize: 10 }}>
-              <i className="fas fa-user-slash" style={{ fontSize: 9 }} />{s.no_face_count} hors champ
+              <i className="fas fa-user-slash" style={{ fontSize: 11 }} />{s.no_face_count} hors champ
             </span>
           )}
         </div>

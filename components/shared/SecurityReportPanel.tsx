@@ -283,7 +283,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: 60 }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: 32 }} />
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 35 }} />
         </div>
       ) : !report ? (
         <div className="alert alert-error">Impossible de charger le rapport de sécurité.</div>
@@ -541,7 +541,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
             ) : (
               <div style={{ width: '100%', height: 180, background: '#f1f5f9', borderRadius: 8,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                <i className="fas fa-camera-slash" style={{ fontSize: 32, color: '#94a3b8' }} />
+                <i className="fas fa-camera-slash" style={{ fontSize: 35, color: '#94a3b8' }} />
                 <span style={{ fontSize: 13, color: '#64748b' }}>Photo non disponible</span>
                 <span style={{ fontSize: 11, color: '#94a3b8' }}>Les photos sont capturées au démarrage de l'examen</span>
               </div>

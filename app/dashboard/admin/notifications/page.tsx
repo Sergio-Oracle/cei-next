@@ -55,10 +55,10 @@ export default function AdminNotificationsPage() {
       </div>
       <div className="card">
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 24 }} /></div>
+          <div style={{ textAlign: 'center', padding: 40 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 26 }} /></div>
         ) : notifications.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 60 }}>
-            <i className="fas fa-bell-slash" style={{ fontSize: 40, color: 'var(--text-muted)', display: 'block', marginBottom: 12 }} />
+            <i className="fas fa-bell-slash" style={{ fontSize: 44, color: 'var(--text-muted)', display: 'block', marginBottom: 12 }} />
             <p style={{ color: 'var(--text-muted)' }}>Aucune notification</p>
           </div>
         ) : notifications.map(n => (
@@ -68,7 +68,7 @@ export default function AdminNotificationsPage() {
             <div style={{ width: 36, height: 36, borderRadius: '50%',
               background: n.is_read ? 'var(--background)' : 'var(--primary)20',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <i className="fas fa-bell" style={{ color: n.is_read ? 'var(--text-muted)' : 'var(--primary)', fontSize: 14 }} />
+              <i className="fas fa-bell" style={{ color: n.is_read ? 'var(--text-muted)' : 'var(--primary)', fontSize: 17 }} />
             </div>
             <div style={{ flex: 1 }}>
               {n.title && <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{n.title}</div>}

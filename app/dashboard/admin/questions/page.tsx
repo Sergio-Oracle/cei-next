@@ -328,7 +328,7 @@ export default function AdminQuestionsPage() {
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
             {preview.tags.map(t => (
               <span key={t} style={{ fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 99, background: '#f0fdfa', color: '#0d9488' }}>
-                <i className="fas fa-hashtag" style={{ fontSize: 9, marginRight: 3 }} />{t}
+                <i className="fas fa-hashtag" style={{ fontSize: 11, marginRight: 3 }} />{t}
               </span>
             ))}
           </div>
@@ -680,12 +680,12 @@ export default function AdminQuestionsPage() {
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>
-            <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, display: 'block', marginBottom: 12 }} />
+            <i className="fas fa-spinner fa-spin" style={{ fontSize: 31, display: 'block', marginBottom: 12 }} />
             Chargement…
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: 64, textAlign: 'center' }}>
-            <i className="fas fa-inbox" style={{ fontSize: 40, color: 'var(--text-muted)', display: 'block', marginBottom: 14 }} />
+            <i className="fas fa-inbox" style={{ fontSize: 44, color: 'var(--text-muted)', display: 'block', marginBottom: 14 }} />
             <h3 style={{ margin: '0 0 10px' }}>{questions.length === 0 ? 'Banque vide' : 'Aucun résultat'}</h3>
             <p style={{ margin: 0, color: 'var(--text-muted)', maxWidth: 380, marginInline: 'auto' }}>
               {questions.length === 0
@@ -742,7 +742,7 @@ export default function AdminQuestionsPage() {
                             {q.tags.map(t => (
                               <span key={t} onClick={() => setFilterTag(t)} title="Filtrer par ce tag"
                                 style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 99, background: '#f0fdfa', color: '#0d9488', cursor: 'pointer' }}>
-                                <i className="fas fa-hashtag" style={{ fontSize: 8, marginRight: 2 }} />{t}
+                                <i className="fas fa-hashtag" style={{ fontSize: 10, marginRight: 2 }} />{t}
                               </span>
                             ))}
                           </div>

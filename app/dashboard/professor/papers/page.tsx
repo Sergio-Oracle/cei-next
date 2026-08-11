@@ -171,7 +171,7 @@ export default function ProfessorPapersPage() {
       {noSubjects && (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '48px 32px', textAlign: 'center', marginBottom: 24 }}>
           <div style={{ width: 56, height: 56, background: '#fef3c7', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <i className="fas fa-triangle-exclamation" style={{ fontSize: 26, color: '#d97706' }} />
+            <i className="fas fa-triangle-exclamation" style={{ fontSize: 29, color: '#d97706' }} />
           </div>
           <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 8 }}>Aucun sujet disponible</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
@@ -251,13 +251,13 @@ export default function ProfessorPapersPage() {
                       }}>
                       {singleFile ? (
                         <>
-                          <i className="fas fa-file-check" style={{ fontSize: 28, color: '#10b981', display: 'block', marginBottom: 8 }} />
+                          <i className="fas fa-file-check" style={{ fontSize: 31, color: '#10b981', display: 'block', marginBottom: 8 }} />
                           <div style={{ fontWeight: 600, fontSize: 14, color: '#15803d', marginBottom: 4 }}>{singleFile.name}</div>
                           <div style={{ fontSize: 12, color: '#64748b' }}>{(singleFile.size / 1024).toFixed(0)} Ko</div>
                         </>
                       ) : (
                         <>
-                          <i className="fas fa-cloud-upload-alt" style={{ fontSize: 32, color: '#94a3b8', display: 'block', marginBottom: 8 }} />
+                          <i className="fas fa-cloud-upload-alt" style={{ fontSize: 35, color: '#94a3b8', display: 'block', marginBottom: 8 }} />
                           <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)', marginBottom: 4 }}>Glissez-déposez le fichier ici</div>
                           <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>ou cliquez pour parcourir</div>
                         </>
@@ -327,13 +327,13 @@ export default function ProfessorPapersPage() {
                       }}>
                       {batchFiles && batchFiles.length > 0 ? (
                         <>
-                          <i className="fas fa-folder-open" style={{ fontSize: 28, color: '#10b981', display: 'block', marginBottom: 8 }} />
+                          <i className="fas fa-folder-open" style={{ fontSize: 31, color: '#10b981', display: 'block', marginBottom: 8 }} />
                           <div style={{ fontWeight: 600, fontSize: 14, color: '#15803d', marginBottom: 4 }}>{batchFiles.length} fichier(s) sélectionné(s)</div>
                           <div style={{ fontSize: 12, color: '#64748b' }}>Cliquez pour changer la sélection</div>
                         </>
                       ) : (
                         <>
-                          <i className="fas fa-folder-open" style={{ fontSize: 32, color: '#94a3b8', display: 'block', marginBottom: 8 }} />
+                          <i className="fas fa-folder-open" style={{ fontSize: 35, color: '#94a3b8', display: 'block', marginBottom: 8 }} />
                           <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)', marginBottom: 4 }}>Sélectionnez un dossier de copies</div>
                           <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Ou glissez-déposez plusieurs fichiers ici</div>
                         </>
@@ -460,7 +460,7 @@ export default function ProfessorPapersPage() {
             <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 44, height: 44, borderRadius: '50%', background: singleResult.score >= 10 ? '#dcfce7' : '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <i className="fas fa-check-circle" style={{ fontSize: 22, color: singleResult.score >= 10 ? '#10b981' : '#ef4444' }} />
+                  <i className="fas fa-check-circle" style={{ fontSize: 24, color: singleResult.score >= 10 ? '#10b981' : '#ef4444' }} />
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>Correction terminée</div>
@@ -517,7 +517,7 @@ export default function ProfessorPapersPage() {
             <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <i className="fas fa-layer-group" style={{ fontSize: 20, color: '#10b981' }} />
+                  <i className="fas fa-layer-group" style={{ fontSize: 24, color: '#10b981' }} />
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>Correction en lot terminée</div>

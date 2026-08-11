@@ -71,7 +71,7 @@ export default function SearchableSelect({ options, value, onChange, placeholder
     <div ref={rootRef} style={{ position: 'relative' }}>
       <div ref={triggerRef} onClick={toggle}
         style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '11px 13px', border: `1.5px solid ${open ? 'var(--primary)' : 'var(--border)'}`, borderRadius: 8, fontSize: 13, background: disabled ? 'var(--background)' : 'var(--surface)', color: selected ? 'var(--text)' : 'var(--text-muted)', cursor: disabled ? 'not-allowed' : 'pointer', boxSizing: 'border-box' }}>
-        <i className="fas fa-magnifying-glass" style={{ fontSize: 11, color: 'var(--text-muted)' }} />
+        <i className="fas fa-magnifying-glass" style={{ fontSize: 13, color: 'var(--text-muted)' }} />
         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {selected ? selected.label : (placeholder || 'Rechercher…')}
         </span>
@@ -83,7 +83,7 @@ export default function SearchableSelect({ options, value, onChange, placeholder
             {options.length} option{options.length !== 1 ? 's' : ''}
           </span>
         )}
-        <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} style={{ fontSize: 11, color: 'var(--text-muted)' }} />
+        <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} style={{ fontSize: 13, color: 'var(--text-muted)' }} />
       </div>
       {open && !disabled && mounted && rect && createPortal(
         <div ref={panelRef} style={{ position: 'fixed', zIndex: 10000, top: rect.top, left: rect.left, width: rect.width, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: 'var(--shadow-lg)', maxHeight: 280, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

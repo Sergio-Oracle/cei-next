@@ -343,7 +343,7 @@ export default function AdminEnrollmentsPage() {
 
       {formations.length === 0 && !loading && (
         <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <i className="fas fa-triangle-exclamation" style={{ color: '#f59e0b', fontSize: 18, flexShrink: 0 }} />
+          <i className="fas fa-triangle-exclamation" style={{ color: '#f59e0b', fontSize: 22, flexShrink: 0 }} />
           <p style={{ margin: 0, fontSize: 13, color: '#92400e' }}>Créez d'abord des formations et des UEs dans <strong>Maquette Pédagogique</strong> avant d'inscrire des étudiants.</p>
         </div>
       )}
@@ -371,7 +371,7 @@ export default function AdminEnrollmentsPage() {
       {view === 'list' && <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="card-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="fas fa-list" style={{ color: 'var(--text-muted)', fontSize: 13 }} />
+            <i className="fas fa-list" style={{ color: 'var(--text-muted)', fontSize: 16 }} />
             <h3 style={{ margin: 0 }}>Liste des étudiants</h3>
             <span className="status-badge secondary" style={{ fontSize: 11 }}>{students.length}</span>
           </div>
@@ -409,11 +409,11 @@ export default function AdminEnrollmentsPage() {
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: 60 }}>
-            <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: 'var(--primary)' }} />
+            <i className="fas fa-spinner fa-spin" style={{ fontSize: 31, color: 'var(--primary)' }} />
           </div>
         ) : filtered.length === 0 ? (
           <div className="empty-message" style={{ padding: '48px 20px' }}>
-            <i className="fas fa-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />
+            <i className="fas fa-inbox" style={{ fontSize: 35, display: 'block', marginBottom: 10 }} />
             Aucun étudiant enregistré.
           </div>
         ) : (
@@ -444,7 +444,7 @@ export default function AdminEnrollmentsPage() {
                       )}
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>
-                      <i className="fas fa-envelope" style={{ marginRight: 3, fontSize: 10 }} />{st.email}
+                      <i className="fas fa-envelope" style={{ marginRight: 3, fontSize: 12 }} />{st.email}
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                       <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginRight: 2 }}>UEs :</span>
@@ -478,7 +478,7 @@ export default function AdminEnrollmentsPage() {
         <div style={{ display: 'flex', flexDirection: 'row', gap: 16, overflowX: 'auto', paddingBottom: 10, alignItems: 'flex-start' }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: 60 }}>
-              <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: 'var(--primary)' }} />
+              <i className="fas fa-spinner fa-spin" style={{ fontSize: 31, color: 'var(--primary)' }} />
             </div>
           ) : (
             <>
@@ -487,7 +487,7 @@ export default function AdminEnrollmentsPage() {
                   {/* En-tête formation */}
                   <div style={{ background: 'var(--primary)', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <i className="fas fa-graduation-cap" style={{ color: '#fff', fontSize: 16 }} />
+                      <i className="fas fa-graduation-cap" style={{ color: '#fff', fontSize: 19 }} />
                       <div>
                         <div style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>{formation!.name}</div>
                         <div style={{ color: 'rgba(255,255,255,.75)', fontSize: 12 }}>{formation!.code} — Niveau {formation!.level}</div>
@@ -574,7 +574,7 @@ export default function AdminEnrollmentsPage() {
                 <div className="card" style={{ flex: '0 0 380px', padding: 0, overflow: 'hidden' }}>
                   <div style={{ background: '#f59e0b', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <i className="fas fa-triangle-exclamation" style={{ color: '#fff', fontSize: 16 }} />
+                      <i className="fas fa-triangle-exclamation" style={{ color: '#fff', fontSize: 19 }} />
                       <div style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>Sans formation principale</div>
                     </div>
                     <span style={{ background: 'rgba(255,255,255,.2)', color: '#fff', borderRadius: 99, padding: '3px 12px', fontSize: 13, fontWeight: 700 }}>
@@ -593,7 +593,7 @@ export default function AdminEnrollmentsPage() {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{st.full_name || st.email}</div>
                             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
-                              <i className="fas fa-envelope" style={{ marginRight: 3, fontSize: 10 }} />{st.email}
+                              <i className="fas fa-envelope" style={{ marginRight: 3, fontSize: 12 }} />{st.email}
                             </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                               <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginRight: 2 }}>UEs :</span>
@@ -618,7 +618,7 @@ export default function AdminEnrollmentsPage() {
 
               {byFormation.length === 0 && noFormation.length === 0 && (
                 <div className="card empty-message" style={{ padding: '48px 20px' }}>
-                  <i className="fas fa-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />
+                  <i className="fas fa-inbox" style={{ fontSize: 35, display: 'block', marginBottom: 10 }} />
                   Aucun étudiant enregistré.
                 </div>
               )}
@@ -632,11 +632,11 @@ export default function AdminEnrollmentsPage() {
       {view === 'byPole' && (
         loading ? (
           <div style={{ textAlign: 'center', padding: 60 }}>
-            <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: 'var(--primary)' }} />
+            <i className="fas fa-spinner fa-spin" style={{ fontSize: 31, color: 'var(--primary)' }} />
           </div>
         ) : byPole.length === 0 && noPole.length === 0 ? (
           <div className="card empty-message" style={{ padding: '48px 20px' }}>
-            <i className="fas fa-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />
+            <i className="fas fa-inbox" style={{ fontSize: 35, display: 'block', marginBottom: 10 }} />
             Aucun étudiant enregistré.
           </div>
         ) : (
@@ -647,7 +647,7 @@ export default function AdminEnrollmentsPage() {
                 <div key={p.poleId} className="card" style={{ flex: '0 0 340px', padding: 0, overflow: 'hidden' }}>
                   <div style={{ background: color, padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, position: 'sticky', top: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                      <i className="fas fa-sitemap" style={{ color: '#fff', fontSize: 16, flexShrink: 0 }} />
+                      <i className="fas fa-sitemap" style={{ color: '#fff', fontSize: 19, flexShrink: 0 }} />
                       <div style={{ minWidth: 0 }}>
                         <div style={{ color: '#fff', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.poleName}</div>
                         <div style={{ color: 'rgba(255,255,255,.75)', fontSize: 11 }}>{p.poleCode}</div>
@@ -696,7 +696,7 @@ export default function AdminEnrollmentsPage() {
               <div key="nopole" className="card" style={{ flex: '0 0 340px', padding: 0, overflow: 'hidden' }}>
                 <div style={{ background: '#f59e0b', padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <i className="fas fa-triangle-exclamation" style={{ color: '#fff', fontSize: 16 }} />
+                    <i className="fas fa-triangle-exclamation" style={{ color: '#fff', fontSize: 19 }} />
                     <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>Sans pôle</div>
                   </div>
                   <span style={{ background: 'rgba(255,255,255,.22)', color: '#fff', borderRadius: 99, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>

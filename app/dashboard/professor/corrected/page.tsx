@@ -152,7 +152,7 @@ export default function CorrectedPage() {
         ].map(({ icon, label, value, color, bg }) => (
           <div key={label} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: 18, display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 44, height: 44, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className={`fas ${icon}`} style={{ color, fontSize: 18 }} />
+              <i className={`fas ${icon}`} style={{ color, fontSize: 22 }} />
             </div>
             <div>
               <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a' }}>{value}</p>
@@ -165,7 +165,7 @@ export default function CorrectedPage() {
       {/* Filtres */}
       <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 18px', marginBottom: 18, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 220, position: 'relative' }}>
-          <i className="fas fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 13 }} />
+          <i className="fas fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 16 }} />
           <input placeholder="Rechercher étudiant, sujet…" value={search} onChange={e => setSearch(e.target.value)}
             style={{ width: '100%', padding: '9px 12px 9px 34px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', color: '#0f172a' }} />
         </div>
@@ -193,12 +193,12 @@ export default function CorrectedPage() {
       <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 24px', color: '#64748b' }}>
-            <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: '#2563eb', display: 'block', marginBottom: 14 }} />
+            <i className="fas fa-spinner fa-spin" style={{ fontSize: 31, color: '#2563eb', display: 'block', marginBottom: 14 }} />
             Chargement des copies…
           </div>
         ) : visible.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 24px', color: '#64748b' }}>
-            <i className="fas fa-inbox" style={{ fontSize: 36, display: 'block', marginBottom: 14, opacity: .4 }} />
+            <i className="fas fa-inbox" style={{ fontSize: 40, display: 'block', marginBottom: 14, opacity: .4 }} />
             <p style={{ margin: '0 0 6px', fontWeight: 600 }}>{papers.length === 0 ? 'Aucune copie corrigée pour l\'instant' : 'Aucun résultat'}</p>
             <p style={{ margin: 0, fontSize: 13 }}>{papers.length === 0 ? 'Les copies corrigées apparaîtront ici après les examens' : 'Modifiez vos critères de recherche'}</p>
           </div>
@@ -224,7 +224,7 @@ export default function CorrectedPage() {
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? 'white' : '#fafafa' }}>
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{ padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: isOnline ? '#dbeafe' : '#e0f2fe', color: isOnline ? '#1d4ed8' : '#0891b2', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                        <i className={`fas ${isOnline ? 'fa-desktop' : 'fa-file-pdf'}`} style={{ fontSize: 10 }} />
+                        <i className={`fas ${isOnline ? 'fa-desktop' : 'fa-file-pdf'}`} style={{ fontSize: 12 }} />
                         {isOnline ? 'En ligne' : 'Papier'}
                       </span>
                     </td>
@@ -239,7 +239,7 @@ export default function CorrectedPage() {
                     <td style={{ padding: '12px 16px' }}>
                       {scoreNum != null ? (
                         <span style={{ padding: '5px 12px', borderRadius: 8, fontWeight: 700, fontSize: 14, background: scoreGood ? '#d1fae5' : '#fee2e2', color: scoreGood ? '#059669' : '#dc2626', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                          <i className={`fas ${scoreGood ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ fontSize: 11 }} />
+                          <i className={`fas ${scoreGood ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ fontSize: 13 }} />
                           {scoreNum.toFixed(1)}/20
                         </span>
                       ) : (
@@ -283,21 +283,21 @@ export default function CorrectedPage() {
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => openDetail(paper)}
                           style={{ padding: '6px 11px', background: '#dbeafe', color: '#1d4ed8', border: 'none', borderRadius: 7, fontWeight: 600, cursor: 'pointer', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                          <i className={`fas ${isOnline ? 'fa-eye' : 'fa-info-circle'}`} style={{ fontSize: 11 }} />
+                          <i className={`fas ${isOnline ? 'fa-eye' : 'fa-info-circle'}`} style={{ fontSize: 13 }} />
                           {isOnline ? 'Réviser' : 'Détail'}
                         </button>
                         <button onClick={() => downloadPdf(paper)} disabled={pdfBusy === paper.id}
                           style={{ padding: '6px 11px', background: pdfBusy === paper.id ? '#f1f5f9' : '#fee2e2', color: pdfBusy === paper.id ? '#94a3b8' : '#dc2626', border: 'none', borderRadius: 7, fontWeight: 600, cursor: pdfBusy === paper.id ? 'not-allowed' : 'pointer', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           {pdfBusy === paper.id
-                            ? <><i className="fas fa-spinner fa-spin" style={{ fontSize: 11 }} />PDF…</>
-                            : <><i className="fas fa-file-pdf" style={{ fontSize: 11 }} />PDF</>
+                            ? <><i className="fas fa-spinner fa-spin" style={{ fontSize: 13 }} />PDF…</>
+                            : <><i className="fas fa-file-pdf" style={{ fontSize: 13 }} />PDF</>
                           }
                         </button>
                         {scoreNum != null && (
                           <button onClick={() => setExampleModal(paper)}
                             style={{ padding: '6px 11px', background: '#ccfbf1', color: '#0f766e', border: 'none', borderRadius: 7, fontWeight: 600, cursor: 'pointer', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}
                             title="Créer une copie-exemple anonymisée pour une restitution collective">
-                            <i className="fas fa-user-secret" style={{ fontSize: 11 }} />Exemple
+                            <i className="fas fa-user-secret" style={{ fontSize: 13 }} />Exemple
                           </button>
                         )}
                       </div>
@@ -339,7 +339,7 @@ export default function CorrectedPage() {
           </p>
           {creatingExample ? (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <i className="fas fa-spinner fa-spin" style={{ fontSize: 22, color: '#0f766e' }} />
+              <i className="fas fa-spinner fa-spin" style={{ fontSize: 24, color: '#0f766e' }} />
               <p style={{ marginTop: 10, fontSize: 13, color: '#64748b' }}>Anonymisation en cours…</p>
             </div>
           ) : (

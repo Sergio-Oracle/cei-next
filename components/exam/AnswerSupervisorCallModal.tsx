@@ -142,7 +142,7 @@ export default function AnswerSupervisorCallModal({ proctorId, supervisorName, o
           <audio ref={remoteAudRef} autoPlay />
           {status !== 'connected' && (
             <div style={{ textAlign: 'center', color: 'rgba(255,255,255,.6)' }}>
-              <i className={`fas ${status === 'error' ? 'fa-phone-slash' : 'fa-spinner fa-spin'}`} style={{ fontSize: 28, marginBottom: 10, display: 'block' }} />
+              <i className={`fas ${status === 'error' ? 'fa-phone-slash' : 'fa-spinner fa-spin'}`} style={{ fontSize: 31, marginBottom: 10, display: 'block' }} />
               {statusLabel[status]}
             </div>
           )}

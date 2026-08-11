@@ -96,13 +96,13 @@ export default function ExamCalendar({ apiPath = '/api/online_exams', role = 'ad
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 60 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 32 }} /></div>
+        <div style={{ textAlign: 'center', padding: 60 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 35 }} /></div>
       ) : view === 'list' ? (
         /* ── VUE LISTE ────────────────────────────────────────────── */
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           {filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
-              <i className="fas fa-calendar-times" style={{ fontSize: 48, display: 'block', marginBottom: 16 }} />
+              <i className="fas fa-calendar-times" style={{ fontSize: 53, display: 'block', marginBottom: 16 }} />
               <h3>Aucun examen</h3>
             </div>
           ) : filtered.map((exam, i) => {
@@ -181,7 +181,7 @@ export default function ExamCalendar({ apiPath = '/api/online_exams', role = 'ad
           <div className="card">
             {!selected ? (
               <div style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
-                <i className="fas fa-hand-pointer" style={{ fontSize: 32, display: 'block', marginBottom: 12 }} />
+                <i className="fas fa-hand-pointer" style={{ fontSize: 35, display: 'block', marginBottom: 12 }} />
                 <p style={{ fontSize: 13 }}>Cliquez sur un jour pour voir les examens</p>
               </div>
             ) : (

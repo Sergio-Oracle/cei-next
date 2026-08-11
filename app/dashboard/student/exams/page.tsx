@@ -78,7 +78,7 @@ export default function StudentExamsPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ background: '#3b82f6', width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className="fas fa-laptop-code" style={{ color: 'white', fontSize: 18 }} />
+            <i className="fas fa-laptop-code" style={{ color: 'white', fontSize: 22 }} />
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Mes Examens en Ligne</h2>
@@ -93,11 +93,11 @@ export default function StudentExamsPage() {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: 32 }} />
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 35 }} />
         </div>
       ) : exams.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '64px 24px', background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)' }}>
-          <i className="fas fa-laptop-code" style={{ fontSize: 52, color: '#cbd5e1', display: 'block', marginBottom: 16 }} />
+          <i className="fas fa-laptop-code" style={{ fontSize: 57, color: '#cbd5e1', display: 'block', marginBottom: 16 }} />
           <h3 style={{ color: '#475569', fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>Aucun examen disponible</h3>
           <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>Vos examens apparaîtront ici lorsqu'ils seront planifiés.</p>
         </div>
@@ -227,14 +227,14 @@ function ExamCard({ exam }: { exam: OnlineExam }) {
         {/* Dates + durée */}
         <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 12px', marginBottom: 12, border: '1px solid #f1f5f9' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#475569', fontSize: 12, marginBottom: 5 }}>
-            <i className="fas fa-play" style={{ color: '#10b981', fontSize: 9 }} />
+            <i className="fas fa-play" style={{ color: '#10b981', fontSize: 11 }} />
             <span style={{ flex: 1 }}>{start.toLocaleString('fr-FR', LOCALE_OPTS)}</span>
             <span style={{ fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <i className="fas fa-clock" style={{ color: '#3b82f6', fontSize: 11 }} /> {fmtDuration(exam.duration_minutes)}
+              <i className="fas fa-clock" style={{ color: '#3b82f6', fontSize: 13 }} /> {fmtDuration(exam.duration_minutes)}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#475569', fontSize: 12 }}>
-            <i className="fas fa-stop" style={{ color: '#ef4444', fontSize: 9 }} />
+            <i className="fas fa-stop" style={{ color: '#ef4444', fontSize: 11 }} />
             <span>{end.toLocaleString('fr-FR', LOCALE_OPTS)}</span>
           </div>
         </div>

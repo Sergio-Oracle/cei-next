@@ -87,12 +87,12 @@ export default function RestitutionPage() {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 24px', color: '#64748b' }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: '#0f766e', display: 'block', marginBottom: 14 }} />
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 31, color: '#0f766e', display: 'block', marginBottom: 14 }} />
           Chargement…
         </div>
       ) : examples.length === 0 ? (
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '60px 24px', textAlign: 'center', color: '#64748b' }}>
-          <i className="fas fa-inbox" style={{ fontSize: 36, display: 'block', marginBottom: 14, opacity: .4 }} />
+          <i className="fas fa-inbox" style={{ fontSize: 40, display: 'block', marginBottom: 14, opacity: .4 }} />
           <p style={{ margin: '0 0 6px', fontWeight: 600 }}>Aucune copie-exemple pour l'instant</p>
           <p style={{ margin: 0, fontSize: 13 }}>Créez-en une depuis <b>Copies Corrigées</b>, avec le bouton « Exemple » sur une copie notée.</p>
         </div>

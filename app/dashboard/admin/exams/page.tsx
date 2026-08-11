@@ -41,7 +41,7 @@ function StatusBadge({ status }: { status: ExamStatus }) {
 function SecPill({ icon, value, title, color = '#64748b', bg = '#f1f5f9' }: { icon: string; value: string | number; title?: string; color?: string; bg?: string }) {
   return (
     <span title={title} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: bg, color, border: `1px solid ${color}20`, borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
-      <i className={`fas ${icon}`} style={{ fontSize: 9 }} />{value}
+      <i className={`fas ${icon}`} style={{ fontSize: 11 }} />{value}
     </span>
   )
 }
@@ -145,7 +145,7 @@ export default function AdminExamsPage() {
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 44, height: 44, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="fas fa-desktop" style={{ color: 'var(--primary)', fontSize: 20 }} />
+            <i className="fas fa-desktop" style={{ color: 'var(--primary)', fontSize: 24 }} />
           </div>
           <div>
             <h2 style={{ margin: 0 }}>Examens en Ligne</h2>
@@ -167,7 +167,7 @@ export default function AdminExamsPage() {
         ].map(s => (
           <div key={s.label} style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 14, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ width: 42, height: 42, background: '#fff', border: `1.5px solid ${s.border}`, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <i className={`fas ${s.icon}`} style={{ color: s.color, fontSize: 18 }} />
+              <i className={`fas ${s.icon}`} style={{ color: s.color, fontSize: 22 }} />
             </div>
             <div>
               <div style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
@@ -192,7 +192,7 @@ export default function AdminExamsPage() {
       ) : exams.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '64px 24px', background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)' }}>
           <div style={{ width: 64, height: 64, background: '#eff6ff', borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <i className="fas fa-desktop" style={{ fontSize: 28, color: 'var(--primary)' }} />
+            <i className="fas fa-desktop" style={{ fontSize: 31, color: 'var(--primary)' }} />
           </div>
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Aucun examen créé</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>Créez votre premier examen en ligne avec surveillance IA</div>
@@ -225,7 +225,7 @@ export default function AdminExamsPage() {
                   {/* Subject */}
                   {exam.subject_title && (
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 6 }}>
-                      <i className="fas fa-book" style={{ color: 'var(--primary)', fontSize: 11, marginTop: 3, flexShrink: 0 }} />
+                      <i className="fas fa-book" style={{ color: 'var(--primary)', fontSize: 13, marginTop: 3, flexShrink: 0 }} />
                       <span style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.4 }}>{exam.subject_title}</span>
                     </div>
                   )}
@@ -233,7 +233,7 @@ export default function AdminExamsPage() {
                   {/* Creator */}
                   {exam.creator_name && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                      <i className="fas fa-user-tie" style={{ color: 'var(--text-muted)', fontSize: 11 }} />
+                      <i className="fas fa-user-tie" style={{ color: 'var(--text-muted)', fontSize: 13 }} />
                       <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{exam.creator_name}</span>
                     </div>
                   )}
@@ -242,11 +242,11 @@ export default function AdminExamsPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
-                        <i className="fas fa-play" style={{ color: '#10b981', fontSize: 9 }} />
+                        <i className="fas fa-play" style={{ color: '#10b981', fontSize: 11 }} />
                         <span style={{ color: 'var(--text)' }}>{exam.start_time ? fmtDate(exam.start_time) : '—'}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
-                        <i className="fas fa-stop" style={{ color: '#ef4444', fontSize: 9 }} />
+                        <i className="fas fa-stop" style={{ color: '#ef4444', fontSize: 11 }} />
                         <span style={{ color: 'var(--text)' }}>{exam.end_time ? fmtDate(exam.end_time) : '—'}</span>
                       </div>
                     </div>
@@ -320,7 +320,7 @@ export default function AdminExamsPage() {
                   {/* Supprimer — toujours en dernier, icône seulement */}
                   <button onClick={() => handleDelete(exam.id)} disabled={busy} title="Supprimer"
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, padding: 0, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', cursor: busy ? 'not-allowed' : 'pointer', marginLeft: 'auto' }}>
-                    <i className="fas fa-trash" style={{ fontSize: 12 }} />
+                    <i className="fas fa-trash" style={{ fontSize: 14 }} />
                   </button>
                 </div>
               </div>

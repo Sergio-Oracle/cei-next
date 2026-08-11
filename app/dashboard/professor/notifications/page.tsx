@@ -178,7 +178,7 @@ export default function ProfessorNotificationsPage() {
         ].map(({ icon, label, value, color, bg }) => (
           <div key={label} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: 18, display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 44, height: 44, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <i className={`fas ${icon}`} style={{ color, fontSize: 20 }} />
+              <i className={`fas ${icon}`} style={{ color, fontSize: 24 }} />
             </div>
             <div>
               <p style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{value}</p>
@@ -219,20 +219,20 @@ export default function ProfessorNotificationsPage() {
       <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 24px', color: '#64748b' }}>
-            <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: '#2563eb', display: 'block', marginBottom: 14 }} />
+            <i className="fas fa-spinner fa-spin" style={{ fontSize: 31, color: '#2563eb', display: 'block', marginBottom: 14 }} />
             Chargement des incidents…
           </div>
         ) : visible.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 24px', color: '#64748b' }}>
             {incidents.length === 0 ? (
               <>
-                <i className="fas fa-check-circle" style={{ fontSize: 44, color: '#10b981', display: 'block', marginBottom: 14 }} />
+                <i className="fas fa-check-circle" style={{ fontSize: 48, color: '#10b981', display: 'block', marginBottom: 14 }} />
                 <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: 16, color: '#059669' }}>Aucun incident détecté</p>
                 <p style={{ margin: 0, fontSize: 13 }}>Tout va bien — aucune anomalie dans les dernières 24h.</p>
               </>
             ) : (
               <>
-                <i className="fas fa-filter" style={{ fontSize: 36, display: 'block', marginBottom: 14, opacity: .4 }} />
+                <i className="fas fa-filter" style={{ fontSize: 40, display: 'block', marginBottom: 14, opacity: .4 }} />
                 <p style={{ margin: 0, fontWeight: 600 }}>Aucun incident pour ce filtre</p>
               </>
             )}
@@ -311,7 +311,7 @@ export default function ProfessorNotificationsPage() {
                       {/* Sévérité */}
                       <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
                         <span style={{ background: sev.bg, color: sev.color, borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                          <i className={`fas ${sev.icon}`} style={{ fontSize: 11 }} />
+                          <i className={`fas ${sev.icon}`} style={{ fontSize: 13 }} />
                           {sev.label}
                         </span>
                       </td>

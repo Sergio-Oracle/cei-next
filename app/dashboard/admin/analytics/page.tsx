@@ -108,7 +108,7 @@ export default function AdminAnalyticsPage() {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '80px 24px' }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: 32, color: 'var(--primary)', display: 'block', marginBottom: 14 }} />
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 35, color: 'var(--primary)', display: 'block', marginBottom: 14 }} />
           <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>Chargement des analytiques…</span>
         </div>
       ) : (
@@ -127,7 +127,7 @@ export default function AdminAnalyticsPage() {
               ].map(({ icon, label, value, color, bg }) => (
                 <div key={label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 9, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <i className={`fas ${icon}`} style={{ color, fontSize: 16 }} />
+                    <i className={`fas ${icon}`} style={{ color, fontSize: 19 }} />
                   </div>
                   <div>
                     <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color }}>{value}</p>
@@ -152,7 +152,7 @@ export default function AdminAnalyticsPage() {
               ].map(({ icon, label, value, color, bg }) => (
                 <div key={label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 9, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <i className={`fas ${icon}`} style={{ color, fontSize: 16 }} />
+                    <i className={`fas ${icon}`} style={{ color, fontSize: 19 }} />
                   </div>
                   <div>
                     <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color }}>{value}</p>
@@ -193,7 +193,7 @@ export default function AdminAnalyticsPage() {
                 ].map(({ icon, label, value, color, bg }) => (
                   <div key={label} style={{ flex: '1 1 130px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px' }}>
                     <div style={{ width: 36, height: 36, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-                      <i className={`fas ${icon}`} style={{ color, fontSize: 14 }} />
+                      <i className={`fas ${icon}`} style={{ color, fontSize: 17 }} />
                     </div>
                     <div style={{ fontSize: 20, fontWeight: 800, color }}>{value}</div>
                     <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 2 }}>{label}</div>
@@ -238,7 +238,7 @@ export default function AdminAnalyticsPage() {
                 ].map(({ icon, color, bg, label, value, caption }) => (
                   <div key={label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-                      <i className={`fas ${icon}`} style={{ color, fontSize: 13 }} />
+                      <i className={`fas ${icon}`} style={{ color, fontSize: 16 }} />
                     </div>
                     <div style={{ fontSize: 20, fontWeight: 800, color }}>{value}</div>
                     <div style={{ fontSize: 11, color: 'var(--text)', fontWeight: 600, marginTop: 2 }}>{label}</div>
@@ -289,7 +289,7 @@ export default function AdminAnalyticsPage() {
                       {(exams.bottom_exams ?? []).map((exam, i) => (
                         <tr key={i} style={{ borderBottom: i < (exams.bottom_exams!.length - 1) ? '1px solid #f1f5f9' : 'none' }}>
                           <td style={{ padding: '8px 10px', fontSize: 13 }}>
-                            <i className="fas fa-arrow-down" style={{ color: '#ef4444', marginRight: 6, fontSize: 10 }} />
+                            <i className="fas fa-arrow-down" style={{ color: '#ef4444', marginRight: 6, fontSize: 12 }} />
                             {exam.title}
                           </td>
                           <td style={{ padding: '8px 10px', fontWeight: 700, fontSize: 13, color: scoreColor(exam.avg_score), whiteSpace: 'nowrap' }}>{fmtScore(exam.avg_score)}/20</td>
@@ -339,7 +339,7 @@ export default function AdminAnalyticsPage() {
           {/* État vide */}
           {!exams.total_exams && !dash.total_users && (
             <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-              <i className="fas fa-chart-bar" style={{ fontSize: 40, color: 'var(--text-muted)', display: 'block', marginBottom: 14, opacity: .3 }} />
+              <i className="fas fa-chart-bar" style={{ fontSize: 44, color: 'var(--text-muted)', display: 'block', marginBottom: 14, opacity: .3 }} />
               <p style={{ color: 'var(--text-muted)', margin: 0 }}>Aucune donnée analytique disponible pour le moment</p>
             </div>
           )}

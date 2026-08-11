@@ -110,7 +110,7 @@ export default function AdminPapersPage() {
         ].map(({ icon, label, value, color, bg }) => (
           <div key={label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 18, display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 44, height: 44, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <i className={`fas ${icon}`} style={{ color, fontSize: 18 }} />
+              <i className={`fas ${icon}`} style={{ color, fontSize: 22 }} />
             </div>
             <div>
               <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>{value}</p>
@@ -123,7 +123,7 @@ export default function AdminPapersPage() {
       {/* Filtres */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px', marginBottom: 18, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 220, position: 'relative' }}>
-          <i className="fas fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 13 }} />
+          <i className="fas fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 16 }} />
           <input placeholder="Rechercher étudiant, sujet, professeur…" value={search} onChange={e => setSearch(e.target.value)}
             style={{ width: '100%', padding: '9px 12px 9px 34px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', color: 'var(--text)', background: 'var(--background)' }} />
         </div>
@@ -146,12 +146,12 @@ export default function AdminPapersPage() {
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 24px', color: 'var(--text-muted)' }}>
-            <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: 'var(--primary)', display: 'block', marginBottom: 14 }} />
+            <i className="fas fa-spinner fa-spin" style={{ fontSize: 31, color: 'var(--primary)', display: 'block', marginBottom: 14 }} />
             Chargement des copies…
           </div>
         ) : visible.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 24px', color: 'var(--text-muted)' }}>
-            <i className="fas fa-inbox" style={{ fontSize: 36, display: 'block', marginBottom: 14, opacity: .4 }} />
+            <i className="fas fa-inbox" style={{ fontSize: 40, display: 'block', marginBottom: 14, opacity: .4 }} />
             <p style={{ margin: '0 0 6px', fontWeight: 600 }}>{papers.length === 0 ? 'Aucune copie corrigée pour l\'instant' : 'Aucun résultat'}</p>
             <p style={{ margin: 0, fontSize: 13 }}>
               {papers.length === 0 ? 'Les copies corrigées apparaîtront ici après les examens' : 'Modifiez vos critères de recherche'}
@@ -178,7 +178,7 @@ export default function AdminPapersPage() {
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? 'white' : '#fafafa' }}>
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{ padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: isOnline ? '#dbeafe' : '#e0f2fe', color: isOnline ? '#1d4ed8' : '#0891b2', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                        <i className={`fas ${isOnline ? 'fa-desktop' : 'fa-file-pdf'}`} style={{ fontSize: 10 }} />
+                        <i className={`fas ${isOnline ? 'fa-desktop' : 'fa-file-pdf'}`} style={{ fontSize: 12 }} />
                         {isOnline ? 'En ligne' : 'Papier'}
                       </span>
                     </td>
@@ -196,7 +196,7 @@ export default function AdminPapersPage() {
                     <td style={{ padding: '12px 16px' }}>
                       {scoreNum != null ? (
                         <span style={{ padding: '5px 12px', borderRadius: 8, fontWeight: 700, fontSize: 14, background: scoreGood ? '#d1fae5' : '#fee2e2', color: scoreGood ? '#059669' : '#dc2626', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                          <i className={`fas ${scoreGood ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ fontSize: 11 }} />
+                          <i className={`fas ${scoreGood ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ fontSize: 13 }} />
                           {scoreNum.toFixed(1)}/20
                         </span>
                       ) : (
@@ -213,13 +213,13 @@ export default function AdminPapersPage() {
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => openDetail(p)}
                           style={{ padding: '6px 11px', background: '#dbeafe', color: '#1d4ed8', border: 'none', borderRadius: 7, fontWeight: 600, cursor: 'pointer', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                          <i className="fas fa-eye" style={{ fontSize: 11 }} />Voir
+                          <i className="fas fa-eye" style={{ fontSize: 13 }} />Voir
                         </button>
                         <button onClick={() => downloadPdf(p)} disabled={pdfBusy === p.id}
                           style={{ padding: '6px 11px', background: pdfBusy === p.id ? '#f1f5f9' : '#fee2e2', color: pdfBusy === p.id ? '#94a3b8' : '#dc2626', border: 'none', borderRadius: 7, fontWeight: 600, cursor: pdfBusy === p.id ? 'not-allowed' : 'pointer', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           {pdfBusy === p.id
-                            ? <><i className="fas fa-spinner fa-spin" style={{ fontSize: 11 }} />…</>
-                            : <><i className="fas fa-file-pdf" style={{ fontSize: 11 }} />PDF</>}
+                            ? <><i className="fas fa-spinner fa-spin" style={{ fontSize: 13 }} />…</>
+                            : <><i className="fas fa-file-pdf" style={{ fontSize: 13 }} />PDF</>}
                         </button>
                       </div>
                     </td>

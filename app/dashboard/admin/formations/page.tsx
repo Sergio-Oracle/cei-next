@@ -1056,13 +1056,13 @@ export default function AdminFormationsPage() {
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: 48 }}>
-              <i className="fas fa-spinner fa-spin" style={{ fontSize: 32, color: 'var(--primary)' }} />
+              <i className="fas fa-spinner fa-spin" style={{ fontSize: 35, color: 'var(--primary)' }} />
             </div>
           ) : (
             <>
               {poles.length === 0 && formationsSansNiveau.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--text-muted)' }}>
-                  <i className="fas fa-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />
+                  <i className="fas fa-inbox" style={{ fontSize: 35, display: 'block', marginBottom: 10 }} />
                   Aucun pôle créé — cliquez &quot;Créer la hiérarchie (pas-à-pas)&quot; en haut pour commencer
                 </div>
               )}
@@ -1208,7 +1208,7 @@ export default function AdminFormationsPage() {
         <ModalOverlay onClose={() => setModal(null)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22, paddingBottom: 18, borderBottom: '1px solid var(--border)' }}>
             <div style={{ width: 42, height: 42, borderRadius: 11, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className={`fas ${modal.kind.startsWith('create') ? 'fa-plus' : 'fa-pen'}`} style={{ color: '#3b82f6', fontSize: 16 }} />
+              <i className={`fas ${modal.kind.startsWith('create') ? 'fa-plus' : 'fa-pen'}`} style={{ color: '#3b82f6', fontSize: 19 }} />
             </div>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{modalTitle()}</h3>
           </div>
@@ -1232,7 +1232,7 @@ export default function AdminFormationsPage() {
         <ModalOverlay onClose={() => setModal(null)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid var(--border)' }}>
             <div style={{ width: 42, height: 42, borderRadius: 11, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className="fas fa-file-import" style={{ color: '#10b981', fontSize: 17 }} />
+              <i className="fas fa-file-import" style={{ color: '#10b981', fontSize: 20 }} />
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Import Bulk Maquette</h3>
@@ -1299,7 +1299,7 @@ export default function AdminFormationsPage() {
         <ModalOverlay onClose={() => setModal(null)} wide>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
             <div style={{ width: 42, height: 42, borderRadius: 11, background: '#fdf2f8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className="fas fa-shoe-prints" style={{ color: '#db2777', fontSize: 17 }} />
+              <i className="fas fa-shoe-prints" style={{ color: '#db2777', fontSize: 20 }} />
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Créer la hiérarchie pas-à-pas</h3>
@@ -1322,7 +1322,7 @@ export default function AdminFormationsPage() {
                     {state === 'done' && <i className="fas fa-check" style={{ marginRight: 4 }} />}
                     {WIZARD_LABELS[s]}
                   </span>
-                  {i < WIZARD_STEPS.length - 1 && <i className="fas fa-arrow-right" style={{ fontSize: 10, color: 'var(--text-muted)' }} />}
+                  {i < WIZARD_STEPS.length - 1 && <i className="fas fa-arrow-right" style={{ fontSize: 12, color: 'var(--text-muted)' }} />}
                 </div>
               )
             })}

@@ -62,7 +62,7 @@ export default function ProfilePage() {
   }
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: 60 }}><i className="fa-solid fa-spinner spin" style={{ fontSize: 32 }} /></div>
+    return <div style={{ textAlign: 'center', padding: 60 }}><i className="fa-solid fa-spinner spin" style={{ fontSize: 35 }} /></div>
   }
 
   return (

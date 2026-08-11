@@ -193,7 +193,7 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
             <div key={label} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 12px', textAlign: 'center' }}>
               <div style={{ width: 34, height: 34, background: color + '18', borderRadius: 9,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>
-                <i className={`fas ${icon}`} style={{ color, fontSize: 14 }} />
+                <i className={`fas ${icon}`} style={{ color, fontSize: 17 }} />
               </div>
               <div style={{ fontSize: 19, fontWeight: 800, color: '#0f172a' }}>{value}</div>
               <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, fontWeight: 600 }}>{label}</div>
@@ -357,12 +357,12 @@ export default function ProfessorResultsPage() {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '80px 24px' }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: 32, color: 'var(--primary)', display: 'block', marginBottom: 14 }} />
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 35, color: 'var(--primary)', display: 'block', marginBottom: 14 }} />
           <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>Chargement…</span>
         </div>
       ) : subjects.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-          <i className="fas fa-chart-bar" style={{ fontSize: 40, color: 'var(--text-muted)', display: 'block', marginBottom: 14, opacity: .3 }} />
+          <i className="fas fa-chart-bar" style={{ fontSize: 44, color: 'var(--text-muted)', display: 'block', marginBottom: 14, opacity: .3 }} />
           <p style={{ margin: '0 0 16px', fontWeight: 600 }}>Aucun sujet créé pour le moment</p>
           <a href="/dashboard/professor/create-subject" className="btn btn-primary">
             <i className="fas fa-plus-circle" /> Créer un sujet
@@ -389,7 +389,7 @@ export default function ProfessorResultsPage() {
                     borderRadius: 12, padding: '14px 12px', textAlign: 'center' }}>
                     <div style={{ width: 36, height: 36, background: 'rgba(255,255,255,.18)', borderRadius: 9,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>
-                      <i className={`fas ${icon}`} style={{ color: '#fff', fontSize: 14 }} />
+                      <i className={`fas ${icon}`} style={{ color: '#fff', fontSize: 17 }} />
                     </div>
                     <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>{val}</div>
                     <div style={{ fontSize: 10, color: '#bfdbfe', marginTop: 2, fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>

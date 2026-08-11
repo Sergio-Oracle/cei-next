@@ -95,9 +95,9 @@ export default function GuideEtudiant() {
           <div className="section-body">
             <p style={{color:'#475569',marginBottom:16}}>Depuis le menu principal, vous avez accès à :</p>
             <div className="steps">
-              <div className="step"><div className="step-num"><i className="fas fa-laptop-code" style={{fontSize:14}} /></div><div className="step-content"><h4>Examens en Ligne</h4><p>Liste de tous vos examens avec leur statut : <span style={{color:'#d97706',fontWeight:600}}>Pas encore ouvert</span> · <span style={{color:'#059669',fontWeight:600}}>Composer</span> · <span style={{color:'#94a3b8',fontWeight:600}}>Terminé</span></p></div></div>
-              <div className="step"><div className="step-num"><i className="fas fa-file-alt" style={{fontSize:14}} /></div><div className="step-content"><h4>Mes Copies</h4><p>Consultez vos copies soumises, vos notes et les feedbacks de correction IA.</p></div></div>
-              <div className="step"><div className="step-num"><i className="fas fa-award" style={{fontSize:14}} /></div><div className="step-content"><h4>Relevés de Notes</h4><p>Téléchargez vos relevés semestriels officiels en PDF avec votre GPA et vos crédits.</p></div></div>
+              <div className="step"><div className="step-num"><i className="fas fa-laptop-code" style={{fontSize:17}} /></div><div className="step-content"><h4>Examens en Ligne</h4><p>Liste de tous vos examens avec leur statut : <span style={{color:'#d97706',fontWeight:600}}>Pas encore ouvert</span> · <span style={{color:'#059669',fontWeight:600}}>Composer</span> · <span style={{color:'#94a3b8',fontWeight:600}}>Terminé</span></p></div></div>
+              <div className="step"><div className="step-num"><i className="fas fa-file-alt" style={{fontSize:17}} /></div><div className="step-content"><h4>Mes Copies</h4><p>Consultez vos copies soumises, vos notes et les feedbacks de correction IA.</p></div></div>
+              <div className="step"><div className="step-num"><i className="fas fa-award" style={{fontSize:17}} /></div><div className="step-content"><h4>Relevés de Notes</h4><p>Téléchargez vos relevés semestriels officiels en PDF avec votre GPA et vos crédits.</p></div></div>
             </div>
           </div>
         </div>

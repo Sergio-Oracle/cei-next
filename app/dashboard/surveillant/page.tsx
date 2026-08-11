@@ -83,7 +83,7 @@ export default function SurveillantDashboard() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ background: '#3b82f6', width: 46, height: 46, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className="fas fa-tachometer-alt" style={{ color: 'white', fontSize: 20 }} />
+            <i className="fas fa-tachometer-alt" style={{ color: 'white', fontSize: 24 }} />
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Tableau de bord Surveillant</h2>
@@ -127,11 +127,11 @@ export default function SurveillantDashboard() {
       {/* ── Corps ────────────────────────────────────────────────────── */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: 32 }} />
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 35 }} />
         </div>
       ) : exams.length === 0 ? (
         <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', textAlign: 'center', padding: '64px 24px' }}>
-          <i className="fas fa-eye-slash" style={{ fontSize: 52, color: '#cbd5e1', display: 'block', marginBottom: 16 }} />
+          <i className="fas fa-eye-slash" style={{ fontSize: 57, color: '#cbd5e1', display: 'block', marginBottom: 16 }} />
           <h3 style={{ color: '#475569', fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>Aucun examen assigné</h3>
           <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>Vous serez notifié lorsque des examens vous seront assignés.</p>
         </div>
@@ -187,7 +187,7 @@ export default function SurveillantDashboard() {
                             <td style={{ padding: '10px 24px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                  <i className="fas fa-user-circle" style={{ fontSize: 18, color: '#3b82f6' }} />
+                                  <i className="fas fa-user-circle" style={{ fontSize: 22, color: '#3b82f6' }} />
                                 </div>
                                 <div>
                                   <div style={{ fontWeight: 500, fontSize: 14, color: 'var(--text)' }}>{student.student_name}</div>
@@ -234,7 +234,7 @@ function StatTile({ icon, label, value, color }: { icon: string; label: string; 
   return (
     <div style={{ background: 'var(--surface)', border: `2px solid ${color}22`, borderRadius: 14, padding: '20px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
       <div style={{ width: 44, height: 44, background: `${color}15`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <i className={`fas ${icon}`} style={{ color, fontSize: 18 }} />
+        <i className={`fas ${icon}`} style={{ color, fontSize: 22 }} />
       </div>
       <div>
         <div style={{ fontSize: 28, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>

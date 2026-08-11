@@ -324,7 +324,7 @@ export default function LoginPage() {
             <button className="lang-btn" onClick={e => { e.stopPropagation(); setMenuOpen(v => !v) }}>
               <i className="fas fa-globe" />
               <span className="lang-current-label">{lang === 'fr' ? '🇫🇷 FR' : lang === 'en' ? '🇬🇧 EN' : '🇸🇳 WO'}</span>
-              <i className="fas fa-chevron-down" style={{ fontSize: 10 }} />
+              <i className="fas fa-chevron-down" style={{ fontSize: 12 }} />
             </button>
             {menuOpen && (
               <div className="lang-menu">

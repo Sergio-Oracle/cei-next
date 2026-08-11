@@ -83,7 +83,7 @@ export default function SurveillantMessagesPage() {
                   </span>
                 </div>
               </div>
-              <i className="fa-solid fa-chevron-right" style={{ color: 'var(--text-muted)', fontSize: 12 }} />
+              <i className="fa-solid fa-chevron-right" style={{ color: 'var(--text-muted)', fontSize: 14 }} />
             </div>
           ))}
         </div>
@@ -92,7 +92,7 @@ export default function SurveillantMessagesPage() {
         <div className="card">
           {!selectedExamId ? (
             <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
-              <i className="fa-solid fa-arrow-left" style={{ fontSize: 32, marginBottom: 12, display: 'block' }} />
+              <i className="fa-solid fa-arrow-left" style={{ fontSize: 35, marginBottom: 12, display: 'block' }} />
               Sélectionnez un examen pour voir les messages
             </div>
           ) : loadingMessages ? (

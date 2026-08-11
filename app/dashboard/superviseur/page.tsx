@@ -107,7 +107,7 @@ export default function SuperviseurDashboard() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ background: '#0891b2', width: 46, height: 46, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className="fas fa-user-shield" style={{ color: 'white', fontSize: 20 }} />
+            <i className="fas fa-user-shield" style={{ color: 'white', fontSize: 24 }} />
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Tableau de bord Superviseur</h2>
@@ -168,11 +168,11 @@ export default function SuperviseurDashboard() {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: 32 }} />
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 35 }} />
         </div>
       ) : !data || data.groups.length === 0 ? (
         <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', textAlign: 'center', padding: '64px 24px' }}>
-          <i className="fas fa-user-shield" style={{ fontSize: 52, color: '#cbd5e1', display: 'block', marginBottom: 16 }} />
+          <i className="fas fa-user-shield" style={{ fontSize: 57, color: '#cbd5e1', display: 'block', marginBottom: 16 }} />
           <h3 style={{ color: '#475569', fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>Aucun groupe assigné</h3>
           <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>Un administrateur doit vous rattacher à un ou plusieurs groupes de surveillants.</p>
         </div>
@@ -249,7 +249,7 @@ function StatTile({ icon, label, value, color }: { icon: string; label: string; 
   return (
     <div style={{ background: 'var(--surface)', border: `2px solid ${color}22`, borderRadius: 14, padding: '20px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
       <div style={{ width: 44, height: 44, background: `${color}15`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <i className={`fas ${icon}`} style={{ color, fontSize: 18 }} />
+        <i className={`fas ${icon}`} style={{ color, fontSize: 22 }} />
       </div>
       <div>
         <div style={{ fontSize: 28, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>

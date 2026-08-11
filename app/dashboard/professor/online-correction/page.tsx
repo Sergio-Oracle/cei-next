@@ -155,13 +155,13 @@ export default function OnlineCorrectionPage() {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '80px 24px' }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: 32, color: 'var(--primary)', display: 'block', marginBottom: 14 }} />
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 35, color: 'var(--primary)', display: 'block', marginBottom: 14 }} />
           <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>Chargement des examens…</span>
         </div>
       ) : exams.length === 0 ? (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '60px 32px', textAlign: 'center' }}>
           <div style={{ width: 56, height: 56, background: '#dbeafe', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <i className="fas fa-laptop-code" style={{ fontSize: 26, color: '#2563eb' }} />
+            <i className="fas fa-laptop-code" style={{ fontSize: 29, color: '#2563eb' }} />
           </div>
           <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 8 }}>Aucun examen à corriger</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
@@ -290,7 +290,7 @@ export default function OnlineCorrectionPage() {
         <Modal title="Correction IA en cours" onClose={() => {}} maxWidth={440}>
           <div style={{ textAlign: 'center', padding: '8px 4px 4px' }}>
             <div style={{ position: 'relative', width: 64, height: 64, margin: '0 auto 16px' }}>
-              <i className="fa-solid fa-robot" style={{ fontSize: 30, position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }} />
+              <i className="fa-solid fa-robot" style={{ fontSize: 33, position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }} />
               <svg width="64" height="64" style={{ transform: 'rotate(-90deg)' }}>
                 <circle cx="32" cy="32" r="28" fill="none" stroke="var(--border)" strokeWidth="4" />
                 <circle cx="32" cy="32" r="28" fill="none" stroke="#10b981" strokeWidth="4"
@@ -325,7 +325,7 @@ export default function OnlineCorrectionPage() {
               width: 56, height: 56, borderRadius: '50%', margin: '0 auto 12px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(16,185,129,.12)',
             }}>
-              <i className="fa-solid fa-circle-check" style={{ fontSize: 28, color: '#10b981' }} />
+              <i className="fa-solid fa-circle-check" style={{ fontSize: 31, color: '#10b981' }} />
             </div>
             <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{resultModal.examTitle}</div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>

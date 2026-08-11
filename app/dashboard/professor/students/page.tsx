@@ -120,7 +120,7 @@ export default function ProfessorStudentsPage() {
       {/* Filtres */}
       <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 18px', marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
-          <i className="fas fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 13 }} />
+          <i className="fas fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 16 }} />
           <input placeholder="Rechercher un étudiant…" value={search} onChange={e => setSearch(e.target.value)}
             style={{ width: '100%', padding: '9px 12px 9px 34px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', color: '#0f172a' }} />
         </div>
@@ -137,12 +137,12 @@ export default function ProfessorStudentsPage() {
       {/* Tableau(x) */}
       {loading ? (
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, textAlign: 'center', padding: '60px 24px', color: '#64748b' }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: '#2563eb', display: 'block', marginBottom: 14 }} />
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 31, color: '#2563eb', display: 'block', marginBottom: 14 }} />
           Chargement…
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, textAlign: 'center', padding: '60px 24px', color: '#64748b' }}>
-          <i className="fas fa-user-slash" style={{ fontSize: 36, display: 'block', marginBottom: 14, opacity: .4 }} />
+          <i className="fas fa-user-slash" style={{ fontSize: 40, display: 'block', marginBottom: 14, opacity: .4 }} />
           <p style={{ margin: '0 0 6px', fontWeight: 600 }}>
             {students.length === 0 ? 'Aucun étudiant inscrit dans vos UEs' : 'Aucun résultat'}
           </p>
@@ -158,7 +158,7 @@ export default function ProfessorStudentsPage() {
             return (
               <div key={p.code} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden', minWidth: 320 }}>
                 <div style={{ padding: '10px 16px', background: '#f0fdfa', borderBottom: '1px solid #99f6e4', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <i className="fas fa-sitemap" style={{ color: '#0d9488', fontSize: 13 }} />
+                  <i className="fas fa-sitemap" style={{ color: '#0d9488', fontSize: 16 }} />
                   <span style={{ fontWeight: 700, fontSize: 13, color: '#0d9488' }}>{p.name}</span>
                   <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#0d9488', background: '#ccfbf1', padding: '2px 8px', borderRadius: 20 }}>{poleStudents.length}</span>
                 </div>

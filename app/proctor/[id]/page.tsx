@@ -214,7 +214,7 @@ export default function ProctorPage() {
       <header style={{ background: '#2563eb', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 12px rgba(0,0,0,.3)', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,.15)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="fas fa-shield-alt" style={{ fontSize: 18 }} />
+            <i className="fas fa-shield-alt" style={{ fontSize: 22 }} />
           </div>
           <div>
             <h1 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>{data?.exam_title || 'Surveillance'}</h1>
@@ -253,7 +253,7 @@ export default function ProctorPage() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
           {([['all','Tous'],['IN_PROGRESS','En cours'],['high_risk','Risque élevé'],['BANNED','Bannis']] as [Filter,string][]).map(([f,label]) => (
             <button key={f} className={`pc-filter-btn${filter === f ? ' active' : ''}`} onClick={() => setFilter(f)}>
-              {f === 'IN_PROGRESS' && <i className="fas fa-circle" style={{ color: '#10b981', fontSize: 8, marginRight: 4 }} />}
+              {f === 'IN_PROGRESS' && <i className="fas fa-circle" style={{ color: '#10b981', fontSize: 10, marginRight: 4 }} />}
               {label}
             </button>
           ))}
@@ -281,10 +281,10 @@ export default function ProctorPage() {
         {done.length > 0 && (
           <div style={{ marginTop: 20, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12, overflow: 'hidden' }}>
             <div onClick={() => setCompletedOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'rgba(255,255,255,.04)', cursor: 'pointer', userSelect: 'none' }}>
-              <i className="fas fa-check-circle" style={{ color: '#10b981', fontSize: 15 }} />
+              <i className="fas fa-check-circle" style={{ color: '#10b981', fontSize: 18 }} />
               <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.8)' }}>Copies terminées</h4>
               <span style={{ background: 'rgba(16,185,129,.2)', color: '#10b981', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>{done.length}</span>
-              <i className="fas fa-chevron-down" style={{ marginLeft: 'auto', color: 'rgba(255,255,255,.4)', fontSize: 12, transform: completedOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
+              <i className="fas fa-chevron-down" style={{ marginLeft: 'auto', color: 'rgba(255,255,255,.4)', fontSize: 14, transform: completedOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
             </div>
             {completedOpen && (
               <div style={{ overflowX: 'auto' }}>
@@ -386,7 +386,7 @@ export default function ProctorPage() {
             <EmptySide icon="fa-shield-alt" text="Aucun événement enregistré" />
           ) : logsPanel.logs.map((log: any, i: number) => (
             <div key={i} style={{ display: 'flex', gap: 8, padding: 8, borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: 11 }}>
-              <i className="fas fa-circle" style={{ color: '#60a5fa', fontSize: 6, marginTop: 4, flexShrink: 0 }} />
+              <i className="fas fa-circle" style={{ color: '#60a5fa', fontSize: 7, marginTop: 4, flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
                 <div style={{ color: 'rgba(255,255,255,.8)' }}>{log.event_type || log.type || '—'}</div>
                 {log.created_at && <div style={{ color: 'rgba(255,255,255,.4)', fontSize: 9, marginTop: 2 }}>{new Date(log.created_at).toLocaleTimeString('fr-FR')}</div>}
@@ -427,14 +427,14 @@ function StudentCard({ s, onWarn, onMessage, onBan, onNote, onTime, onRec, onLog
       {/* Zone vidéo */}
       <div style={{ position: 'relative', aspectRatio: '16/9', background: '#000', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.25)', gap: 8 }}>
-          <i className="fas fa-video-slash" style={{ fontSize: 28 }} />
+          <i className="fas fa-video-slash" style={{ fontSize: 31 }} />
           <span style={{ fontSize: 11 }}>Connexion en attente…</span>
         </div>
 
         {/* Overlay soumis */}
         {isDone && !s.banned && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,.88)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <i className="fas fa-check-circle" style={{ fontSize: 32, color: '#10b981' }} />
+            <i className="fas fa-check-circle" style={{ fontSize: 35, color: '#10b981' }} />
             <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '.05em' }}>{s.status === 'auto_submitted' ? 'Auto-soumis' : 'Copie soumise'}</span>
             {s.submitted_at && <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{fmtTime(s.submitted_at)}</span>}
           </div>
@@ -443,7 +443,7 @@ function StudentCard({ s, onWarn, onMessage, onBan, onNote, onTime, onRec, onLog
         {/* Overlay exclu */}
         {s.banned && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(239,68,68,.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 16, fontWeight: 700 }}>
-            <i className="fas fa-ban" style={{ fontSize: 28 }} />EXCLU
+            <i className="fas fa-ban" style={{ fontSize: 31 }} />EXCLU
           </div>
         )}
 
@@ -467,7 +467,7 @@ function StudentCard({ s, onWarn, onMessage, onBan, onNote, onTime, onRec, onLog
 
         {/* Statut */}
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 10, marginBottom: 8, background: s.banned ? 'rgba(239,68,68,.15)' : isDone ? 'rgba(37,99,235,.15)' : 'rgba(16,185,129,.15)', color: s.banned ? '#ef4444' : isDone ? '#60a5fa' : '#10b981' }}>
-          <i className="fas fa-circle" style={{ fontSize: 6 }} />
+          <i className="fas fa-circle" style={{ fontSize: 7 }} />
           {s.banned ? 'Exclu' : isDone ? (s.status === 'auto_submitted' ? 'Auto-soumis' : 'Soumis') : 'En cours'}
         </span>
 
@@ -478,11 +478,11 @@ function StudentCard({ s, onWarn, onMessage, onBan, onNote, onTime, onRec, onLog
             { icon: 'fa-user-slash', val: s.no_face_count, lbl: 'Sans visage', warn: s.no_face_count > 0, bad: s.no_face_count > 5 },
           ].map(m => (
             <div key={m.lbl} className="pc-metric" style={{ background: m.bad ? 'rgba(239,68,68,.15)' : m.warn ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.07)', color: m.bad ? '#ef4444' : m.warn ? '#f59e0b' : 'rgba(255,255,255,.7)' }}>
-              <i className={`fas ${m.icon}`} style={{ fontSize: 9 }} /><strong>{m.val}</strong> {m.lbl}
+              <i className={`fas ${m.icon}`} style={{ fontSize: 11 }} /><strong>{m.val}</strong> {m.lbl}
             </div>
           ))}
           {s.started_at && !isDone && (
-            <div className="pc-metric" style={{ background: 'rgba(255,255,255,.07)', color: 'rgba(255,255,255,.7)' }}><i className="fas fa-clock" style={{ fontSize: 9 }} /> {elapsed(s.started_at)}</div>
+            <div className="pc-metric" style={{ background: 'rgba(255,255,255,.07)', color: 'rgba(255,255,255,.7)' }}><i className="fas fa-clock" style={{ fontSize: 11 }} /> {elapsed(s.started_at)}</div>
           )}
         </div>
 
@@ -494,7 +494,7 @@ function StudentCard({ s, onWarn, onMessage, onBan, onNote, onTime, onRec, onLog
           Score de risque &nbsp;{s.risk_score}% — {rc === 'high' ? 'ÉLEVÉ' : rc === 'medium' ? 'MOYEN' : 'FAIBLE'}
         </div>
 
-        {s.proctor_name && <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginBottom: 8 }}><i className="fas fa-user-tie" style={{ marginRight: 5, fontSize: 10 }} />{s.proctor_name}</div>}
+        {s.proctor_name && <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginBottom: 8 }}><i className="fas fa-user-tie" style={{ marginRight: 5, fontSize: 12 }} />{s.proctor_name}</div>}
 
         {/* Actions */}
         {s.banned ? (
@@ -533,7 +533,7 @@ function EmptyState({ filter, done, banned, search }: { filter: Filter; done: nu
   }
   return (
     <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: 'rgba(255,255,255,.3)' }}>
-      <i className={`fas ${icon}`} style={{ fontSize: 48, display: 'block', marginBottom: 16 }} />
+      <i className={`fas ${icon}`} style={{ fontSize: 53, display: 'block', marginBottom: 16 }} />
       <p style={{ fontSize: 14 }}>{msg}</p>
     </div>
   )
@@ -561,9 +561,9 @@ function PcModal({ children, onClose }: { children: React.ReactNode; onClose: ()
   )
 }
 
-function SpinCenter() { return <div style={{ textAlign: 'center', padding: 40 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 24 }} /></div> }
+function SpinCenter() { return <div style={{ textAlign: 'center', padding: 40 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 26 }} /></div> }
 function EmptySide({ icon, text }: { icon: string; text: string }) {
-  return <div style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,.3)', fontSize: 13 }}><i className={`fas ${icon}`} style={{ fontSize: 24, display: 'block', marginBottom: 8 }} />{text}</div>
+  return <div style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,.3)', fontSize: 13 }}><i className={`fas ${icon}`} style={{ fontSize: 26, display: 'block', marginBottom: 8 }} />{text}</div>
 }
 
 const mTitle: React.CSSProperties = { fontSize: 16, fontWeight: 700, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }

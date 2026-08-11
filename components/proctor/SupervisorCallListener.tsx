@@ -43,7 +43,7 @@ export default function SupervisorCallListener() {
       {resumedAlert && (
         <div style={{ position: 'fixed', top: incoming ? 96 : 16, right: 20, zIndex: 9599, background: '#0f172a', color: 'white', borderRadius: 12, padding: '12px 16px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid rgba(59,130,246,.4)', cursor: 'pointer', maxWidth: 320 }}
           onClick={() => { router.push(`/proctor/monitor/${resumedAlert.examId}`); setResumedAlert(null) }}>
-          <i className="fas fa-bell" style={{ color: '#60a5fa', fontSize: 18, flexShrink: 0 }} />
+          <i className="fas fa-bell" style={{ color: '#60a5fa', fontSize: 22, flexShrink: 0 }} />
           <div style={{ fontSize: 12.5, flex: 1 }}>{resumedAlert.message}</div>
           <button onClick={(e) => { e.stopPropagation(); setResumedAlert(null) }}
             style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.6)', cursor: 'pointer', fontSize: 14 }}>
@@ -53,7 +53,7 @@ export default function SupervisorCallListener() {
       )}
       {incoming && !answering && (
         <div style={{ position: 'fixed', top: 16, right: 20, zIndex: 9600, background: '#0f172a', color: 'white', borderRadius: 12, padding: '14px 18px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(16,185,129,.4)' }}>
-          <i className="fas fa-phone-volume fa-shake" style={{ color: '#10b981', fontSize: 20 }} />
+          <i className="fas fa-phone-volume fa-shake" style={{ color: '#10b981', fontSize: 24 }} />
           <div>
             <div style={{ fontWeight: 700, fontSize: 13 }}>Appel entrant</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)' }}>{incoming.supervisorName}</div>

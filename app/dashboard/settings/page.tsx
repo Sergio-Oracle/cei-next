@@ -225,14 +225,14 @@ export default function SettingsPage() {
 
                     <Fg label="Adresse e-mail" hint="L'adresse e-mail ne peut pas être modifiée ici.">
                       <div style={{ position: 'relative' }}>
-                        <i className="fas fa-lock" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 13 }} />
+                        <i className="fas fa-lock" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 16 }} />
                         <input value={email} disabled placeholder="Email" style={{ ...inputStyle, paddingLeft: 38, opacity: .55, cursor: 'not-allowed', background: 'var(--background)' }} />
                       </div>
                     </Fg>
 
                     <Fg label="Rôle" hint="Votre rôle est attribué par l'administrateur.">
                       <div style={{ position: 'relative' }}>
-                        <i className="fas fa-id-badge" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 13 }} />
+                        <i className="fas fa-id-badge" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 16 }} />
                         <input value={roleLabels[profile?.role || user?.role || ''] || ''} disabled style={{ ...inputStyle, paddingLeft: 38, opacity: .55, cursor: 'not-allowed', background: 'var(--background)' }} />
                       </div>
                     </Fg>
@@ -257,7 +257,7 @@ export default function SettingsPage() {
               <form onSubmit={changePassword}>
                 <Fg label="Mot de passe actuel">
                   <div style={{ position: 'relative' }}>
-                    <i className="fas fa-lock" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 13 }} />
+                    <i className="fas fa-lock" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 16 }} />
                     <input type={showPwds ? 'text' : 'password'} value={currentPwd}
                       onChange={e => setCurrentPwd(e.target.value)}
                       required autoComplete="current-password" placeholder="••••••••"
@@ -271,7 +271,7 @@ export default function SettingsPage() {
 
                 <Fg label="Nouveau mot de passe">
                   <div style={{ position: 'relative' }}>
-                    <i className="fas fa-key" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 13 }} />
+                    <i className="fas fa-key" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 16 }} />
                     <input type={showPwds ? 'text' : 'password'} value={newPwd}
                       onChange={e => setNewPwd(e.target.value)}
                       required autoComplete="new-password" minLength={6} placeholder="Minimum 6 caractères"
@@ -283,7 +283,7 @@ export default function SettingsPage() {
                 <Fg label="Confirmer le nouveau mot de passe">
                   <div style={{ position: 'relative' }}>
                     <i className={`fas ${confirmPwd && newPwd === confirmPwd ? 'fa-check-circle' : 'fa-lock'}`}
-                      style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: confirmPwd && newPwd === confirmPwd ? '#10b981' : 'var(--text-muted)' }} />
+                      style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: confirmPwd && newPwd === confirmPwd ? '#10b981' : 'var(--text-muted)' }} />
                     <input type={showPwds ? 'text' : 'password'} value={confirmPwd}
                       onChange={e => setConfirmPwd(e.target.value)}
                       required autoComplete="new-password" placeholder="Répéter le nouveau mot de passe"
@@ -349,7 +349,7 @@ export default function SettingsPage() {
                         borderRadius: 12,
                         background: dark === opt.val ? 'var(--primary)15' : 'var(--background)',
                         cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }}>
-                      <i className={`fas ${opt.icon}`} style={{ fontSize: 26,
+                      <i className={`fas ${opt.icon}`} style={{ fontSize: 29,
                         color: dark === opt.val ? 'var(--primary)' : 'var(--text-muted)',
                         display: 'block', marginBottom: 8 }} />
                       <div style={{ fontWeight: 600, fontSize: 14,
@@ -357,7 +357,7 @@ export default function SettingsPage() {
                       <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{opt.desc}</div>
                       {dark === opt.val && (
                         <div style={{ marginTop: 8 }}>
-                          <i className="fas fa-check-circle" style={{ color: 'var(--primary)', fontSize: 16 }} />
+                          <i className="fas fa-check-circle" style={{ color: 'var(--primary)', fontSize: 19 }} />
                         </div>
                       )}
                     </button>
@@ -505,7 +505,7 @@ function ToggleRow({ icon, title, desc, checked, onChange }: {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-        <i className={`fas ${icon}`} style={{ color: 'var(--primary)', marginTop: 2, width: 18, fontSize: 15 }} />
+        <i className={`fas ${icon}`} style={{ color: 'var(--primary)', marginTop: 2, width: 18, fontSize: 18 }} />
         <div>
           <div style={{ fontWeight: 600, fontSize: 14 }}>{title}</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</div>

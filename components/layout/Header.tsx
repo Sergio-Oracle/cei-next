@@ -208,7 +208,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 36, height: 36, borderRadius: '50%', background: 'var(--background)',
                 border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)' }}>
-              <i className="fas fa-download" style={{ fontSize: 17 }} />
+              <i className="fas fa-download" style={{ fontSize: 20 }} />
             </button>
           )}
 
@@ -217,7 +217,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: 36, height: 36, borderRadius: '50%', background: 'var(--background)',
               border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)' }}>
-            <i className={`fas ${dark ? 'fa-sun' : 'fa-moon'}`} style={{ fontSize: 17 }} />
+            <i className={`fas ${dark ? 'fa-sun' : 'fa-moon'}`} style={{ fontSize: 20 }} />
           </button>
 
           {/* Notifications */}
@@ -226,7 +226,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 36, height: 36, borderRadius: '50%', background: 'var(--background)',
                 border: '1px solid var(--border)', textDecoration: 'none', color: 'var(--text)' }}>
-              <i className="fas fa-bell" style={{ fontSize: 17 }} />
+              <i className="fas fa-bell" style={{ fontSize: 20 }} />
               {unreadCount > 0 && (
                 <span style={{ position: 'absolute', top: -3, right: -3, background: '#ef4444', color: 'white',
                   borderRadius: '50%', width: 17, height: 17, fontSize: 10, fontWeight: 700,
@@ -243,9 +243,9 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
                 background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 20,
                 cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
-              <i className="fas fa-globe" style={{ color: 'var(--primary)', fontSize: 13 }} />
+              <i className="fas fa-globe" style={{ color: 'var(--primary)', fontSize: 16 }} />
               <span>{currentLangObj.flag}</span>
-              <i className="fas fa-chevron-down" style={{ fontSize: 9, color: 'var(--text-muted)' }} />
+              <i className="fas fa-chevron-down" style={{ fontSize: 11, color: 'var(--text-muted)' }} />
             </button>
             {langOpen && (
               <div style={{ position: 'absolute', top: 42, right: 0, background: 'var(--surface)', borderRadius: 10,
@@ -277,7 +277,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                   color: 'white', fontWeight: 700, fontSize: 13, letterSpacing: .5, flexShrink: 0 }}>
                   {initials}
                 </div>
-                <i className="fas fa-chevron-down" style={{ fontSize: 9, color: 'var(--text-muted)' }} />
+                <i className="fas fa-chevron-down" style={{ fontSize: 11, color: 'var(--text-muted)' }} />
               </button>
 
               {userOpen && (
@@ -311,7 +311,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                     </div>
                     {profileExtra.last_login && (
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <i className="fas fa-clock" style={{ fontSize: 10 }} />
+                        <i className="fas fa-clock" style={{ fontSize: 12 }} />
                         Dernière connexion : {new Date(profileExtra.last_login).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </div>
                     )}
@@ -347,7 +347,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         où que le surveillant se trouve dans l'application. */}
     {incomingSupervisorCall && !answeringSupervisorCall && (
       <div style={{ position: 'fixed', top: 70, right: 20, zIndex: 9400, background: '#0f172a', color: 'white', borderRadius: 12, padding: '14px 18px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(16,185,129,.4)' }}>
-        <i className="fas fa-phone-volume fa-shake" style={{ color: '#10b981', fontSize: 20 }} />
+        <i className="fas fa-phone-volume fa-shake" style={{ color: '#10b981', fontSize: 24 }} />
         <div>
           <div style={{ fontWeight: 700, fontSize: 13 }}>Appel entrant</div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)' }}>{incomingSupervisorCall.supervisorName}</div>

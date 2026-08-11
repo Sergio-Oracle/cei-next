@@ -271,10 +271,10 @@ export default function AdminExamDetailPage() {
     }
   }
 
-  if (loading) return <div style={{ textAlign: 'center', padding: 60 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 32 }} /></div>
+  if (loading) return <div style={{ textAlign: 'center', padding: 60 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 35 }} /></div>
   if (!exam) return (
     <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-      <i className="fas fa-exclamation-triangle" style={{ fontSize: 32 }} />
+      <i className="fas fa-exclamation-triangle" style={{ fontSize: 35 }} />
       <p style={{ marginTop: 16 }}>Examen introuvable</p>
       <Link href="/dashboard/admin/exams" className="btn btn-secondary" style={{ marginTop: 16 }}>Retour</Link>
     </div>

@@ -1815,7 +1815,7 @@ export default function ExamPage() {
   /* ══════════════════════════════════════════════════════════════════════ */
   if(phase==='loading') return(
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f8fafc'}}>
-      <div style={{textAlign:'center'}}><i className="fas fa-spinner fa-spin" style={{fontSize:48,color:'#2563eb',marginBottom:16,display:'block'}}/><p style={{color:'#64748b'}}>Chargement de l'examen…</p></div>
+      <div style={{textAlign:'center'}}><i className="fas fa-spinner fa-spin" style={{fontSize:53,color:'#2563eb',marginBottom:16,display:'block'}}/><p style={{color:'#64748b'}}>Chargement de l'examen…</p></div>
     </div>
   )
 
@@ -1958,12 +1958,12 @@ export default function ExamPage() {
     const PI=({icon,label,desc,status}:{icon:string;label:string;desc:string;status:PermStatus})=>(
       <div style={{display:'flex',alignItems:'center',gap:14,background:'#0f172a',border:`1px solid ${pBorder(status)}`,borderRadius:12,padding:'14px 16px'}}>
         <div style={{width:40,height:40,minWidth:40,borderRadius:10,background:status==='ok'?'rgba(16,185,129,.15)':status==='error'?'rgba(239,68,68,.15)':'#1e293b',display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <i className={`fas ${icon}`} style={{color:pCol(status),fontSize:18}}/>
+          <i className={`fas ${icon}`} style={{color:pCol(status),fontSize:22}}/>
         </div>
         <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:'white',marginBottom:3}}>{label}</div><div style={{fontSize:12,color:status==='loading'?'#94a3b8':pCol(status)}}>{status==='loading'?'Demande en cours…':desc}</div></div>
         <div style={{width:24,height:24,minWidth:24,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,background:status==='ok'?'#10b981':status==='error'?'#ef4444':'#334155',color:'white'}}>
           {status==='ok'&&<i className="fas fa-check"/>}{status==='error'&&<i className="fas fa-times"/>}
-          {status==='loading'&&<i className="fas fa-spinner fa-spin" style={{fontSize:9}}/>}{status==='pending'&&<i className="fas fa-clock" style={{fontSize:9}}/>}
+          {status==='loading'&&<i className="fas fa-spinner fa-spin" style={{fontSize:11}}/>}{status==='pending'&&<i className="fas fa-clock" style={{fontSize:11}}/>}
         </div>
       </div>
     )
@@ -2138,7 +2138,7 @@ export default function ExamPage() {
             directe). */}
         {focusLost && (
           <div style={{position:'fixed',inset:0,zIndex:10000,background:'rgba(15,23,42,.94)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,color:'#fff',textAlign:'center',padding:24}}>
-            <i className="fas fa-triangle-exclamation" style={{fontSize:44,color:'#f59e0b'}} />
+            <i className="fas fa-triangle-exclamation" style={{fontSize:48,color:'#f59e0b'}} />
             <h2 style={{fontSize:20,fontWeight:700,margin:0}}>Vous avez quitté l&apos;examen</h2>
             <p style={{maxWidth:420,color:'#cbd5e1',margin:0,fontSize:14,lineHeight:1.5}}>
               Un changement d&apos;onglet, une perte de focus ou une sortie du plein écran a été détectée et enregistrée.
@@ -2185,7 +2185,7 @@ export default function ExamPage() {
           </div>
           {/* Agent IA */}
           <div style={{margin:'8px 10px',padding:'9px 11px',background:'rgba(16,185,129,.08)',border:'1px solid rgba(16,185,129,.22)',borderRadius:8,display:'flex',alignItems:'center',gap:9}}>
-            <div style={{width:28,height:28,background:'rgba(16,185,129,.15)',borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><i className="fas fa-robot" style={{color:'#6ee7b7',fontSize:13}}/></div>
+            <div style={{width:28,height:28,background:'rgba(16,185,129,.15)',borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><i className="fas fa-robot" style={{color:'#6ee7b7',fontSize:16}}/></div>
             <div style={{display:'flex',alignItems:'center',gap:7,flex:1}}>
               <span style={{width:7,height:7,background:'#10b981',borderRadius:'50%',flexShrink:0,display:'inline-block',animation:'agP 1.8s ease-in-out infinite'}}/>
               <span style={{fontSize:10,color:'#6ee7b7',fontWeight:600,lineHeight:1.4}}>Agent IA de surveillance actif<br/><span style={{fontWeight:400,color:'rgba(110,231,183,.65)'}}>Surveillance automatique en temps réel</span></span>
@@ -2232,7 +2232,7 @@ export default function ExamPage() {
           <div style={{flex:1,overflowY:'auto',padding:'8px 12px'}}>
             <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8,fontSize:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px',color:'#64748b'}}><i className="fas fa-exclamation-triangle"/> Alertes système</div>
             {alerts.length===0?(
-              <div style={{textAlign:'center',padding:'20px 12px',color:'#94a3b8'}}><i className="fas fa-shield-alt" style={{fontSize:24,opacity:.3,display:'block',marginBottom:6}}/><p style={{fontSize:10,margin:0}}>Aucune alerte</p></div>
+              <div style={{textAlign:'center',padding:'20px 12px',color:'#94a3b8'}}><i className="fas fa-shield-alt" style={{fontSize:26,opacity:.3,display:'block',marginBottom:6}}/><p style={{fontSize:10,margin:0}}>Aucune alerte</p></div>
             ):alerts.slice(0,10).map((a,i)=>(
               <div key={i} style={{background:a.type.startsWith('teacher')?'rgba(245,158,11,.07)':'rgba(239,68,68,.05)',borderLeft:`3px solid ${a.type.startsWith('teacher')?'#f59e0b':'#ef4444'}`,padding:'6px 8px',marginBottom:6,borderRadius:4,fontSize:10}}>
                 <div style={{marginBottom:3,color:'#0f172a',fontWeight:500}}>{a.msg}</div>
@@ -2292,7 +2292,7 @@ export default function ExamPage() {
                 </button>
               )}
               <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 16px',background:timerColor,color:'white',borderRadius:8,fontSize:20,fontWeight:700,fontVariantNumeric:'tabular-nums'}}>
-                <i className="fas fa-clock" style={{fontSize:16}}/> {fmtTimer(timeLeft)}
+                <i className="fas fa-clock" style={{fontSize:19}}/> {fmtTimer(timeLeft)}
               </div>
               <button onClick={()=>setShowReview(true)} disabled={submitting}
                 style={{padding:'10px 20px',background:'#10b981',color:'white',border:'none',borderRadius:8,fontWeight:700,fontSize:14,cursor:submitting?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:7}}>
@@ -2384,7 +2384,7 @@ export default function ExamPage() {
                   {p2Blocks.length>0&&(p1Blocks.length===0||showPart2)&&(
                     <div>
                       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14,padding:'12px 16px',background:'#ecfdf5',borderRadius:10,borderLeft:'4px solid #10b981'}}>
-                        <i className="fas fa-pen-alt" style={{color:'#10b981',fontSize:18}}/>
+                        <i className="fas fa-pen-alt" style={{color:'#10b981',fontSize:22}}/>
                         <div style={{flex:1}}>
                           <div style={{fontWeight:700,fontSize:14,color:'#065f46'}}>Partie 2 — Questions à réponses courtes / développées</div>
                           <div style={{fontSize:12,color:'#10b981'}}>{p2Blocks.length} question{p2Blocks.length>1?'s':''}{isFinite(perPage)?` • ${perPage} par page`:''} • Rédigez vos réponses dans les zones ci-dessous</div>
@@ -2518,7 +2518,7 @@ export default function ExamPage() {
         {/* Panel appel privé — toujours dans le DOM pour que les refs soient disponibles */}
         <div style={{display:privateCallActive?'block':'none',position:'fixed',left:296,bottom:12,zIndex:9500,background:'#0f172a',border:'2px solid #3b82f6',borderRadius:8,overflow:'hidden',width:230,boxShadow:'0 8px 32px rgba(0,0,0,.6)'}}>
           <div style={{background:'#3b82f6',padding:'6px 10px',display:'flex',alignItems:'center',gap:8}}>
-            <i className="fas fa-phone" style={{color:'white',fontSize:10}}/>
+            <i className="fas fa-phone" style={{color:'white',fontSize:12}}/>
             <span style={{color:'white',fontSize:11,fontWeight:700}}>Appel privé avec le surveillant</span>
             <button onClick={leavePrivateCall} style={{marginLeft:'auto',background:'rgba(239,68,68,.85)',color:'white',border:'none',borderRadius:4,padding:'3px 8px',cursor:'pointer',fontSize:10,fontWeight:700}}>
               <i className="fas fa-phone-slash"/> Terminer
@@ -2574,7 +2574,7 @@ function ProgBar({answered,total}:{answered:number;total:number}) {
 function SecHead({icon,color,bg,tc,title,sub}:{icon:string;color:string;bg:string;tc:string;title:string;sub:string}) {
   return(
     <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14,padding:'12px 16px',background:bg,borderRadius:10,borderLeft:`4px solid ${color}`}}>
-      <i className={`fas ${icon}`} style={{color,fontSize:18}}/>
+      <i className={`fas ${icon}`} style={{color,fontSize:22}}/>
       <div><div style={{fontWeight:700,fontSize:14,color:tc}}>{title}</div><div style={{fontSize:12,color}}>{sub}</div></div>
     </div>
   )
@@ -2610,7 +2610,7 @@ function SQ({q,idx,answers,setAnswers}:{q:Question;idx:number;answers:Record<str
             <label key={opt} onClick={()=>setAnswers(p=>({...p,[q.id.toString()]:opt}))} style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',flex:1,justifyContent:'center',transition:'all .18s'}}>
               <span style={{width:32,height:32,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:14,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{opt[0]}</span>
               <span style={{fontSize:15,color:'#1e293b'}}>{opt}</span>
-              {sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:18}}/>}
+              {sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:22}}/>}
             </label>
           )})}
         </div>
@@ -2623,7 +2623,7 @@ function SQ({q,idx,answers,setAnswers}:{q:Question;idx:number;answers:Record<str
               <label key={ci} onClick={()=>setAnswers(p=>({...p,[q.id.toString()]:ch}))} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',transition:'all .18s',userSelect:'none'}}>
                 <span style={{width:32,height:32,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:14,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{letter}</span>
                 <span style={{fontSize:15,color:'#1e293b',flex:1,lineHeight:1.5}}>{ch}</span>
-                {sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:18,flexShrink:0}}/>}
+                {sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:22,flexShrink:0}}/>}
               </label>
             )
           })}
@@ -2691,7 +2691,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:Pa
           {['Vrai','Faux'].map(opt=>{const sel=answers[key]===opt;const col=SELECTED_COLOR;return(
             <label key={opt} onClick={()=>{setAnswers(p=>({...p,[key]:opt}));onAnswer?.(key,block.type)}} style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',flex:1,justifyContent:'center',transition:'all .18s'}}>
               <span style={{width:32,height:32,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:14,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{opt[0]}</span>
-              <span style={{fontSize:15,color:'#1e293b'}}>{opt}</span>{sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:18}}/>}
+              <span style={{fontSize:15,color:'#1e293b'}}>{opt}</span>{sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:22}}/>}
             </label>
           )})}
         </div>
@@ -2704,7 +2704,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:Pa
               <label key={ci} onClick={()=>{setAnswers(p=>({...p,[key]:c.letter}));onAnswer?.(key,block.type)}} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',transition:'all .18s',userSelect:'none'}}>
                 <span style={{width:32,height:32,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:14,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{c.letter}</span>
                 <span style={{fontSize:15,color:'#1e293b',flex:1,lineHeight:1.5}}>{c.text}</span>
-                {sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:18,flexShrink:0}}/>}
+                {sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:22,flexShrink:0}}/>}
               </label>
             )
           })}

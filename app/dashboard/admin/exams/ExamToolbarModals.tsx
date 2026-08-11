@@ -20,7 +20,7 @@ function ModalHeader({ icon, color, title, subtitle, onClose }: { icon: string; 
   return (
     <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
       <div style={{ width: 40, height: 40, background: color + '15', border: `1px solid ${color}30`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <i className={`fas ${icon}`} style={{ color, fontSize: 17 }} />
+        <i className={`fas ${icon}`} style={{ color, fontSize: 20 }} />
       </div>
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 700, fontSize: 15 }}>{title}</div>
@@ -45,7 +45,7 @@ function ModalFooter({ onClose, children }: { onClose: () => void; children?: Re
 }
 
 function Spinner() {
-  return <div style={{ textAlign: 'center', padding: '40px 24px', color: 'var(--text-muted)', fontSize: 13 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 22, marginBottom: 10, display: 'block' }} />Chargement…</div>
+  return <div style={{ textAlign: 'center', padding: '40px 24px', color: 'var(--text-muted)', fontSize: 13 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 24, marginBottom: 10, display: 'block' }} />Chargement…</div>
 }
 
 async function triggerDownload(blob: Blob, filename: string) {
@@ -196,7 +196,7 @@ export function PlagiatModal({ examId, examTitle, onClose }: { examId: number; e
               <tbody>
                 {pairs.length === 0
                   ? <tr><td colSpan={4} style={{ padding: '28px', textAlign: 'center', color: '#10b981' }}>
-                      <i className="fas fa-shield-check" style={{ fontSize: 22, display: 'block', marginBottom: 8 }} />
+                      <i className="fas fa-shield-check" style={{ fontSize: 24, display: 'block', marginBottom: 8 }} />
                       Aucune similarité suspecte détectée
                     </td></tr>
                   : pairs.map((p, i) => (
@@ -477,7 +477,7 @@ export function IncidentsModal({ examId, examTitle, onClose }: { examId: number;
                 <tbody>
                   {incidents.length === 0
                     ? <tr><td colSpan={4} style={{ textAlign: 'center', padding: '28px', color: '#10b981' }}>
-                        <i className="fas fa-check-circle" style={{ fontSize: 22, display: 'block', marginBottom: 8 }} />
+                        <i className="fas fa-check-circle" style={{ fontSize: 24, display: 'block', marginBottom: 8 }} />
                         Aucun incident détecté
                       </td></tr>
                     : incidents.map((inc, i) => {

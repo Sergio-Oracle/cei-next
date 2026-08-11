@@ -63,7 +63,7 @@ export default function PostSubmitLockGuard() {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.94)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: 'var(--surface)', borderRadius: 16, padding: '36px 32px', maxWidth: 440, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,.5)' }}>
-        <i className="fas fa-hourglass-half" style={{ fontSize: 40, color: '#d97706', marginBottom: 16, display: 'block' }} />
+        <i className="fas fa-hourglass-half" style={{ fontSize: 44, color: '#d97706', marginBottom: 16, display: 'block' }} />
         <h2 style={{ margin: '0 0 10px', fontSize: 19 }}>Merci d&apos;avoir soumis votre copie</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>
           {status.exam_title && <>« {status.exam_title} » n&apos;est pas encore terminé pour tous les étudiants. </>}

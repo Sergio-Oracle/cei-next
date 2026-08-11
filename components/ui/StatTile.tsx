@@ -15,7 +15,7 @@ export default function StatTile({ icon, label, value, color }: Props) {
         width: 46, height: 46, borderRadius: 12, background: `${color}18`,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
       }}>
-        <i className={`fa-solid ${icon}`} style={{ color, fontSize: 18 }} />
+        <i className={`fa-solid ${icon}`} style={{ color, fontSize: 22 }} />
       </div>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', lineHeight: 1.15 }}>{value}</div>

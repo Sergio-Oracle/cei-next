@@ -60,7 +60,7 @@ export default function Calculator({ onClose }: Props) {
         </button>
         <button onClick={onClose} title="Fermer"
           style={{ background: 'rgba(255,255,255,.12)', border: 'none', color: 'white', borderRadius: 6, width: 26, height: 26, cursor: 'pointer' }}>
-          <i className="fas fa-times" style={{ fontSize: 12 }} />
+          <i className="fas fa-times" style={{ fontSize: 14 }} />
         </button>
       </div>
 

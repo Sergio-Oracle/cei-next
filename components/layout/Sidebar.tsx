@@ -181,7 +181,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
           )}
         </nav>
         <div className="sidebar-scroll-fade">
-          <i className="fas fa-chevron-down" style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', fontSize: 11, color: '#94a3b8' }} />
+          <i className="fas fa-chevron-down" style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', fontSize: 13, color: '#94a3b8' }} />
         </div>
       </div>
     </>

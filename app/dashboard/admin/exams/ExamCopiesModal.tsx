@@ -288,7 +288,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
           {/* Header */}
           <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <i className="fas fa-file-alt" style={{ color: 'var(--primary)', fontSize: 18 }} />
+              <i className="fas fa-file-alt" style={{ color: 'var(--primary)', fontSize: 22 }} />
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{examTitle}</h3>
               <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <i className="fas fa-times" />
@@ -299,7 +299,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
             {!loading && (
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ background: 'rgba(16,185,129,.1)', color: '#059669', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
-                  <i className="fas fa-circle" style={{ fontSize: 8, marginRight: 4 }} />{inProgress.length} en cours
+                  <i className="fas fa-circle" style={{ fontSize: 10, marginRight: 4 }} />{inProgress.length} en cours
                 </span>
                 <span style={{ background: 'rgba(37,99,235,.1)', color: '#2563eb', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
                   <i className="fas fa-check-circle" style={{ marginRight: 4 }} />{done.length} terminé(s)
@@ -344,7 +344,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
           <div style={{ overflowY: 'auto', flex: 1, padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
             {loading ? (
               <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
-                <i className="fas fa-spinner fa-spin" style={{ fontSize: 24 }} />
+                <i className="fas fa-spinner fa-spin" style={{ fontSize: 26 }} />
               </div>
             ) : (
               <>
@@ -624,7 +624,7 @@ function ReviewCard({ title, icon, children }: { title: string; icon: string; ch
   return (
     <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, marginBottom: 2 }}>
       <div style={{ padding: '10px 16px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', borderRadius: '10px 10px 0 0' }}>
-        <i className={`fas ${icon}`} style={{ color: '#64748b', fontSize: 13 }} />
+        <i className={`fas ${icon}`} style={{ color: '#64748b', fontSize: 16 }} />
         <span style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{title}</span>
       </div>
       <div style={{ padding: '4px 0 4px 0', background: '#ffffff', borderRadius: '0 0 10px 10px' }}>{children}</div>
@@ -662,7 +662,7 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
         {/* Header */}
         <div style={{ padding: '14px 22px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <div style={{ width: 36, height: 36, background: '#eff6ff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className="fas fa-file-alt" style={{ color: '#2563eb', fontSize: 15 }} />
+            <i className="fas fa-file-alt" style={{ color: '#2563eb', fontSize: 18 }} />
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em' }}>Détails de la Tentative</div>
@@ -677,7 +677,7 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
         <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>
-              <i className="fas fa-spinner fa-spin" style={{ fontSize: 22 }} />
+              <i className="fas fa-spinner fa-spin" style={{ fontSize: 24 }} />
             </div>
           ) : !data ? (
             <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>Données introuvables</div>

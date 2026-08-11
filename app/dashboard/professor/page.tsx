@@ -35,7 +35,7 @@ export default function ProfessorDashboard() {
       {/* ── Header ───────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
         <div style={{ background: '#3b82f6', width: 46, height: 46, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <i className="fas fa-chart-line" style={{ color: 'white', fontSize: 20 }} />
+          <i className="fas fa-chart-line" style={{ color: 'white', fontSize: 24 }} />
         </div>
         <div>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Tableau de bord</h2>
@@ -84,12 +84,12 @@ export default function ProfessorDashboard() {
         <div style={{ padding: '20px', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
           <Link href="/dashboard/professor/create-subject"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#3b82f6', color: 'white', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
-            <i className="fas fa-plus-circle" style={{ fontSize: 16 }} />
+            <i className="fas fa-plus-circle" style={{ fontSize: 19 }} />
             Créer un Sujet
           </Link>
           <Link href="/dashboard/professor/papers"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#10b981', color: 'white', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
-            <i className="fas fa-pencil-alt" style={{ fontSize: 16 }} />
+            <i className="fas fa-pencil-alt" style={{ fontSize: 19 }} />
             Corriger des Copies
           </Link>
         </div>
@@ -103,7 +103,7 @@ export default function ProfessorDashboard() {
               style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 14px', textAlign: 'center', cursor: 'pointer', transition: 'box-shadow .2s, transform .2s' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(0,0,0,.1)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}>
-              <i className={`fas ${a.icon}`} style={{ fontSize: 26, color: a.color, marginBottom: 10, display: 'block' }} />
+              <i className={`fas ${a.icon}`} style={{ fontSize: 29, color: a.color, marginBottom: 10, display: 'block' }} />
               <div style={{ color: a.color, fontWeight: 600, fontSize: 13 }}>{a.label}</div>
             </div>
           </Link>
@@ -129,7 +129,7 @@ function StatTile({ icon, label, value, color, href }: { icon: string; label: st
         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(0,0,0,.1)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}>
         <div style={{ width: 48, height: 48, background: `${color}15`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <i className={`fas ${icon}`} style={{ color, fontSize: 20 }} />
+          <i className={`fas ${icon}`} style={{ color, fontSize: 24 }} />
         </div>
         <div>
           <div style={{ fontSize: 32, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>

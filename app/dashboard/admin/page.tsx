@@ -81,7 +81,7 @@ export default function AdminDashboard() {
                   <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: 14 }}>{a.label}</div>
                   <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{a.desc}</div>
                 </div>
-                <i className="fa-solid fa-chevron-right" style={{ color: 'var(--border)', marginLeft: 'auto', fontSize: 12 }} />
+                <i className="fa-solid fa-chevron-right" style={{ color: 'var(--border)', marginLeft: 'auto', fontSize: 14 }} />
               </Link>
             ))}
           </div>

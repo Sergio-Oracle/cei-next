@@ -143,7 +143,7 @@ export default function StudentDashboard() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
         <div style={{ background: '#3b82f6', width: 46, height: 46, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <i className="fas fa-chart-bar" style={{ color: 'white', fontSize: 20 }} />
+          <i className="fas fa-chart-bar" style={{ color: 'white', fontSize: 24 }} />
         </div>
         <div>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Mon tableau de bord</h2>
@@ -155,7 +155,7 @@ export default function StudentDashboard() {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: 32 }} />
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 35 }} />
         </div>
       ) : (
         <>
@@ -188,7 +188,7 @@ export default function StudentDashboard() {
           {/* ── Alerte : examen quitté en cours, code de reprise requis ────── */}
           {inProgressExams.map(e => (
             <div key={e.id} style={{ background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-              <i className="fas fa-triangle-exclamation" style={{ color: '#d97706', fontSize: 16, flexShrink: 0 }} />
+              <i className="fas fa-triangle-exclamation" style={{ color: '#d97706', fontSize: 19, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 180 }}>
                 <span style={{ fontWeight: 700, color: '#92400e', fontSize: 13 }}>Examen en cours : {e.title}</span>
                 <div style={{ fontSize: 12, color: '#b45309', marginTop: 2 }}>
@@ -225,7 +225,7 @@ export default function StudentDashboard() {
           {/* ── Tableau historique ───────────────────────────────────────────── */}
           {totalCount === 0 ? (
             <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', textAlign: 'center', padding: '52px 24px', marginBottom: 28 }}>
-              <i className="fas fa-inbox" style={{ fontSize: 52, color: '#cbd5e1', display: 'block', marginBottom: 16 }} />
+              <i className="fas fa-inbox" style={{ fontSize: 57, color: '#cbd5e1', display: 'block', marginBottom: 16 }} />
               <p style={{ color: '#94a3b8', margin: 0 }}>Aucune évaluation pour le moment.<br />Vos notes apparaîtront ici après correction.</p>
             </div>
           ) : (
@@ -328,7 +328,7 @@ export default function StudentDashboard() {
                 <div style={{ background: 'var(--surface)', border: `1px solid var(--border)`, borderRadius: 14, padding: '20px 14px', textAlign: 'center', cursor: 'pointer', transition: 'box-shadow .2s, transform .2s' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(0,0,0,.1)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}>
-                  <i className={`fas ${a.icon}`} style={{ fontSize: 26, color: a.color, marginBottom: 10, display: 'block' }} />
+                  <i className={`fas ${a.icon}`} style={{ fontSize: 29, color: a.color, marginBottom: 10, display: 'block' }} />
                   <div style={{ color: a.color, fontWeight: 600, fontSize: 13 }}>{a.label}</div>
                 </div>
               </Link>

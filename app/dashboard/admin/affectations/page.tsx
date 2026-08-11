@@ -175,7 +175,7 @@ export default function AdminAffectationsPage() {
       {/* ── Table card ─────────────────────────────────────────────────────── */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <i className="fas fa-list" style={{ color: 'var(--text-muted)', fontSize: 14 }} />
+          <i className="fas fa-list" style={{ color: 'var(--text-muted)', fontSize: 17 }} />
           <h3 style={{ margin: 0 }}>Liste des ECs</h3>
           <span className="status-badge secondary" style={{ marginLeft: 4, fontSize: 11, padding: '2px 9px' }}>
             {ecs.length}
@@ -184,11 +184,11 @@ export default function AdminAffectationsPage() {
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: 60 }}>
-            <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: 'var(--primary)' }} />
+            <i className="fas fa-spinner fa-spin" style={{ fontSize: 31, color: 'var(--primary)' }} />
           </div>
         ) : ecs.length === 0 ? (
           <div className="empty-message" style={{ padding: '48px 20px' }}>
-            <i className="fas fa-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10 }} />
+            <i className="fas fa-inbox" style={{ fontSize: 35, display: 'block', marginBottom: 10 }} />
             Aucun EC disponible. Créez d'abord des formations et des UEs.
           </div>
         ) : (
@@ -246,7 +246,7 @@ export default function AdminAffectationsPage() {
                                 <button onClick={() => unassign(a.id)} disabled={unassigning === a.id}
                                   title="Retirer ce professeur de cet EC"
                                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', opacity: .7, padding: 0, marginLeft: 2, lineHeight: 1 }}>
-                                  <i className={`fas ${unassigning === a.id ? 'fa-spinner fa-spin' : 'fa-times'}`} style={{ fontSize: 11 }} />
+                                  <i className={`fas ${unassigning === a.id ? 'fa-spinner fa-spin' : 'fa-times'}`} style={{ fontSize: 13 }} />
                                 </button>
                               </span>
                             ))}

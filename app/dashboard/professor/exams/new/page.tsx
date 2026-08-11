@@ -108,7 +108,7 @@ export default function NewExamPage() {
       {/* Page header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
         <div style={{ background: '#3b82f6', width: 42, height: 42, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <i className="fas fa-plus" style={{ color: 'white', fontSize: 16 }} />
+          <i className="fas fa-plus" style={{ color: 'white', fontSize: 19 }} />
         </div>
         <div>
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Créer un Examen en Ligne</h2>
@@ -188,7 +188,7 @@ export default function NewExamPage() {
           {/* Paramètres de Sécurité */}
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '16px 18px', marginTop: 18, marginBottom: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <i className="fas fa-shield-alt" style={{ color: '#1d4ed8', fontSize: 15 }} />
+              <i className="fas fa-shield-alt" style={{ color: '#1d4ed8', fontSize: 18 }} />
               <span style={{ fontWeight: 700, color: '#0f172a', fontSize: 14 }}>Paramètres de Sécurité</span>
             </div>
 
@@ -302,7 +302,7 @@ export default function NewExamPage() {
             Surveillants" (lié à l'EC) est le seul mécanisme désormais */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, position: 'sticky', top: 16 }}>
           <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="fas fa-shield-halved" style={{ color: '#1d4ed8', fontSize: 14 }} />
+            <i className="fas fa-shield-halved" style={{ color: '#1d4ed8', fontSize: 17 }} />
             <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>Surveillants</span>
           </div>
           <div style={{ padding: '14px 18px', fontSize: 12.5, color: 'var(--text-muted)', lineHeight: 1.6 }}>

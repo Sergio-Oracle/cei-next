@@ -97,7 +97,7 @@ export default function SubjectsClient({ initialSubjects }: Props) {
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
         >
           <div style={{ width: 48, height: 48, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className="fas fa-upload" style={{ color: 'var(--primary)', fontSize: 20 }} />
+            <i className="fas fa-upload" style={{ color: 'var(--primary)', fontSize: 24 }} />
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', marginBottom: 4 }}>Créer un Sujet</div>
@@ -105,7 +105,7 @@ export default function SubjectsClient({ initialSubjects }: Props) {
               Uploadez un fichier PDF/DOCX — extraction texte + annotation + barème IA
             </div>
           </div>
-          <i className="fas fa-arrow-right" style={{ color: 'var(--primary)', marginLeft: 'auto', fontSize: 14 }} />
+          <i className="fas fa-arrow-right" style={{ color: 'var(--primary)', marginLeft: 'auto', fontSize: 17 }} />
         </button>
 
         <button
@@ -115,7 +115,7 @@ export default function SubjectsClient({ initialSubjects }: Props) {
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
         >
           <div style={{ width: 48, height: 48, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className="fas fa-wand-magic-sparkles" style={{ color: '#d97706', fontSize: 20 }} />
+            <i className="fas fa-wand-magic-sparkles" style={{ color: '#d97706', fontSize: 24 }} />
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', marginBottom: 4 }}>Générer avec l'IA</div>
@@ -123,7 +123,7 @@ export default function SubjectsClient({ initialSubjects }: Props) {
               Uploadez un cours — l'IA propose 3 sujets complets avec questions et barème
             </div>
           </div>
-          <i className="fas fa-arrow-right" style={{ color: '#d97706', marginLeft: 'auto', fontSize: 14 }} />
+          <i className="fas fa-arrow-right" style={{ color: '#d97706', marginLeft: 'auto', fontSize: 17 }} />
         </button>
       </div>
 
@@ -131,13 +131,13 @@ export default function SubjectsClient({ initialSubjects }: Props) {
       <div className="card">
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <i className="fas fa-list" style={{ color: 'var(--text-muted)', fontSize: 14 }} />
+            <i className="fas fa-list" style={{ color: 'var(--text-muted)', fontSize: 17 }} />
             <span style={{ fontWeight: 600, fontSize: 14 }}>
               {subjects.length} sujet{subjects.length !== 1 ? 's' : ''} au total
             </span>
           </div>
           <button onClick={reload} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <i className="fas fa-rotate-right" style={{ fontSize: 12 }} />Actualiser
+            <i className="fas fa-rotate-right" style={{ fontSize: 14 }} />Actualiser
           </button>
         </div>
         <div className="table-responsive">
@@ -159,7 +159,7 @@ export default function SubjectsClient({ initialSubjects }: Props) {
                   <td colSpan={7}>
                     <div style={{ textAlign: 'center', padding: '48px 24px' }}>
                       <div style={{ width: 56, height: 56, background: '#eff6ff', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-                        <i className="fas fa-file-lines" style={{ fontSize: 24, color: 'var(--primary)' }} />
+                        <i className="fas fa-file-lines" style={{ fontSize: 26, color: 'var(--primary)' }} />
                       </div>
                       <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Aucun sujet pour le moment</div>
                       <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 18 }}>
@@ -188,14 +188,14 @@ export default function SubjectsClient({ initialSubjects }: Props) {
                       <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.4 }}>{s.title}</div>
                       {hasRubric && (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', padding: '1px 7px', borderRadius: 99, fontSize: 10, fontWeight: 600, marginTop: 4 }}>
-                          <i className="fas fa-scale-balanced" style={{ fontSize: 8 }} /> Barème
+                          <i className="fas fa-scale-balanced" style={{ fontSize: 10 }} /> Barème
                         </span>
                       )}
                     </td>
                     <td>
                       {s.ec_code
                         ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
-                            <i className="fas fa-book" style={{ fontSize: 9 }} /> {s.ec_code}
+                            <i className="fas fa-book" style={{ fontSize: 11 }} /> {s.ec_code}
                           </span>
                         : <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>—</span>}
                     </td>
@@ -210,7 +210,7 @@ export default function SubjectsClient({ initialSubjects }: Props) {
                     <td><span className="status-badge secondary">{s.papers_count ?? 0}</span></td>
                     <td><span className="status-badge secondary">{s.exam_count ?? 0}</span></td>
                     <td style={{ fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      <i className="fas fa-calendar-day" style={{ marginRight: 5, fontSize: 11 }} />{dateStr}
+                      <i className="fas fa-calendar-day" style={{ marginRight: 5, fontSize: 13 }} />{dateStr}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 6 }}>
@@ -237,7 +237,7 @@ export default function SubjectsClient({ initialSubjects }: Props) {
           <div style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: 820, maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 64px rgba(0,0,0,.2)', overflow: 'hidden' }}>
             {previewLoading ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 60 }}>
-                <i className="fas fa-spinner fa-spin" style={{ fontSize: 28, color: 'var(--primary)' }} />
+                <i className="fas fa-spinner fa-spin" style={{ fontSize: 31, color: 'var(--primary)' }} />
               </div>
             ) : previewSubject && (
               <>
@@ -247,7 +247,7 @@ export default function SubjectsClient({ initialSubjects }: Props) {
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                       {previewSubject.ec_code && (
                         <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
-                          <i className="fas fa-book" style={{ marginRight: 4, fontSize: 9 }} />{previewSubject.ec_code}
+                          <i className="fas fa-book" style={{ marginRight: 4, fontSize: 11 }} />{previewSubject.ec_code}
                         </span>
                       )}
                       {previewSubject.creator_name && (
@@ -281,7 +281,7 @@ export default function SubjectsClient({ initialSubjects }: Props) {
                     </div>
                   ) : (
                     <div style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
-                      <i className="fas fa-file-slash" style={{ fontSize: 32, marginBottom: 10, display: 'block' }} />
+                      <i className="fas fa-file-slash" style={{ fontSize: 35, marginBottom: 10, display: 'block' }} />
                       Aucun contenu textuel disponible pour ce sujet.
                     </div>
                   )}

@@ -53,7 +53,7 @@ export default function InstallPwaBanner() {
       fontSize:       '13.5px',
       color:          'var(--text)',
     }}>
-      <i className="fas fa-mobile-alt" style={{ color: 'var(--primary)', fontSize: 16, flexShrink: 0 }} />
+      <i className="fas fa-mobile-alt" style={{ color: 'var(--primary)', fontSize: 19, flexShrink: 0 }} />
 
       {canInstall && (
         <>
@@ -62,7 +62,7 @@ export default function InstallPwaBanner() {
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8,
               background: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer',
               fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
-            <i className="fas fa-download" style={{ fontSize: 12 }} />
+            <i className="fas fa-download" style={{ fontSize: 14 }} />
             Installer
           </button>
         </>
@@ -79,7 +79,7 @@ export default function InstallPwaBanner() {
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26,
           borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer',
           color: 'var(--text-muted)', flexShrink: 0 }}>
-        <i className="fas fa-times" style={{ fontSize: 13 }} />
+        <i className="fas fa-times" style={{ fontSize: 16 }} />
       </button>
     </div>
   )

@@ -253,7 +253,7 @@ export default function AdminCreateSubjectPage() {
           <div style={{ background:'var(--surface)', borderRadius:16, border:'1px solid var(--border)', overflow:'hidden', boxShadow:'var(--shadow-md)' }}>
             <div style={{ background:'var(--primary)', padding:'28px 28px 24px', textAlign:'center' }}>
               <div style={{ width:60, height:60, borderRadius:14, background:'rgba(255,255,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}>
-                <i className="fas fa-robot" style={{ fontSize:26, color:'#fff' }} />
+                <i className="fas fa-robot" style={{ fontSize:29, color:'#fff' }} />
               </div>
               <h3 style={{ margin:0, fontSize:17, fontWeight:700, color:'#fff' }}>Analyse IA en cours…</h3>
               <p style={{ margin:'6px 0 0', color:'rgba(255,255,255,.75)', fontSize:13 }}>
@@ -269,10 +269,10 @@ export default function AdminCreateSubjectPage() {
                   <div key={p.icon} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', background: isDone ? '#f0fdf4' : 'var(--background)', borderRadius:12, border:`1px solid ${isDone ? '#bbf7d0' : isActive ? 'var(--primary)' : 'var(--border)'}`, transition:'all .4s' }}>
                     <div style={{ width:40, height:40, borderRadius:10, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background: isDone ? '#dcfce7' : isActive ? '#eff6ff' : 'var(--surface)', border:`1px solid ${isDone ? '#bbf7d0' : isActive ? '#bfdbfe' : 'var(--border)'}` }}>
                       {isDone
-                        ? <i className="fas fa-check" style={{ fontSize:15, color:'#16a34a' }} />
+                        ? <i className="fas fa-check" style={{ fontSize:18, color:'#16a34a' }} />
                         : isActive
-                          ? <i className={`fas ${p.icon} fa-spin`} style={{ fontSize:14, color:'var(--primary)' }} />
-                          : <i className={`fas ${p.icon}`} style={{ fontSize:14, color:'var(--text-muted)' }} />
+                          ? <i className={`fas ${p.icon} fa-spin`} style={{ fontSize:17, color:'var(--primary)' }} />
+                          : <i className={`fas ${p.icon}`} style={{ fontSize:17, color:'var(--text-muted)' }} />
                       }
                     </div>
                     <div style={{ flex:1 }}>
@@ -322,7 +322,7 @@ export default function AdminCreateSubjectPage() {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18, flexWrap:'wrap', gap:10 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <div style={{ width:38, height:38, background:'#dcfce7', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <i className="fas fa-circle-check" style={{ color:'#16a34a', fontSize:18 }} />
+              <i className="fas fa-circle-check" style={{ color:'#16a34a', fontSize:22 }} />
             </div>
             <div>
               <div style={{ fontWeight:700, fontSize:16 }}>Sujet créé avec succès</div>
@@ -340,7 +340,7 @@ export default function AdminCreateSubjectPage() {
         </div>
 
         <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 18px', background:'var(--surface)', border:'1px solid var(--border)', borderLeft:'4px solid var(--primary)', borderRadius:10, marginBottom:16 }}>
-          <i className="fas fa-file-alt" style={{ color:'var(--primary)', fontSize:18 }} />
+          <i className="fas fa-file-alt" style={{ color:'var(--primary)', fontSize:22 }} />
           <div>
             <div style={{ fontWeight:700, fontSize:15 }}>{created.title}</div>
             {created.created_at && <div style={{ fontSize:12, color:'var(--text-muted)' }}>Créé le {new Date(created.created_at).toLocaleString('fr-FR')}</div>}
@@ -411,7 +411,7 @@ export default function AdminCreateSubjectPage() {
           onClick={e => { if (e.target===e.currentTarget) setShowBankModal(false) }}>
           <div style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:480, boxShadow:'var(--shadow-lg)', overflow:'hidden' }}>
             <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 }}>
-              <i className="fas fa-database" style={{ color:'var(--primary)', fontSize:16 }} />
+              <i className="fas fa-database" style={{ color:'var(--primary)', fontSize:19 }} />
               <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Sauvegarder dans la banque</h3>
               <button onClick={() => setShowBankModal(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
             </div>
@@ -453,7 +453,7 @@ export default function AdminCreateSubjectPage() {
           onClick={e => { if (e.target===e.currentTarget) setShowCompare(false) }}>
           <div style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:Math.min(280*basket.length+80, 1400), boxShadow:'var(--shadow-lg)', overflow:'hidden', maxHeight:'90vh', display:'flex', flexDirection:'column' }}>
             <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9, flexShrink:0 }}>
-              <i className="fas fa-columns" style={{ color:'var(--primary)', fontSize:16 }} />
+              <i className="fas fa-columns" style={{ color:'var(--primary)', fontSize:19 }} />
               <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Comparer les versions ({basket.length})</h3>
               <button onClick={() => setShowCompare(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
             </div>
@@ -505,7 +505,7 @@ export default function AdminCreateSubjectPage() {
       <div style={{ display:'flex', gap:0, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:4, marginBottom:24, width:'fit-content', boxShadow:'var(--shadow-sm)' }}>
         {([{ key:'upload', icon:'fa-cloud-arrow-up', label:'Uploader un fichier' }, { key:'bank', icon:'fa-database', label:'Banque de questions' }] as { key:Mode; icon:string; label:string }[]).map(m => (
           <button key={m.key} onClick={() => setMode(m.key)} style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 18px', border:'none', borderRadius:9, fontSize:13, fontWeight:mode===m.key?700:500, cursor:'pointer', transition:'all .2s', background:mode===m.key?'var(--primary)':'transparent', color:mode===m.key?'#fff':'var(--text-muted)' }}>
-            <i className={`fas ${m.icon}`} style={{ fontSize:13 }} />{m.label}
+            <i className={`fas ${m.icon}`} style={{ fontSize:16 }} />{m.label}
           </button>
         ))}
       </div>
@@ -515,7 +515,7 @@ export default function AdminCreateSubjectPage() {
         <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:24, alignItems:'start' }}>
           <div style={{ background:'var(--surface)', borderRadius:14, border:'1px solid var(--border)', borderTop:'3px solid var(--primary)', boxShadow:'var(--shadow-sm)' }}>
             <div style={{ padding:'18px 24px 14px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 }}>
-              <i className="fas fa-pen-to-square" style={{ color:'var(--primary)', fontSize:15 }} />
+              <i className="fas fa-pen-to-square" style={{ color:'var(--primary)', fontSize:18 }} />
               <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Informations du sujet</h3>
             </div>
             <form onSubmit={handleUpload} style={{ padding:24 }}>
@@ -544,8 +544,8 @@ export default function AdminCreateSubjectPage() {
                   {([['qcm','QCM','fa-circle-question','#1d4ed8','#dbeafe','#bfdbfe'],['open','Questions ouvertes','fa-pen-line','#0369a1','#e0f2fe','#7dd3fc'],['vf','Vrai / Faux','fa-toggle-on','#15803d','#dcfce7','#86efac']] as const).map(([k,label,icon,color,bg,border])=>(
                     <button key={k} type="button" onClick={()=>setQTypes(p=>({...p,[k]:!p[k]}))}
                       style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 16px', border:`1.5px solid ${qTypes[k]?border:'var(--border)'}`, borderRadius:10, cursor:'pointer', background:qTypes[k]?bg:'var(--surface)', transition:'all .15s', fontWeight:qTypes[k]?700:400, fontSize:13, color:qTypes[k]?color:'var(--text)' }}>
-                      <i className={`fas ${icon}`} style={{ fontSize:14, color:qTypes[k]?color:'var(--text-muted)' }} />{label}
-                      {qTypes[k]&&<i className="fas fa-check" style={{ fontSize:10, marginLeft:2, color }} />}
+                      <i className={`fas ${icon}`} style={{ fontSize:17, color:qTypes[k]?color:'var(--text-muted)' }} />{label}
+                      {qTypes[k]&&<i className="fas fa-check" style={{ fontSize:12, marginLeft:2, color }} />}
                     </button>
                   ))}
                 </div>
@@ -605,7 +605,7 @@ export default function AdminCreateSubjectPage() {
                 </label>
                 <label style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:10, padding:'28px 20px', border:`2px dashed ${dragOver?'#16a34a':'var(--border)'}`, borderRadius:12, cursor:'pointer', background:dragOver?'#f0fdf4':'var(--background)', transition:'all .2s', textAlign:'center' }}
                   onDragOver={e=>{e.preventDefault();setDragOver(true)}} onDragLeave={()=>setDragOver(false)} onDrop={handleDrop}>
-                  <i className="fas fa-cloud-arrow-up" style={{ fontSize:34, color:'var(--text-muted)' }} />
+                  <i className="fas fa-cloud-arrow-up" style={{ fontSize:37, color:'var(--text-muted)' }} />
                   <div><div style={{ fontWeight:600, fontSize:14 }}>Glissez un ou plusieurs fichiers ici</div><div style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>ou cliquez pour parcourir</div></div>
                   <div style={{ display:'flex', gap:6 }}>
                     {[{l:'PDF',bg:'#dbeafe',fg:'#1d4ed8'},{l:'DOCX',bg:'#dcfce7',fg:'#15803d'},{l:'TXT',bg:'#fef9c3',fg:'#854d0e'}].map(b=><span key={b.l} style={{ background:b.bg,color:b.fg,padding:'2px 9px',borderRadius:99,fontSize:11,fontWeight:700 }}>{b.l}</span>)}
@@ -616,7 +616,7 @@ export default function AdminCreateSubjectPage() {
                   <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:10 }}>
                     {files.map((f, idx) => (
                       <div key={idx} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'#f0fdf4', border:'1px solid #86efac', borderRadius:10 }}>
-                        <i className="fas fa-file-check" title="Fichier chargé" style={{ color:'#16a34a', fontSize:18, flexShrink:0 }} />
+                        <i className="fas fa-file-check" title="Fichier chargé" style={{ color:'#16a34a', fontSize:22, flexShrink:0 }} />
                         <div style={{ flex:1 }}>
                           <div style={{ fontWeight:600, color:'#15803d', fontSize:13 }}>{f.name}</div>
                           <div style={{ fontSize:12, color:'var(--text-muted)' }}>{(f.size/1024/1024).toFixed(2)} Mo</div>
@@ -648,7 +648,7 @@ export default function AdminCreateSubjectPage() {
               </h4>
               {[{icon:'fa-file-pdf',color:'#ef4444',label:'PDF',desc:'Natif ou scanné'},{icon:'fa-file-word',color:'var(--primary)',label:'DOCX / DOC',desc:'Microsoft Word'},{icon:'fa-file-lines',color:'#16a34a',label:'TXT',desc:'Texte brut'}].map(f=>(
                 <div key={f.label} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', background:'var(--background)', borderRadius:8, marginBottom:6 }}>
-                  <i className={`fas ${f.icon}`} style={{ color:f.color, fontSize:18, width:22, textAlign:'center', flexShrink:0 }} />
+                  <i className={`fas ${f.icon}`} style={{ color:f.color, fontSize:22, width:22, textAlign:'center', flexShrink:0 }} />
                   <div><div style={{ fontWeight:600, fontSize:12 }}>{f.label}</div><div style={{ fontSize:11, color:'var(--text-muted)' }}>{f.desc}</div></div>
                 </div>
               ))}
@@ -731,9 +731,9 @@ export default function AdminCreateSubjectPage() {
           {/* Table */}
           <div style={{ background:'var(--surface)', borderRadius:12, border:'1px solid var(--border)', overflow:'hidden', boxShadow:'var(--shadow-sm)' }}>
             {bankLoading?(
-              <div style={{ padding:48, textAlign:'center', color:'var(--text-muted)' }}><i className="fas fa-spinner fa-spin" style={{ fontSize:24, display:'block', marginBottom:10 }} />Chargement…</div>
+              <div style={{ padding:48, textAlign:'center', color:'var(--text-muted)' }}><i className="fas fa-spinner fa-spin" style={{ fontSize:26, display:'block', marginBottom:10 }} />Chargement…</div>
             ):bankQ.length===0?(
-              <div style={{ padding:56, textAlign:'center', color:'var(--text-muted)' }}><i className="fas fa-inbox" style={{ fontSize:36, display:'block', marginBottom:12 }} />Banque vide — sauvegardez des questions depuis la génération IA pour les réutiliser ici.</div>
+              <div style={{ padding:56, textAlign:'center', color:'var(--text-muted)' }}><i className="fas fa-inbox" style={{ fontSize:40, display:'block', marginBottom:12 }} />Banque vide — sauvegardez des questions depuis la génération IA pour les réutiliser ici.</div>
             ):(
               <div style={{ overflowX:'auto' }}>
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
@@ -766,8 +766,8 @@ export default function AdminCreateSubjectPage() {
                         <td style={{ padding:'10px 14px' }}>
                           <div style={{ fontSize:11, color:'var(--text-muted)', lineHeight:1.7 }}>
                             {q.formation_name&&<div style={{ fontWeight:600, color:'var(--text)' }}>{q.formation_name}{q.formation_level&&` — ${q.formation_level}`}</div>}
-                            {q.ue_code&&<div><i className="fas fa-book" style={{ marginRight:4, fontSize:9 }} />{q.ue_code}{q.ue_name&&` — ${q.ue_name}`}</div>}
-                            {q.ec_code&&<div><i className="fas fa-puzzle-piece" style={{ marginRight:4, fontSize:9 }} />{q.ec_code}{q.ec_name&&` — ${q.ec_name}`}</div>}
+                            {q.ue_code&&<div><i className="fas fa-book" style={{ marginRight:4, fontSize:11 }} />{q.ue_code}{q.ue_name&&` — ${q.ue_name}`}</div>}
+                            {q.ec_code&&<div><i className="fas fa-puzzle-piece" style={{ marginRight:4, fontSize:11 }} />{q.ec_code}{q.ec_name&&` — ${q.ec_name}`}</div>}
                             {!q.formation_name&&!q.ec_name&&<span>—</span>}
                           </div>
                         </td>
@@ -797,7 +797,7 @@ export default function AdminCreateSubjectPage() {
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }} onClick={e=>{if(e.target===e.currentTarget)setShowAssemble(false)}}>
           <div style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:580, boxShadow:'var(--shadow-lg)', overflow:'hidden', maxHeight:'90vh', display:'flex', flexDirection:'column' }}>
             <div style={{ padding:'18px 24px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
-              <i className="fas fa-layer-group" style={{ color:'var(--primary)', fontSize:17 }} />
+              <i className="fas fa-layer-group" style={{ color:'var(--primary)', fontSize:20 }} />
               <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Créer un sujet à partir de {bankSel.size} question{bankSel.size>1?'s':''}</h3>
               <button onClick={()=>setShowAssemble(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:18, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
             </div>
