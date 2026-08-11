@@ -912,6 +912,7 @@ export default function AdminSuggestionsPage() {
                       <div style={{ display:'flex', flexDirection:'column', gap:6, maxWidth:340, margin:'0 auto' }} onClick={e => e.stopPropagation()}>
                         {courseFiles.map((f, idx) => (
                           <div key={idx} style={{ display:'flex', alignItems:'center', gap:8, background:'#fff', border:'1px solid #bbf7d0', borderRadius:8, padding:'6px 10px' }}>
+                            <i className="fas fa-file-check" title="Fichier chargé" style={{ color:'#16a34a', fontSize:14, flexShrink:0 }} />
                             <span style={{ flex:1, textAlign:'left', fontSize:12, color:'#15803d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</span>
                             <span style={{ fontSize:11, color:'#10b981' }}>{(f.size/1024/1024).toFixed(2)} Mo</span>
                             <button type="button" onClick={() => removeCourseFile(idx)} style={{ background:'none', border:'none', color:'#6b7280', cursor:'pointer', fontSize:14, padding:2 }}><i className="fas fa-times-circle" /></button>

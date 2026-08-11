@@ -638,7 +638,7 @@ export default function ProfessorCreateSubjectPage() {
                   <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:10 }}>
                     {files.map((f, idx) => (
                       <div key={idx} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'#f0fdf4', border:'1px solid #86efac', borderRadius:10 }}>
-                        <i className="fas fa-file-check" style={{ color:'#16a34a', fontSize:18, flexShrink:0 }} />
+                        <i className="fas fa-file-check" title="Fichier chargé" style={{ color:'#16a34a', fontSize:18, flexShrink:0 }} />
                         <div style={{ flex:1 }}>
                           <div style={{ fontWeight:600, color:'#15803d', fontSize:13 }}>{f.name}</div>
                           <div style={{ fontSize:12, color:'var(--text-muted)' }}>{(f.size/1024/1024).toFixed(2)} Mo</div>

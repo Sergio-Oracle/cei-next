@@ -112,11 +112,15 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
   const strip = (s: string) => s.trim().replace(/^[*_]{1,2}\s*/,'').replace(/\s*[*_]{1,2}$/,'').trim()
   const Q_RE  = /^(?:(?:Question|Q)\.?\s+)?(\d{1,2})(?!\s*\.\s*\d)(?:\s*[.:)–—-]|\.\s+|\s{2,})\s*(.+)/i
   const TYPE_MARKER = /\[(QCM_MULTI|QCM|VF|OUVERT|SUBOPEN|APPARIEMENT|CODE|OUVERT[ES]*)\]/i
+  // Marqueur de niveau de difficulté par question (ex: [Facile]/[Moyen]/[Difficile]) —
+  // visible pour l'enseignant dans l'aperçu brut avant publication, mais jamais
+  // affiché à l'étudiant pendant l'examen, au même titre que TYPE_MARKER.
+  const DIFF_MARKER = /\[(Facile|Moyen|Difficile)\]/i
   const isQ  = (l: string) => Q_RE.test(strip(l))
   const getQ = (l: string) => {
     const m = strip(l).match(Q_RE); if (!m) return null
     const marker = strip(l).match(TYPE_MARKER)
-    return { num: m[1], text: strip(m[2]).replace(TYPE_MARKER,'').trim(), markerType: marker ? marker[1].toUpperCase() : null }
+    return { num: m[1], text: strip(m[2]).replace(TYPE_MARKER,'').replace(DIFF_MARKER,'').trim(), markerType: marker ? marker[1].toUpperCase() : null }
   }
   const C_RE = /^(?:\(?([A-Fa-f])\)?)\s*[.):\s-]\s+(.+)/
   const isC  = (l: string) => C_RE.test(strip(l)) && strip(l).length > 3
