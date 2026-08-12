@@ -1991,8 +1991,27 @@ export default function ExamPage() {
 
   /* ── Phase 1 : scan environnement 360° ────────────────────────────────── */
   if(phase==='env_scan') {
+    // Étapes animées guidant physiquement l'étudiant pendant les 8s du scan
+    // (SCAN_DURATION_MS) — imite les indications directionnelles des
+    // plateformes de surveillance standard (tourner la caméra à gauche/droite
+    // puis montrer le bureau) plutôt qu'un texte statique unique qui ne
+    // renseignait pas QUAND ni COMMENT bouger la caméra.
+    const ENV_SCAN_STAGES = [
+      { icon:'fa-user',        dir:null,    label:'Restez face à la caméra, bien centré et éclairé' },
+      { icon:'fa-arrow-left',  dir:'left',  label:'Tournez lentement la caméra vers la GAUCHE' },
+      { icon:'fa-arrow-right', dir:'right', label:'Tournez lentement la caméra vers la DROITE' },
+      { icon:'fa-arrow-down',  dir:'down',  label:"Montrez votre bureau et l'espace autour de vous" },
+    ] as const
+    const scanStageIdx = envScanProgress < 20 ? 0 : envScanProgress < 45 ? 1 : envScanProgress < 70 ? 2 : 3
+    const scanStage = ENV_SCAN_STAGES[scanStageIdx]
+    const scanStageAnim = scanStage.dir==='left' ? 'scanArrowLeft 1.1s ease-in-out infinite'
+      : scanStage.dir==='right' ? 'scanArrowRight 1.1s ease-in-out infinite'
+      : scanStage.dir==='down' ? 'scanArrowDown 1.1s ease-in-out infinite'
+      : 'scanPulseBlue 1.8s ease-in-out infinite'
+
     return(
       <div style={{minHeight:'100vh',background:'#0f172a',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+        <style>{`@keyframes scanArrowLeft{0%,100%{transform:translateX(0)}50%{transform:translateX(-10px)}}@keyframes scanArrowRight{0%,100%{transform:translateX(0)}50%{transform:translateX(10px)}}@keyframes scanArrowDown{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}@keyframes scanPulseBlue{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.6)}50%{box-shadow:0 0 0 10px rgba(59,130,246,0)}}`}</style>
         <div style={{background:'#1e293b',border:'1px solid #334155',borderRadius:20,padding:'32px 32px',maxWidth:520,width:'100%',color:'white'}}>
           <h2 style={{fontSize:20,fontWeight:800,margin:'0 0 8px',display:'flex',alignItems:'center',gap:10}}>
             <i className="fas fa-house-signal" style={{color:'#3b82f6'}}/> Vérification de votre environnement
@@ -2004,6 +2023,13 @@ export default function ExamPage() {
           <div style={{borderRadius:14,overflow:'hidden',background:'#000',position:'relative',aspectRatio:'4/3',marginBottom:18}}>
             <video ref={el=>{scanVideoRef.current=el;if(el&&camStream.current&&el.srcObject!==camStream.current)el.srcObject=camStream.current}}
               autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)'}}/>
+            {envScanStatus==='scanning' && (
+              <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none'}}>
+                <div style={{width:64,height:64,borderRadius:'50%',background:'rgba(15,23,42,.55)',backdropFilter:'blur(2px)',display:'flex',alignItems:'center',justifyContent:'center',animation:scanStageAnim}}>
+                  <i className={`fas ${scanStage.icon}`} style={{fontSize:26,color:'#fff'}}/>
+                </div>
+              </div>
+            )}
           </div>
 
           {envScanStatus==='loading_ai' && (
@@ -2014,10 +2040,18 @@ export default function ExamPage() {
 
           {envScanStatus==='scanning' && (
             <>
-              <div style={{height:8,borderRadius:4,background:'#334155',overflow:'hidden',marginBottom:8}}>
+              <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:10}}>
+                {ENV_SCAN_STAGES.map((_,i)=>(
+                  <span key={i} style={{width:7,height:7,borderRadius:'50%',background:i<=scanStageIdx?'#3b82f6':'#334155',transition:'background .3s'}}/>
+                ))}
+              </div>
+              <div style={{height:8,borderRadius:4,background:'#334155',overflow:'hidden',marginBottom:10}}>
                 <div style={{height:'100%',width:`${envScanProgress}%`,background:'#3b82f6',transition:'width .3s'}}/>
               </div>
-              <div style={{fontSize:13,color:'#94a3b8'}}>Analyse en cours… continuez à balayer la pièce</div>
+              <div style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#e2e8f0',fontWeight:600}}>
+                <i className={`fas ${scanStage.icon}`} style={{color:'#3b82f6'}}/>
+                {scanStage.label}
+              </div>
             </>
           )}
 
@@ -2129,7 +2163,7 @@ export default function ExamPage() {
 
     return(
       <div className="exam-shell" style={{display:'flex',height:'100vh',width:'100%',overflow:'hidden',fontFamily:"-apple-system,'Segoe UI',Roboto,sans-serif"}}>
-        <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes agP{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}50%{box-shadow:0 0 0 5px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}`}</style>
+        <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes agP{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}50%{box-shadow:0 0 0 5px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}@keyframes faceRingBad{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.7)}50%{box-shadow:0 0 0 6px rgba(239,68,68,0)}}@keyframes faceRingWarn{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.6)}50%{box-shadow:0 0 0 6px rgba(245,158,11,0)}}`}</style>
 
         {/* Blocage actif (et non plus seulement un log passif) tant que
             l'étudiant n'a pas explicitement confirmé son retour — le clic
@@ -2195,7 +2229,21 @@ export default function ExamPage() {
           <div style={{margin:'0 12px 8px',borderRadius:8,overflow:'hidden',background:'#000',boxShadow:'0 2px 8px rgba(0,0,0,.12)',position:'relative',aspectRatio:'4/3'}}>
             <video ref={el=>{videoRef.current=el;if(el&&camStream.current&&el.srcObject!==camStream.current)el.srcObject=camStream.current}}
               autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',display:'block',transform:'scaleX(-1)'}}/>
-            <div style={{position:'absolute',top:6,right:6,padding:'3px 7px',background:faceStatus==='ok'?'rgba(16,185,129,.9)':faceStatus==='warn'?'rgba(245,158,11,.9)':faceStatus==='bad'?'rgba(239,68,68,.9)':'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',borderRadius:4,color:'white',fontSize:9,fontWeight:600,display:'flex',alignItems:'center',gap:4}}>
+            {/* Guide de repositionnement animé — un badge seul en coin est
+                facile à manquer pendant qu'on compose ; ce contour ovale sur
+                le flux vidéo lui-même (même principe que les plateformes de
+                surveillance standard) montre concrètement OÙ replacer son
+                visage, pas seulement QU'il manque. */}
+            {(faceStatus==='warn'||faceStatus==='bad') && (
+              <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',pointerEvents:'none',padding:8,gap:6}}>
+                <div style={{width:'52%',aspectRatio:'3/4',borderRadius:'50%',border:`2px dashed ${faceStatus==='bad'?'#ef4444':'#f59e0b'}`,animation:faceStatus==='bad'?'faceRingBad 1.4s ease-in-out infinite':'faceRingWarn 1.6s ease-in-out infinite'}}/>
+                <div style={{background:'rgba(15,23,42,.78)',color:'#fff',fontSize:9,fontWeight:700,padding:'3px 8px',borderRadius:6,textAlign:'center',lineHeight:1.3}}>
+                  <i className={`fas ${faceStatus==='bad'?'fa-user-slash':'fa-eye-slash'}`} style={{marginRight:4}}/>
+                  {faceStatus==='bad' ? 'Recentrez votre visage ici' : 'Repositionnez-vous dans le cadre'}
+                </div>
+              </div>
+            )}
+            <div style={{position:'absolute',top:6,right:6,padding:'3px 7px',background:faceStatus==='ok'?'rgba(16,185,129,.9)':faceStatus==='warn'?'rgba(245,158,11,.9)':faceStatus==='bad'?'rgba(239,68,68,.9)':'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',borderRadius:4,color:'white',fontSize:9,fontWeight:600,display:'flex',alignItems:'center',gap:4,animation:faceStatus==='bad'?'faceRingBad 1.4s ease-in-out infinite':faceStatus==='warn'?'faceRingWarn 1.6s ease-in-out infinite':'none'}}>
               {faceStatus==='init'&&<><i className="fas fa-sync fa-spin"/>Init…</>}
               {faceStatus==='ok'&&<><i className="fas fa-user-check"/>Visage OK</>}
               {faceStatus==='warn'&&<><i className="fas fa-eye-slash"/>Repositionnez…</>}
