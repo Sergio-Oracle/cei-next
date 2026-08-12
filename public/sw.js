@@ -10,7 +10,7 @@
 // ça force l'invalidation de TOUS les caches sur chaque nouveau déploiement, pour éviter
 // qu'un client garde en cache une page HTML qui référence des fichiers JS supprimés du
 // serveur par le build suivant (écran blanc / éléments qui ne s'affichent plus).
-const BUILD_ID      = 'JncdqrVMhXKXqX5MiTYpU';
+const BUILD_ID      = 'pgm1ee_oiBeTSUSYftny9';
 const STATIC_CACHE = 'cei-static-' + BUILD_ID;
 const PAGE_CACHE   = 'cei-pages-' + BUILD_ID;
 const ALL_CACHES   = [STATIC_CACHE, PAGE_CACHE];
