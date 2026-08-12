@@ -61,7 +61,7 @@ export default function StudentTranscriptsPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                   <div>
                     <h3 style={{ marginBottom: 4 }}>{t.semester_name ?? `Semestre ${t.semester_id}`}</h3>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>
                       Généré le {new Date(t.generated_at).toLocaleDateString('fr-FR')}
                     </div>
                   </div>
@@ -72,16 +72,16 @@ export default function StudentTranscriptsPage() {
 
                 <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                   <div style={{ textAlign: 'center', padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)' }}>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: t.gpa != null && t.gpa >= 10 ? 'var(--success)' : 'var(--danger)' }}>
+                    <div style={{ fontSize:26.5, fontWeight: 700, color: t.gpa != null && t.gpa >= 10 ? 'var(--success)' : 'var(--danger)' }}>
                       {t.gpa != null ? t.gpa.toFixed(2) : '—'}
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Moyenne GPA</div>
+                    <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>Moyenne GPA</div>
                   </div>
                   <div style={{ textAlign: 'center', padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)' }}>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--primary)' }}>
+                    <div style={{ fontSize:26.5, fontWeight: 700, color: 'var(--primary)' }}>
                       {t.obtained_credits ?? '?'}/{t.total_credits}
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Crédits ECTS</div>
+                    <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>Crédits ECTS</div>
                   </div>
                 </div>
 

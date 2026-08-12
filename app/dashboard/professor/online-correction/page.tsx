@@ -147,24 +147,24 @@ export default function OnlineCorrectionPage() {
     <div>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <h2 style={{ margin: '0 0 4px', fontSize:24, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="fas fa-check-circle" style={{ color: 'var(--primary)' }} />Corrections d'Examens en Ligne
         </h2>
-        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 14 }}>Corrigez automatiquement les examens soumis avec l'IA</p>
+        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize:17 }}>Corrigez automatiquement les examens soumis avec l'IA</p>
       </div>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '80px 24px' }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: 35, color: 'var(--primary)', display: 'block', marginBottom: 14 }} />
-          <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>Chargement des examens…</span>
+          <span style={{ color: 'var(--text-muted)', fontSize:17 }}>Chargement des examens…</span>
         </div>
       ) : exams.length === 0 ? (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '60px 32px', textAlign: 'center' }}>
           <div style={{ width: 56, height: 56, background: '#dbeafe', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <i className="fas fa-laptop-code" style={{ fontSize: 29, color: '#2563eb' }} />
           </div>
-          <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 8 }}>Aucun examen à corriger</div>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+          <div style={{ fontWeight: 700, fontSize:19, color: 'var(--text)', marginBottom: 8 }}>Aucun examen à corriger</div>
+          <div style={{ fontSize:15.5, color: 'var(--text-muted)' }}>
             Les examens actifs ou terminés avec des tentatives soumises apparaîtront ici.
           </div>
         </div>
@@ -179,30 +179,30 @@ export default function OnlineCorrectionPage() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <i className="fas fa-laptop-code" style={{ color: 'var(--primary)' }} />
-                  <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>{exam.title}</span>
+                  <span style={{ fontWeight: 700, fontSize:19, color: 'var(--text)' }}>{exam.title}</span>
                   <span style={{
-                    padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 600,
+                    padding: '2px 9px', borderRadius: 99, fontSize:13, fontWeight: 600,
                     background: exam.status === 'active' ? '#dcfce7' : '#f1f5f9',
                     color: exam.status === 'active' ? '#15803d' : '#64748b'
                   }}>
                     {exam.status === 'active' ? 'En cours' : 'Terminé'}
                   </span>
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                <div style={{ fontSize:15.5, color: 'var(--text-muted)' }}>
                   {exam.attempts.length} tentative(s) · {needsCorrection.length} à corriger · {corrected.length} corrigée(s)
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {needsCorrection.length > 0 && (
                   <button onClick={() => correctAll(exam.id)} disabled={correctingAll === exam.id}
-                    style={{ padding: '8px 14px', background: correctingAll === exam.id ? '#6ee7b7' : '#10b981', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, cursor: correctingAll === exam.id ? 'not-allowed' : 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    style={{ padding: '8px 14px', background: correctingAll === exam.id ? '#6ee7b7' : '#10b981', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, cursor: correctingAll === exam.id ? 'not-allowed' : 'pointer', fontSize:15.5, display: 'flex', alignItems: 'center', gap: 6 }}>
                     {correctingAll === exam.id
                       ? <><i className="fas fa-spinner fa-spin" />Correction en cours…</>
                       : <><i className="fas fa-magic" />Tout Corriger avec IA</>}
                   </button>
                 )}
                 <button onClick={() => exportCSV(exam.id, exam.title)}
-                  style={{ padding: '8px 14px', background: '#0f766e', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  style={{ padding: '8px 14px', background: '#0f766e', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize:15.5, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="fas fa-file-csv" />Export CSV
                 </button>
               </div>
@@ -220,7 +220,7 @@ export default function OnlineCorrectionPage() {
                       { label: 'Note',      icon: 'fa-star' },
                       { label: 'Actions',   icon: 'fa-cog' },
                     ].map(({ label, icon }) => (
-                      <th key={label} style={{ padding: '11px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, borderBottom: '1px solid var(--border)' }}>
+                      <th key={label} style={{ padding: '11px 16px', textAlign: 'left', fontSize:14.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, borderBottom: '1px solid var(--border)' }}>
                         <i className={`fas ${icon}`} style={{ marginRight: 6 }} />{label}
                       </th>
                     ))}
@@ -234,42 +234,42 @@ export default function OnlineCorrectionPage() {
                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f0f9ff' }}
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? 'white' : '#fafafa' }}>
                         <td style={{ padding: '12px 16px' }}>
-                          <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: 14, marginBottom: 3 }}>{attempt.student_name}</div>
-                          <span style={{ background: sb.bg, color: sb.color, padding: '1px 7px', borderRadius: 99, fontSize: 10, fontWeight: 600 }}>{sb.label}</span>
+                          <div style={{ fontWeight: 600, color: 'var(--text)', fontSize:17, marginBottom: 3 }}>{attempt.student_name}</div>
+                          <span style={{ background: sb.bg, color: sb.color, padding: '1px 7px', borderRadius: 99, fontSize:12, fontWeight: 600 }}>{sb.label}</span>
                         </td>
-                        <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 13, whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize:15.5, whiteSpace: 'nowrap' }}>
                           {attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleString('fr-FR') : 'N/A'}
                         </td>
                         <td style={{ padding: '12px 16px' }}>
                           {attempt.has_incidents ? (
-                            <span style={{ color: '#ef4444', fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
+                            <span style={{ color: '#ef4444', fontWeight: 600, fontSize:15.5, display: 'flex', alignItems: 'center', gap: 5 }}>
                               <i className="fas fa-circle-exclamation" />{attempt.warnings_count}
                             </span>
                           ) : (
-                            <span style={{ color: '#10b981', fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
+                            <span style={{ color: '#10b981', fontWeight: 600, fontSize:15.5, display: 'flex', alignItems: 'center', gap: 5 }}>
                               <i className="fas fa-check" />Aucun
                             </span>
                           )}
                         </td>
                         <td style={{ padding: '12px 16px' }}>
                           {attempt.score !== null
-                            ? <strong style={{ color: attempt.score >= 10 ? '#10b981' : '#ef4444', fontSize: 16 }}>{fmtScore(attempt.score)}/20</strong>
-                            : <span style={{ color: '#94a3b8', fontSize: 13 }}>Non corrigé</span>}
+                            ? <strong style={{ color: attempt.score >= 10 ? '#10b981' : '#ef4444', fontSize:19 }}>{fmtScore(attempt.score)}/20</strong>
+                            : <span style={{ color: '#94a3b8', fontSize:15.5 }}>Non corrigé</span>}
                         </td>
                         <td style={{ padding: '12px 16px' }}>
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                             {attempt.status === 'banned' ? (
-                              <span style={{ background: '#fee2e2', color: '#dc2626', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700 }}>Banni</span>
+                              <span style={{ background: '#fee2e2', color: '#dc2626', padding: '4px 10px', borderRadius: 8, fontSize:13, fontWeight: 700 }}>Banni</span>
                             ) : attempt.needs_correction ? (
                               <button onClick={() => correctSingle(attempt)} disabled={correcting === attempt.id}
-                                style={{ padding: '6px 12px', background: correcting === attempt.id ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: 7, fontWeight: 600, cursor: correcting === attempt.id ? 'not-allowed' : 'pointer', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                style={{ padding: '6px 12px', background: correcting === attempt.id ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: 7, fontWeight: 600, cursor: correcting === attempt.id ? 'not-allowed' : 'pointer', fontSize:14.5, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                                 {correcting === attempt.id
                                   ? <><i className="fas fa-spinner fa-spin" />…</>
                                   : <><i className="fas fa-magic" />Corriger</>}
                               </button>
                             ) : (
                               <button onClick={() => router.push(`/dashboard/professor/attempts/${attempt.id}`)}
-                                style={{ padding: '6px 12px', background: '#dbeafe', color: '#1d4ed8', border: 'none', borderRadius: 7, fontWeight: 600, cursor: 'pointer', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                style={{ padding: '6px 12px', background: '#dbeafe', color: '#1d4ed8', border: 'none', borderRadius: 7, fontWeight: 600, cursor: 'pointer', fontSize:14.5, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                                 <i className="fas fa-eye" />Voir
                               </button>
                             )}
@@ -299,18 +299,18 @@ export default function OnlineCorrectionPage() {
               </svg>
             </div>
             {progress.total > 1 && (
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#10b981', marginBottom: 4 }}>
+              <div style={{ fontSize:15.5, fontWeight: 700, color: '#10b981', marginBottom: 4 }}>
                 Tentative {progress.index} / {progress.total}
               </div>
             )}
-            <div style={{ fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtElapsed(elapsed)}</div>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 16px' }}>
+            <div style={{ fontSize:24, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtElapsed(elapsed)}</div>
+            <p style={{ fontSize:15.5, color: 'var(--text-muted)', margin: '4px 0 16px' }}>
               Copie de <strong>{progress.studentName}</strong>
             </p>
-            <p style={{ fontSize: 14, minHeight: 20 }}>
+            <p style={{ fontSize:17, minHeight: 20 }}>
               {[...CORRECTION_STEPS].reverse().find(s => elapsed >= s.at)?.label}
             </p>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12 }}>
+            <p style={{ fontSize:14.5, color: 'var(--text-muted)', marginTop: 12 }}>
               Peut prendre jusqu'à 3 minutes par copie selon la charge du modèle IA.
             </p>
           </div>
@@ -327,22 +327,22 @@ export default function OnlineCorrectionPage() {
             }}>
               <i className="fa-solid fa-circle-check" style={{ fontSize: 31, color: '#10b981' }} />
             </div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{resultModal.examTitle}</div>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+            <div style={{ fontSize:20.5, fontWeight: 700, color: 'var(--text)' }}>{resultModal.examTitle}</div>
+            <div style={{ fontSize:15.5, color: 'var(--text-muted)', marginTop: 2 }}>
               {resultModal.items.filter(r => r.success).length} corrigée(s) avec succès
               {resultModal.items.some(r => !r.success) && `, ${resultModal.items.filter(r => !r.success).length} échec(s)`}
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto' }}>
             {resultModal.items.map((it, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: 'var(--background)', borderRadius: 8, fontSize: 13 }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: 'var(--background)', borderRadius: 8, fontSize:15.5 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <i className={`fa-solid ${it.success ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ color: it.success ? '#10b981' : '#ef4444' }} />
                   {it.student_name}
                 </span>
                 {it.success
                   ? <strong style={{ color: (it.score ?? 0) >= 10 ? '#10b981' : '#ef4444' }}>{fmtScore(it.score ?? 0)}/20</strong>
-                  : <span style={{ color: '#ef4444', fontSize: 12 }}>Échec</span>}
+                  : <span style={{ color: '#ef4444', fontSize:14.5 }}>Échec</span>}
               </div>
             ))}
           </div>

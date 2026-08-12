@@ -38,8 +38,8 @@ export default function ProfessorDashboard() {
           <i className="fas fa-chart-line" style={{ color: 'white', fontSize: 24 }} />
         </div>
         <div>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Tableau de bord</h2>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Bienvenue, <strong>{user?.full_name}</strong></p>
+          <h2 style={{ margin: 0, fontSize:24, fontWeight: 700, color: 'var(--text)' }}>Tableau de bord</h2>
+          <p style={{ margin: '4px 0 0', fontSize:15.5, color: 'var(--text-muted)' }}>Bienvenue, <strong>{user?.full_name}</strong></p>
         </div>
       </div>
 
@@ -79,16 +79,16 @@ export default function ProfessorDashboard() {
       <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', marginBottom: 28 }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <i className="fas fa-rocket" style={{ color: '#f59e0b' }} />
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Actions Rapides</h3>
+          <h3 style={{ margin: 0, fontSize:18, fontWeight: 700, color: 'var(--text)' }}>Actions Rapides</h3>
         </div>
         <div style={{ padding: '20px', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
           <Link href="/dashboard/professor/create-subject"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#3b82f6', color: 'white', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#3b82f6', color: 'white', borderRadius: 10, fontSize:17, fontWeight: 600, textDecoration: 'none' }}>
             <i className="fas fa-plus-circle" style={{ fontSize: 19 }} />
             Créer un Sujet
           </Link>
           <Link href="/dashboard/professor/papers"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#10b981', color: 'white', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#10b981', color: 'white', borderRadius: 10, fontSize:17, fontWeight: 600, textDecoration: 'none' }}>
             <i className="fas fa-pencil-alt" style={{ fontSize: 19 }} />
             Corriger des Copies
           </Link>
@@ -104,7 +104,7 @@ export default function ProfessorDashboard() {
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(0,0,0,.1)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}>
               <i className={`fas ${a.icon}`} style={{ fontSize: 29, color: a.color, marginBottom: 10, display: 'block' }} />
-              <div style={{ color: a.color, fontWeight: 600, fontSize: 13 }}>{a.label}</div>
+              <div style={{ color: a.color, fontWeight: 600, fontSize:15.5 }}>{a.label}</div>
             </div>
           </Link>
         ))}
@@ -132,8 +132,8 @@ function StatTile({ icon, label, value, color, href }: { icon: string; label: st
           <i className={`fas ${icon}`} style={{ color, fontSize: 24 }} />
         </div>
         <div>
-          <div style={{ fontSize: 32, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
-          <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>{label}</div>
+          <div style={{ fontSize:35, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
+          <div style={{ fontSize:15.5, color: '#64748b', marginTop: 4 }}>{label}</div>
         </div>
       </div>
     </Link>

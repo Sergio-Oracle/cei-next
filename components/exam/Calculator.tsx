@@ -14,7 +14,7 @@ import { evaluateExpression } from '@/lib/safeMathEval'
 interface Props { onClose: () => void }
 
 const BTN: React.CSSProperties = {
-  border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer',
+  border: 'none', borderRadius: 8, fontSize:18, fontWeight: 600, cursor: 'pointer',
   height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
 }
 
@@ -53,9 +53,9 @@ export default function Calculator({ onClose }: Props) {
     }}>
       <div style={{ background: '#1e293b', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
         <i className="fas fa-calculator" style={{ color: '#60a5fa' }} />
-        <span style={{ color: 'white', fontWeight: 700, fontSize: 13, flex: 1 }}>Calculatrice</span>
+        <span style={{ color: 'white', fontWeight: 700, fontSize:15.5, flex: 1 }}>Calculatrice</span>
         <button onClick={() => setSci(s => !s)} title="Fonctions scientifiques"
-          style={{ background: sci ? '#3b82f6' : 'rgba(255,255,255,.12)', border: 'none', color: 'white', borderRadius: 6, padding: '4px 8px', fontSize: 11, cursor: 'pointer', fontWeight: 700 }}>
+          style={{ background: sci ? '#3b82f6' : 'rgba(255,255,255,.12)', border: 'none', color: 'white', borderRadius: 6, padding: '4px 8px', fontSize:13, cursor: 'pointer', fontWeight: 700 }}>
           fx
         </button>
         <button onClick={onClose} title="Fermer"
@@ -66,8 +66,8 @@ export default function Calculator({ onClose }: Props) {
 
       <div style={{ padding: '10px 12px 0' }}>
         <div style={{ background: '#0f172a', borderRadius: 8, padding: '10px 12px', marginBottom: 10, minHeight: 54 }}>
-          <div style={{ color: '#94a3b8', fontSize: 12, minHeight: 16, wordBreak: 'break-all', fontFamily: 'monospace' }}>{expr || '0'}</div>
-          <div style={{ color: err ? '#f87171' : '#4ade80', fontSize: 18, fontWeight: 700, fontFamily: 'monospace', wordBreak: 'break-all' }}>
+          <div style={{ color: '#94a3b8', fontSize:14.5, minHeight: 16, wordBreak: 'break-all', fontFamily: 'monospace' }}>{expr || '0'}</div>
+          <div style={{ color: err ? '#f87171' : '#4ade80', fontSize:21.5, fontWeight: 700, fontFamily: 'monospace', wordBreak: 'break-all' }}>
             {err || (result !== '' ? `= ${result}` : ' ')}
           </div>
         </div>
@@ -80,7 +80,7 @@ export default function Calculator({ onClose }: Props) {
               ['sin(', 'sin'], ['cos(', 'cos'], ['tan(', 'tan'], ['sqrt(', '√'], ['^2', 'x²'],
               ['log(', 'log'], ['ln(', 'ln'], ['^', 'x^y'], ['pi', 'π'], ['e', 'e'],
             ].map(([val, label]) => (
-              <button key={label} onClick={() => insert(val)} style={{ ...BTN, background: '#eff6ff', color: '#1d4ed8', height: 34, fontSize: 12 }}>{label}</button>
+              <button key={label} onClick={() => insert(val)} style={{ ...BTN, background: '#eff6ff', color: '#1d4ed8', height: 34, fontSize:14.5 }}>{label}</button>
             ))}
           </div>
         )}
@@ -106,9 +106,9 @@ export default function Calculator({ onClose }: Props) {
           <button onClick={() => insert('+')} style={{ ...BTN, background: '#eff6ff', color: '#1d4ed8' }}>+</button>
 
           <button onClick={() => { setMemory(m => { try { return evaluateExpression(expr || result) } catch { return m } }) }}
-            style={{ ...BTN, background: '#f1f5f9', color: '#475569', fontSize: 11 }}>M+</button>
-          <button onClick={() => insert(String(memory))} style={{ ...BTN, background: '#f1f5f9', color: '#475569', fontSize: 11 }}>MR</button>
-          <button onClick={() => setMemory(0)} style={{ ...BTN, background: '#f1f5f9', color: '#475569', fontSize: 11 }}>MC</button>
+            style={{ ...BTN, background: '#f1f5f9', color: '#475569', fontSize:13 }}>M+</button>
+          <button onClick={() => insert(String(memory))} style={{ ...BTN, background: '#f1f5f9', color: '#475569', fontSize:13 }}>MR</button>
+          <button onClick={() => setMemory(0)} style={{ ...BTN, background: '#f1f5f9', color: '#475569', fontSize:13 }}>MC</button>
           <button onClick={equals} style={{ ...BTN, background: '#10b981', color: 'white' }}>=</button>
         </div>
       </div>

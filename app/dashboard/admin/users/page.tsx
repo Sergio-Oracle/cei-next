@@ -216,7 +216,7 @@ export default function AdminUsersPage() {
   function Avatar({ user }: { user: User }) {
     const m = ROLE_META[user.role] || ROLE_META.student
     return (
-      <div style={{ width: 36, height: 36, borderRadius: '50%', background: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
+      <div style={{ width: 36, height: 36, borderRadius: '50%', background: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize:15.5, flexShrink: 0 }}>
         {initials(user.full_name || '')}
       </div>
     )
@@ -232,7 +232,7 @@ export default function AdminUsersPage() {
             <i className="fas fa-users" style={{ color: 'var(--primary)' }} />
             Gestion des Utilisateurs
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>Gérez les comptes admins, professeurs et étudiants</p>
+          <p style={{ color: 'var(--text-muted)', fontSize:17, marginTop: 4 }}>Gérez les comptes admins, professeurs et étudiants</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => openCreate('student')} style={btnStyle('#10b981')}>
@@ -269,8 +269,8 @@ export default function AdminUsersPage() {
                 <i className={`fas ${m.icon}`} style={{ color: m.color, fontSize: 24 }} />
               </div>
               <div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: m.color, lineHeight: 1 }}>{count}</div>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{m.plural}</div>
+                <div style={{ fontSize:31, fontWeight: 800, color: m.color, lineHeight: 1 }}>{count}</div>
+                <div style={{ fontSize:15.5, color: 'var(--text-muted)', marginTop: 2 }}>{m.plural}</div>
               </div>
             </div>
           )
@@ -283,15 +283,15 @@ export default function AdminUsersPage() {
           <i className="fas fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 16 }} />
           <input type="text" placeholder="Rechercher un utilisateur…" value={search} onChange={e => setSearch(e.target.value)}
             autoComplete="off" name="cei-admin-users-search" data-lpignore="true" data-1p-ignore
-            style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }} />
+            style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid var(--border)', borderRadius: 8, fontSize:17, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }} />
         </div>
         {activeFilter && (
-          <button onClick={() => setActiveFilter('')} style={{ fontSize: 13, padding: '8px 14px', borderRadius: 8, background: '#f1f5f9', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)' }}>
+          <button onClick={() => setActiveFilter('')} style={{ fontSize:15.5, padding: '8px 14px', borderRadius: 8, background: '#f1f5f9', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)' }}>
             <i className="fas fa-times" style={{ marginRight: 5 }} />Effacer le filtre
           </button>
         )}
         {activeFilter === 'no_email' && (
-          <span style={{ fontSize: 12, color: '#3b82f6', background: '#dbeafe', padding: '4px 10px', borderRadius: 20, fontWeight: 600 }}>
+          <span style={{ fontSize:14.5, color: '#3b82f6', background: '#dbeafe', padding: '4px 10px', borderRadius: 20, fontWeight: 600 }}>
             <i className="fas fa-user-slash" style={{ marginRight: 4 }} />Filtre : Sans email institutionnel
           </span>
         )}
@@ -323,32 +323,32 @@ export default function AdminUsersPage() {
             <tr key={u.id}>
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize:14.5, flexShrink: 0 }}>
                     {initials(u.full_name || '')}
                   </div>
                   <span style={{ fontWeight: 600 }}>{u.full_name}</span>
                   {isNoEmail(u) && (
-                    <span style={{ fontSize: 10, background: '#dbeafe', color: '#2563eb', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>Sans email</span>
+                    <span style={{ fontSize:12, background: '#dbeafe', color: '#2563eb', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>Sans email</span>
                   )}
                 </div>
               </td>
-              <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{u.email || '—'}</td>
+              <td style={{ color: 'var(--text-muted)', fontSize:15.5 }}>{u.email || '—'}</td>
               {role === 'student' && studentPoles.length <= 1 && (
-                <td style={{ fontSize: 13 }}>
+                <td style={{ fontSize:15.5 }}>
                   {u.pole_code
-                    ? <span title={u.pole_name} style={{ background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4', borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{u.pole_code}</span>
+                    ? <span title={u.pole_name} style={{ background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4', borderRadius: 99, padding: '2px 9px', fontSize:13, fontWeight: 700 }}>{u.pole_code}</span>
                     : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                 </td>
               )}
               {role === 'student' && (
-                <td style={{ fontSize: 13 }}>
+                <td style={{ fontSize:15.5 }}>
                   {u.formation_code ? (
                     <span title={u.formation_name}>{u.niveau ? `${u.niveau} · ` : ''}{u.formation_code}</span>
                   ) : (u.niveau || '—')}
                 </td>
               )}
               <td>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: u.is_active ? '#10b981' : '#ef4444' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize:15.5, fontWeight: 600, color: u.is_active ? '#10b981' : '#ef4444' }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: u.is_active ? '#10b981' : '#ef4444', display: 'inline-block' }} />
                   {u.is_active ? 'Actif' : 'Inactif'}
                 </span>
@@ -356,7 +356,7 @@ export default function AdminUsersPage() {
               <td>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <button onClick={() => openEdit(u)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', fontSize: 13, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', color: 'var(--text)' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', fontSize:15.5, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', color: 'var(--text)' }}>
                     <i className="fas fa-pen" style={{ fontSize: 13 }} /> Modifier
                   </button>
                   {role !== 'admin' && (
@@ -397,9 +397,9 @@ export default function AdminUsersPage() {
                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: m.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <i className={`fas ${m.icon}`} style={{ color: m.color, fontSize: 19 }} />
                 </div>
-                <h3 style={{ margin: 0, fontSize: 16 }}>
+                <h3 style={{ margin: 0, fontSize:19 }}>
                   {m.plural}
-                  <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 600, color: m.color, background: m.bg, padding: '2px 8px', borderRadius: 20 }}>{sUsers.length}</span>
+                  <span style={{ marginLeft: 8, fontSize:15.5, fontWeight: 600, color: m.color, background: m.bg, padding: '2px 8px', borderRadius: 20 }}>{sUsers.length}</span>
                 </h3>
               </div>
 
@@ -412,8 +412,8 @@ export default function AdminUsersPage() {
                       <div key={p.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', minWidth: 320 }}>
                         <div style={{ padding: '10px 14px', background: '#f0fdfa', borderBottom: '1px solid #99f6e4', display: 'flex', alignItems: 'center', gap: 8 }}>
                           <i className="fas fa-sitemap" style={{ color: '#0d9488', fontSize: 16 }} />
-                          <span style={{ fontWeight: 700, fontSize: 13, color: '#0d9488' }}>{p.name}</span>
-                          <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#0d9488', background: '#ccfbf1', padding: '2px 8px', borderRadius: 20 }}>{poleUsers.length}</span>
+                          <span style={{ fontWeight: 700, fontSize:15.5, color: '#0d9488' }}>{p.name}</span>
+                          <span style={{ marginLeft: 'auto', fontSize:14.5, fontWeight: 700, color: '#0d9488', background: '#ccfbf1', padding: '2px 8px', borderRadius: 20 }}>{poleUsers.length}</span>
                         </div>
                         <div className="table-responsive">
                           <table>
@@ -500,7 +500,7 @@ export default function AdminUsersPage() {
                   {formationOpts.filter(f => f.niveau_id === selNiveauId).map(f => <option key={f.id} value={f.id}>{f.code}</option>)}
                 </select>
               </div>
-              <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
+              <p style={{ fontSize:14, color: 'var(--text-muted)', margin: '6px 0 0' }}>
                 Optionnel — mais inscrit automatiquement l&apos;étudiant à toutes les UE de la formation choisie.
               </p>
             </Fg>
@@ -510,9 +510,9 @@ export default function AdminUsersPage() {
               placeholder={modal === 'edit' ? '••••••••' : 'Min. 6 caractères'} style={inp} />
           </Fg>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-            <button onClick={() => setModal(null)} style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 14 }}>Annuler</button>
+            <button onClick={() => setModal(null)} style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize:17 }}>Annuler</button>
             <button onClick={handleSave} disabled={saving}
-              style={{ padding: '9px 22px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+              style={{ padding: '9px 22px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer', fontSize:17, fontWeight: 600 }}>
               <i className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-save'}`} style={{ marginRight: 6 }} />
               {saving ? 'Enregistrement…' : modal === 'edit' ? 'Modifier' : 'Créer'}
             </button>
@@ -527,7 +527,7 @@ export default function AdminUsersPage() {
             <i className="fas fa-user-slash" style={{ color: '#3b82f6', marginRight: 8 }} />
             Étudiant sans email institutionnel
           </h3>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+          <p style={{ fontSize:15.5, color: 'var(--text-muted)', marginBottom: 20 }}>
             Un email temporaire et un mot de passe seront générés automatiquement.
           </p>
           {noEmailResult ? (
@@ -535,15 +535,15 @@ export default function AdminUsersPage() {
               <div style={{ fontWeight: 700, color: '#166534', marginBottom: 10 }}>
                 <i className="fas fa-check-circle" style={{ marginRight: 6 }} />Compte créé avec succès
               </div>
-              <div style={{ fontSize: 13, marginBottom: 6 }}>
+              <div style={{ fontSize:15.5, marginBottom: 6 }}>
                 <strong>Email temporaire :</strong><br />
-                <code style={{ fontSize: 12, background: '#dcfce7', padding: '2px 6px', borderRadius: 4 }}>{noEmailResult.email}</code>
+                <code style={{ fontSize:14.5, background: '#dcfce7', padding: '2px 6px', borderRadius: 4 }}>{noEmailResult.email}</code>
               </div>
-              <div style={{ fontSize: 13 }}>
+              <div style={{ fontSize:15.5 }}>
                 <strong>Mot de passe temporaire :</strong><br />
-                <code style={{ fontSize: 14, fontWeight: 700, background: '#dcfce7', padding: '2px 8px', borderRadius: 4, letterSpacing: 1 }}>{noEmailResult.temp_password}</code>
+                <code style={{ fontSize:17, fontWeight: 700, background: '#dcfce7', padding: '2px 8px', borderRadius: 4, letterSpacing: 1 }}>{noEmailResult.temp_password}</code>
               </div>
-              <p style={{ fontSize: 12, color: '#166534', marginTop: 10, marginBottom: 0 }}>
+              <p style={{ fontSize:14.5, color: '#166534', marginTop: 10, marginBottom: 0 }}>
                 <i className="fas fa-info-circle" style={{ marginRight: 4 }} />
                 Notez ces informations — le mot de passe ne sera plus affiché.
               </p>
@@ -581,12 +581,12 @@ export default function AdminUsersPage() {
             </>
           )}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-            <button onClick={() => setModal(null)} style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 14 }}>
+            <button onClick={() => setModal(null)} style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize:17 }}>
               {noEmailResult ? 'Fermer' : 'Annuler'}
             </button>
             {!noEmailResult && (
               <button onClick={handleNoEmail} disabled={saving}
-                style={{ padding: '9px 22px', borderRadius: 8, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+                style={{ padding: '9px 22px', borderRadius: 8, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize:17, fontWeight: 600 }}>
                 <i className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-plus'}`} style={{ marginRight: 6 }} />
                 {saving ? 'Création…' : 'Créer le compte'}
               </button>
@@ -602,12 +602,12 @@ export default function AdminUsersPage() {
             <i className="fas fa-file-import" style={{ color: 'var(--primary)', marginRight: 8 }} />
             Import Bulk Utilisateurs
           </h3>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
+          <p style={{ fontSize:15.5, color: 'var(--text-muted)', marginBottom: 14 }}>
             Importez plusieurs utilisateurs à la fois via un fichier CSV
           </p>
 
           {/* Instructions */}
-          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13 }}>
+          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize:15.5 }}>
             <strong style={{ color: '#1d4ed8' }}>Instructions :</strong>
             <ol style={{ margin: '8px 0 0 18px', color: '#1e40af', lineHeight: 1.8 }}>
               <li>Téléchargez le template CSV</li>
@@ -626,11 +626,11 @@ export default function AdminUsersPage() {
           {/* Bouton télécharger template */}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 18 }}>
             <button onClick={downloadCsvTemplate}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 8, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 8, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 600 }}>
               <i className="fas fa-download" /> Télécharger Template CSV
             </button>
             <button onClick={() => setShowCodesRef(v => !v)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize:15.5, fontWeight: 600 }}>
               <i className={`fas ${showCodesRef ? 'fa-chevron-up' : 'fa-list'}`} />
               {showCodesRef ? 'Masquer' : 'Voir'} les codes Formation disponibles
             </button>
@@ -641,7 +641,7 @@ export default function AdminUsersPage() {
               d'une mauvaise inscription vécue précédemment : Formation/Pôle confondus). */}
           {showCodesRef && (
             <div style={{ border: '1px solid var(--border)', borderRadius: 8, marginBottom: 18, maxHeight: 260, overflowY: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize:15 }}>
                 <thead style={{ position: 'sticky', top: 0, background: 'var(--surface-alt, #f1f5f9)' }}>
                   <tr>
                     <th style={thStyle}>Pôle</th>
@@ -675,13 +675,13 @@ export default function AdminUsersPage() {
 
           <Fg label="Fichier CSV *">
             <input type="file" accept=".csv" onChange={e => { setCsvFile(e.target.files?.[0] || null); setImportResult(null) }}
-              style={{ width: '100%', fontSize: 14 }} />
+              style={{ width: '100%', fontSize:17 }} />
           </Fg>
 
           {/* Résultat import */}
           {importResult && (
             <div style={{ marginBottom: 14 }}>
-              <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: 12, fontSize: 13 }}>
+              <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: 12, fontSize:15.5 }}>
                 <strong style={{ color: '#166534' }}>
                   <i className="fas fa-check-circle" style={{ marginRight: 5 }} />
                   {importResult.created || 0} utilisateur(s) créé(s)
@@ -693,7 +693,7 @@ export default function AdminUsersPage() {
                   </div>
                 )}
                 {importResult.users?.length > 0 && (
-                  <ul style={{ margin: '8px 0 0 16px', fontSize: 12, color: '#166534' }}>
+                  <ul style={{ margin: '8px 0 0 16px', fontSize:14.5, color: '#166534' }}>
                     {importResult.users.map((u: any, i: number) => (
                       <li key={i}><strong>{u.full_name}</strong> ({u.email}) — {u.role}</li>
                     ))}
@@ -701,12 +701,12 @@ export default function AdminUsersPage() {
                 )}
               </div>
               {(importResult.errors > 0 || importResult.error_details?.length > 0) && (
-                <div style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: 8, padding: 12, fontSize: 13, marginTop: 8 }}>
+                <div style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: 8, padding: 12, fontSize:15.5, marginTop: 8 }}>
                   <strong style={{ color: '#92400e' }}>
                     <i className="fas fa-exclamation-triangle" style={{ marginRight: 5 }} />
                     {importResult.errors || importResult.error_details?.length || 0} erreur(s)
                   </strong>
-                  <ul style={{ margin: '6px 0 0 16px', color: '#92400e', fontSize: 12 }}>
+                  <ul style={{ margin: '6px 0 0 16px', color: '#92400e', fontSize:14.5 }}>
                     {(importResult.error_details || []).map((e: string, i: number) => <li key={i}>{e}</li>)}
                   </ul>
                 </div>
@@ -716,11 +716,11 @@ export default function AdminUsersPage() {
 
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={handleImport} disabled={importing || !csvFile}
-              style={{ padding: '9px 22px', borderRadius: 8, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600, opacity: !csvFile ? .5 : 1 }}>
+              style={{ padding: '9px 22px', borderRadius: 8, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize:17, fontWeight: 600, opacity: !csvFile ? .5 : 1 }}>
               <i className={`fas ${importing ? 'fa-spinner fa-spin' : 'fa-upload'}`} style={{ marginRight: 6 }} />
               {importing ? 'Import en cours…' : 'Importer'}
             </button>
-            <button onClick={() => setModal(null)} style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: 14 }}>Annuler</button>
+            <button onClick={() => setModal(null)} style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize:17 }}>Annuler</button>
           </div>
         </ModalOverlay>
       )}
@@ -736,13 +736,13 @@ function btnStyle(color: string): React.CSSProperties {
   return {
     padding: '8px 16px', borderRadius: 8,
     border: `1px solid ${color}40`,
-    background: color + '18', color, fontWeight: 700, fontSize: 13,
+    background: color + '18', color, fontWeight: 700, fontSize:15.5,
     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
   }
 }
 
 const inp: React.CSSProperties = {
-  width: '100%', padding: '10px 14px', fontSize: 14,
+  width: '100%', padding: '10px 14px', fontSize:17,
   border: '1px solid var(--border)', borderRadius: 8,
   background: 'var(--surface)', color: 'var(--text)',
   boxSizing: 'border-box', outline: 'none',
@@ -751,7 +751,7 @@ const inp: React.CSSProperties = {
 function Fg({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 5 }}>{label}</label>
+      <label style={{ display: 'block', fontSize:15.5, fontWeight: 600, color: 'var(--text)', marginBottom: 5 }}>{label}</label>
       {children}
     </div>
   )

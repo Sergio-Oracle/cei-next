@@ -169,7 +169,7 @@ export default function SettingsPage() {
                 padding: '10px 14px', marginBottom: 2,
                 background: tab === t.key ? 'var(--primary)' : 'transparent',
                 color: tab === t.key ? 'white' : 'var(--text)',
-                border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14,
+                border: 'none', borderRadius: 8, cursor: 'pointer', fontSize:17,
                 fontWeight: tab === t.key ? 600 : 400, textAlign: 'left' }}>
               <i className={`fas ${t.icon}`} style={{ width: 16 }} />
               {t.label}
@@ -185,26 +185,26 @@ export default function SettingsPage() {
             <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               {/* Carte avatar */}
               <div className="card" style={{ width: 240, flexShrink: 0, textAlign: 'center', padding: 28 }}>
-                <div style={{ width: 80, height: 80, borderRadius: '50%', background: roleColors[profile?.role || user?.role || ''] || 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 32, color: 'white', fontWeight: 700 }}>
+                <div style={{ width: 80, height: 80, borderRadius: '50%', background: roleColors[profile?.role || user?.role || ''] || 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize:35, color: 'white', fontWeight: 700 }}>
                   {(profile?.full_name || user?.full_name || 'U').charAt(0).toUpperCase()}
                 </div>
-                <h3 style={{ marginBottom: 4, fontSize: 16 }}>{profile?.full_name || user?.full_name}</h3>
-                <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 12 }}>{profile?.email || user?.email}</div>
-                <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, padding: '3px 12px', borderRadius: 12, background: roleColors[profile?.role || user?.role || ''] || 'var(--primary)', color: 'white', textTransform: 'uppercase' }}>
+                <h3 style={{ marginBottom: 4, fontSize:19 }}>{profile?.full_name || user?.full_name}</h3>
+                <div style={{ color: 'var(--text-muted)', fontSize:15.5, marginBottom: 12 }}>{profile?.email || user?.email}</div>
+                <span style={{ display: 'inline-block', fontSize:13, fontWeight: 700, padding: '3px 12px', borderRadius: 12, background: roleColors[profile?.role || user?.role || ''] || 'var(--primary)', color: 'white', textTransform: 'uppercase' }}>
                   {roleLabels[profile?.role || user?.role || ''] || profile?.role || user?.role}
                 </span>
                 {profile?.formation_name && (
-                  <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-muted)' }}>
+                  <div style={{ marginTop: 12, fontSize:14.5, color: 'var(--text-muted)' }}>
                     <i className="fas fa-university" /> {profile.formation_name}{profile.niveau ? ` · ${profile.niveau}` : ''}
                   </div>
                 )}
                 <div style={{ marginTop: 12 }}>
-                  <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, padding: '3px 12px', borderRadius: 12, background: profile?.is_active !== false ? '#dcfce7' : '#fef2f2', color: profile?.is_active !== false ? '#059669' : '#dc2626' }}>
+                  <span style={{ display: 'inline-block', fontSize:13, fontWeight: 700, padding: '3px 12px', borderRadius: 12, background: profile?.is_active !== false ? '#dcfce7' : '#fef2f2', color: profile?.is_active !== false ? '#059669' : '#dc2626' }}>
                     {profile?.is_active !== false ? 'Compte actif' : 'Compte inactif'}
                   </span>
                 </div>
                 {profile?.last_login && (
-                  <div style={{ marginTop: 10, fontSize: 11, color: 'var(--text-muted)' }}>
+                  <div style={{ marginTop: 10, fontSize:13, color: 'var(--text-muted)' }}>
                     Dernière connexion :<br />
                     {new Date(profile.last_login).toLocaleString('fr-FR')}
                   </div>
@@ -214,7 +214,7 @@ export default function SettingsPage() {
               {/* Formulaire */}
               <div style={{ flex: 1, minWidth: 240 }}>
                 <div className="card" style={{ padding: 28 }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 24, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <h3 style={{ fontSize:18, fontWeight: 700, marginBottom: 24, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <i className="fas fa-user-edit" style={{ color: 'var(--primary)' }} /> Modifier le profil
                   </h3>
                   <form onSubmit={saveProfile}>
@@ -238,7 +238,7 @@ export default function SettingsPage() {
                     </Fg>
 
                     <button type="submit" disabled={saving}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 9, fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? .7 : 1 }}>
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 9, fontSize:17, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? .7 : 1 }}>
                       <i className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-save'}`} />
                       {saving ? 'Enregistrement…' : 'Enregistrer les modifications'}
                     </button>
@@ -251,7 +251,7 @@ export default function SettingsPage() {
           {/* ── Sécurité ─────────────────────────────────────────────────── */}
           {tab === 'securite' && (
             <div className="card" style={{ padding: 28 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 24, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ fontSize:18, fontWeight: 700, marginBottom: 24, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <i className="fas fa-lock" style={{ color: 'var(--primary)' }} /> Changer le mot de passe
               </h3>
               <form onSubmit={changePassword}>
@@ -290,12 +290,12 @@ export default function SettingsPage() {
                       style={{ ...inputStyle, paddingLeft: 38, borderColor: confirmPwd ? (newPwd === confirmPwd ? '#10b981' : '#ef4444') : undefined }} />
                   </div>
                   {confirmPwd.length > 0 && newPwd !== confirmPwd && (
-                    <div style={{ marginTop: 6, fontSize: 12, color: '#ef4444', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ marginTop: 6, fontSize:14.5, color: '#ef4444', display: 'flex', alignItems: 'center', gap: 5 }}>
                       <i className="fas fa-times-circle" /> Les mots de passe ne correspondent pas
                     </div>
                   )}
                   {confirmPwd.length > 0 && newPwd === confirmPwd && (
-                    <div style={{ marginTop: 6, fontSize: 12, color: '#10b981', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ marginTop: 6, fontSize:14.5, color: '#10b981', display: 'flex', alignItems: 'center', gap: 5 }}>
                       <i className="fas fa-check-circle" /> Les mots de passe correspondent
                     </div>
                   )}
@@ -303,7 +303,7 @@ export default function SettingsPage() {
 
                 <div style={{ paddingTop: 8 }}>
                   <button type="submit" disabled={changingPwd || newPwd !== confirmPwd || !currentPwd}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 9, fontSize: 14, fontWeight: 600, cursor: changingPwd || newPwd !== confirmPwd || !currentPwd ? 'not-allowed' : 'pointer', opacity: changingPwd || newPwd !== confirmPwd || !currentPwd ? .6 : 1 }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 9, fontSize:17, fontWeight: 600, cursor: changingPwd || newPwd !== confirmPwd || !currentPwd ? 'not-allowed' : 'pointer', opacity: changingPwd || newPwd !== confirmPwd || !currentPwd ? .6 : 1 }}>
                     <i className={`fas ${changingPwd ? 'fa-spinner fa-spin' : 'fa-key'}`} />
                     {changingPwd ? 'Modification…' : 'Changer le mot de passe'}
                   </button>
@@ -311,7 +311,7 @@ export default function SettingsPage() {
               </form>
 
               <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
-                <h4 style={{ marginBottom: 12, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h4 style={{ marginBottom: 12, fontSize:17, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <i className="fas fa-shield-alt" style={{ color: 'var(--primary)' }} /> Conseils de sécurité
                 </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -321,7 +321,7 @@ export default function SettingsPage() {
                     ['fa-check', 'Ne partagez jamais vos identifiants.'],
                     ['fa-check', 'Déconnectez-vous sur les appareils partagés.'],
                   ].map(([icon, text]) => (
-                    <div key={text} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: 'var(--text-muted)' }}>
+                    <div key={text} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize:15.5, color: 'var(--text-muted)' }}>
                       <i className={`fas ${icon}`} style={{ color: '#10b981', marginTop: 2, flexShrink: 0 }} />
                       {text}
                     </div>
@@ -337,7 +337,7 @@ export default function SettingsPage() {
               <h3 className="card-title"><i className="fas fa-paint-brush" /> Apparence</h3>
 
               <div style={{ marginBottom: 28 }}>
-                <label style={{ fontWeight: 600, display: 'block', marginBottom: 12, fontSize: 14 }}>Thème</label>
+                <label style={{ fontWeight: 600, display: 'block', marginBottom: 12, fontSize:17 }}>Thème</label>
                 <div style={{ display: 'flex', gap: 12 }}>
                   {[
                     { val: false, icon: 'fa-sun',  label: 'Mode clair',  desc: 'Interface claire par défaut' },
@@ -352,9 +352,9 @@ export default function SettingsPage() {
                       <i className={`fas ${opt.icon}`} style={{ fontSize: 29,
                         color: dark === opt.val ? 'var(--primary)' : 'var(--text-muted)',
                         display: 'block', marginBottom: 8 }} />
-                      <div style={{ fontWeight: 600, fontSize: 14,
+                      <div style={{ fontWeight: 600, fontSize:17,
                         color: dark === opt.val ? 'var(--primary)' : 'var(--text)' }}>{opt.label}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{opt.desc}</div>
+                      <div style={{ fontSize:14.5, color: 'var(--text-muted)', marginTop: 4 }}>{opt.desc}</div>
                       {dark === opt.val && (
                         <div style={{ marginTop: 8 }}>
                           <i className="fas fa-check-circle" style={{ color: 'var(--primary)', fontSize: 19 }} />
@@ -366,7 +366,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label style={{ fontWeight: 600, display: 'block', marginBottom: 12, fontSize: 14 }}>Taille du texte</label>
+                <label style={{ fontWeight: 600, display: 'block', marginBottom: 12, fontSize:17 }}>Taille du texte</label>
                 <div style={{ display: 'flex', gap: 12 }}>
                   {([
                     { val: 'sm' as const, label: 'Petit',  size: '13px', desc: 'Plus compact' },
@@ -381,9 +381,9 @@ export default function SettingsPage() {
                         cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }}>
                       <div style={{ fontSize: opt.size, fontWeight: 700,
                         color: fontSize === opt.val ? 'var(--primary)' : 'var(--text)', marginBottom: 4 }}>Aa</div>
-                      <div style={{ fontSize: 13, fontWeight: 600,
+                      <div style={{ fontSize:15.5, fontWeight: 600,
                         color: fontSize === opt.val ? 'var(--primary)' : 'var(--text)' }}>{opt.label}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{opt.desc}</div>
+                      <div style={{ fontSize:13, color: 'var(--text-muted)', marginTop: 2 }}>{opt.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -412,14 +412,14 @@ export default function SettingsPage() {
               />
 
               <div style={{ paddingTop: 20, marginTop: 8 }}>
-                <h4 style={{ marginBottom: 12, fontSize: 15 }}>
+                <h4 style={{ marginBottom: 12, fontSize:18 }}>
                   <i className="fas fa-keyboard" style={{ marginRight: 8, color: 'var(--primary)' }} />
                   Raccourcis clavier
                 </h4>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
+                <p style={{ fontSize:15.5, color: 'var(--text-muted)', marginBottom: 14 }}>
                   Ces raccourcis sont actifs sur toutes les pages du tableau de bord.
                 </p>
-                <table style={{ width: '100%', fontSize: 14, borderCollapse: 'separate', borderSpacing: '0 4px' }}>
+                <table style={{ width: '100%', fontSize:17, borderCollapse: 'separate', borderSpacing: '0 4px' }}>
                   <tbody>
                     {[
                       ['Alt + D', 'Aller au Dashboard'],
@@ -431,10 +431,10 @@ export default function SettingsPage() {
                       <tr key={key}>
                         <td style={{ padding: '5px 0', width: 130, verticalAlign: 'middle' }}>
                           <kbd style={{ background: 'var(--background)', border: '1px solid var(--border)',
-                            borderRadius: 6, padding: '3px 10px', fontSize: 12,
+                            borderRadius: 6, padding: '3px 10px', fontSize:14.5,
                             fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{key}</kbd>
                         </td>
-                        <td style={{ padding: '5px 0', color: 'var(--text-muted)', fontSize: 13 }}>{desc}</td>
+                        <td style={{ padding: '5px 0', color: 'var(--text-muted)', fontSize:15.5 }}>{desc}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -451,7 +451,7 @@ export default function SettingsPage() {
 
 /* Style commun pour les inputs */
 const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 14px', fontSize: 14,
+  width: '100%', padding: '10px 14px', fontSize:17,
   background: 'var(--surface)', border: '1px solid var(--border)',
   borderRadius: 8, color: 'var(--text)', outline: 'none',
   boxSizing: 'border-box',
@@ -461,11 +461,11 @@ const inputStyle: React.CSSProperties = {
 function Fg({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 20 }}>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
+      <label style={{ display: 'block', fontSize:15.5, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
         {label}
       </label>
       {children}
-      {hint && <div style={{ marginTop: 5, fontSize: 12, color: 'var(--text-muted)' }}>{hint}</div>}
+      {hint && <div style={{ marginTop: 5, fontSize:14.5, color: 'var(--text-muted)' }}>{hint}</div>}
     </div>
   )
 }
@@ -490,7 +490,7 @@ function PasswordStrength({ pwd }: { pwd: string }) {
             transition: 'background 0.2s' }} />
         ))}
       </div>
-      <small style={{ fontSize: 12, color: score > 0 ? colors[score - 1] : 'var(--text-muted)' }}>
+      <small style={{ fontSize:14.5, color: score > 0 ? colors[score - 1] : 'var(--text-muted)' }}>
         {score > 0 ? labels[score - 1] : ''}
       </small>
     </div>
@@ -507,8 +507,8 @@ function ToggleRow({ icon, title, desc, checked, onChange }: {
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         <i className={`fas ${icon}`} style={{ color: 'var(--primary)', marginTop: 2, width: 18, fontSize: 18 }} />
         <div>
-          <div style={{ fontWeight: 600, fontSize: 14 }}>{title}</div>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</div>
+          <div style={{ fontWeight: 600, fontSize:17 }}>{title}</div>
+          <div style={{ fontSize:15.5, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</div>
         </div>
       </div>
       <button onClick={() => onChange(!checked)}

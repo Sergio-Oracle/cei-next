@@ -226,7 +226,7 @@ export default function AttemptDetailPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
         <div style={{ textAlign: 'center' }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: 40, color: '#2563eb', display: 'block', marginBottom: 16 }} />
-          <p style={{ color: '#64748b', fontSize: 14 }}>Chargement de la correction…</p>
+          <p style={{ color: '#64748b', fontSize:17 }}>Chargement de la correction…</p>
         </div>
       </div>
     )
@@ -241,7 +241,7 @@ export default function AttemptDetailPage() {
         <h3 style={{ margin: '0 0 8px', color: 'var(--text)' }}>Correction introuvable</h3>
         <p style={{ color: '#64748b', marginBottom: 24 }}>Cette tentative n'existe pas ou vous n'y avez pas accès.</p>
         <Link href="/dashboard/professor/corrected"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 22px', background: '#2563eb', color: 'white', borderRadius: 8, fontWeight: 600, textDecoration: 'none', fontSize: 14 }}>
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 22px', background: '#2563eb', color: 'white', borderRadius: 8, fontWeight: 600, textDecoration: 'none', fontSize:17 }}>
           <i className="fas fa-arrow-left" />Retour aux copies corrigées
         </Link>
       </div>
@@ -312,9 +312,9 @@ export default function AttemptDetailPage() {
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
       {/* Fil d'Ariane + bouton retour */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, fontSize: 13, color: '#64748b' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, fontSize:15.5, color: '#64748b' }}>
         <Link href="/dashboard/professor/corrected"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#2563eb', fontWeight: 600, textDecoration: 'none', padding: '6px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, fontSize: 13 }}>
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#2563eb', fontWeight: 600, textDecoration: 'none', padding: '6px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, fontSize:15.5 }}>
           <i className="fas fa-arrow-left" />Retour aux copies corrigées
         </Link>
         <i className="fas fa-chevron-right" style={{ fontSize: 12 }} />
@@ -329,13 +329,13 @@ export default function AttemptDetailPage() {
 
           {/* Identité étudiant */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#dbeafe', color: '#1d4ed8', fontSize: 18, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '2px solid #bfdbfe' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#dbeafe', color: '#1d4ed8', fontSize:21.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '2px solid #bfdbfe' }}>
               {initials}
             </div>
             <div>
-              <h2 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 800, color: 'var(--text)' }}>{data.student_name}</h2>
+              <h2 style={{ margin: '0 0 4px', fontSize:24, fontWeight: 800, color: 'var(--text)' }}>{data.student_name}</h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 13, color: '#64748b', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ fontSize:15.5, color: '#64748b', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <i className="fas fa-laptop-code" style={{ color: '#2563eb', fontSize: 13 }} />
                   {data.exam_title}
                 </span>
@@ -347,35 +347,35 @@ export default function AttemptDetailPage() {
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             {/* Note */}
             <div style={{ textAlign: 'center', padding: '12px 20px', background: scoreBg, border: `1.5px solid ${scoreColor}44`, borderRadius: 12, minWidth: 80 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: scoreColor, textTransform: 'uppercase', letterSpacing: .5, marginBottom: 2 }}>Note</div>
-              <div style={{ fontSize: 24, fontWeight: 900, color: scoreColor, lineHeight: 1 }}>
-                {hasScore ? fmtScore(data.score as number) : '—'}<span style={{ fontSize: 12, fontWeight: 600 }}>/20</span>
+              <div style={{ fontSize:12, fontWeight: 700, color: scoreColor, textTransform: 'uppercase', letterSpacing: .5, marginBottom: 2 }}>Note</div>
+              <div style={{ fontSize:26.5, fontWeight: 900, color: scoreColor, lineHeight: 1 }}>
+                {hasScore ? fmtScore(data.score as number) : '—'}<span style={{ fontSize:14.5, fontWeight: 600 }}>/20</span>
               </div>
-              {hasScore && <div style={{ fontSize: 10, color: scoreColor, marginTop: 2, fontWeight: 600 }}>{getMention(data.score as number)}</div>}
+              {hasScore && <div style={{ fontSize:12, color: scoreColor, marginTop: 2, fontWeight: 600 }}>{getMention(data.score as number)}</div>}
             </div>
 
             {/* Risque */}
             <div style={{ textAlign: 'center', padding: '12px 20px', background: riskBg, border: `1.5px solid ${riskColor}44`, borderRadius: 12, minWidth: 80 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: riskColor, textTransform: 'uppercase', letterSpacing: .5, marginBottom: 2 }}>Risque</div>
-              <div style={{ fontSize: 24, fontWeight: 900, color: riskColor, lineHeight: 1 }}>{data.risk_score}<span style={{ fontSize: 12, fontWeight: 600 }}>%</span></div>
-              <div style={{ fontSize: 10, color: riskColor, marginTop: 2, fontWeight: 600 }}>{riskLabel}</div>
+              <div style={{ fontSize:12, fontWeight: 700, color: riskColor, textTransform: 'uppercase', letterSpacing: .5, marginBottom: 2 }}>Risque</div>
+              <div style={{ fontSize:26.5, fontWeight: 900, color: riskColor, lineHeight: 1 }}>{data.risk_score}<span style={{ fontSize:14.5, fontWeight: 600 }}>%</span></div>
+              <div style={{ fontSize:12, color: riskColor, marginTop: 2, fontWeight: 600 }}>{riskLabel}</div>
             </div>
 
             {/* Durée */}
             <div style={{ textAlign: 'center', padding: '12px 20px', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 12, minWidth: 80 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 2 }}>Durée</div>
-              <div style={{ fontSize: 24, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>
-                {data.duration_min != null ? data.duration_min : '—'}<span style={{ fontSize: 12, fontWeight: 600 }}>{data.duration_min != null ? ' min' : ''}</span>
+              <div style={{ fontSize:12, fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 2 }}>Durée</div>
+              <div style={{ fontSize:26.5, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>
+                {data.duration_min != null ? data.duration_min : '—'}<span style={{ fontSize:14.5, fontWeight: 600 }}>{data.duration_min != null ? ' min' : ''}</span>
               </div>
-              {data.extra_minutes ? <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 2, fontWeight: 600 }}>+{data.extra_minutes} min extra</div> : <div style={{ height: 14 }} />}
+              {data.extra_minutes ? <div style={{ fontSize:12, color: '#f59e0b', marginTop: 2, fontWeight: 600 }}>+{data.extra_minutes} min extra</div> : <div style={{ height: 14 }} />}
             </div>
 
             {/* Bouton PDF */}
             <button onClick={downloadPDF} disabled={pdfLoading}
-              style={{ padding: '14px 20px', background: pdfLoading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: 12, fontWeight: 700, cursor: pdfLoading ? 'not-allowed' : 'pointer', fontSize: 13, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 90 }}>
+              style={{ padding: '14px 20px', background: pdfLoading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: 12, fontWeight: 700, cursor: pdfLoading ? 'not-allowed' : 'pointer', fontSize:15.5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 90 }}>
               {pdfLoading
-                ? <><i className="fas fa-spinner fa-spin" style={{ fontSize: 22 }} /><span style={{ fontSize: 11 }}>Génération…</span></>
-                : <><i className="fas fa-file-pdf" style={{ fontSize: 22 }} /><span style={{ fontSize: 11 }}>Rapport PDF</span></>}
+                ? <><i className="fas fa-spinner fa-spin" style={{ fontSize: 22 }} /><span style={{ fontSize:13 }}>Génération…</span></>
+                : <><i className="fas fa-file-pdf" style={{ fontSize: 22 }} /><span style={{ fontSize:13 }}>Rapport PDF</span></>}
             </button>
           </div>
         </div>
@@ -390,15 +390,15 @@ export default function AttemptDetailPage() {
           ].map(stat => (
             <div key={stat.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
               <i className={`fas ${stat.icon}`} style={{ color: stat.color, fontSize: 16 }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: stat.color }}>{stat.value}</span>
-              <span style={{ fontSize: 12, color: '#64748b' }}>{stat.label}</span>
+              <span style={{ fontSize:14.5, fontWeight: 700, color: stat.color }}>{stat.value}</span>
+              <span style={{ fontSize:14.5, color: '#64748b' }}>{stat.label}</span>
             </div>
           ))}
           {data.ban_reason && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
               <i className="fas fa-ban" style={{ color: '#dc2626', fontSize: 16 }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626' }}>Exclu : </span>
-              <span style={{ fontSize: 12, color: '#64748b' }}>{data.ban_reason}</span>
+              <span style={{ fontSize:14.5, fontWeight: 700, color: '#dc2626' }}>Exclu : </span>
+              <span style={{ fontSize:14.5, color: '#64748b' }}>{data.ban_reason}</span>
             </div>
           )}
         </div>
@@ -410,24 +410,24 @@ export default function AttemptDetailPage() {
         {/* Incidents */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
           <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', background: data.incidents.length > 0 ? '#fef2f2' : '#f0fdf4', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className={`fas ${data.incidents.length > 0 ? 'fa-triangle-exclamation' : 'fa-check-circle'}`} style={{ color: data.incidents.length > 0 ? '#ef4444' : '#10b981', fontSize: 14 }} />
-            <span style={{ fontWeight: 700, fontSize: 14, color: data.incidents.length > 0 ? '#dc2626' : '#15803d' }}>
+            <i className={`fas ${data.incidents.length > 0 ? 'fa-triangle-exclamation' : 'fa-check-circle'}`} style={{ color: data.incidents.length > 0 ? '#ef4444' : '#10b981', fontSize:17 }} />
+            <span style={{ fontWeight: 700, fontSize:17, color: data.incidents.length > 0 ? '#dc2626' : '#15803d' }}>
               Incidents ({data.incidents.length})
             </span>
           </div>
           <div style={{ padding: '14px 20px', maxHeight: 260, overflowY: 'auto' }}>
             {data.incidents.length === 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#10b981', fontWeight: 600, fontSize: 13 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#10b981', fontWeight: 600, fontSize:15.5 }}>
                 <i className="fas fa-shield-alt" />Aucun incident détecté
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {data.incidents.slice(-20).map((inc, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 10px', background: i % 2 === 0 ? '#fef2f2' : 'white', borderRadius: 6 }}>
-                    <span style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap', minWidth: 54 }}>
+                    <span style={{ fontSize:13, color: '#94a3b8', whiteSpace: 'nowrap', minWidth: 54 }}>
                       {inc.timestamp ? new Date(inc.timestamp).toLocaleTimeString('fr-FR') : '—'}
                     </span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#ef4444' }}>
+                    <span style={{ fontSize:14.5, fontWeight: 600, color: '#ef4444' }}>
                       {INCIDENT_LABELS[inc.type] || inc.type}
                     </span>
                   </div>
@@ -441,22 +441,22 @@ export default function AttemptDetailPage() {
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
           <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', background: '#fffbeb', display: 'flex', alignItems: 'center', gap: 8 }}>
             <i className="fas fa-sticky-note" style={{ color: '#f59e0b', fontSize: 17 }} />
-            <span style={{ fontWeight: 700, fontSize: 14, color: '#92400e' }}>
+            <span style={{ fontWeight: 700, fontSize:17, color: '#92400e' }}>
               Notes surveillant ({data.proctor_notes.length})
             </span>
           </div>
           <div style={{ padding: '14px 20px', maxHeight: 260, overflowY: 'auto' }}>
             {data.proctor_notes.length === 0 ? (
-              <div style={{ color: '#94a3b8', fontSize: 13 }}>Aucune note de surveillance enregistrée</div>
+              <div style={{ color: '#94a3b8', fontSize:15.5 }}>Aucune note de surveillance enregistrée</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {data.proctor_notes.map((n, i) => (
                   <div key={i} style={{ background: '#fef3c7', borderLeft: '3px solid #f59e0b', padding: '10px 14px', borderRadius: '0 8px 8px 0' }}>
-                    <div style={{ fontSize: 11, color: '#92400e', fontWeight: 700, marginBottom: 3 }}>
+                    <div style={{ fontSize:13, color: '#92400e', fontWeight: 700, marginBottom: 3 }}>
                       <i className="fas fa-user-shield" style={{ marginRight: 4 }} />
                       {n.author || '—'} — {n.timestamp ? new Date(n.timestamp).toLocaleString('fr-FR') : '—'}
                     </div>
-                    <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.5 }}>{n.note}</div>
+                    <div style={{ fontSize:14.5, color: '#78350f', lineHeight: 1.5 }}>{n.note}</div>
                   </div>
                 ))}
               </div>
@@ -471,15 +471,15 @@ export default function AttemptDetailPage() {
           <div style={{ width: 32, height: 32, background: '#f1f5f9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <i className="fas fa-pencil-alt" style={{ color: '#475569', fontSize: 16 }} />
           </div>
-          <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>Réponse de l'étudiant</span>
+          <span style={{ fontWeight: 700, fontSize:17, color: 'var(--text)' }}>Réponse de l'étudiant</span>
         </div>
         <div style={{ padding: '18px 20px' }}>
           {displayAnswer && displayAnswer.trim() !== '' ? (
-            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', fontSize: 13, color: '#334155', background: '#f8fafc', padding: 16, borderRadius: 10, maxHeight: 320, overflowY: 'auto', border: '1px solid var(--border)', margin: 0, lineHeight: 1.8 }}>
+            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', fontSize:15.5, color: '#334155', background: '#f8fafc', padding: 16, borderRadius: 10, maxHeight: 320, overflowY: 'auto', border: '1px solid var(--border)', margin: 0, lineHeight: 1.8 }}>
               {displayAnswer.substring(0, 3000)}{displayAnswer.length > 3000 ? '\n\n…(réponse tronquée à 3000 caractères)' : ''}
             </pre>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize: 13, padding: '8px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize:15.5, padding: '8px 0' }}>
               <i className="fas fa-inbox" />L'étudiant n'a pas rédigé de réponse
             </div>
           )}
@@ -495,9 +495,9 @@ export default function AttemptDetailPage() {
             <div style={{ width: 32, height: 32, background: '#dcfce7', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <i className="fas fa-list-ol" style={{ color: '#059669', fontSize: 16 }} />
             </div>
-            <span style={{ fontWeight: 700, fontSize: 14, color: '#065f46' }}>Détail par question</span>
+            <span style={{ fontWeight: 700, fontSize:17, color: '#065f46' }}>Détail par question</span>
             {!editingQuestions && (
-              <button onClick={startEditingQuestions} style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#065f46', background: 'white', border: '1px solid #bbf7d0', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button onClick={startEditingQuestions} style={{ marginLeft: 'auto', fontSize:14.5, fontWeight: 700, color: '#065f46', background: 'white', border: '1px solid #bbf7d0', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <i className="fas fa-pen" /> Corriger question par question
               </button>
             )}
@@ -512,27 +512,27 @@ export default function AttemptDetailPage() {
                   {(questionText || rubricText) && (
                     <div style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
                       {questionText && (
-                        <p style={{ margin: 0, fontSize: 12.5, color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{questionText}</p>
+                        <p style={{ margin: 0, fontSize:15, color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{questionText}</p>
                       )}
                       {rubricText && (
-                        <p style={{ margin: questionText ? '8px 0 0' : 0, fontSize: 12, color: '#0369a1', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                        <p style={{ margin: questionText ? '8px 0 0' : 0, fontSize:14.5, color: '#0369a1', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
                           <i className="fas fa-scale-balanced" style={{ marginRight: 5 }} />{rubricText}
                         </p>
                       )}
                     </div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>Question {q.num}</span>
-                    <span className="status-badge secondary" style={{ fontSize: 11 }}>{Q_TYPE_LABEL[q.type] ?? q.type}</span>
+                    <span style={{ fontWeight: 700, fontSize:15.5, color: 'var(--text)' }}>Question {q.num}</span>
+                    <span className="status-badge secondary" style={{ fontSize:13 }}>{Q_TYPE_LABEL[q.type] ?? q.type}</span>
                     {q.correct !== undefined && (
                       <i className={`fas ${q.correct ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ color: q.correct ? '#10b981' : '#ef4444', fontSize: 16 }} />
                     )}
-                    {q.given && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Réponse : {q.given}</span>}
-                    <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: q.score >= q.max * 0.5 ? '#059669' : '#dc2626' }}>
+                    {q.given && <span style={{ fontSize:14.5, color: 'var(--text-muted)' }}>Réponse : {q.given}</span>}
+                    <span style={{ marginLeft: 'auto', fontSize:15.5, fontWeight: 700, color: q.score >= q.max * 0.5 ? '#059669' : '#dc2626' }}>
                       {editingQuestions ? (
                         <input type="number" min={0} max={q.max} step={0.25} value={edit?.score ?? ''}
                           onChange={e => setQEdits(p => ({ ...p, [q.num]: { ...p[q.num], score: e.target.value } }))}
-                          style={{ width: 64, padding: '4px 6px', fontSize: 13, fontWeight: 700, border: '1.5px solid #e2e8f0', borderRadius: 6, textAlign: 'right' }} />
+                          style={{ width: 64, padding: '4px 6px', fontSize:15.5, fontWeight: 700, border: '1.5px solid #e2e8f0', borderRadius: 6, textAlign: 'right' }} />
                       ) : q.score}
                       {' '}/ {q.max} pt
                     </span>
@@ -540,20 +540,20 @@ export default function AttemptDetailPage() {
                   {editingQuestions ? (
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Feedback (modifiable)</label>
+                        <label style={{ fontSize:13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Feedback (modifiable)</label>
                         {!!edit?.feedback && (
                           <button type="button" onClick={() => setQEdits(p => ({ ...p, [q.num]: { ...p[q.num], feedback: '' } }))}
-                            style={{ fontSize: 11, fontWeight: 600, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            style={{ fontSize:13, fontWeight: 600, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                             <i className="fas fa-eraser" /> Vider et réécrire
                           </button>
                         )}
                       </div>
                       <textarea value={edit?.feedback ?? ''} onChange={e => setQEdits(p => ({ ...p, [q.num]: { ...p[q.num], feedback: e.target.value } }))}
                         rows={3} placeholder="Feedback pour cette question…"
-                        style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 12.5, resize: 'vertical' }} />
+                        style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontFamily: 'inherit', fontSize:15, resize: 'vertical' }} />
                     </div>
                   ) : q.feedback ? (
-                    <p style={{ margin: 0, fontSize: 12.5, color: '#475569', lineHeight: 1.6 }}>{q.feedback}</p>
+                    <p style={{ margin: 0, fontSize:15, color: '#475569', lineHeight: 1.6 }}>{q.feedback}</p>
                   ) : null}
                 </div>
               )
@@ -562,11 +562,11 @@ export default function AttemptDetailPage() {
           {editingQuestions && (
             <div style={{ padding: '14px 20px', display: 'flex', gap: 10, justifyContent: 'flex-end', borderTop: '1px solid var(--border)' }}>
               <button onClick={() => setEditingQuestions(false)} disabled={savingQ}
-                style={{ padding: '9px 18px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                style={{ padding: '9px 18px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 600, fontSize:15.5, cursor: 'pointer' }}>
                 Annuler
               </button>
               <button onClick={saveQuestionGrades} disabled={savingQ}
-                style={{ padding: '9px 20px', background: '#059669', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: savingQ ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                style={{ padding: '9px 20px', background: '#059669', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize:15.5, cursor: savingQ ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
                 {savingQ ? <><i className="fas fa-spinner fa-spin" />Enregistrement…</> : <><i className="fas fa-check" />Enregistrer et recalculer la note</>}
               </button>
             </div>
@@ -580,16 +580,16 @@ export default function AttemptDetailPage() {
           <div style={{ width: 32, height: 32, background: '#dbeafe', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <i className={`fas ${data.corrector_name ? 'fa-user-check' : 'fa-robot'}`} style={{ color: '#2563eb', fontSize: 16 }} />
           </div>
-          <span style={{ fontWeight: 700, fontSize: 14, color: '#1d4ed8' }}>
+          <span style={{ fontWeight: 700, fontSize:17, color: '#1d4ed8' }}>
             {data.corrector_name ? `Corrigé par ${data.corrector_name}` : 'Correction IA'}
           </span>
           {hasScore && (
-            <span style={{ background: scoreBg, color: scoreColor, padding: '3px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700 }}>
+            <span style={{ background: scoreBg, color: scoreColor, padding: '3px 12px', borderRadius: 99, fontSize:14.5, fontWeight: 700 }}>
               {fmtScore(data.score as number)}/20 — {getMention(data.score as number)}
             </span>
           )}
           {!editing && (
-            <button onClick={startEditing} style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#1d4ed8', background: 'white', border: '1px solid #bae6fd', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button onClick={startEditing} style={{ marginLeft: 'auto', fontSize:14.5, fontWeight: 700, color: '#1d4ed8', background: 'white', border: '1px solid #bae6fd', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
               <i className="fas fa-pen" /> {hasScore ? 'Revoir / modifier' : 'Corriger moi-même'}
             </button>
           )}
@@ -598,33 +598,33 @@ export default function AttemptDetailPage() {
           {editing ? (
             <div>
               <div style={{ marginBottom: 14 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 6 }}>Note /20</label>
+                <label style={{ fontSize:14.5, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 6 }}>Note /20</label>
                 <input type="number" min={0} max={20} step={0.25} value={editScore} onChange={e => setEditScore(e.target.value)}
-                  autoFocus style={{ width: 120, padding: '8px 12px', fontSize: 16, fontWeight: 700, border: '2px solid #e2e8f0', borderRadius: 8 }} />
+                  autoFocus style={{ width: 120, padding: '8px 12px', fontSize:19, fontWeight: 700, border: '2px solid #e2e8f0', borderRadius: 8 }} />
               </div>
               <div style={{ marginBottom: 14 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 6 }}>Feedback</label>
+                <label style={{ fontSize:14.5, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 6 }}>Feedback</label>
                 <textarea value={editFeedback} onChange={e => setEditFeedback(e.target.value)} rows={10}
                   placeholder="Corrigez ou complétez l'appréciation de l'IA…"
-                  style={{ width: '100%', padding: '12px 14px', border: '2px solid #e2e8f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 13, resize: 'vertical', lineHeight: 1.7 }} />
+                  style={{ width: '100%', padding: '12px 14px', border: '2px solid #e2e8f0', borderRadius: 8, fontFamily: 'inherit', fontSize:15.5, resize: 'vertical', lineHeight: 1.7 }} />
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                 <button onClick={() => setEditing(false)} disabled={saving}
-                  style={{ padding: '9px 18px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                  style={{ padding: '9px 18px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 600, fontSize:15.5, cursor: 'pointer' }}>
                   Annuler
                 </button>
                 <button onClick={saveManualGrade} disabled={saving}
-                  style={{ padding: '9px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  style={{ padding: '9px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize:15.5, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
                   {saving ? <><i className="fas fa-spinner fa-spin" />Enregistrement…</> : <><i className="fas fa-check" />Enregistrer</>}
                 </button>
               </div>
             </div>
           ) : data.feedback ? (
-            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', fontSize: 13, color: '#1e3a5f', background: '#f0f9ff', padding: 16, borderRadius: 10, maxHeight: 420, overflowY: 'auto', border: '1px solid #bae6fd', margin: 0, lineHeight: 1.8 }}>
+            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', fontSize:15.5, color: '#1e3a5f', background: '#f0f9ff', padding: 16, borderRadius: 10, maxHeight: 420, overflowY: 'auto', border: '1px solid #bae6fd', margin: 0, lineHeight: 1.8 }}>
               {data.feedback.substring(0, 4000)}{data.feedback.length > 4000 ? '\n\n…(feedback tronqué à 4000 caractères)' : ''}
             </pre>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize: 13, padding: '8px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize:15.5, padding: '8px 0' }}>
               <i className="fas fa-clock" />Pas encore corrigé
             </div>
           )}

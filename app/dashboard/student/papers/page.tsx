@@ -95,7 +95,7 @@ export default function StudentPapersPage() {
                       ? <span className={`status-badge ${p.reclamation_status === 'resolved' ? 'success' : p.reclamation_status === 'rejected' ? 'danger' : 'warning'}`}>{p.reclamation_status}</span>
                       : canReclaim(p)
                         ? <span className="status-badge secondary">Possible</span>
-                        : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>
+                        : <span style={{ color: 'var(--text-muted)', fontSize:14.5 }}>—</span>
                     }
                   </td>
                   <td>
@@ -132,7 +132,7 @@ export default function StudentPapersPage() {
           {selected.content && (
             <div className="form-group">
               <label>Feedback</label>
-              <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize: 14, whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}>
+              <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize:17, whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}>
                 {selected.content}
               </div>
             </div>
@@ -143,7 +143,7 @@ export default function StudentPapersPage() {
                 <i className="fa-solid fa-triangle-exclamation" /> Faire une réclamation
               </button>
               {selected.reclamation_window_end && (
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                <div style={{ fontSize:14.5, color: 'var(--text-muted)', marginTop: 4 }}>
                   Délai : {new Date(selected.reclamation_window_end).toLocaleString('fr-FR')}
                 </div>
               )}

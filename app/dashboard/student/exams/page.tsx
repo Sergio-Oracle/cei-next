@@ -23,7 +23,7 @@ function fmtDuration(min: number) {
 
 function SecChip({ icon, label, color, bg }: { icon: string; label: string; color: string; bg: string }) {
   return (
-    <span style={{ background: bg, color, padding: '3px 9px', borderRadius: 99, fontSize: 11, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+    <span style={{ background: bg, color, padding: '3px 9px', borderRadius: 99, fontSize:13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
       <i className={`fas ${icon}`} />{label}
     </span>
   )
@@ -81,12 +81,12 @@ export default function StudentExamsPage() {
             <i className="fas fa-laptop-code" style={{ color: 'white', fontSize: 22 }} />
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Mes Examens en Ligne</h2>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>{exams.length} examen(s) disponible(s)</p>
+            <h2 style={{ margin: 0, fontSize:24, fontWeight: 700, color: 'var(--text)' }}>Mes Examens en Ligne</h2>
+            <p style={{ margin: '4px 0 0', fontSize:15.5, color: 'var(--text-muted)' }}>{exams.length} examen(s) disponible(s)</p>
           </div>
         </div>
         <Link href="/dashboard/student/results"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: 8, fontSize:15.5, fontWeight: 600, textDecoration: 'none' }}>
           <i className="fas fa-history" /> Mon historique
         </Link>
       </div>
@@ -98,8 +98,8 @@ export default function StudentExamsPage() {
       ) : exams.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '64px 24px', background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)' }}>
           <i className="fas fa-laptop-code" style={{ fontSize: 57, color: '#cbd5e1', display: 'block', marginBottom: 16 }} />
-          <h3 style={{ color: '#475569', fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>Aucun examen disponible</h3>
-          <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>Vos examens apparaîtront ici lorsqu'ils seront planifiés.</p>
+          <h3 style={{ color: '#475569', fontSize:21.5, fontWeight: 600, margin: '0 0 8px' }}>Aucun examen disponible</h3>
+          <p style={{ color: '#94a3b8', fontSize:17, margin: 0 }}>Vos examens apparaîtront ici lorsqu'ils seront planifiés.</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
@@ -137,7 +137,7 @@ function ExamCard({ exam }: { exam: OnlineExam }) {
       const clr = (att.score ?? 0) >= 10 ? '#10b981' : '#ef4444'
       actionNode = (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1 }}>
-          <span style={{ fontWeight: 700, color: clr, fontSize: 15, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ fontWeight: 700, color: clr, fontSize:18, display: 'flex', alignItems: 'center', gap: 5 }}>
             <i className="fas fa-star" /> {Number(att.score).toFixed(2)}/20
           </span>
           <Link href="/dashboard/student/results" style={{ ...btnStyle('#2563eb', 'white'), flex: 1, textAlign: 'center' }}>
@@ -147,25 +147,25 @@ function ExamCard({ exam }: { exam: OnlineExam }) {
       )
     } else if (att.pending_publication) {
       actionNode = (
-        <span style={{ color: '#f59e0b', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ color: '#f59e0b', fontSize:15.5, display: 'flex', alignItems: 'center', gap: 6 }}>
           <i className="fas fa-gavel" /> En délibération
         </span>
       )
     } else if (att.status === 'banned') {
       actionNode = (
-        <span style={{ color: '#ef4444', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ color: '#ef4444', fontSize:15.5, display: 'flex', alignItems: 'center', gap: 6 }}>
           <i className="fas fa-ban" /> Exclu de l'examen
         </span>
       )
     } else if (att.submitted_at) {
       actionNode = (
-        <span style={{ color: '#f59e0b', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ color: '#f59e0b', fontSize:15.5, display: 'flex', alignItems: 'center', gap: 6 }}>
           <i className="fas fa-hourglass-half" /> Correction en cours…
         </span>
       )
     } else {
       actionNode = (
-        <span style={{ color: '#94a3b8', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ color: '#94a3b8', fontSize:15.5, display: 'flex', alignItems: 'center', gap: 6 }}>
           <i className="fas fa-check-circle" /> Déjà composé
         </span>
       )
@@ -178,20 +178,20 @@ function ExamCard({ exam }: { exam: OnlineExam }) {
     )
   } else if (now < start) {
     actionNode = (
-      <span style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
+      <span style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', borderRadius: 8, padding: '8px 14px', fontSize:15.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
         <i className="fas fa-clock" /> Pas encore ouvert
       </span>
     )
   } else if (now <= end && exam.status !== 'active') {
     // Plage horaire atteinte mais l'enseignant n'a pas encore cliqué "Activer"
     actionNode = (
-      <span style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
+      <span style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', borderRadius: 8, padding: '8px 14px', fontSize:15.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
         <i className="fas fa-hourglass-half" /> Ouverture imminente — patientez
       </span>
     )
   } else {
     actionNode = (
-      <span style={{ color: '#94a3b8', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span style={{ color: '#94a3b8', fontSize:15.5, display: 'flex', alignItems: 'center', gap: 6 }}>
         <i className="fas fa-check" /> Terminé
       </span>
     )
@@ -210,15 +210,15 @@ function ExamCard({ exam }: { exam: OnlineExam }) {
       <div style={{ padding: '18px 20px', flex: 1 }}>
         {/* Titre + badge */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0, lineHeight: 1.35, flex: 1 }}>{exam.title}</h3>
-          <span style={{ background: sc.bg, color: sc.color, padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <h3 style={{ fontSize:18, fontWeight: 700, color: 'var(--text)', margin: 0, lineHeight: 1.35, flex: 1 }}>{exam.title}</h3>
+          <span style={{ background: sc.bg, color: sc.color, padding: '4px 10px', borderRadius: 99, fontSize:13, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <i className={`fas ${sc.icon}`} /> {sc.label}
           </span>
         </div>
 
         {/* Sujet */}
         {exam.subject_title && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--text-muted)', fontSize: 13, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--text-muted)', fontSize:15.5, marginBottom: 12 }}>
             <i className="fas fa-book" style={{ color: '#3b82f6', width: 13 }} />
             <span>{exam.subject_title}</span>
           </div>
@@ -226,14 +226,14 @@ function ExamCard({ exam }: { exam: OnlineExam }) {
 
         {/* Dates + durée */}
         <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 12px', marginBottom: 12, border: '1px solid #f1f5f9' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#475569', fontSize: 12, marginBottom: 5 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#475569', fontSize:14.5, marginBottom: 5 }}>
             <i className="fas fa-play" style={{ color: '#10b981', fontSize: 11 }} />
             <span style={{ flex: 1 }}>{start.toLocaleString('fr-FR', LOCALE_OPTS)}</span>
             <span style={{ fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <i className="fas fa-clock" style={{ color: '#3b82f6', fontSize: 13 }} /> {fmtDuration(exam.duration_minutes)}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#475569', fontSize: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#475569', fontSize:14.5 }}>
             <i className="fas fa-stop" style={{ color: '#ef4444', fontSize: 11 }} />
             <span>{end.toLocaleString('fr-FR', LOCALE_OPTS)}</span>
           </div>
@@ -259,5 +259,5 @@ function ExamCard({ exam }: { exam: OnlineExam }) {
 }
 
 function btnStyle(bg: string, color: string): React.CSSProperties {
-  return { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 16px', background: bg, color, border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', flex: 1 }
+  return { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 16px', background: bg, color, border: 'none', borderRadius: 8, fontSize:15.5, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', flex: 1 }
 }

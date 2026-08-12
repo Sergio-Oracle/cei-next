@@ -76,9 +76,9 @@ export default function SurveillantMessagesPage() {
               onClick={() => loadMessages(exam.id)}
             >
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>{exam.title}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  <span className={`status-badge ${exam.status === 'active' ? 'success' : 'secondary'}`} style={{ fontSize: 10 }}>
+                <div style={{ fontWeight: 600, fontSize:17 }}>{exam.title}</div>
+                <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>
+                  <span className={`status-badge ${exam.status === 'active' ? 'success' : 'secondary'}`} style={{ fontSize:12 }}>
                     {exam.status === 'active' ? 'Actif' : 'Clôturé'}
                   </span>
                 </div>
@@ -105,17 +105,17 @@ export default function SurveillantMessagesPage() {
                 <div key={msg.id} className="reclamation-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary)20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--primary)', fontSize: 13 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary)20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--primary)', fontSize:15.5 }}>
                         {msg.student_name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{msg.student_name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Étudiant #{msg.student_id}</div>
+                        <div style={{ fontWeight: 600, fontSize:17 }}>{msg.student_name}</div>
+                        <div style={{ fontSize:13, color: 'var(--text-muted)' }}>Étudiant #{msg.student_id}</div>
                       </div>
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{new Date(msg.created_at).toLocaleString('fr-FR')}</div>
+                    <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>{new Date(msg.created_at).toLocaleString('fr-FR')}</div>
                   </div>
-                  <div style={{ fontSize: 14, padding: '8px 12px', background: 'var(--background)', borderRadius: 'var(--radius)', width: '100%' }}>
+                  <div style={{ fontSize:17, padding: '8px 12px', background: 'var(--background)', borderRadius: 'var(--radius)', width: '100%' }}>
                     {msg.message}
                   </div>
                 </div>

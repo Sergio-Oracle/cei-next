@@ -93,9 +93,9 @@ export default function AdminPapersPage() {
           <h2 style={{ margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <i className="fas fa-check-circle" style={{ color: 'var(--primary)' }} />Copies Corrigées
           </h2>
-          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 14 }}>Toutes les copies corrigées par les professeurs — examens en ligne et sur papier</p>
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize:17 }}>Toutes les copies corrigées par les professeurs — examens en ligne et sur papier</p>
         </div>
-        <button onClick={load} style={{ padding: '9px 16px', background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button onClick={load} style={{ padding: '9px 16px', background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize:15.5, display: 'flex', alignItems: 'center', gap: 6 }}>
           <i className="fas fa-rotate-right" />Actualiser
         </button>
       </div>
@@ -113,8 +113,8 @@ export default function AdminPapersPage() {
               <i className={`fas ${icon}`} style={{ color, fontSize: 22 }} />
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>{value}</p>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>{label}</p>
+              <p style={{ margin: 0, fontSize:24, fontWeight: 800, color: 'var(--text)' }}>{value}</p>
+              <p style={{ margin: 0, fontSize:14.5, color: 'var(--text-muted)' }}>{label}</p>
             </div>
           </div>
         ))}
@@ -125,13 +125,13 @@ export default function AdminPapersPage() {
         <div style={{ flex: 1, minWidth: 220, position: 'relative' }}>
           <i className="fas fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 16 }} />
           <input placeholder="Rechercher étudiant, sujet, professeur…" value={search} onChange={e => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '9px 12px 9px 34px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', color: 'var(--text)', background: 'var(--background)' }} />
+            style={{ width: '100%', padding: '9px 12px 9px 34px', border: '1px solid var(--border)', borderRadius: 8, fontSize:17, outline: 'none', boxSizing: 'border-box', color: 'var(--text)', background: 'var(--background)' }} />
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           {(['all', 'online', 'paper'] as const).map(t => (
             <button key={t} onClick={() => setFilterType(t)}
               style={{
-                padding: '7px 14px', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 12,
+                padding: '7px 14px', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize:14.5,
                 background: filterType === t ? (t === 'online' ? '#dbeafe' : t === 'paper' ? '#e0f2fe' : '#0f172a') : '#f1f5f9',
                 color:      filterType === t ? (t === 'online' ? '#1d4ed8' : t === 'paper' ? '#0891b2' : 'white') : '#475569'
               }}>
@@ -153,7 +153,7 @@ export default function AdminPapersPage() {
           <div style={{ textAlign: 'center', padding: '60px 24px', color: 'var(--text-muted)' }}>
             <i className="fas fa-inbox" style={{ fontSize: 40, display: 'block', marginBottom: 14, opacity: .4 }} />
             <p style={{ margin: '0 0 6px', fontWeight: 600 }}>{papers.length === 0 ? 'Aucune copie corrigée pour l\'instant' : 'Aucun résultat'}</p>
-            <p style={{ margin: 0, fontSize: 13 }}>
+            <p style={{ margin: 0, fontSize:15.5 }}>
               {papers.length === 0 ? 'Les copies corrigées apparaîtront ici après les examens' : 'Modifiez vos critères de recherche'}
             </p>
           </div>
@@ -163,7 +163,7 @@ export default function AdminPapersPage() {
             <thead>
               <tr style={{ background: '#f8fafc' }}>
                 {['Type','Étudiant','Email','Sujet','Professeur','Note/20','Date de correction','Actions'].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
+                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize:14.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -177,46 +177,46 @@ export default function AdminPapersPage() {
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f0f9ff' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? 'white' : '#fafafa' }}>
                     <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: isOnline ? '#dbeafe' : '#e0f2fe', color: isOnline ? '#1d4ed8' : '#0891b2', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ padding: '4px 10px', borderRadius: 99, fontSize:13, fontWeight: 700, background: isOnline ? '#dbeafe' : '#e0f2fe', color: isOnline ? '#1d4ed8' : '#0891b2', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                         <i className={`fas ${isOnline ? 'fa-desktop' : 'fa-file-pdf'}`} style={{ fontSize: 12 }} />
                         {isOnline ? 'En ligne' : 'Papier'}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)', fontSize: 14 }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)', fontSize:17 }}>
                       <i className="fas fa-user-circle" style={{ color: '#94a3b8', marginRight: 8 }} />
                       {p.student_name}
                     </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 13 }}>{p.student_email}</td>
-                    <td style={{ padding: '12px 16px', color: '#334155', fontSize: 14, maxWidth: 180 }}>
+                    <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize:15.5 }}>{p.student_email}</td>
+                    <td style={{ padding: '12px 16px', color: '#334155', fontSize:17, maxWidth: 180 }}>
                       <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.subject_title}</span>
                     </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 13 }}>
+                    <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize:15.5 }}>
                       {p.professor_name || <span style={{ color: '#cbd5e1' }}>—</span>}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       {scoreNum != null ? (
-                        <span style={{ padding: '5px 12px', borderRadius: 8, fontWeight: 700, fontSize: 14, background: scoreGood ? '#d1fae5' : '#fee2e2', color: scoreGood ? '#059669' : '#dc2626', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ padding: '5px 12px', borderRadius: 8, fontWeight: 700, fontSize:17, background: scoreGood ? '#d1fae5' : '#fee2e2', color: scoreGood ? '#059669' : '#dc2626', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           <i className={`fas ${scoreGood ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ fontSize: 13 }} />
                           {scoreNum.toFixed(1)}/20
                         </span>
                       ) : (
-                        <span style={{ color: '#94a3b8', fontSize: 12 }}>
+                        <span style={{ color: '#94a3b8', fontSize:14.5 }}>
                           <i className="fas fa-clock" style={{ marginRight: 4 }} />En attente
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 13, whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize:15.5, whiteSpace: 'nowrap' }}>
                       <i className="fas fa-calendar" style={{ marginRight: 6 }} />
                       {new Date(p.corrected_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => openDetail(p)}
-                          style={{ padding: '6px 11px', background: '#dbeafe', color: '#1d4ed8', border: 'none', borderRadius: 7, fontWeight: 600, cursor: 'pointer', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          style={{ padding: '6px 11px', background: '#dbeafe', color: '#1d4ed8', border: 'none', borderRadius: 7, fontWeight: 600, cursor: 'pointer', fontSize:14.5, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           <i className="fas fa-eye" style={{ fontSize: 13 }} />Voir
                         </button>
                         <button onClick={() => downloadPdf(p)} disabled={pdfBusy === p.id}
-                          style={{ padding: '6px 11px', background: pdfBusy === p.id ? '#f1f5f9' : '#fee2e2', color: pdfBusy === p.id ? '#94a3b8' : '#dc2626', border: 'none', borderRadius: 7, fontWeight: 600, cursor: pdfBusy === p.id ? 'not-allowed' : 'pointer', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          style={{ padding: '6px 11px', background: pdfBusy === p.id ? '#f1f5f9' : '#fee2e2', color: pdfBusy === p.id ? '#94a3b8' : '#dc2626', border: 'none', borderRadius: 7, fontWeight: 600, cursor: pdfBusy === p.id ? 'not-allowed' : 'pointer', fontSize:14.5, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           {pdfBusy === p.id
                             ? <><i className="fas fa-spinner fa-spin" style={{ fontSize: 13 }} />…</>
                             : <><i className="fas fa-file-pdf" style={{ fontSize: 13 }} />PDF</>}
@@ -234,17 +234,17 @@ export default function AdminPapersPage() {
         {/* Footer */}
         {!loading && visible.length > 0 && (
           <div style={{ padding: '12px 18px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
-            <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>
+            <p style={{ margin: 0, fontSize:15.5, color: '#64748b' }}>
               <i className="fas fa-table" style={{ marginRight: 6 }} />
               {visible.length} copie{visible.length > 1 ? 's' : ''} affichée{visible.length > 1 ? 's' : ''}
               {filterType !== 'all' || search ? ` sur ${papers.length} total` : ''}
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>
+              <span style={{ fontSize:14.5, color: '#10b981', fontWeight: 600 }}>
                 <i className="fas fa-thumbs-up" style={{ marginRight: 4 }} />
                 {papers.filter(p => (p.score ?? 0) >= 10).length} réussites
               </span>
-              <span style={{ fontSize: 12, color: '#ef4444', fontWeight: 600 }}>
+              <span style={{ fontSize:14.5, color: '#ef4444', fontWeight: 600 }}>
                 <i className="fas fa-thumbs-down" style={{ marginRight: 4 }} />
                 {papers.filter(p => p.score != null && p.score < 10).length} échecs
               </span>

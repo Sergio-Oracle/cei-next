@@ -47,7 +47,7 @@ const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
 const POLE_COLORS: Record<string, string> = { STN: '#2563eb', LSHE: '#10b981', SEJA: '#f59e0b', RTN: '#0891b2' }
 const poleColor = (code?: string | null) => POLE_COLORS[code || ''] || '#64748b'
 
-const selStyle = { padding: '8px 11px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 12, background: 'var(--background)', color: 'var(--text)', outline: 'none', width: '100%' }
+const selStyle = { padding: '8px 11px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize:14.5, background: 'var(--background)', color: 'var(--text)', outline: 'none', width: '100%' }
 
 export default function ProfessorQuestionsPage() {
   const { success, error: toastErr } = useToast()
@@ -306,45 +306,45 @@ export default function ProfessorQuestionsPage() {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div className="card" style={{ width: '100%', maxWidth: 600, maxHeight: '85vh', overflowY: 'auto', padding: 28 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, gap: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 17 }}>{preview.title}</h3>
+          <h3 style={{ margin: 0, fontSize:20.5 }}>{preview.title}</h3>
           <button className="btn btn-secondary btn-sm" onClick={() => setPreview(null)}><i className="fas fa-times" /></button>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-          <span style={{ ...typeSt(preview.question_type), padding: '2px 10px', borderRadius: 99, fontSize: 12, fontWeight: 700 }}>
+          <span style={{ ...typeSt(preview.question_type), padding: '2px 10px', borderRadius: 99, fontSize:14.5, fontWeight: 700 }}>
             {typeLabel(preview.question_type)}
           </span>
-          {preview.bloom_level && <span className="status-badge secondary" style={{ fontSize: 12 }}>{preview.bloom_level}</span>}
+          {preview.bloom_level && <span className="status-badge secondary" style={{ fontSize:14.5 }}>{preview.bloom_level}</span>}
           {preview.pole_code && (
-            <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: poleColor(preview.pole_code) + '20', color: poleColor(preview.pole_code) }}>
+            <span style={{ padding: '2px 8px', borderRadius: 99, fontSize:14.5, fontWeight: 700, background: poleColor(preview.pole_code) + '20', color: poleColor(preview.pole_code) }}>
               Pôle {preview.pole_code}
             </span>
           )}
-          {preview.formation_name && <span className="status-badge secondary" style={{ fontSize: 11 }}>{preview.formation_name}</span>}
-          {preview.ue_code && <span className="status-badge secondary" style={{ fontSize: 11 }}>UE {preview.ue_code}</span>}
-          {preview.ec_name && <span className="status-badge secondary" style={{ fontSize: 11 }}><i className="fas fa-book" /> {preview.ec_name}</span>}
-          {preview.status === 'hidden' && <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: '#f1f5f9', color: '#64748b' }}><i className="fas fa-eye-slash" style={{ marginRight: 3 }} />Masquée</span>}
+          {preview.formation_name && <span className="status-badge secondary" style={{ fontSize:13 }}>{preview.formation_name}</span>}
+          {preview.ue_code && <span className="status-badge secondary" style={{ fontSize:13 }}>UE {preview.ue_code}</span>}
+          {preview.ec_name && <span className="status-badge secondary" style={{ fontSize:13 }}><i className="fas fa-book" /> {preview.ec_name}</span>}
+          {preview.status === 'hidden' && <span style={{ padding: '2px 8px', borderRadius: 99, fontSize:13, fontWeight: 700, background: '#f1f5f9', color: '#64748b' }}><i className="fas fa-eye-slash" style={{ marginRight: 3 }} />Masquée</span>}
         </div>
         {preview.tags && preview.tags.length > 0 && (
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
             {preview.tags.map(t => (
-              <span key={t} style={{ fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 99, background: '#f0fdfa', color: '#0d9488' }}>
+              <span key={t} style={{ fontSize:13, fontWeight: 600, padding: '2px 9px', borderRadius: 99, background: '#f0fdfa', color: '#0d9488' }}>
                 <i className="fas fa-hashtag" style={{ fontSize: 11, marginRight: 3 }} />{t}
               </span>
             ))}
           </div>
         )}
-        <pre style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 8, padding: 14, fontSize: 13, whiteSpace: 'pre-wrap', lineHeight: 1.7, maxHeight: 280, overflowY: 'auto' }}>
+        <pre style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 8, padding: 14, fontSize:15.5, whiteSpace: 'pre-wrap', lineHeight: 1.7, maxHeight: 280, overflowY: 'auto' }}>
           {preview.content}
         </pre>
         {preview.rubric && (<>
-          <h4 style={{ margin: '16px 0 8px', fontSize: 14 }}>
+          <h4 style={{ margin: '16px 0 8px', fontSize:17 }}>
             <i className="fas fa-clipboard-list" style={{ color: '#10b981', marginRight: 6 }} />Barème
           </h4>
-          <pre style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 14, fontSize: 12, whiteSpace: 'pre-wrap', lineHeight: 1.7, maxHeight: 200, overflowY: 'auto' }}>
+          <pre style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 14, fontSize:14.5, whiteSpace: 'pre-wrap', lineHeight: 1.7, maxHeight: 200, overflowY: 'auto' }}>
             {preview.rubric}
           </pre>
         </>)}
-        <p style={{ margin: '14px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>
+        <p style={{ margin: '14px 0 0', fontSize:13, color: 'var(--text-muted)' }}>
           <i className="fas fa-user" style={{ marginRight: 4 }} />Créée par {preview.created_by || '—'}
           {preview.created_at && <> le {new Date(preview.created_at).toLocaleDateString('fr-FR')}</>}
           {preview.updated_at && preview.updated_at !== preview.created_at && (
@@ -367,42 +367,42 @@ export default function ProfessorQuestionsPage() {
     return (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div className="card" style={{ width: '100%', maxWidth: 580, maxHeight: '90vh', overflowY: 'auto', padding: 28 }}>
-          <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700 }}>
+          <h3 style={{ margin: '0 0 20px', fontSize:21.5, fontWeight: 700 }}>
             <i className="fas fa-layer-group" style={{ color: '#2563eb', marginRight: 8 }} />
             Créer un sujet à partir de {selected.size} question{selected.size > 1 ? 's' : ''}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Titre de l&apos;examen *</label>
+              <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>Titre de l&apos;examen *</label>
               <input className="form-control" value={aTitle} onChange={e => setATitle(e.target.value)} placeholder="Ex : Examen de Réseaux S1 2025" />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Durée (minutes)</label>
+                <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>Durée (minutes)</label>
                 <input className="form-control" type="number" min={15} max={360} value={aDuration} onChange={e => setADuration(Number(e.target.value))} />
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Niveau</label>
+                <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>Niveau</label>
                 <select className="form-control" value={aLevel} onChange={e => setALevel(e.target.value)}>
                   {['Licence 1','Licence 2','Licence 3','Master 1','Master 2','Doctorat'].map(l => <option key={l}>{l}</option>)}
                 </select>
               </div>
             </div>
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Élément Constitutif (EC)</label>
+              <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>Élément Constitutif (EC)</label>
               <select className="form-control" value={aEcId} onChange={e => setAEcId(e.target.value)}>
                 <option value="">— Aucun EC spécifique —</option>
                 {(uniqueEcIds.length ? uniqueEcIds : ecs).map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
             </div>
             <div style={{ background: 'var(--background)', borderRadius: 8, padding: 12, maxHeight: 160, overflowY: 'auto' }}>
-              <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Questions sélectionnées :</p>
+              <p style={{ margin: '0 0 8px', fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Questions sélectionnées :</p>
               {selQuestions.map((q, i) => {
                 const st = typeSt(q.question_type)
                 return (
                   <div key={q.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderBottom: '1px solid var(--border)' }}>
-                    <span style={{ ...st, fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 99, flexShrink: 0 }}>{typeLabel(q.question_type)}</span>
-                    <span style={{ fontSize: 13 }}>{i + 1}. {q.title}</span>
+                    <span style={{ ...st, fontSize:12, fontWeight: 700, padding: '1px 6px', borderRadius: 99, flexShrink: 0 }}>{typeLabel(q.question_type)}</span>
+                    <span style={{ fontSize:15.5 }}>{i + 1}. {q.title}</span>
                   </div>
                 )
               })}
@@ -431,13 +431,13 @@ export default function ProfessorQuestionsPage() {
             <i className="fas fa-database" style={{ color: '#2563eb' }} />
             Banque de Questions
           </h2>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
+          <p style={{ margin: '4px 0 0', fontSize:15.5, color: 'var(--text-muted)' }}>
             {filtered.length} / {questions.length} question(s) — cochez pour assembler un sujet
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={checkDuplicates} disabled={dupLoading || questions.length === 0}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', border: '1.5px solid #f59e0b', background: dupPairs && dupPairs.length > 0 ? '#fef3c7' : '#fffbeb', color: '#92400e', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: questions.length === 0 ? 'not-allowed' : 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', border: '1.5px solid #f59e0b', background: dupPairs && dupPairs.length > 0 ? '#fef3c7' : '#fffbeb', color: '#92400e', borderRadius: 8, fontSize:15.5, fontWeight: 600, cursor: questions.length === 0 ? 'not-allowed' : 'pointer' }}>
             <i className={`fas ${dupLoading ? 'fa-spinner fa-spin' : 'fa-clone'}`} />
             {dupLoading ? 'Analyse…' : dupPairs !== null ? `${dupPairs.length} doublon${dupPairs.length !== 1 ? 's' : ''}` : 'Vérifier doublons'}
           </button>
@@ -451,10 +451,10 @@ export default function ProfessorQuestionsPage() {
 
       {/* ── Sélecteur cascade Pôle → Formation → Semestre → UE → EC ── */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
           <i className="fas fa-filter" style={{ color: '#2563eb' }} /> Filtrer par hiérarchie académique
           {hasFilter && (
-            <button onClick={resetFilters} style={{ background: '#fef2f2', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 11, padding: '2px 8px', borderRadius: 6, marginLeft: 4 }}>
+            <button onClick={resetFilters} style={{ background: '#fef2f2', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize:13, padding: '2px 8px', borderRadius: 6, marginLeft: 4 }}>
               <i className="fas fa-times" /> Réinitialiser
             </button>
           )}
@@ -463,7 +463,7 @@ export default function ProfessorQuestionsPage() {
 
           {/* Pôle */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <label style={{ fontSize:13, fontWeight: 700, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
               <i className="fas fa-sitemap" /> Pôle
             </label>
             <select value={filterPole} onChange={e => { setFilterPole(e.target.value); setFilterForm(''); setFilterSem(''); setFilterUe(''); setFilterEc('') }} style={selStyle}>
@@ -476,7 +476,7 @@ export default function ProfessorQuestionsPage() {
 
           {/* Formation */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <label style={{ fontSize:13, fontWeight: 700, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
               <i className="fas fa-university" /> Formation
             </label>
             <select value={filterForm} onChange={e => { setFilterForm(e.target.value); setFilterSem(''); setFilterUe(''); setFilterEc('') }} style={selStyle}>
@@ -487,7 +487,7 @@ export default function ProfessorQuestionsPage() {
 
           {/* Semestre */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#0891b2', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <label style={{ fontSize:13, fontWeight: 700, color: '#0891b2', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
               <i className="fas fa-calendar-alt" /> Semestre
             </label>
             <select value={filterSem} onChange={e => { setFilterSem(e.target.value); setFilterUe(''); setFilterEc('') }} style={selStyle}>
@@ -498,7 +498,7 @@ export default function ProfessorQuestionsPage() {
 
           {/* UE */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <label style={{ fontSize:13, fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
               <i className="fas fa-book-open" /> UE
             </label>
             <select value={filterUe} onChange={e => { setFilterUe(e.target.value); setFilterEc('') }} style={selStyle}>
@@ -509,7 +509,7 @@ export default function ProfessorQuestionsPage() {
 
           {/* EC */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <label style={{ fontSize:13, fontWeight: 700, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
               <i className="fas fa-tag" /> EC
             </label>
             <select value={filterEc} onChange={e => setFilterEc(e.target.value)} style={selStyle}>
@@ -520,7 +520,7 @@ export default function ProfessorQuestionsPage() {
 
           {/* Type */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <label style={{ fontSize:13, fontWeight: 700, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
               <i className="fas fa-list" /> Type
             </label>
             <select value={filterType} onChange={e => setFilterType(e.target.value)} style={selStyle}>
@@ -531,7 +531,7 @@ export default function ProfessorQuestionsPage() {
 
           {/* Tag — parité Moodle : recherche transversale hors hiérarchie */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#0d9488', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <label style={{ fontSize:13, fontWeight: 700, color: '#0d9488', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
               <i className="fas fa-hashtag" /> Tag
             </label>
             <select value={filterTag} onChange={e => setFilterTag(e.target.value)} style={selStyle} disabled={availTags.length === 0}>
@@ -549,10 +549,10 @@ export default function ProfessorQuestionsPage() {
             placeholder="Rechercher dans le titre ou l'énoncé…"
             value={filterSearch}
             onChange={e => setFilterSearch(e.target.value)}
-            style={{ ...selStyle, flex: 1, padding: '9px 14px', fontSize: 13 }}
+            style={{ ...selStyle, flex: 1, padding: '9px 14px', fontSize:15.5 }}
           />
           {hiddenCount > 0 && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:14.5, fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
               <input type="checkbox" checked={showHidden} onChange={e => setShowHidden(e.target.checked)} />
               Afficher les {hiddenCount} masquée{hiddenCount > 1 ? 's' : ''}
             </label>
@@ -564,23 +564,23 @@ export default function ProfessorQuestionsPage() {
       {selected.size > 0 && (
         <div style={{ background: '#2563eb', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           <div style={{ flex: 1 }}>
-            <span style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>{selected.size} question{selected.size > 1 ? 's' : ''}</span>
-            <span style={{ color: '#bfdbfe', fontSize: 13, marginLeft: 8 }}>sélectionnée{selected.size > 1 ? 's' : ''}</span>
+            <span style={{ color: '#fff', fontWeight: 700, fontSize:18 }}>{selected.size} question{selected.size > 1 ? 's' : ''}</span>
+            <span style={{ color: '#bfdbfe', fontSize:15.5, marginLeft: 8 }}>sélectionnée{selected.size > 1 ? 's' : ''}</span>
           </div>
           <button onClick={clearAll}
-            style={{ background: 'rgba(255,255,255,.15)', border: 'none', color: '#fff', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ background: 'rgba(255,255,255,.15)', border: 'none', color: '#fff', padding: '8px 14px', borderRadius: 8, fontSize:15.5, fontWeight: 600, cursor: 'pointer' }}>
             <i className="fas fa-times" /> Désélectionner
           </button>
           <button onClick={() => setMoveModal(true)}
-            style={{ background: 'rgba(255,255,255,.15)', border: 'none', color: '#fff', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ background: 'rgba(255,255,255,.15)', border: 'none', color: '#fff', padding: '8px 14px', borderRadius: 8, fontSize:15.5, fontWeight: 600, cursor: 'pointer' }}>
             <i className="fas fa-arrow-right-arrow-left" /> Déplacer vers un EC
           </button>
           <button onClick={bulkDelete} disabled={bulkDeleting}
-            style={{ background: 'rgba(255,255,255,.15)', border: 'none', color: '#fecaca', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: bulkDeleting ? 'not-allowed' : 'pointer' }}>
+            style={{ background: 'rgba(255,255,255,.15)', border: 'none', color: '#fecaca', padding: '8px 14px', borderRadius: 8, fontSize:15.5, fontWeight: 600, cursor: bulkDeleting ? 'not-allowed' : 'pointer' }}>
             <i className={`fas ${bulkDeleting ? 'fa-spinner fa-spin' : 'fa-trash'}`} /> Supprimer
           </button>
           <button onClick={() => setAssembleModal(true)}
-            style={{ background: '#fff', border: 'none', color: '#1d4ed8', padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 2px 8px rgba(0,0,0,.15)' }}>
+            style={{ background: '#fff', border: 'none', color: '#1d4ed8', padding: '10px 20px', borderRadius: 8, fontSize:17, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 2px 8px rgba(0,0,0,.15)' }}>
             <i className="fas fa-layer-group" /> Créer un sujet d&apos;examen
           </button>
         </div>
@@ -591,11 +591,11 @@ export default function ProfessorQuestionsPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
           onClick={() => setMoveModal(false)}>
           <div className="card" style={{ width: '100%', maxWidth: 440, padding: 24 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700 }}>
+            <h3 style={{ margin: '0 0 16px', fontSize:19, fontWeight: 700 }}>
               <i className="fas fa-arrow-right-arrow-left" style={{ color: '#2563eb', marginRight: 8 }} />
               Déplacer {selected.size} question{selected.size > 1 ? 's' : ''}
             </h3>
-            <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>EC de destination</label>
+            <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>EC de destination</label>
             <select className="form-control" value={moveEcId} onChange={e => setMoveEcId(e.target.value)}>
               <option value="">— Retirer l&apos;EC (question indépendante) —</option>
               {ecs.map(e => <option key={e.id} value={e.id}>{e.code ? `${e.code} — ` : ''}{e.name}</option>)}
@@ -616,34 +616,34 @@ export default function ProfessorQuestionsPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
           onClick={() => setEditQ(null)}>
           <div className="card" style={{ width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', padding: 28 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 18px', fontSize: 17, fontWeight: 700 }}>
+            <h3 style={{ margin: '0 0 18px', fontSize:20.5, fontWeight: 700 }}>
               <i className="fas fa-pen-to-square" style={{ color: '#2563eb', marginRight: 8 }} />
               Modifier la question
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Titre *</label>
+                <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>Titre *</label>
                 <input className="form-control" value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} />
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Énoncé *</label>
+                <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>Énoncé *</label>
                 <textarea className="form-control" rows={6} style={{ resize: 'vertical', fontFamily: 'inherit' }}
                   value={editForm.content} onChange={e => setEditForm(p => ({ ...p, content: e.target.value }))} />
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Barème / correction</label>
+                <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>Barème / correction</label>
                 <textarea className="form-control" rows={3} style={{ resize: 'vertical', fontFamily: 'inherit' }}
                   value={editForm.rubric} onChange={e => setEditForm(p => ({ ...p, rubric: e.target.value }))} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Type</label>
+                  <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>Type</label>
                   <select className="form-control" value={editForm.question_type} onChange={e => setEditForm(p => ({ ...p, question_type: e.target.value }))}>
                     {Object.entries(TYPE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Niveau de Bloom</label>
+                  <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>Niveau de Bloom</label>
                   <select className="form-control" value={editForm.bloom_level} onChange={e => setEditForm(p => ({ ...p, bloom_level: e.target.value }))}>
                     <option value="">—</option>
                     {['Connaissance','Compréhension','Application','Analyse','Synthèse','Évaluation'].map(b => <option key={b}>{b}</option>)}
@@ -651,14 +651,14 @@ export default function ProfessorQuestionsPage() {
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Élément Constitutif</label>
+                <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>Élément Constitutif</label>
                 <select className="form-control" value={editForm.ec_id} onChange={e => setEditForm(p => ({ ...p, ec_id: e.target.value }))}>
                   <option value="">— Aucun —</option>
                   {ecs.map(e => <option key={e.id} value={e.id}>{e.code ? `${e.code} — ` : ''}{e.name}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>
                   <i className="fas fa-hashtag" style={{ color: '#0d9488', marginRight: 4 }} />Tags (séparés par des virgules)
                 </label>
                 <input className="form-control" value={editForm.tags} onChange={e => setEditForm(p => ({ ...p, tags: e.target.value }))}
@@ -704,11 +704,11 @@ export default function ProfessorQuestionsPage() {
               <thead>
                 <tr style={{ background: 'var(--background)' }}>
                   <th style={{ padding: '12px 14px', width: 36 }}></th>
-                  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Type</th>
-                  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Titre / Énoncé</th>
-                  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Bloom</th>
-                  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Pôle / UE / EC</th>
-                  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Actions</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize:13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Type</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize:13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Titre / Énoncé</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize:13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Bloom</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize:13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Pôle / UE / EC</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', fontSize:13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -724,15 +724,15 @@ export default function ProfessorQuestionsPage() {
                           style={{ width: 16, height: 16, accentColor: '#2563eb', cursor: 'pointer' }} />
                       </td>
                       <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
-                        <span style={{ ...st, padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700 }}>
+                        <span style={{ ...st, padding: '2px 8px', borderRadius: 99, fontSize:13, fontWeight: 700 }}>
                           {typeLabel(q.question_type)}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 600, color: 'var(--text)', maxWidth: 320 }}>
+                      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize:15.5, fontWeight: 600, color: 'var(--text)', maxWidth: 320 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                           {q.title}
                           {isHidden && (
-                            <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 99, background: '#f1f5f9', color: '#64748b' }}>
+                            <span style={{ fontSize:12, fontWeight: 700, padding: '1px 6px', borderRadius: 99, background: '#f1f5f9', color: '#64748b' }}>
                               <i className="fas fa-eye-slash" style={{ marginRight: 3 }} />masquée
                             </span>
                           )}
@@ -741,28 +741,28 @@ export default function ProfessorQuestionsPage() {
                           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
                             {q.tags.map(t => (
                               <span key={t} onClick={() => setFilterTag(t)} title="Filtrer par ce tag"
-                                style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 99, background: '#f0fdfa', color: '#0d9488', cursor: 'pointer' }}>
+                                style={{ fontSize:12, fontWeight: 600, padding: '1px 7px', borderRadius: 99, background: '#f0fdfa', color: '#0d9488', cursor: 'pointer' }}>
                                 <i className="fas fa-hashtag" style={{ fontSize: 10, marginRight: 2 }} />{t}
                               </span>
                             ))}
                           </div>
                         )}
                       </td>
-                      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
+                      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize:14.5, color: 'var(--text-muted)' }}>
                         {q.bloom_level || '—'}
                       </td>
                       <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                           {q.pole_code && (
-                            <span style={{ fontSize: 10, fontWeight: 800, padding: '1px 7px', borderRadius: 99, background: poleColor(q.pole_code) + '20', color: poleColor(q.pole_code), width: 'fit-content' }}>
+                            <span style={{ fontSize:12, fontWeight: 800, padding: '1px 7px', borderRadius: 99, background: poleColor(q.pole_code) + '20', color: poleColor(q.pole_code), width: 'fit-content' }}>
                               {q.pole_code}
                             </span>
                           )}
-                          {q.ue_code && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>UE {q.ue_code}</span>}
-                          {q.ec_name && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{q.ec_code} — {q.ec_name}</span>}
+                          {q.ue_code && <span style={{ fontSize:13, color: 'var(--text-muted)' }}>UE {q.ue_code}</span>}
+                          {q.ec_name && <span style={{ fontSize:13, color: 'var(--text-muted)' }}>{q.ec_code} — {q.ec_name}</span>}
                           {!q.pole_code && !q.ec_name && (
                             <span title="Sans EC — visible dans tous les filtres, comme une question de contexte Système dans Moodle"
-                              style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 99, background: '#f1f5f9', color: '#64748b', width: 'fit-content' }}>
+                              style={{ fontSize:12, fontWeight: 700, padding: '1px 7px', borderRadius: 99, background: '#f1f5f9', color: '#64748b', width: 'fit-content' }}>
                               <i className="fas fa-globe" style={{ marginRight: 3 }} />Globale
                             </span>
                           )}
@@ -771,23 +771,23 @@ export default function ProfessorQuestionsPage() {
                       <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
                         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                           <button onClick={() => setPreview(q)} title="Aperçu"
-                            style={{ background: '#eff6ff', border: 'none', color: '#3b82f6', padding: '5px 9px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+                            style={{ background: '#eff6ff', border: 'none', color: '#3b82f6', padding: '5px 9px', borderRadius: 6, fontSize:14.5, cursor: 'pointer' }}>
                             <i className="fas fa-eye" />
                           </button>
                           <button onClick={() => openEdit(q)} title="Modifier"
-                            style={{ background: '#f0fdf4', border: 'none', color: '#16a34a', padding: '5px 9px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+                            style={{ background: '#f0fdf4', border: 'none', color: '#16a34a', padding: '5px 9px', borderRadius: 6, fontSize:14.5, cursor: 'pointer' }}>
                             <i className="fas fa-pen-to-square" />
                           </button>
                           <button onClick={() => duplicateQ(q.id)} title="Dupliquer" disabled={isBusy}
-                            style={{ background: '#eef2ff', border: 'none', color: '#4f46e5', padding: '5px 9px', borderRadius: 6, fontSize: 12, cursor: isBusy ? 'not-allowed' : 'pointer' }}>
+                            style={{ background: '#eef2ff', border: 'none', color: '#4f46e5', padding: '5px 9px', borderRadius: 6, fontSize:14.5, cursor: isBusy ? 'not-allowed' : 'pointer' }}>
                             <i className={`fas ${isBusy ? 'fa-spinner fa-spin' : 'fa-copy'}`} />
                           </button>
                           <button onClick={() => toggleStatus(q)} title={isHidden ? 'Réactiver' : 'Masquer'} disabled={isBusy}
-                            style={{ background: '#fffbeb', border: 'none', color: '#b45309', padding: '5px 9px', borderRadius: 6, fontSize: 12, cursor: isBusy ? 'not-allowed' : 'pointer' }}>
+                            style={{ background: '#fffbeb', border: 'none', color: '#b45309', padding: '5px 9px', borderRadius: 6, fontSize:14.5, cursor: isBusy ? 'not-allowed' : 'pointer' }}>
                             <i className={`fas ${isHidden ? 'fa-eye' : 'fa-eye-slash'}`} />
                           </button>
                           <button onClick={() => deleteQ(q.id)} title="Supprimer"
-                            style={{ background: '#fef2f2', border: 'none', color: '#ef4444', padding: '5px 9px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+                            style={{ background: '#fef2f2', border: 'none', color: '#ef4444', padding: '5px 9px', borderRadius: 6, fontSize:14.5, cursor: 'pointer' }}>
                             <i className="fas fa-trash" />
                           </button>
                         </div>
@@ -806,7 +806,7 @@ export default function ProfessorQuestionsPage() {
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {Object.entries(TYPE_LABEL).map(([k, v]) => {
             const st = typeSt(k)
-            return <span key={k} style={{ ...st, fontSize: 11, padding: '2px 10px', borderRadius: 99, fontWeight: 600 }}>{v}</span>
+            return <span key={k} style={{ ...st, fontSize:13, padding: '2px 10px', borderRadius: 99, fontWeight: 600 }}>{v}</span>
           })}
         </div>
       )}

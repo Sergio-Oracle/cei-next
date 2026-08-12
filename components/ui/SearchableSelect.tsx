@@ -70,7 +70,7 @@ export default function SearchableSelect({ options, value, onChange, placeholder
   return (
     <div ref={rootRef} style={{ position: 'relative' }}>
       <div ref={triggerRef} onClick={toggle}
-        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '11px 13px', border: `1.5px solid ${open ? 'var(--primary)' : 'var(--border)'}`, borderRadius: 8, fontSize: 13, background: disabled ? 'var(--background)' : 'var(--surface)', color: selected ? 'var(--text)' : 'var(--text-muted)', cursor: disabled ? 'not-allowed' : 'pointer', boxSizing: 'border-box' }}>
+        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '11px 13px', border: `1.5px solid ${open ? 'var(--primary)' : 'var(--border)'}`, borderRadius: 8, fontSize:15.5, background: disabled ? 'var(--background)' : 'var(--surface)', color: selected ? 'var(--text)' : 'var(--text-muted)', cursor: disabled ? 'not-allowed' : 'pointer', boxSizing: 'border-box' }}>
         <i className="fas fa-magnifying-glass" style={{ fontSize: 13, color: 'var(--text-muted)' }} />
         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {selected ? selected.label : (placeholder || 'Rechercher…')}
@@ -79,7 +79,7 @@ export default function SearchableSelect({ options, value, onChange, placeholder
             liste vide/cassée alors qu'elle contient des options non encore
             consultées. */}
         {!selected && (
-          <span style={{ fontSize: 11, fontWeight: 600, color: options.length ? 'var(--primary)' : '#ef4444', background: options.length ? 'var(--background)' : '#fef2f2', border: `1px solid ${options.length ? 'var(--border)' : '#fecaca'}`, borderRadius: 99, padding: '1px 7px', flexShrink: 0 }}>
+          <span style={{ fontSize:13, fontWeight: 600, color: options.length ? 'var(--primary)' : '#ef4444', background: options.length ? 'var(--background)' : '#fef2f2', border: `1px solid ${options.length ? 'var(--border)' : '#fecaca'}`, borderRadius: 99, padding: '1px 7px', flexShrink: 0 }}>
             {options.length} option{options.length !== 1 ? 's' : ''}
           </span>
         )}
@@ -89,18 +89,18 @@ export default function SearchableSelect({ options, value, onChange, placeholder
         <div ref={panelRef} style={{ position: 'fixed', zIndex: 10000, top: rect.top, left: rect.left, width: rect.width, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: 'var(--shadow-lg)', maxHeight: 280, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <input autoFocus type="text" value={query} onChange={e => setQuery(e.target.value)}
             placeholder="Filtrer…"
-            style={{ padding: '9px 12px', border: 'none', borderBottom: '1px solid var(--border)', fontSize: 13, outline: 'none', background: 'var(--background)', color: 'var(--text)' }} />
+            style={{ padding: '9px 12px', border: 'none', borderBottom: '1px solid var(--border)', fontSize:15.5, outline: 'none', background: 'var(--background)', color: 'var(--text)' }} />
           <div style={{ overflowY: 'auto' }}>
             <div onClick={() => { onChange(''); setQuery(''); setOpen(false) }}
-              style={{ padding: '9px 12px', fontSize: 13, cursor: 'pointer', color: 'var(--text-muted)', background: value === '' ? 'var(--background)' : 'transparent' }}>
+              style={{ padding: '9px 12px', fontSize:15.5, cursor: 'pointer', color: 'var(--text-muted)', background: value === '' ? 'var(--background)' : 'transparent' }}>
               {emptyLabel || '— Aucun —'}
             </div>
             {filtered.length === 0 && (
-              <div style={{ padding: '9px 12px', fontSize: 12, color: 'var(--text-muted)' }}>Aucun résultat</div>
+              <div style={{ padding: '9px 12px', fontSize:14.5, color: 'var(--text-muted)' }}>Aucun résultat</div>
             )}
             {filtered.map(o => (
               <div key={o.value} onClick={() => { onChange(o.value); setQuery(''); setOpen(false) }}
-                style={{ padding: '9px 12px', fontSize: 13, cursor: 'pointer', color: 'var(--text)', background: o.value === value ? 'var(--background)' : 'transparent' }}
+                style={{ padding: '9px 12px', fontSize:15.5, cursor: 'pointer', color: 'var(--text)', background: o.value === value ? 'var(--background)' : 'transparent' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--background)')}
                 onMouseLeave={e => (e.currentTarget.style.background = o.value === value ? 'var(--background)' : 'transparent')}>
                 {o.label}

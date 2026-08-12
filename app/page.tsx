@@ -223,9 +223,9 @@ export default function LandingPage() {
         </button>
         {menuOpen && (
           <div className="landing-lang-menu">
-            <button className={`landing-lang-option${lang === 'fr' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('fr') }}><span style={{ fontSize: 18 }}>🇫🇷</span> Français</button>
-            <button className={`landing-lang-option${lang === 'en' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('en') }}><span style={{ fontSize: 18 }}>🇬🇧</span> English</button>
-            <button className={`landing-lang-option${lang === 'wo' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('wo') }}><span style={{ fontSize: 18 }}>🇸🇳</span> Wolof</button>
+            <button className={`landing-lang-option${lang === 'fr' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('fr') }}><span style={{ fontSize:21.5 }}>🇫🇷</span> Français</button>
+            <button className={`landing-lang-option${lang === 'en' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('en') }}><span style={{ fontSize:21.5 }}>🇬🇧</span> English</button>
+            <button className={`landing-lang-option${lang === 'wo' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('wo') }}><span style={{ fontSize:21.5 }}>🇸🇳</span> Wolof</button>
           </div>
         )}
       </div>
@@ -283,9 +283,9 @@ export default function LandingPage() {
       <section id="mission" className="py-80" style={{ background: 'white' }}>
         <div className="container">
           <div style={{ textAlign: 'center', maxWidth: 760, margin: '0 auto 64px' }}>
-            <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 16 }}>Notre mission</span>
-            <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 16, lineHeight: 1.25 }}>Pourquoi le Centre d&apos;Examen Intelligent ?</h2>
-            <p style={{ color: 'var(--gray-500)', fontSize: '1.05rem', lineHeight: 1.7 }}>Au Sénégal, les enseignants font face à des promotions surchargées, des délais de correction serrés et des fraudes difficiles à contrôler — surtout en présentiel. Le CEI est né pour répondre à ces défis concrets avec une solution entièrement numérique, accessible depuis n&apos;importe quel navigateur.</p>
+            <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize:14.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 16 }}>Notre mission</span>
+            <h2 style={{ fontSize: '2.3rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 16, lineHeight: 1.25 }}>Pourquoi le Centre d&apos;Examen Intelligent ?</h2>
+            <p style={{ color: 'var(--gray-500)', fontSize: '1.21rem', lineHeight: 1.7 }}>Au Sénégal, les enseignants font face à des promotions surchargées, des délais de correction serrés et des fraudes difficiles à contrôler — surtout en présentiel. Le CEI est né pour répondre à ces défis concrets avec une solution entièrement numérique, accessible depuis n&apos;importe quel navigateur.</p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(280px, 100%), 1fr))', gap: 28, marginBottom: 72 }}>
@@ -293,22 +293,22 @@ export default function LandingPage() {
               <div style={{ width: 48, height: 48, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
               </div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: 10 }}>Objectif</h3>
-              <p style={{ color: 'var(--gray-500)', fontSize: '.93rem', lineHeight: 1.7 }}>Numériser l&apos;intégralité du cycle d&apos;examen — de la création du sujet à la publication des relevés de notes — en éliminant les tâches manuelles répétitives et en garantissant l&apos;intégrité académique à chaque étape.</p>
+              <h3 style={{ fontSize: '1.21rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: 10 }}>Objectif</h3>
+              <p style={{ color: 'var(--gray-500)', fontSize: '1.07rem', lineHeight: 1.7 }}>Numériser l&apos;intégralité du cycle d&apos;examen — de la création du sujet à la publication des relevés de notes — en éliminant les tâches manuelles répétitives et en garantissant l&apos;intégrité académique à chaque étape.</p>
             </div>
             <div data-reveal="1" style={{ border: '1px solid var(--gray-200)', borderRadius: 16, padding: 32, background: 'var(--gray-50)' }}>
               <div style={{ width: 48, height: 48, borderRadius: 12, background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
               </div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: 10 }}>Public visé</h3>
-              <p style={{ color: 'var(--gray-500)', fontSize: '.93rem', lineHeight: 1.7 }}>Universités, grandes écoles, centres de formation professionnelle et instituts techniques au Sénégal et en Afrique de l&apos;Ouest. La plateforme s&apos;adresse aux établissements publics comme privés souhaitant moderniser leur système d&apos;évaluation.</p>
+              <h3 style={{ fontSize: '1.21rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: 10 }}>Public visé</h3>
+              <p style={{ color: 'var(--gray-500)', fontSize: '1.07rem', lineHeight: 1.7 }}>Universités, grandes écoles, centres de formation professionnelle et instituts techniques au Sénégal et en Afrique de l&apos;Ouest. La plateforme s&apos;adresse aux établissements publics comme privés souhaitant moderniser leur système d&apos;évaluation.</p>
             </div>
             <div data-reveal="1" style={{ border: '1px solid var(--gray-200)', borderRadius: 16, padding: 32, background: 'var(--gray-50)' }}>
               <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               </div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: 10 }}>Pourquoi c&apos;est crucial au Sénégal</h3>
-              <p style={{ color: 'var(--gray-500)', fontSize: '.93rem', lineHeight: 1.7 }}>Avec des classes pouvant dépasser 200 étudiants, un enseignant passe des semaines à corriger manuellement. Le CEI réduit ce délai à quelques heures grâce à l&apos;IA, tout en rendant la surveillance possible à distance — un enjeu majeur pour les filières en ligne comme l&apos;EC2LT ou l&apos;UVS.</p>
+              <h3 style={{ fontSize: '1.21rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: 10 }}>Pourquoi c&apos;est crucial au Sénégal</h3>
+              <p style={{ color: 'var(--gray-500)', fontSize: '1.07rem', lineHeight: 1.7 }}>Avec des classes pouvant dépasser 200 étudiants, un enseignant passe des semaines à corriger manuellement. Le CEI réduit ce délai à quelques heures grâce à l&apos;IA, tout en rendant la surveillance possible à distance — un enjeu majeur pour les filières en ligne comme l&apos;EC2LT ou l&apos;UVS.</p>
             </div>
           </div>
 
@@ -324,8 +324,8 @@ export default function LandingPage() {
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={item.stroke} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">{item.path}</svg>
                 </div>
                 <div>
-                  <div style={{ fontSize: '.88rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: 4 }}>{item.title}</div>
-                  <div style={{ fontSize: '.82rem', color: 'var(--gray-500)', lineHeight: 1.5 }}>{item.desc}</div>
+                  <div style={{ fontSize: '1.01rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: 4 }}>{item.title}</div>
+                  <div style={{ fontSize: '0.94rem', color: 'var(--gray-500)', lineHeight: 1.5 }}>{item.desc}</div>
                 </div>
               </div>
             ))}
@@ -369,9 +369,9 @@ export default function LandingPage() {
       <section id="apercu" className="py-100" style={{ background: 'var(--gray-50)' }}>
         <div className="container" style={{ maxWidth: 1440 }}>
           <div style={{ textAlign: 'center', maxWidth: 700, margin: '0 auto 72px' }}>
-            <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 16 }}>Aperçu de la plateforme</span>
-            <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 16, lineHeight: 1.25 }}>Le CEI en action</h2>
-            <p style={{ color: 'var(--gray-500)', fontSize: '1.05rem', lineHeight: 1.7 }}>Cinq rôles, cinq interfaces dédiées — enseignant, étudiant, surveillant, superviseur et administrateur, chacun avec les outils qui lui reviennent.</p>
+            <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize:14.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 16 }}>Aperçu de la plateforme</span>
+            <h2 style={{ fontSize: '2.3rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 16, lineHeight: 1.25 }}>Le CEI en action</h2>
+            <p style={{ color: 'var(--gray-500)', fontSize: '1.21rem', lineHeight: 1.7 }}>Cinq rôles, cinq interfaces dédiées — enseignant, étudiant, surveillant, superviseur et administrateur, chacun avec les outils qui lui reviennent.</p>
           </div>
 
           {[
@@ -411,7 +411,7 @@ export default function LandingPage() {
             },
           ].map((group, g) => (
             <div key={g} style={{ marginBottom: g < 3 ? 80 : 0 }}>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 32, paddingBottom: 12, borderBottom: '2px solid var(--gray-200)' }}>{group.heading}</h3>
+              <h3 style={{ fontSize: '1.32rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 32, paddingBottom: 12, borderBottom: '2px solid var(--gray-200)' }}>{group.heading}</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(560px, 100%), 1fr))', gap: 44 }}>
                 {group.items.map((card, i) => (
                   <div key={i}>
@@ -425,12 +425,12 @@ export default function LandingPage() {
                       <img src={card.img} alt={card.title} loading="lazy" decoding="async" style={{ display: 'block', width: '100%', height: 'auto' }} />
                     </div>
                     <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginTop: 20 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, minWidth: 30, borderRadius: '50%', background: 'var(--primary)', color: 'white', fontWeight: 800, fontSize: 13 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, minWidth: 30, borderRadius: '50%', background: 'var(--primary)', color: 'white', fontWeight: 800, fontSize:15.5 }}>
                         {card.badge}
                       </div>
                       <div>
-                        <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 6, lineHeight: 1.3 }}>{card.title}</h4>
-                        <p style={{ color: 'var(--gray-500)', fontSize: '.95rem', lineHeight: 1.65 }}>{card.desc}</p>
+                        <h4 style={{ fontSize: '1.32rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 6, lineHeight: 1.3 }}>{card.title}</h4>
+                        <p style={{ color: 'var(--gray-500)', fontSize: '1.09rem', lineHeight: 1.65 }}>{card.desc}</p>
                       </div>
                     </div>
                   </div>
@@ -534,7 +534,7 @@ export default function LandingPage() {
                   <div className="browser-dot dot-red" />
                   <div className="browser-dot dot-yellow" />
                   <div className="browser-dot dot-green" />
-                  <span style={{ fontSize: 10, color: 'var(--gray-400)', marginLeft: 10, fontFamily: 'monospace' }}>examen-surveillé · session active</span>
+                  <span style={{ fontSize:12, color: 'var(--gray-400)', marginLeft: 10, fontFamily: 'monospace' }}>examen-surveillé · session active</span>
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/screenshots/capture-14.jpg" alt="Interface de composition sous surveillance IA en temps réel" loading="lazy" decoding="async" style={{ display: 'block', width: '100%', height: 'auto' }} />
@@ -615,7 +615,7 @@ export default function LandingPage() {
               </div>
               <h3 className="process-label-title">Côté Surveillant</h3>
             </div>
-            <p style={{ textAlign: 'center', color: 'var(--gray-500)', fontSize: '.95rem', maxWidth: 560, margin: '0 auto 32px' }}>
+            <p style={{ textAlign: 'center', color: 'var(--gray-500)', fontSize: '1.09rem', maxWidth: 560, margin: '0 auto 32px' }}>
               Un rôle à part entière, distinct du professeur : chaque surveillant ne voit que le groupe d&apos;étudiants qui lui a été attribué.
             </p>
             <div className="steps-grid" id="steps-surveillant">
@@ -649,9 +649,9 @@ export default function LandingPage() {
       <section id="temoignages" className="py-80" style={{ background: 'var(--gray-50)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto 56px' }}>
-            <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 16 }}>Ils utilisent le CEI</span>
-            <h2 style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 14, lineHeight: 1.25 }}>Ce qu&apos;en disent les professionnels</h2>
-            <p style={{ color: 'var(--gray-500)', fontSize: '.97rem', lineHeight: 1.7 }}>Enseignants, ingénieurs et responsables académiques partagent leur expérience avec la plateforme.</p>
+            <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize:14.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 16 }}>Ils utilisent le CEI</span>
+            <h2 style={{ fontSize: '2.18rem', fontWeight: 800, color: 'var(--gray-900)', marginBottom: 14, lineHeight: 1.25 }}>Ce qu&apos;en disent les professionnels</h2>
+            <p style={{ color: 'var(--gray-500)', fontSize: '1.12rem', lineHeight: 1.7 }}>Enseignants, ingénieurs et responsables académiques partagent leur expérience avec la plateforme.</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(300px, 100%), 1fr))', gap: 24 }}>
             {[
@@ -663,12 +663,12 @@ export default function LandingPage() {
                 <div style={{ display: 'flex', gap: 4 }}>
                   {[0,1,2,3,4].map(j => <svg key={j} width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>)}
                 </div>
-                <blockquote style={{ fontSize: '.97rem', color: '#334155', lineHeight: 1.75, fontStyle: 'italic', margin: 0, flex: 1 }}>&ldquo;{item.quote}&rdquo;</blockquote>
+                <blockquote style={{ fontSize: '1.12rem', color: '#334155', lineHeight: 1.75, fontStyle: 'italic', margin: 0, flex: 1 }}>&ldquo;{item.quote}&rdquo;</blockquote>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingTop: 16, borderTop: '1px solid var(--gray-100)' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.1rem', fontWeight: 700, flexShrink: 0 }}>{item.initial}</div>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.26rem', fontWeight: 700, flexShrink: 0 }}>{item.initial}</div>
                   <div>
-                    <div style={{ fontWeight: 700, color: 'var(--gray-900)', fontSize: '.93rem' }}>{item.name}</div>
-                    <div style={{ fontSize: '.82rem', color: 'var(--gray-500)', lineHeight: 1.4 }}>{item.role}</div>
+                    <div style={{ fontWeight: 700, color: 'var(--gray-900)', fontSize: '1.07rem' }}>{item.name}</div>
+                    <div style={{ fontSize: '0.94rem', color: 'var(--gray-500)', lineHeight: 1.4 }}>{item.role}</div>
                   </div>
                 </div>
               </div>

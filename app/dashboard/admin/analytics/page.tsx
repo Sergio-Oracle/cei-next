@@ -97,7 +97,7 @@ export default function AdminAnalyticsPage() {
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <i className="fas fa-chart-bar" style={{ color: 'var(--primary)' }} />Analytique
           </h2>
-          <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize: 14 }}>
+          <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize:17 }}>
             Statistiques et analyses de la plateforme
           </p>
         </div>
@@ -109,13 +109,13 @@ export default function AdminAnalyticsPage() {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '80px 24px' }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: 35, color: 'var(--primary)', display: 'block', marginBottom: 14 }} />
-          <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>Chargement des analytiques…</span>
+          <span style={{ color: 'var(--text-muted)', fontSize:17 }}>Chargement des analytiques…</span>
         </div>
       ) : (
         <>
           {/* Section utilisateurs */}
           <div style={{ marginBottom: 8 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
+            <p style={{ fontSize:13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
               <i className="fas fa-users" style={{ marginRight: 6 }} />Utilisateurs de la plateforme
             </p>
             <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
@@ -130,8 +130,8 @@ export default function AdminAnalyticsPage() {
                     <i className={`fas ${icon}`} style={{ color, fontSize: 19 }} />
                   </div>
                   <div>
-                    <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color }}>{value}</p>
-                    <p style={{ margin: 0, fontSize: 11, color: '#64748b' }}>{label}</p>
+                    <p style={{ margin: 0, fontSize:24, fontWeight: 800, color }}>{value}</p>
+                    <p style={{ margin: 0, fontSize:13, color: '#64748b' }}>{label}</p>
                   </div>
                 </div>
               ))}
@@ -140,7 +140,7 @@ export default function AdminAnalyticsPage() {
 
           {/* Section copies et examens */}
           <div style={{ marginBottom: 8 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
+            <p style={{ fontSize:13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
               <i className="fas fa-file-alt" style={{ marginRight: 6 }} />Sujets & Corrections
             </p>
             <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
@@ -155,8 +155,8 @@ export default function AdminAnalyticsPage() {
                     <i className={`fas ${icon}`} style={{ color, fontSize: 19 }} />
                   </div>
                   <div>
-                    <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color }}>{value}</p>
-                    <p style={{ margin: 0, fontSize: 11, color: '#64748b' }}>{label}</p>
+                    <p style={{ margin: 0, fontSize:24, fontWeight: 800, color }}>{value}</p>
+                    <p style={{ margin: 0, fontSize:13, color: '#64748b' }}>{label}</p>
                   </div>
                 </div>
               ))}
@@ -166,7 +166,7 @@ export default function AdminAnalyticsPage() {
           {/* KPI Examens en ligne */}
           {(exams.total_exams != null || exams.overall_avg != null) && (
             <div style={{ marginBottom: 8 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
+              <p style={{ fontSize:13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
                 <i className="fas fa-laptop-code" style={{ marginRight: 6 }} />Examens en Ligne
                 {Object.keys(statusCounts).length > 0 && (
                   <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, marginLeft: 12 }}>
@@ -195,8 +195,8 @@ export default function AdminAnalyticsPage() {
                     <div style={{ width: 36, height: 36, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
                       <i className={`fas ${icon}`} style={{ color, fontSize: 17 }} />
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color }}>{value}</div>
-                    <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 2 }}>{label}</div>
+                    <div style={{ fontSize:24, fontWeight: 800, color }}>{value}</div>
+                    <div style={{ fontSize:13, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 2 }}>{label}</div>
                   </div>
                 ))}
               </div>
@@ -206,7 +206,7 @@ export default function AdminAnalyticsPage() {
           {/* Ratios (Retour #21) */}
           {exams.ratios && (
             <div style={{ marginBottom: 24 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
+              <p style={{ fontSize:13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
                 <i className="fas fa-scale-balanced" style={{ marginRight: 6, color: '#0d9488' }} />Ratios
               </p>
               <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
@@ -240,9 +240,9 @@ export default function AdminAnalyticsPage() {
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
                       <i className={`fas ${icon}`} style={{ color, fontSize: 16 }} />
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color }}>{value}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text)', fontWeight: 600, marginTop: 2 }}>{label}</div>
-                    <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 3, lineHeight: 1.4 }}>{caption}</div>
+                    <div style={{ fontSize:24, fontWeight: 800, color }}>{value}</div>
+                    <div style={{ fontSize:13, color: 'var(--text)', fontWeight: 600, marginTop: 2 }}>{label}</div>
+                    <div style={{ fontSize:12.5, color: '#94a3b8', marginTop: 3, lineHeight: 1.4 }}>{caption}</div>
                   </div>
                 ))}
               </div>
@@ -253,23 +253,23 @@ export default function AdminAnalyticsPage() {
           {((exams.top_exams ?? []).length > 0 || (exams.bottom_exams ?? []).length > 0) && (
             <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-                <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <h3 style={{ margin: '0 0 12px', fontSize:15.5, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 7 }}>
                   <i className="fas fa-trophy" style={{ color: '#f59e0b' }} />Meilleurs examens
                 </h3>
                 {(exams.top_exams ?? []).length === 0 ? (
-                  <p style={{ color: '#94a3b8', fontSize: 12 }}>Pas encore de données (min. 2 copies corrigées)</p>
+                  <p style={{ color: '#94a3b8', fontSize:14.5 }}>Pas encore de données (min. 2 copies corrigées)</p>
                 ) : (
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <tbody>
                       {(exams.top_exams ?? []).map((exam, i) => (
                         <tr key={i} style={{ borderBottom: i < (exams.top_exams!.length - 1) ? '1px solid #f1f5f9' : 'none' }}>
-                          <td style={{ padding: '8px 10px', fontSize: 13 }}>
+                          <td style={{ padding: '8px 10px', fontSize:15.5 }}>
                             <span style={{ marginRight: 6 }}>{['🥇','🥈','🥉'][i] ?? '•'}</span>
                             {exam.title}
                           </td>
-                          <td style={{ padding: '8px 10px', fontWeight: 700, fontSize: 13, color: scoreColor(exam.avg_score), whiteSpace: 'nowrap' }}>{fmtScore(exam.avg_score)}/20</td>
-                          <td style={{ padding: '8px 10px', fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>{exam.pass_rate}%</td>
-                          <td style={{ padding: '8px 10px', fontSize: 12, color: '#94a3b8', whiteSpace: 'nowrap' }}>{exam.corrected} copie(s)</td>
+                          <td style={{ padding: '8px 10px', fontWeight: 700, fontSize:15.5, color: scoreColor(exam.avg_score), whiteSpace: 'nowrap' }}>{fmtScore(exam.avg_score)}/20</td>
+                          <td style={{ padding: '8px 10px', fontSize:14.5, color: '#64748b', whiteSpace: 'nowrap' }}>{exam.pass_rate}%</td>
+                          <td style={{ padding: '8px 10px', fontSize:14.5, color: '#94a3b8', whiteSpace: 'nowrap' }}>{exam.corrected} copie(s)</td>
                         </tr>
                       ))}
                     </tbody>
@@ -278,23 +278,23 @@ export default function AdminAnalyticsPage() {
               </div>
 
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-                <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <h3 style={{ margin: '0 0 12px', fontSize:15.5, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 7 }}>
                   <i className="fas fa-arrow-down" style={{ color: '#ef4444' }} />Examens à améliorer
                 </h3>
                 {(exams.bottom_exams ?? []).length === 0 ? (
-                  <p style={{ color: '#94a3b8', fontSize: 12 }}>Pas encore de données (min. 2 copies corrigées)</p>
+                  <p style={{ color: '#94a3b8', fontSize:14.5 }}>Pas encore de données (min. 2 copies corrigées)</p>
                 ) : (
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <tbody>
                       {(exams.bottom_exams ?? []).map((exam, i) => (
                         <tr key={i} style={{ borderBottom: i < (exams.bottom_exams!.length - 1) ? '1px solid #f1f5f9' : 'none' }}>
-                          <td style={{ padding: '8px 10px', fontSize: 13 }}>
+                          <td style={{ padding: '8px 10px', fontSize:15.5 }}>
                             <i className="fas fa-arrow-down" style={{ color: '#ef4444', marginRight: 6, fontSize: 12 }} />
                             {exam.title}
                           </td>
-                          <td style={{ padding: '8px 10px', fontWeight: 700, fontSize: 13, color: scoreColor(exam.avg_score), whiteSpace: 'nowrap' }}>{fmtScore(exam.avg_score)}/20</td>
-                          <td style={{ padding: '8px 10px', fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>{exam.pass_rate}%</td>
-                          <td style={{ padding: '8px 10px', fontSize: 12, color: '#94a3b8', whiteSpace: 'nowrap' }}>{exam.corrected} copie(s)</td>
+                          <td style={{ padding: '8px 10px', fontWeight: 700, fontSize:15.5, color: scoreColor(exam.avg_score), whiteSpace: 'nowrap' }}>{fmtScore(exam.avg_score)}/20</td>
+                          <td style={{ padding: '8px 10px', fontSize:14.5, color: '#64748b', whiteSpace: 'nowrap' }}>{exam.pass_rate}%</td>
+                          <td style={{ padding: '8px 10px', fontSize:14.5, color: '#94a3b8', whiteSpace: 'nowrap' }}>{exam.corrected} copie(s)</td>
                         </tr>
                       ))}
                     </tbody>
@@ -307,26 +307,26 @@ export default function AdminAnalyticsPage() {
           {/* Corrections récentes */}
           {(exams.recent_corrections ?? []).length > 0 && (
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-              <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <h3 style={{ margin: '0 0 12px', fontSize:15.5, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 7 }}>
                 <i className="fas fa-clock" style={{ color: '#2563eb' }} />Corrections récentes (10 dernières)
               </h3>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
                     {['Étudiant','Examen','Note','Date'].map(h => (
-                      <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize:13, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {(exams.recent_corrections ?? []).map((c, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '7px 10px', fontSize: 13, fontWeight: 600 }}>{c.student_name}</td>
-                      <td style={{ padding: '7px 10px', fontSize: 13, color: '#64748b' }}>{c.exam_title}</td>
-                      <td style={{ padding: '7px 10px', fontSize: 13, fontWeight: 700, color: scoreColor(c.score) }}>
+                      <td style={{ padding: '7px 10px', fontSize:15.5, fontWeight: 600 }}>{c.student_name}</td>
+                      <td style={{ padding: '7px 10px', fontSize:15.5, color: '#64748b' }}>{c.exam_title}</td>
+                      <td style={{ padding: '7px 10px', fontSize:15.5, fontWeight: 700, color: scoreColor(c.score) }}>
                         {c.score != null ? `${fmtScore(c.score)}/20` : <span style={{ color: '#94a3b8', fontWeight: 400 }}>—</span>}
                       </td>
-                      <td style={{ padding: '7px 10px', fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '7px 10px', fontSize:13, color: '#94a3b8', whiteSpace: 'nowrap' }}>
                         {c.corrected_at ? new Date(c.corrected_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}
                       </td>
                     </tr>

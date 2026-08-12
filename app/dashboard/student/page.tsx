@@ -37,18 +37,18 @@ function ScoreBadge({ score, pendingPublication }: { score: number | null | unde
     // Retour #29 — distinguer "pas encore corrigé" de "corrigé, en attente
     // de délibération" pour ne pas laisser croire à un retard de correction
     return pendingPublication
-      ? <span style={{ color: '#f59e0b', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}><i className="fas fa-gavel" /> En attente de délibération</span>
-      : <span style={{ color: '#94a3b8', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}><i className="fas fa-clock" /> En attente</span>
+      ? <span style={{ color: '#f59e0b', fontSize:14.5, display: 'flex', alignItems: 'center', gap: 4 }}><i className="fas fa-gavel" /> En attente de délibération</span>
+      : <span style={{ color: '#94a3b8', fontSize:14.5, display: 'flex', alignItems: 'center', gap: 4 }}><i className="fas fa-clock" /> En attente</span>
   }
   const c = score >= 10 ? '#10b981' : '#ef4444'
-  return <span style={{ fontWeight: 700, color: c, fontSize: 13 }}>{Number(score).toFixed(2)}/20</span>
+  return <span style={{ fontWeight: 700, color: c, fontSize:15.5 }}>{Number(score).toFixed(2)}/20</span>
 }
 
 function RecBadge({ hasRec, status }: { hasRec?: boolean; status?: string }) {
   if (!hasRec || !status) return null
   const c = REC_COLORS[status] ?? '#94a3b8'
   return (
-    <span style={{ fontSize: 10, fontWeight: 700, color: c, background: c + '22', padding: '2px 7px', borderRadius: 99, marginLeft: 6 }}>
+    <span style={{ fontSize:12, fontWeight: 700, color: c, background: c + '22', padding: '2px 7px', borderRadius: 99, marginLeft: 6 }}>
       {REC_LABELS[status] ?? status}
     </span>
   )
@@ -146,8 +146,8 @@ export default function StudentDashboard() {
           <i className="fas fa-chart-bar" style={{ color: 'white', fontSize: 24 }} />
         </div>
         <div>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Mon tableau de bord</h2>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
+          <h2 style={{ margin: 0, fontSize:24, fontWeight: 700, color: 'var(--text)' }}>Mon tableau de bord</h2>
+          <p style={{ margin: '4px 0 0', fontSize:15.5, color: 'var(--text-muted)' }}>
             Bienvenue, <strong>{user?.full_name}</strong>
           </p>
         </div>
@@ -167,18 +167,18 @@ export default function StudentDashboard() {
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}>
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981', display: 'inline-block', animation: 'pulse 1.5s infinite', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontWeight: 700, color: '#065f46', fontSize: 13 }}>
+                  <span style={{ fontWeight: 700, color: '#065f46', fontSize:15.5 }}>
                     {activeExams.length > 1
                       ? `${activeExams.length} examens ouverts en ce moment`
                       : `Examen ouvert : ${activeExams[0].title}`}
                   </span>
                   {activeExams.length === 1 && (
-                    <span style={{ fontSize: 12, color: '#047857', marginLeft: 8 }}>
+                    <span style={{ fontSize:14.5, color: '#047857', marginLeft: 8 }}>
                       — ferme le {new Date(activeExams[0].end_time).toLocaleString('fr-FR', LOCALE_OPTS)}
                     </span>
                   )}
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                <span style={{ fontSize:14.5, fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
                   Accéder <i className="fas fa-arrow-right" />
                 </span>
               </div>
@@ -190,15 +190,15 @@ export default function StudentDashboard() {
             <div key={e.id} style={{ background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
               <i className="fas fa-triangle-exclamation" style={{ color: '#d97706', fontSize: 19, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 180 }}>
-                <span style={{ fontWeight: 700, color: '#92400e', fontSize: 13 }}>Examen en cours : {e.title}</span>
-                <div style={{ fontSize: 12, color: '#b45309', marginTop: 2 }}>
+                <span style={{ fontWeight: 700, color: '#92400e', fontSize:15.5 }}>Examen en cours : {e.title}</span>
+                <div style={{ fontSize:14.5, color: '#b45309', marginTop: 2 }}>
                   Vous avez quitté cet examen — cliquez sur « Reprendre » pour retrouver votre code personnel et continuer.
                 </div>
               </div>
-              <button onClick={() => setCallExam(e)} title="Besoin d'aide ? Appeler votre surveillant" style={{ fontSize: 12, fontWeight: 700, color: '#b45309', background: 'white', border: '1.5px solid #fbbf24', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button onClick={() => setCallExam(e)} title="Besoin d'aide ? Appeler votre surveillant" style={{ fontSize:14.5, fontWeight: 700, color: '#b45309', background: 'white', border: '1.5px solid #fbbf24', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <i className="fas fa-phone-volume" /> Besoin d'aide ?
               </button>
-              <Link href={`/exam/${e.id}`} style={{ fontSize: 12, fontWeight: 700, color: 'white', background: '#d97706', border: 'none', borderRadius: 8, padding: '8px 14px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Link href={`/exam/${e.id}`} style={{ fontSize:14.5, fontWeight: 700, color: 'white', background: '#d97706', border: 'none', borderRadius: 8, padding: '8px 14px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <i className="fas fa-arrow-right" /> Reprendre
               </Link>
             </div>
@@ -231,35 +231,35 @@ export default function StudentDashboard() {
           ) : (
             <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', marginBottom: 28, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h3 style={{ margin: 0, fontSize:18, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <i className="fas fa-list-alt" style={{ color: '#3b82f6' }} /> Historique de toutes mes notes
                 </h3>
-                <span style={{ fontSize: 12, color: '#94a3b8' }}>{totalCount} évaluation(s)</span>
+                <span style={{ fontSize:14.5, color: '#94a3b8' }}>{totalCount} évaluation(s)</span>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
                       {['Intitulé', 'Type', 'Note', 'Date', 'Actions'].map(h => (
-                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize:14.5, color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {papers.map(p => (
                       <tr key={`p-${p.id}`} style={{ borderTop: '1px solid var(--border)' }}>
-                        <td style={{ padding: '10px 14px', fontSize: 13 }}>
+                        <td style={{ padding: '10px 14px', fontSize:15.5 }}>
                           <i className="fas fa-file-alt" style={{ color: '#3b82f6', marginRight: 6 }} />
                           {p.subject_title || '—'}
                           <RecBadge hasRec={p.has_reclamation} status={p.reclamation_status} />
                         </td>
                         <td style={{ padding: '10px 14px' }}>
-                          <span style={{ fontSize: 11, background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 99 }}>Copie</span>
+                          <span style={{ fontSize:13, background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 99 }}>Copie</span>
                         </td>
                         <td style={{ padding: '10px 14px' }}>
                           <ScoreBadge score={p.score} pendingPublication={p.pending_publication} />
                         </td>
-                        <td style={{ padding: '10px 14px', fontSize: 12, color: '#64748b' }}>
+                        <td style={{ padding: '10px 14px', fontSize:14.5, color: '#64748b' }}>
                           {fmtDate(p.corrected_at || p.created_at)}
                         </td>
                         <td style={{ padding: '10px 14px' }}>
@@ -274,26 +274,26 @@ export default function StudentDashboard() {
                                 </Link>
                               )}
                             </div>
-                          ) : <span style={{ color: '#94a3b8', fontSize: 12 }}>—</span>}
+                          ) : <span style={{ color: '#94a3b8', fontSize:14.5 }}>—</span>}
                         </td>
                       </tr>
                     ))}
                     {online.map(o => (
                       <tr key={`o-${o.attempt_id}`} style={{ borderTop: '1px solid var(--border)' }}>
-                        <td style={{ padding: '10px 14px', fontSize: 13 }}>
+                        <td style={{ padding: '10px 14px', fontSize:15.5 }}>
                           <i className="fas fa-laptop" style={{ color: '#2563eb', marginRight: 6 }} />
                           {o.exam_title || '—'}
                           <RecBadge hasRec={o.has_reclamation} status={o.reclamation_status} />
                         </td>
                         <td style={{ padding: '10px 14px' }}>
                           {o.auto_correct
-                            ? <span style={{ fontSize: 11, background: '#f0fdf4', color: '#15803d', padding: '2px 8px', borderRadius: 99 }}>IA auto</span>
-                            : <span style={{ fontSize: 11, background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 99 }}>En ligne</span>}
+                            ? <span style={{ fontSize:13, background: '#f0fdf4', color: '#15803d', padding: '2px 8px', borderRadius: 99 }}>IA auto</span>
+                            : <span style={{ fontSize:13, background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 99 }}>En ligne</span>}
                         </td>
                         <td style={{ padding: '10px 14px' }}>
                           <ScoreBadge score={o.score} pendingPublication={o.pending_publication} />
                         </td>
-                        <td style={{ padding: '10px 14px', fontSize: 12, color: '#64748b' }}>
+                        <td style={{ padding: '10px 14px', fontSize:14.5, color: '#64748b' }}>
                           {fmtDate(o.corrected_at)}
                         </td>
                         <td style={{ padding: '10px 14px' }}>
@@ -329,7 +329,7 @@ export default function StudentDashboard() {
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(0,0,0,.1)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}>
                   <i className={`fas ${a.icon}`} style={{ fontSize: 29, color: a.color, marginBottom: 10, display: 'block' }} />
-                  <div style={{ color: a.color, fontWeight: 600, fontSize: 13 }}>{a.label}</div>
+                  <div style={{ color: a.color, fontWeight: 600, fontSize:15.5 }}>{a.label}</div>
                 </div>
               </Link>
             ))}
@@ -354,5 +354,5 @@ function StatTile({ icon, label, value, color, sm }: {
 }
 
 function actBtn(bg: string): React.CSSProperties {
-  return { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, padding: '5px 10px', background: bg, color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', textDecoration: 'none', fontWeight: 600 }
+  return { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize:13, padding: '5px 10px', background: bg, color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', textDecoration: 'none', fontWeight: 600 }
 }

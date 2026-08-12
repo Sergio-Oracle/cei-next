@@ -567,16 +567,16 @@ export default function AdminSuggestionsPage() {
         <i className="fas fa-robot" style={{ fontSize:35, color:'var(--primary)' }} />
       </div>
       <div style={{ textAlign:'center' }}>
-        <h3 style={{ margin:'0 0 8px', fontSize:20 }}>Analyse IA en cours…</h3>
-        <p style={{ margin:0, color:'var(--text-muted)', fontSize:14 }}>L'IA lit et analyse votre cours. Cela peut prendre 1 à 2 minutes.</p>
+        <h3 style={{ margin:'0 0 8px', fontSize:24 }}>Analyse IA en cours…</h3>
+        <p style={{ margin:0, color:'var(--text-muted)', fontSize:17 }}>L'IA lit et analyse votre cours. Cela peut prendre 1 à 2 minutes.</p>
       </div>
       <div style={{ width:320, height:6, background:'var(--border)', borderRadius:99, overflow:'hidden' }}>
         <div style={{ height:'100%', borderRadius:99, background:'var(--primary)', animation:'aibar 2s ease-in-out infinite alternate', width:'60%' }} />
       </div>
       <div style={{ display:'flex', alignItems:'center', gap:10, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:10, padding:'10px 20px' }}>
         <i className="fas fa-clock" style={{ color:'var(--primary)' }} />
-        <span style={{ fontFamily:'monospace', fontWeight:700, fontSize:18, color:'var(--primary)' }}>{fmtElapsed(elapsed)}</span>
-        <span style={{ fontSize:13, color:'var(--text-muted)' }}>— temps écoulé</span>
+        <span style={{ fontFamily:'monospace', fontWeight:700, fontSize:21.5, color:'var(--primary)' }}>{fmtElapsed(elapsed)}</span>
+        <span style={{ fontSize:15.5, color:'var(--text-muted)' }}>— temps écoulé</span>
       </div>
       <style>{`@keyframes aibar { from { width:15%; } to { width:85%; } }`}</style>
     </div>
@@ -589,8 +589,8 @@ export default function AdminSuggestionsPage() {
         <i className="fas fa-wand-magic-sparkles" style={{ fontSize:35, color:'var(--primary)' }} />
       </div>
       <div style={{ textAlign:'center' }}>
-        <h3 style={{ margin:'0 0 8px', fontSize:20 }}>Génération du sujet en cours…</h3>
-        <p style={{ margin:0, color:'var(--text-muted)', fontSize:14 }}>L'IA génère les questions et le barème. Cela peut prendre 1 à 5 minutes selon le nombre de questions et de types combinés.</p>
+        <h3 style={{ margin:'0 0 8px', fontSize:24 }}>Génération du sujet en cours…</h3>
+        <p style={{ margin:0, color:'var(--text-muted)', fontSize:17 }}>L'IA génère les questions et le barème. Cela peut prendre 1 à 5 minutes selon le nombre de questions et de types combinés.</p>
       </div>
       <div style={{ width:320, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 18px', display:'flex', flexDirection:'column', gap:10 }}>
         {[
@@ -604,7 +604,7 @@ export default function AdminSuggestionsPage() {
                 ? <i className="fas fa-check-circle" style={{ color:'#15803d', fontSize:16 }} />
                 : <i className={`fas ${icon} fa-spin`} style={{ color:'var(--primary)', fontSize:14 }} />}
             </div>
-            <span style={{ fontSize:13, color: done ? '#15803d' : 'var(--text)', fontWeight: done ? 600 : 400 }}>{label}</span>
+            <span style={{ fontSize:15.5, color: done ? '#15803d' : 'var(--text)', fontWeight: done ? 600 : 400 }}>{label}</span>
           </div>
         ))}
       </div>
@@ -613,8 +613,8 @@ export default function AdminSuggestionsPage() {
       </div>
       <div style={{ display:'flex', alignItems:'center', gap:10, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:10, padding:'10px 20px' }}>
         <i className="fas fa-clock" style={{ color:'var(--primary)' }} />
-        <span style={{ fontFamily:'monospace', fontWeight:700, fontSize:18, color:'var(--primary)' }}>{fmtElapsed(genFullElapsed)}</span>
-        <span style={{ fontSize:13, color:'var(--text-muted)' }}>— temps écoulé</span>
+        <span style={{ fontFamily:'monospace', fontWeight:700, fontSize:21.5, color:'var(--primary)' }}>{fmtElapsed(genFullElapsed)}</span>
+        <span style={{ fontSize:15.5, color:'var(--text-muted)' }}>— temps écoulé</span>
       </div>
       <style>{`@keyframes aibar { from { width:15%; } to { width:85%; } }`}</style>
     </div>
@@ -632,10 +632,10 @@ export default function AdminSuggestionsPage() {
       {draftRestoredAt && (
         <div style={{ maxWidth:900, margin:'0 auto 16px', display:'flex', alignItems:'center', gap:12, padding:'12px 18px', background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:10 }}>
           <i className="fas fa-clock-rotate-left" style={{ color:'var(--primary)', fontSize:22 }} />
-          <div style={{ flex:1, fontSize:13 }}>
+          <div style={{ flex:1, fontSize:15.5 }}>
             <strong>Session précédente restaurée</strong> — vous avez repris là où vous en étiez le {draftRestoredAt}.
           </div>
-          <button type="button" onClick={discardDraft} style={{ background:'none', border:'1px solid #bfdbfe', color:'var(--primary)', borderRadius:8, padding:'6px 12px', fontSize:12.5, cursor:'pointer', fontWeight:600 }}>
+          <button type="button" onClick={discardDraft} style={{ background:'none', border:'1px solid #bfdbfe', color:'var(--primary)', borderRadius:8, padding:'6px 12px', fontSize:15, cursor:'pointer', fontWeight:600 }}>
             Recommencer à zéro
           </button>
         </div>
@@ -643,8 +643,8 @@ export default function AdminSuggestionsPage() {
       <div style={{ maxWidth:900, margin:'0 auto' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 18px', background:'var(--surface)', border:'1px solid var(--border)', borderLeft:'4px solid var(--primary)', borderRadius:10, marginBottom:16 }}>
           <i className="fas fa-file-alt" style={{ color:'var(--primary)', fontSize:22 }} />
-          <div style={{ fontWeight:700, fontSize:15 }}>{previewTitle}</div>
-          <span style={{ marginLeft:'auto', background:'#dcfce7', color:'#15803d', padding:'2px 10px', borderRadius:99, fontSize:11, fontWeight:700 }}>
+          <div style={{ fontWeight:700, fontSize:18 }}>{previewTitle}</div>
+          <span style={{ marginLeft:'auto', background:'#dcfce7', color:'#15803d', padding:'2px 10px', borderRadius:99, fontSize:13, fontWeight:700 }}>
             <i className="fas fa-robot" style={{ marginRight:4 }} />IA — Modifiable
           </span>
         </div>
@@ -652,17 +652,17 @@ export default function AdminSuggestionsPage() {
         <div style={{ background:'var(--surface)', borderRadius:12, border:'1px solid var(--border)', overflow:'hidden', boxShadow:'var(--shadow-sm)', marginBottom:14 }}>
           <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, background:'var(--background)' }}>
             <i className="fas fa-file-lines" style={{ color:'var(--primary)' }} />
-            <span style={{ fontWeight:600, fontSize:13 }}>Sujet d'Examen &amp; Questions</span>
-            <span style={{ marginLeft:'auto', background:'#eff6ff', color:'var(--primary)', padding:'2px 8px', borderRadius:99, fontSize:11, fontWeight:600 }}>
+            <span style={{ fontWeight:600, fontSize:15.5 }}>Sujet d'Examen &amp; Questions</span>
+            <span style={{ marginLeft:'auto', background:'#eff6ff', color:'var(--primary)', padding:'2px 8px', borderRadius:99, fontSize:13, fontWeight:600 }}>
               <i className="fas fa-robot" style={{ marginRight:4 }} />Généré par IA — modifiable
             </span>
           </div>
           <div style={{ padding:'14px 14px 0' }}>
             <textarea ref={previewTextareaRef} value={previewContent} onChange={e => setPreviewContent(e.target.value)} rows={14}
-              style={{ width:'100%', padding:14, background:'var(--background)', borderRadius:8, fontFamily:'monospace', fontSize:13, lineHeight:1.7, border:'1px solid var(--border)', resize:'vertical', boxSizing:'border-box', outline:'none', color:'var(--text)', transition:'border-color .2s' }}
+              style={{ width:'100%', padding:14, background:'var(--background)', borderRadius:8, fontFamily:'monospace', fontSize:15.5, lineHeight:1.7, border:'1px solid var(--border)', resize:'vertical', boxSizing:'border-box', outline:'none', color:'var(--text)', transition:'border-color .2s' }}
               onFocus={e=>e.target.style.borderColor='var(--primary)'} onBlur={e=>e.target.style.borderColor='var(--border)'} />
             {preGenMedia.length > 0 && (
-              <p style={{ margin:'6px 0 14px', fontSize:11, color:'var(--text-muted)' }}>
+              <p style={{ margin:'6px 0 14px', fontSize:13, color:'var(--text-muted)' }}>
                 <i className="fas fa-info-circle" style={{ marginRight:4 }} />{preGenMedia.length} média(s) joint(s) avant génération — l'IA a placé les marqueurs <code>[IMAGE:...]</code>/<code>[AUDIO:...]</code>/<code>[VIDEO:...]</code> dans le sujet ci-dessus.
               </p>
             )}
@@ -678,13 +678,13 @@ export default function AdminSuggestionsPage() {
             <div style={{ background:'var(--surface)', borderRadius:12, border:'1px solid var(--border)', borderLeft:'4px solid #f59e0b', overflow:'hidden', boxShadow:'var(--shadow-sm)', marginBottom:16 }}>
               <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, background:'var(--background)' }}>
                 <i className="fas fa-list-check" style={{ color:'#f59e0b' }} />
-                <span style={{ fontWeight:600, fontSize:13 }}>Questions détectées ({qBlocks.length}) — cochez pour éliminer ou ajouter au panier</span>
+                <span style={{ fontWeight:600, fontSize:15.5 }}>Questions détectées ({qBlocks.length}) — cochez pour éliminer ou ajouter au panier</span>
                 <button onClick={addSelectionToBasket} disabled={elimSet.size === 0}
-                  style={{ marginLeft:'auto', padding:'6px 14px', background:elimSet.size ? '#f0fdf4' : 'var(--background)', color:elimSet.size ? '#15803d' : 'var(--text-muted)', border:'1px solid ' + (elimSet.size ? '#bbf7d0' : 'var(--border)'), borderRadius:8, fontSize:12, fontWeight:700, cursor:elimSet.size ? 'pointer' : 'not-allowed' }}>
+                  style={{ marginLeft:'auto', padding:'6px 14px', background:elimSet.size ? '#f0fdf4' : 'var(--background)', color:elimSet.size ? '#15803d' : 'var(--text-muted)', border:'1px solid ' + (elimSet.size ? '#bbf7d0' : 'var(--border)'), borderRadius:8, fontSize:14.5, fontWeight:700, cursor:elimSet.size ? 'pointer' : 'not-allowed' }}>
                   <i className="fas fa-basket-shopping" style={{ marginRight:6 }} />Ajouter au panier ({elimSet.size})
                 </button>
                 <button onClick={handleEliminateSelected} disabled={elimSet.size === 0}
-                  style={{ padding:'6px 14px', background:elimSet.size ? '#fee2e2' : 'var(--background)', color:elimSet.size ? '#dc2626' : 'var(--text-muted)', border:'1px solid ' + (elimSet.size ? '#fecaca' : 'var(--border)'), borderRadius:8, fontSize:12, fontWeight:700, cursor:elimSet.size ? 'pointer' : 'not-allowed' }}>
+                  style={{ padding:'6px 14px', background:elimSet.size ? '#fee2e2' : 'var(--background)', color:elimSet.size ? '#dc2626' : 'var(--text-muted)', border:'1px solid ' + (elimSet.size ? '#fecaca' : 'var(--border)'), borderRadius:8, fontSize:14.5, fontWeight:700, cursor:elimSet.size ? 'pointer' : 'not-allowed' }}>
                   <i className="fas fa-trash-alt" style={{ marginRight:6 }} />Retirer la sélection ({elimSet.size})
                 </button>
               </div>
@@ -692,7 +692,7 @@ export default function AdminSuggestionsPage() {
                 {qBlocks.map(b => (
                   <label key={b.num} style={{ display:'flex', alignItems:'center', gap:9, padding:'6px 8px', borderRadius:6, cursor:'pointer', background:elimSet.has(b.num) ? '#fef2f2' : 'transparent' }}>
                     <input type="checkbox" checked={elimSet.has(b.num)} onChange={() => toggleElim(b.num)} />
-                    <span style={{ fontSize:12.5, color:'var(--text)' }}><strong>Question {b.num}</strong> — {b.title}</span>
+                    <span style={{ fontSize:15, color:'var(--text)' }}><strong>Question {b.num}</strong> — {b.title}</span>
                   </label>
                 ))}
               </div>
@@ -703,41 +703,41 @@ export default function AdminSuggestionsPage() {
         <div style={{ background:'var(--surface)', borderRadius:12, border:'1px solid var(--border)', borderLeft:'4px solid #10b981', overflow:'hidden', boxShadow:'var(--shadow-sm)', marginBottom:16 }}>
           <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, background:'var(--background)' }}>
             <i className="fas fa-clipboard-list" style={{ color:'#10b981' }} />
-            <span style={{ fontWeight:600, fontSize:13 }}>Barème de Notation</span>
-            <span style={{ marginLeft:'auto', background:'#f0fdf4', color:'#15803d', padding:'2px 8px', borderRadius:99, fontSize:11, fontWeight:600 }}>
+            <span style={{ fontWeight:600, fontSize:15.5 }}>Barème de Notation</span>
+            <span style={{ marginLeft:'auto', background:'#f0fdf4', color:'#15803d', padding:'2px 8px', borderRadius:99, fontSize:13, fontWeight:600 }}>
               <i className="fas fa-pencil-alt" style={{ marginRight:4 }} />Modifiable
             </span>
           </div>
           <div style={{ padding:'0 14px 14px' }}>
             <textarea value={previewRubric} onChange={e => setPreviewRubric(e.target.value)} rows={9}
-              style={{ width:'100%', padding:14, background:'#f0fdf4', borderRadius:8, fontFamily:'monospace', fontSize:13, lineHeight:1.8, border:'1px solid #bbf7d0', resize:'vertical', boxSizing:'border-box', outline:'none', color:'var(--text)', marginTop:14, transition:'border-color .2s' }}
+              style={{ width:'100%', padding:14, background:'#f0fdf4', borderRadius:8, fontFamily:'monospace', fontSize:15.5, lineHeight:1.8, border:'1px solid #bbf7d0', resize:'vertical', boxSizing:'border-box', outline:'none', color:'var(--text)', marginTop:14, transition:'border-color .2s' }}
               onFocus={e=>e.target.style.borderColor='#10b981'} onBlur={e=>e.target.style.borderColor='#bbf7d0'} />
           </div>
         </div>
 
-        <div style={{ padding:12, background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, marginBottom:18, fontSize:13, color:'#92400e' }}>
+        <div style={{ padding:12, background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, marginBottom:18, fontSize:15.5, color:'#92400e' }}>
           <i className="fas fa-info-circle" style={{ marginRight:6 }} />
           <strong>Information :</strong> Ce sujet et son barème seront sauvegardés. Les étudiants verront les questions avec leurs points lors de l'examen en ligne.
         </div>
 
         <div style={{ display:'flex', gap:10, justifyContent:'flex-end', flexWrap:'wrap' }}>
-          <button onClick={() => setStep('results')} className="btn btn-secondary" style={{ fontSize:13 }}>
+          <button onClick={() => setStep('results')} className="btn btn-secondary" style={{ fontSize:15.5 }}>
             <i className="fas fa-arrow-left" /> Retour aux suggestions
           </button>
-          <button onClick={addToBasket} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bbf7d0', background:'#f0fdf4', color:'#15803d', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', position:'relative' }}>
+          <button onClick={addToBasket} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bbf7d0', background:'#f0fdf4', color:'#15803d', borderRadius:8, fontSize:15.5, fontWeight:600, cursor:'pointer', position:'relative' }}>
             <i className="fas fa-shopping-basket" /> Panier
-            {basket.length > 0 && <span style={{ position:'absolute', top:-6, right:-6, background:'#ef4444', color:'#fff', borderRadius:'50%', width:18, height:18, fontSize:10, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>{basket.length}</span>}
+            {basket.length > 0 && <span style={{ position:'absolute', top:-6, right:-6, background:'#ef4444', color:'#fff', borderRadius:'50%', width:18, height:18, fontSize:12, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>{basket.length}</span>}
           </button>
-          <button onClick={() => setShowCompare(true)} disabled={basket.length === 0} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bfdbfe', background:'#eff6ff', color:basket.length>0?'var(--primary)':'var(--text-muted)', borderRadius:8, fontSize:13, fontWeight:600, cursor:basket.length>0?'pointer':'not-allowed' }}>
+          <button onClick={() => setShowCompare(true)} disabled={basket.length === 0} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bfdbfe', background:'#eff6ff', color:basket.length>0?'var(--primary)':'var(--text-muted)', borderRadius:8, fontSize:15.5, fontWeight:600, cursor:basket.length>0?'pointer':'not-allowed' }}>
             <i className="fas fa-columns" /> Comparer
           </button>
-          <button onClick={openBankModal} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bfdbfe', background:'#eff6ff', color:'var(--primary)', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+          <button onClick={openBankModal} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bfdbfe', background:'#eff6ff', color:'var(--primary)', borderRadius:8, fontSize:15.5, fontWeight:600, cursor:'pointer' }}>
             <i className="fas fa-database" /> Banque
           </button>
-          <button onClick={() => setShowMoreModal(true)} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+          <button onClick={() => setShowMoreModal(true)} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:15.5, fontWeight:600, cursor:'pointer' }}>
             <i className="fas fa-wand-magic-sparkles" /> Générer d'autres questions
           </button>
-          <button onClick={handleSaveSubject} disabled={savingSubject} className="btn btn-primary" style={{ fontSize:13, minWidth:180 }}>
+          <button onClick={handleSaveSubject} disabled={savingSubject} className="btn btn-primary" style={{ fontSize:15.5, minWidth:180 }}>
             {savingSubject ? <><i className="fas fa-spinner fa-spin" style={{ marginRight:6 }} />Enregistrement…</> : <><i className="fas fa-save" style={{ marginRight:6 }} />Enregistrer ce Sujet</>}
           </button>
         </div>
@@ -750,32 +750,32 @@ export default function AdminSuggestionsPage() {
           <div style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:480, boxShadow:'var(--shadow-lg)', overflow:'hidden' }}>
             <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 }}>
               <i className="fas fa-database" style={{ color:'var(--primary)', fontSize:19 }} />
-              <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Sauvegarder dans la banque</h3>
-              <button onClick={() => setShowBankModal(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
+              <h3 style={{ margin:0, fontSize:18, fontWeight:700 }}>Sauvegarder dans la banque</h3>
+              <button onClick={() => setShowBankModal(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:20.5, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
             </div>
             <div style={{ padding:'18px 22px', display:'flex', flexDirection:'column', gap:14 }}>
-              <div style={{ fontSize:12.5, color:'var(--text-muted)', background:'var(--background)', border:'1px solid var(--border)', borderRadius:8, padding:'9px 12px' }}>
+              <div style={{ fontSize:15, color:'var(--text-muted)', background:'var(--background)', border:'1px solid var(--border)', borderRadius:8, padding:'9px 12px' }}>
                 <i className="fas fa-circle-info" style={{ marginRight:6, color:'var(--primary)' }} />
                 {elimSet.size > 0
                   ? <>Les <strong>{elimSet.size} question(s) cochée(s)</strong> ci-dessus seront sauvegardées individuellement, chacune sa propre entrée.</>
                   : <>Aucune question cochée — <strong>tout le sujet</strong> sera sauvegardé comme une seule entrée. Cochez des questions dans « Questions détectées » pour les sauvegarder une par une à la place.</>}
               </div>
               <div>
-                <label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:8 }}>
-                  <i className="fas fa-brain" style={{ color:'var(--primary)', marginRight:6 }} />Niveau de Bloom <span style={{ fontSize:11, fontWeight:400, color:'var(--text-muted)' }}>(optionnel)</span>
+                <label style={{ fontSize:15.5, fontWeight:600, display:'block', marginBottom:8 }}>
+                  <i className="fas fa-brain" style={{ color:'var(--primary)', marginRight:6 }} />Niveau de Bloom <span style={{ fontSize:13, fontWeight:400, color:'var(--text-muted)' }}>(optionnel)</span>
                 </label>
                 <select value={bankSaveBloom} onChange={e => setBankSaveBloom(e.target.value)}
-                  style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }}>
+                  style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:15.5, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }}>
                   <option value="">— Sélectionner un niveau —</option>
                   {BLOOM_LEVELS.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:8 }}>
-                  <i className="fas fa-book-open" style={{ color:'var(--primary)', marginRight:6 }} />EC associé <span style={{ fontSize:11, fontWeight:400, color:'var(--text-muted)' }}>(optionnel)</span>
+                <label style={{ fontSize:15.5, fontWeight:600, display:'block', marginBottom:8 }}>
+                  <i className="fas fa-book-open" style={{ color:'var(--primary)', marginRight:6 }} />EC associé <span style={{ fontSize:13, fontWeight:400, color:'var(--text-muted)' }}>(optionnel)</span>
                 </label>
                 <select value={bankSaveEc} onChange={e => setBankSaveEc(e.target.value)}
-                  style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }}>
+                  style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:15.5, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }}>
                   <option value="">— Aucun EC —</option>
                   {ecs.map(ec => <option key={ec.id} value={String(ec.id)}>{ec.ue_code ? `${ec.ue_code} › ` : ''}{ec.code} — {ec.name}</option>)}
                 </select>
@@ -798,28 +798,28 @@ export default function AdminSuggestionsPage() {
           <div style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:440, boxShadow:'var(--shadow-lg)', overflow:'hidden' }}>
             <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 }}>
               <i className="fas fa-wand-magic-sparkles" style={{ color:'#0369a1', fontSize:19 }} />
-              <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Générer d'autres questions</h3>
-              {!generatingMore && <button onClick={() => setShowMoreModal(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>}
+              <h3 style={{ margin:0, fontSize:18, fontWeight:700 }}>Générer d'autres questions</h3>
+              {!generatingMore && <button onClick={() => setShowMoreModal(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:20.5, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>}
             </div>
             {generatingMore ? (
               <div style={{ padding:'32px 22px', display:'flex', flexDirection:'column', alignItems:'center', gap:14, textAlign:'center' }}>
                 <i className="fas fa-wand-magic-sparkles fa-spin" style={{ fontSize:31, color:'#0369a1' }} />
                 <div>
-                  <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>Génération en cours…</div>
-                  <div style={{ fontSize:12, color:'var(--text-muted)' }}>L'IA rédige {moreCount} nouvelle{moreCount>1?'s':''} question{moreCount>1?'s':''} en évitant les doublons avec le sujet existant.</div>
+                  <div style={{ fontWeight:700, fontSize:17, marginBottom:4 }}>Génération en cours…</div>
+                  <div style={{ fontSize:14.5, color:'var(--text-muted)' }}>L'IA rédige {moreCount} nouvelle{moreCount>1?'s':''} question{moreCount>1?'s':''} en évitant les doublons avec le sujet existant.</div>
                 </div>
               </div>
             ) : (<>
               <div style={{ padding:'18px 22px', display:'flex', flexDirection:'column', gap:14 }}>
-                <p style={{ margin:0, fontSize:13, color:'var(--text-muted)' }}>
+                <p style={{ margin:0, fontSize:15.5, color:'var(--text-muted)' }}>
                   Les nouvelles questions seront <strong>ajoutées</strong> à la fin du sujet actuel (rien n'est remplacé).
                 </p>
                 <div>
-                  <label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:8 }}>
+                  <label style={{ fontSize:15.5, fontWeight:600, display:'block', marginBottom:8 }}>
                     <i className="fas fa-list-check" style={{ color:'#0369a1', marginRight:6 }} />Type de question
                   </label>
                   <select value={moreType} onChange={e => setMoreType(e.target.value)}
-                    style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }}>
+                    style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:15.5, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }}>
                     <option value="QCM">QCU (choix unique)</option>
                     <option value="QCM_MULTI">QCM (réponses multiples)</option>
                     <option value="VF">Vrai / Faux</option>
@@ -829,19 +829,19 @@ export default function AdminSuggestionsPage() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize:13, fontWeight:600, display:'block', marginBottom:8 }}>
+                  <label style={{ fontSize:15.5, fontWeight:600, display:'block', marginBottom:8 }}>
                     <i className="fas fa-hashtag" style={{ color:'#0369a1', marginRight:6 }} />Nombre de questions
                   </label>
                   <input type="number" min={1} max={10}
                     value={Number.isNaN(moreCount) ? '' : moreCount}
                     onChange={e => setMoreCount(parseInt(e.target.value, 10))}
                     onBlur={() => setMoreCount(c => Math.max(1, Math.min(10, Number.isNaN(c) ? 3 : c)))}
-                    style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }} />
+                    style={{ width:'100%', padding:'9px 11px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:15.5, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }} />
                 </div>
               </div>
               <div style={{ padding:'14px 22px', borderTop:'1px solid var(--border)', display:'flex', gap:10, justifyContent:'flex-end' }}>
                 <button onClick={() => setShowMoreModal(false)} className="btn btn-secondary">Annuler</button>
-                <button onClick={handleGenerateMore} style={{ minWidth:150, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'9px 18px', border:'none', background:'#0369a1', color:'#fff', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                <button onClick={handleGenerateMore} style={{ minWidth:150, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'9px 18px', border:'none', background:'#0369a1', color:'#fff', borderRadius:8, fontSize:15.5, fontWeight:700, cursor:'pointer' }}>
                   <i className="fas fa-wand-magic-sparkles" /> Générer
                 </button>
               </div>
@@ -857,29 +857,29 @@ export default function AdminSuggestionsPage() {
           <div style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:Math.min(280*basket.length+80, 1200), boxShadow:'var(--shadow-lg)', overflow:'hidden', maxHeight:'90vh', display:'flex', flexDirection:'column' }}>
             <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9, flexShrink:0 }}>
               <i className="fas fa-columns" style={{ color:'var(--primary)', fontSize:19 }} />
-              <h3 style={{ margin:0, fontSize:15, fontWeight:700 }}>Comparer les versions ({basket.length})</h3>
-              <button onClick={() => setShowCompare(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:17, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
+              <h3 style={{ margin:0, fontSize:18, fontWeight:700 }}>Comparer les versions ({basket.length})</h3>
+              <button onClick={() => setShowCompare(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:20.5, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
             </div>
             <div className="grid" style={{ display:'grid', gridTemplateColumns:`repeat(${basket.length}, 1fr)`, gap:14, padding:20, overflowY:'auto', flex:1 }}>
               {basket.map((v, i) => (
                 <div key={i} style={{ minWidth:240 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
-                    <div style={{ fontWeight:700, fontSize:13, flex:1 }}>{v.label}</div>
+                    <div style={{ fontWeight:700, fontSize:15.5, flex:1 }}>{v.label}</div>
                     <button onClick={() => loadFromBasket(i)} title="Charger cette version dans l'aperçu"
-                      style={{ background:'#eff6ff', border:'none', color:'var(--primary)', padding:'3px 9px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
+                      style={{ background:'#eff6ff', border:'none', color:'var(--primary)', padding:'3px 9px', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
                       <i className="fas fa-arrow-rotate-left" /> Charger
                     </button>
-                    <button onClick={() => removeFromBasket(i)} style={{ background:'#fee2e2', border:'none', color:'#dc2626', padding:'3px 7px', borderRadius:6, fontSize:11, cursor:'pointer' }}>
+                    <button onClick={() => removeFromBasket(i)} style={{ background:'#fee2e2', border:'none', color:'#dc2626', padding:'3px 7px', borderRadius:6, fontSize:13, cursor:'pointer' }}>
                       <i className="fas fa-trash" />
                     </button>
                   </div>
                   <div style={{ marginBottom:8 }}>
-                    <div style={{ fontSize:11, fontWeight:700, color:'var(--text-muted)', marginBottom:4 }}>CONTENU</div>
-                    <pre style={{ background:'var(--background)', border:'1px solid var(--border)', borderRadius:8, padding:10, fontSize:11, whiteSpace:'pre-wrap', maxHeight:200, overflowY:'auto', margin:0 }}>{v.content}</pre>
+                    <div style={{ fontSize:13, fontWeight:700, color:'var(--text-muted)', marginBottom:4 }}>CONTENU</div>
+                    <pre style={{ background:'var(--background)', border:'1px solid var(--border)', borderRadius:8, padding:10, fontSize:13, whiteSpace:'pre-wrap', maxHeight:200, overflowY:'auto', margin:0 }}>{v.content}</pre>
                   </div>
                   <div>
-                    <div style={{ fontSize:11, fontWeight:700, color:'#15803d', marginBottom:4 }}>BARÈME</div>
-                    <pre style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, padding:10, fontSize:11, whiteSpace:'pre-wrap', maxHeight:180, overflowY:'auto', color:'#15803d', margin:0 }}>{v.rubric}</pre>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#15803d', marginBottom:4 }}>BARÈME</div>
+                    <pre style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, padding:10, fontSize:13, whiteSpace:'pre-wrap', maxHeight:180, overflowY:'auto', color:'#15803d', margin:0 }}>{v.rubric}</pre>
                   </div>
                 </div>
               ))}
@@ -906,8 +906,8 @@ export default function AdminSuggestionsPage() {
               <i className="fas fa-check-circle" style={{ fontSize:24, color:'#10b981' }} />
             </div>
             <div>
-              <h2 style={{ margin:0, fontSize:20, fontWeight:700 }}>Sujet créé avec succès</h2>
-              <p style={{ margin:'3px 0 0', fontSize:13, color:'var(--text-muted)' }}>Le sujet a été enregistré et est prêt à être utilisé</p>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:700 }}>Sujet créé avec succès</h2>
+              <p style={{ margin:'3px 0 0', fontSize:15.5, color:'var(--text-muted)' }}>Le sujet a été enregistré et est prêt à être utilisé</p>
             </div>
           </div>
           <div style={{ display:'flex', gap:10 }}>
@@ -923,8 +923,8 @@ export default function AdminSuggestionsPage() {
         <div style={{ display:'flex', alignItems:'center', gap:12, padding:'16px 20px', background:'var(--surface)', border:'1px solid var(--border)', borderLeft:'4px solid var(--primary)', borderRadius:10 }}>
           <i className="fas fa-file-alt" style={{ fontSize:29, color:'var(--primary)' }} />
           <div>
-            <h3 style={{ margin:0, fontSize:17 }}>{createdSubject.title}</h3>
-            {createdSubject.created_at && <small style={{ color:'var(--text-muted)', fontSize:12 }}><i className="fas fa-calendar" style={{ marginRight:5 }} />Créé le {new Date(createdSubject.created_at).toLocaleString('fr-FR')}</small>}
+            <h3 style={{ margin:0, fontSize:20.5 }}>{createdSubject.title}</h3>
+            {createdSubject.created_at && <small style={{ color:'var(--text-muted)', fontSize:14.5 }}><i className="fas fa-calendar" style={{ marginRight:5 }} />Créé le {new Date(createdSubject.created_at).toLocaleString('fr-FR')}</small>}
           </div>
         </div>
 
@@ -934,7 +934,7 @@ export default function AdminSuggestionsPage() {
             <span style={{ fontWeight:600 }}>Contenu du Sujet</span>
           </div>
           <div style={{ padding:20 }}>
-            <pre style={{ margin:0, maxHeight:340, overflowY:'auto', padding:16, background:'var(--background)', borderRadius:8, fontSize:13, lineHeight:1.7, whiteSpace:'pre-wrap', fontFamily:'monospace' }}>
+            <pre style={{ margin:0, maxHeight:340, overflowY:'auto', padding:16, background:'var(--background)', borderRadius:8, fontSize:15.5, lineHeight:1.7, whiteSpace:'pre-wrap', fontFamily:'monospace' }}>
               {createdSubject.content || 'Contenu non disponible'}
             </pre>
           </div>
@@ -945,12 +945,12 @@ export default function AdminSuggestionsPage() {
             <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, background:'var(--background)' }}>
               <i className="fas fa-clipboard-list" style={{ color:'#10b981' }} />
               <span style={{ fontWeight:600 }}>Barème de Notation</span>
-              <span style={{ marginLeft:'auto', background:'#dcfce7', color:'#15803d', padding:'2px 10px', borderRadius:99, fontSize:12, fontWeight:600 }}>
+              <span style={{ marginLeft:'auto', background:'#dcfce7', color:'#15803d', padding:'2px 10px', borderRadius:99, fontSize:14.5, fontWeight:600 }}>
                 <i className="fas fa-robot" style={{ marginRight:4 }} />Auto-généré
               </span>
             </div>
             <div style={{ padding:20 }}>
-              <pre style={{ margin:0, maxHeight:400, overflowY:'auto', padding:16, background:'#f0fdf4', borderRadius:8, fontSize:13, lineHeight:1.8, whiteSpace:'pre-wrap', fontFamily:'monospace', color:'#15803d' }}>
+              <pre style={{ margin:0, maxHeight:400, overflowY:'auto', padding:16, background:'#f0fdf4', borderRadius:8, fontSize:15.5, lineHeight:1.8, whiteSpace:'pre-wrap', fontFamily:'monospace', color:'#15803d' }}>
                 {createdSubject.rubric}
               </pre>
             </div>
@@ -960,7 +960,7 @@ export default function AdminSuggestionsPage() {
         <div style={{ padding:16, background:'#eff6ff', borderRadius:10, border:'1px solid #bfdbfe' }}>
           <i className="fas fa-lightbulb" style={{ color:'var(--primary)', marginRight:8 }} />
           <strong style={{ color:'#1e40af' }}>Conseil :</strong>
-          <span style={{ color:'#1e40af', marginLeft:6, fontSize:14 }}>
+          <span style={{ color:'#1e40af', marginLeft:6, fontSize:17 }}>
             Vous pouvez maintenant créer un examen en ligne à partir de ce sujet depuis la page Sujets.
           </span>
         </div>
@@ -975,7 +975,7 @@ export default function AdminSuggestionsPage() {
         <div>
           <h2><i className="fas fa-magic" style={{ marginRight:10, color:'var(--primary)' }} />Générer des Suggestions d'Examen avec IA</h2>
           <p>Uploadez votre cours, l'IA analysera le contenu et proposera des sujets d'examen adaptés</p>
-          <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>
+          <p style={{ fontSize:14.5, color:'var(--text-muted)', marginTop:2 }}>
             <i className="fas fa-circle-info" style={{ marginRight:5 }} />
             L'IA <strong>génère de nouvelles questions</strong> à partir de votre cours. Pour importer un examen déjà rédigé ou réutiliser des questions existantes, utilisez plutôt « Créer Sujet ».
           </p>
@@ -990,10 +990,10 @@ export default function AdminSuggestionsPage() {
       {draftRestoredAt && (
         <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 18px', background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:10, marginBottom:18 }}>
           <i className="fas fa-clock-rotate-left" style={{ color:'var(--primary)', fontSize:22 }} />
-          <div style={{ flex:1, fontSize:13 }}>
+          <div style={{ flex:1, fontSize:15.5 }}>
             <strong>Session précédente restaurée</strong> — vous avez repris là où vous en étiez le {draftRestoredAt}.
           </div>
-          <button type="button" onClick={discardDraft} style={{ background:'none', border:'1px solid #bfdbfe', color:'var(--primary)', borderRadius:8, padding:'6px 12px', fontSize:12.5, cursor:'pointer', fontWeight:600 }}>
+          <button type="button" onClick={discardDraft} style={{ background:'none', border:'1px solid #bfdbfe', color:'var(--primary)', borderRadius:8, padding:'6px 12px', fontSize:15, cursor:'pointer', fontWeight:600 }}>
             Recommencer à zéro
           </button>
         </div>
@@ -1013,13 +1013,13 @@ export default function AdminSuggestionsPage() {
                       <i className="fas fa-upload" style={{ color:'#fff' }} />
                     </div>
                     <div>
-                      <h3 style={{ margin:0, color:'#fff', fontSize:15 }}>Fichier de cours</h3>
-                      <p style={{ margin:0, color:'rgba(255,255,255,.75)', fontSize:12 }}>PDF, DOCX ou TXT</p>
+                      <h3 style={{ margin:0, color:'#fff', fontSize:18 }}>Fichier de cours</h3>
+                      <p style={{ margin:0, color:'rgba(255,255,255,.75)', fontSize:14.5 }}>PDF, DOCX ou TXT</p>
                     </div>
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', borderRadius:8, padding:'5px 12px' }}>
                     <i className="fas fa-weight-hanging" style={{ color:'#fff', fontSize:14 }} />
-                    <span style={{ color:'#fff', fontSize:13, fontWeight:700 }}>Max : {MAX_MB} Mo</span>
+                    <span style={{ color:'#fff', fontSize:15.5, fontWeight:700 }}>Max : {MAX_MB} Mo</span>
                   </div>
                 </div>
               </div>
@@ -1033,30 +1033,30 @@ export default function AdminSuggestionsPage() {
                       <div style={{ width:52, height:52, background:'#dcfce7', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
                         <i className="fas fa-file-circle-check" style={{ fontSize:24, color:'#10b981' }} />
                       </div>
-                      <div style={{ fontWeight:700, fontSize:14, color:'#15803d', marginBottom:10 }}>{courseFiles.length} fichier{courseFiles.length > 1 ? 's' : ''} sélectionné{courseFiles.length > 1 ? 's' : ''}</div>
+                      <div style={{ fontWeight:700, fontSize:17, color:'#15803d', marginBottom:10 }}>{courseFiles.length} fichier{courseFiles.length > 1 ? 's' : ''} sélectionné{courseFiles.length > 1 ? 's' : ''}</div>
                       <div style={{ display:'flex', flexDirection:'column', gap:6, maxWidth:340, margin:'0 auto' }} onClick={e => e.stopPropagation()}>
                         {courseFiles.map((f, idx) => (
                           <div key={idx} style={{ display:'flex', alignItems:'center', gap:8, background:'#fff', border:'1px solid #bbf7d0', borderRadius:8, padding:'6px 10px' }}>
                             <i className="fas fa-file-check" title="Fichier chargé" style={{ color:'#16a34a', fontSize:17, flexShrink:0 }} />
-                            <span style={{ flex:1, textAlign:'left', fontSize:12, color:'#15803d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</span>
-                            <span style={{ fontSize:11, color:'#10b981' }}>{(f.size/1024/1024).toFixed(2)} Mo</span>
-                            <button type="button" onClick={() => removeCourseFile(idx)} style={{ background:'none', border:'none', color:'#6b7280', cursor:'pointer', fontSize:14, padding:2 }}><i className="fas fa-times-circle" /></button>
+                            <span style={{ flex:1, textAlign:'left', fontSize:14.5, color:'#15803d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</span>
+                            <span style={{ fontSize:13, color:'#10b981' }}>{(f.size/1024/1024).toFixed(2)} Mo</span>
+                            <button type="button" onClick={() => removeCourseFile(idx)} style={{ background:'none', border:'none', color:'#6b7280', cursor:'pointer', fontSize:17, padding:2 }}><i className="fas fa-times-circle" /></button>
                           </div>
                         ))}
                       </div>
-                      <div style={{ fontSize:12, color:'#10b981', marginTop:10 }}>Cliquez pour ajouter d'autres fichiers</div>
+                      <div style={{ fontSize:14.5, color:'#10b981', marginTop:10 }}>Cliquez pour ajouter d'autres fichiers</div>
                     </>
                   ) : (
                     <>
                       <div style={{ width:52, height:52, background:'#eff6ff', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
                         <i className="fas fa-cloud-upload-alt" style={{ fontSize:24, color:'var(--primary)' }} />
                       </div>
-                      <div style={{ fontWeight:600, fontSize:15, color:'var(--text)', marginBottom:6 }}>Glissez un ou plusieurs fichiers ici</div>
-                      <div style={{ fontSize:13, color:'var(--text-muted)', marginBottom:16 }}>ou</div>
-                      <span style={{ display:'inline-block', background:'var(--primary)', color:'#fff', padding:'9px 22px', borderRadius:8, fontSize:13, fontWeight:600 }}>
+                      <div style={{ fontWeight:600, fontSize:18, color:'var(--text)', marginBottom:6 }}>Glissez un ou plusieurs fichiers ici</div>
+                      <div style={{ fontSize:15.5, color:'var(--text-muted)', marginBottom:16 }}>ou</div>
+                      <span style={{ display:'inline-block', background:'var(--primary)', color:'#fff', padding:'9px 22px', borderRadius:8, fontSize:15.5, fontWeight:600 }}>
                         <i className="fas fa-folder-open" style={{ marginRight:7 }} />Parcourir les fichiers
                       </span>
-                      <div style={{ marginTop:14, fontSize:12, color:'var(--text-muted)' }}>
+                      <div style={{ marginTop:14, fontSize:14.5, color:'var(--text-muted)' }}>
                         <i className="fas fa-info-circle" style={{ marginRight:5 }} />
                         Taille maximale autorisée (cumulée) : <strong>{MAX_MB} Mo</strong>
                       </div>
@@ -1073,13 +1073,13 @@ export default function AdminSuggestionsPage() {
               <div className="card-header">
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <i className="fas fa-sliders" style={{ color:'var(--text-muted)', fontSize:17 }} />
-                  <h3 style={{ margin:0, fontSize:15 }}>Options de génération</h3>
+                  <h3 style={{ margin:0, fontSize:18 }}>Options de génération</h3>
                 </div>
               </div>
               <div style={{ padding:24, display:'flex', flexDirection:'column', gap:24 }}>
                 <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
                   <div>
-                    <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
+                    <label style={{ display:'block', fontSize:15.5, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
                       <i className="fas fa-signal" style={{ color:'var(--primary)', marginRight:6 }} />Niveau de difficulté
                     </label>
                     <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
@@ -1087,7 +1087,7 @@ export default function AdminSuggestionsPage() {
                         const s = DIFF_STYLE[v]; const sel = difficulty === v
                         return (
                           <button key={v} type="button" onClick={() => setDifficulty(v)}
-                            style={{ padding:'10px 14px', borderRadius:8, border:`1.5px solid ${sel?s.border:'var(--border)'}`, background:sel?s.bg:'var(--surface)', color:sel?s.color:'var(--text)', fontWeight:sel?700:400, fontSize:13, cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between', transition:'all .15s' }}>
+                            style={{ padding:'10px 14px', borderRadius:8, border:`1.5px solid ${sel?s.border:'var(--border)'}`, background:sel?s.bg:'var(--surface)', color:sel?s.color:'var(--text)', fontWeight:sel?700:400, fontSize:15.5, cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between', transition:'all .15s' }}>
                             {v}{sel&&<i className="fas fa-circle-check" style={{ color:s.color }} />}
                           </button>
                         )
@@ -1095,7 +1095,7 @@ export default function AdminSuggestionsPage() {
                     </div>
                   </div>
                   <div>
-                    <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
+                    <label style={{ display:'block', fontSize:15.5, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
                       <i className="fas fa-user-graduate" style={{ color:'var(--primary)', marginRight:6 }} />Niveau des étudiants
                     </label>
                     <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
@@ -1103,7 +1103,7 @@ export default function AdminSuggestionsPage() {
                         const sel = level === v
                         return (
                           <button key={v} type="button" onClick={() => setLevel(v)}
-                            style={{ padding:'10px 14px', borderRadius:8, border:`1.5px solid ${sel?'var(--primary)':'var(--border)'}`, background:sel?'#eff6ff':'var(--surface)', color:sel?'#1d4ed8':'var(--text)', fontWeight:sel?700:400, fontSize:13, cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between', transition:'all .15s' }}>
+                            style={{ padding:'10px 14px', borderRadius:8, border:`1.5px solid ${sel?'var(--primary)':'var(--border)'}`, background:sel?'#eff6ff':'var(--surface)', color:sel?'#1d4ed8':'var(--text)', fontWeight:sel?700:400, fontSize:15.5, cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between', transition:'all .15s' }}>
                             {v}{sel&&<i className="fas fa-circle-check" style={{ color:'var(--primary)' }} />}
                           </button>
                         )
@@ -1113,7 +1113,7 @@ export default function AdminSuggestionsPage() {
                 </div>
 
                 <div>
-                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
+                  <label style={{ display:'block', fontSize:15.5, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
                     <i className="fas fa-clock" style={{ color:'var(--primary)', marginRight:6 }} />Durée souhaitée de l'examen
                   </label>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -1122,15 +1122,15 @@ export default function AdminSuggestionsPage() {
                       onChange={e => setDuration(parseInt(e.target.value, 10))}
                       onBlur={() => setDuration(d => Math.max(15, Math.min(480, Number.isNaN(d) ? 90 : d)))}
                       style={{ maxWidth:140 }} />
-                    <span style={{ fontSize:13, color:'var(--text-muted)' }}>minutes</span>
+                    <span style={{ fontSize:15.5, color:'var(--text-muted)' }}>minutes</span>
                   </div>
-                  <p style={{ margin:'6px 0 0', fontSize:11.5, color:'var(--text-muted)' }}>
+                  <p style={{ margin:'6px 0 0', fontSize:14, color:'var(--text-muted)' }}>
                     <i className="fas fa-info-circle" style={{ marginRight:4 }} />Fixée par vous, pas par l'IA — les suggestions générées respecteront exactement cette durée (nombre et complexité des questions adaptés en conséquence).
                   </p>
                 </div>
 
                 <div>
-                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
+                  <label style={{ display:'block', fontSize:15.5, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
                     <i className="fas fa-list-check" style={{ color:'var(--primary)', marginRight:6 }} />Types de questions
                   </label>
                   <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
@@ -1144,7 +1144,7 @@ export default function AdminSuggestionsPage() {
                         ['subopen','Sous-questions liées','fa-diagram-project','#0d9488','#f0fdfa','#99f6e4'],
                       ] as const).map(([k,label,icon,color,bg,border]) => (
                         <button key={k} type="button" onClick={() => setQTypes(p => ({...p,[k]:!p[k]}))}
-                          style={{ display:'flex', alignItems:'center', gap:9, padding:'10px 18px', border:`1.5px solid ${qTypes[k]?border:'var(--border)'}`, borderRadius:10, cursor:'pointer', background:qTypes[k]?bg:'var(--surface)', transition:'all .15s', fontWeight:qTypes[k]?700:400, fontSize:13, color:qTypes[k]?color:'var(--text)' }}>
+                          style={{ display:'flex', alignItems:'center', gap:9, padding:'10px 18px', border:`1.5px solid ${qTypes[k]?border:'var(--border)'}`, borderRadius:10, cursor:'pointer', background:qTypes[k]?bg:'var(--surface)', transition:'all .15s', fontWeight:qTypes[k]?700:400, fontSize:15.5, color:qTypes[k]?color:'var(--text)' }}>
                           <i className={`fas ${icon}`} style={{ fontSize:18, color:qTypes[k]?color:'var(--text-muted)' }} />
                           {label}
                           {qTypes[k]&&<i className="fas fa-check" style={{ marginLeft:4, fontSize:13, color }} />}
@@ -1152,7 +1152,7 @@ export default function AdminSuggestionsPage() {
                       ))}
                     </div>
                     {qTypes.subopen && (
-                      <p style={{ margin:0, fontSize:11.5, color:'var(--text-muted)' }}>
+                      <p style={{ margin:0, fontSize:14, color:'var(--text-muted)' }}>
                         <i className="fas fa-info-circle" style={{ marginRight:4 }} />Exercices en plusieurs parties (a, b, c...) où chaque sous-question s'appuie explicitement sur le résultat de la précédente — la correction applique l'erreur reportée (une erreur en a) n'invalide pas une méthode correcte en b) appliquée à ce résultat).
                       </p>
                     )}
@@ -1166,7 +1166,7 @@ export default function AdminSuggestionsPage() {
                       <div style={{ display:'flex', alignItems:'center', gap:4, padding:'4px', borderRadius:10, background:'var(--background)', border:'1px solid var(--border)', width:'fit-content' }}>
                         {([[true,'Une seule réponse'],[false,'Plusieurs réponses']] as const).map(([v,lbl]) => (
                           <button key={String(v)} type="button" onClick={() => setQcmSingle(v)}
-                            style={{ padding:'7px 12px', borderRadius:7, border:'none', cursor:'pointer', fontSize:12, fontWeight:qcmSingle===v?700:400, background:qcmSingle===v?'var(--primary)':'transparent', color:qcmSingle===v?'white':'var(--text-muted)', transition:'all .15s' }}>
+                            style={{ padding:'7px 12px', borderRadius:7, border:'none', cursor:'pointer', fontSize:14.5, fontWeight:qcmSingle===v?700:400, background:qcmSingle===v?'var(--primary)':'transparent', color:qcmSingle===v?'white':'var(--text-muted)', transition:'all .15s' }}>
                             {lbl}
                           </button>
                         ))}
@@ -1179,16 +1179,16 @@ export default function AdminSuggestionsPage() {
                     la répartition par type AVANT génération, plutôt que de
                     laisser l'IA répartir 20 points également entre les types. */}
                 <div>
-                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
+                  <label style={{ display:'block', fontSize:15.5, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
                     <i className="fas fa-scale-balanced" style={{ color:'#16a34a', marginRight:6 }} />Barème
                   </label>
                   <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
-                    <span style={{ fontSize:13, color:'var(--text-muted)' }}>Note totale sur</span>
+                    <span style={{ fontSize:15.5, color:'var(--text-muted)' }}>Note totale sur</span>
                     <input type="number" min={1} max={200} value={totalPoints}
                       onChange={e=>setTotalPoints(parseInt(e.target.value,10))}
                       onBlur={()=>setTotalPoints(v=>Math.max(1,Math.min(200,Number.isNaN(v)?20:v)))}
-                      style={{ width:80, padding:'8px 10px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:13, background:'var(--background)', color:'var(--text)' }} />
-                    <span style={{ fontSize:13, color:'var(--text-muted)' }}>points</span>
+                      style={{ width:80, padding:'8px 10px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:15.5, background:'var(--background)', color:'var(--text)' }} />
+                    <span style={{ fontSize:15.5, color:'var(--text-muted)' }}>points</span>
                   </div>
                   {(() => {
                     const TYPE_LABELS: Record<string, string> = { qcm:'QCM', open:'Questions ouvertes', vf:'Vrai / Faux', appariement:'Appariement', code:'Maths / Programmation', subopen:'Sous-questions liées' }
@@ -1197,23 +1197,23 @@ export default function AdminSuggestionsPage() {
                     const ok = sum === totalPoints
                     return selectedKeys.length > 1 ? (
                       <div style={{ background:'var(--background)', border:'1px solid var(--border)', borderRadius:10, padding:14 }}>
-                        <p style={{ margin:'0 0 10px', fontSize:11.5, color:'var(--text-muted)' }}>
+                        <p style={{ margin:'0 0 10px', fontSize:14, color:'var(--text-muted)' }}>
                           <i className="fas fa-circle-info" style={{ marginRight:4 }} />Répartition par type — ajustez librement, doit totaliser {totalPoints} pts.
                         </p>
                         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                           {selectedKeys.map(k => (
                             <div key={k} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}>
-                              <span style={{ fontSize:13 }}>{TYPE_LABELS[k]}</span>
+                              <span style={{ fontSize:15.5 }}>{TYPE_LABELS[k]}</span>
                               <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                                 <input type="number" min={1} max={totalPoints} value={pointsByType[k] ?? ''}
                                   onChange={e => setPointsByType(p => ({ ...p, [k]: parseInt(e.target.value,10) || 0 }))}
-                                  style={{ width:64, padding:'6px 8px', border:'1.5px solid var(--border)', borderRadius:6, fontSize:13, background:'var(--surface)', color:'var(--text)', textAlign:'center' }} />
-                                <span style={{ fontSize:12, color:'var(--text-muted)' }}>pts</span>
+                                  style={{ width:64, padding:'6px 8px', border:'1.5px solid var(--border)', borderRadius:6, fontSize:15.5, background:'var(--surface)', color:'var(--text)', textAlign:'center' }} />
+                                <span style={{ fontSize:14.5, color:'var(--text-muted)' }}>pts</span>
                               </div>
                             </div>
                           ))}
                         </div>
-                        <div style={{ marginTop:10, fontSize:12, fontWeight:600, color: ok ? '#15803d' : '#dc2626', display:'flex', alignItems:'center', gap:6 }}>
+                        <div style={{ marginTop:10, fontSize:14.5, fontWeight:600, color: ok ? '#15803d' : '#dc2626', display:'flex', alignItems:'center', gap:6 }}>
                           <i className={`fas ${ok?'fa-check-circle':'fa-triangle-exclamation'}`} />
                           Réparti : {sum} / {totalPoints} pts{!ok && ' — ajustez avant de générer'}
                         </div>
@@ -1223,10 +1223,10 @@ export default function AdminSuggestionsPage() {
                 </div>
 
                 <div>
-                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:4 }}>
+                  <label style={{ display:'block', fontSize:15.5, fontWeight:600, color:'var(--text)', marginBottom:4 }}>
                     <i className="fas fa-brain" style={{ color:'var(--primary)', marginRight:6 }} />Niveaux taxonomiques de Bloom
                   </label>
-                  <p style={{ margin:'0 0 10px', fontSize:12, color:'var(--text-muted)' }}>
+                  <p style={{ margin:'0 0 10px', fontSize:14.5, color:'var(--text-muted)' }}>
                     <i className="fas fa-info-circle" style={{ marginRight:4 }} />Niveaux cognitifs à cibler dans la génération
                   </p>
                   <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
@@ -1237,7 +1237,7 @@ export default function AdminSuggestionsPage() {
                       const c = BLOOM_COLORS[k]; const active = bloom[k]
                       return (
                         <button key={k} type="button" onClick={() => setBloom(p => ({...p,[k]:!p[k]}))}
-                          style={{ padding:'7px 16px', borderRadius:99, fontSize:13, fontWeight:active?700:400, cursor:'pointer', border:`1.5px solid ${active?c.active:'var(--border)'}`, background:active?c.active:'var(--surface)', color:active?'#fff':'var(--text)', transition:'all .15s' }}>
+                          style={{ padding:'7px 16px', borderRadius:99, fontSize:15.5, fontWeight:active?700:400, cursor:'pointer', border:`1.5px solid ${active?c.active:'var(--border)'}`, background:active?c.active:'var(--surface)', color:active?'#fff':'var(--text)', transition:'all .15s' }}>
                           {active&&<i className="fas fa-check" style={{ marginRight:5, fontSize:12 }} />}{label}
                         </button>
                       )
@@ -1246,7 +1246,7 @@ export default function AdminSuggestionsPage() {
                 </div>
 
                 <div>
-                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:8 }}>
+                  <label style={{ display:'block', fontSize:15.5, fontWeight:600, color:'var(--text)', marginBottom:8 }}>
                     <i className="fas fa-hashtag" style={{ color:'var(--primary)', marginRight:6 }} />
                     Nombre de questions
                   </label>
@@ -1258,13 +1258,13 @@ export default function AdminSuggestionsPage() {
                       style={{ maxWidth:140 }} />
                     <button type="button" onClick={suggestQuestionCount} disabled={suggestingCount}
                       title="Suggestion IA basée sur la difficulté et le niveau, pour un examen d'environ 1h"
-                      style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:12, fontWeight:600, cursor:suggestingCount?'not-allowed':'pointer' }}>
+                      style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:14.5, fontWeight:600, cursor:suggestingCount?'not-allowed':'pointer' }}>
                       <i className={`fas ${suggestingCount ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`} />
                       {suggestingCount ? 'Suggestion…' : 'Suggérer (IA)'}
                     </button>
                   </div>
                   {questionCount > 50 && (
-                    <p style={{ margin:'8px 0 0', fontSize:12, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius:6, padding:'8px 10px', display:'flex', gap:6, alignItems:'flex-start' }}>
+                    <p style={{ margin:'8px 0 0', fontSize:14.5, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius:6, padding:'8px 10px', display:'flex', gap:6, alignItems:'flex-start' }}>
                       <i className="fas fa-triangle-exclamation" style={{ marginTop:1 }} />
                       <span>Au-delà de 50 questions, la génération prend plus de temps (plusieurs appels IA successifs) et le risque de résultat incomplet augmente avec la charge de travail demandée à l&apos;IA. Un nombre plus modéré (20-40) donne généralement un résultat plus rapide et plus fiable.</span>
                     </p>
@@ -1272,11 +1272,11 @@ export default function AdminSuggestionsPage() {
                 </div>
 
                 <div>
-                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:8 }}>
+                  <label style={{ display:'block', fontSize:15.5, fontWeight:600, color:'var(--text)', marginBottom:8 }}>
                     <i className="fas fa-photo-film" style={{ color:'var(--primary)', marginRight:6 }} />
                     Médias à intégrer (optionnel)
                   </label>
-                  <p style={{ margin:'0 0 10px', fontSize:12, color:'var(--text-muted)' }}>
+                  <p style={{ margin:'0 0 10px', fontSize:14.5, color:'var(--text-muted)' }}>
                     <i className="fas fa-info-circle" style={{ marginRight:4 }} />
                     Joignez une image, un audio ou une vidéo : l'IA l'analyse selon votre consigne et l'intègre elle-même à la question la plus pertinente du sujet généré.
                   </p>
@@ -1285,15 +1285,15 @@ export default function AdminSuggestionsPage() {
                     rows={2} className="form-control" style={{ marginBottom:8, resize:'vertical' }} />
                   <div style={{ display:'flex', gap:8, marginBottom: preGenMedia.length ? 10 : 0 }}>
                     <button type="button" onClick={() => imageInputRef.current?.click()} disabled={uploadingMedia}
-                      style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #bfdbfe', background:'#eff6ff', color:'var(--primary)', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                      style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #bfdbfe', background:'#eff6ff', color:'var(--primary)', borderRadius:8, fontSize:14.5, fontWeight:600, cursor:'pointer' }}>
                       <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-image'}`} /> Ajouter une image
                     </button>
                     <button type="button" onClick={() => audioInputRef.current?.click()} disabled={uploadingMedia}
-                      style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                      style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:14.5, fontWeight:600, cursor:'pointer' }}>
                       <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-music'}`} /> Ajouter un audio
                     </button>
                     <button type="button" onClick={() => videoInputRef.current?.click()} disabled={uploadingMedia}
-                      style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #fed7aa', background:'#fff7ed', color:'#c2410c', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                      style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', border:'1px solid #fed7aa', background:'#fff7ed', color:'#c2410c', borderRadius:8, fontSize:14.5, fontWeight:600, cursor:'pointer' }}>
                       <i className={`fas ${uploadingMedia ? 'fa-spinner fa-spin' : 'fa-film'}`} /> Ajouter une vidéo
                     </button>
                     <input ref={imageInputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleMediaUpload(f, 'image'); e.target.value = '' }} />
@@ -1306,14 +1306,14 @@ export default function AdminSuggestionsPage() {
                         <div key={m.marker} style={{ padding:10, border:'1px solid var(--border)', borderRadius:8, background:'var(--background)' }}>
                           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
                             <i className={`fas ${m.media_type==='image'?'fa-image':m.media_type==='audio'?'fa-music':'fa-film'}`} style={{ color:'var(--primary)' }} />
-                            <span style={{ fontWeight:600, fontSize:12.5 }}>{m.filename}</span>
+                            <span style={{ fontWeight:600, fontSize:15 }}>{m.filename}</span>
                             <button type="button" onClick={() => removePreGenMedia(m.marker)} title="Retirer"
-                              style={{ marginLeft:'auto', background:'none', border:'none', color:'#dc2626', cursor:'pointer', fontSize:12 }}>
+                              style={{ marginLeft:'auto', background:'none', border:'none', color:'#dc2626', cursor:'pointer', fontSize:14.5 }}>
                               <i className="fas fa-trash" />
                             </button>
                           </div>
-                          {m.instructions && <div style={{ fontSize:11.5, color:'var(--text-muted)', marginBottom:4 }}><strong>Consigne :</strong> {m.instructions}</div>}
-                          <div style={{ fontSize:11.5, color:'var(--text-muted)' }}><strong>Analyse IA :</strong> {m.analysis}</div>
+                          {m.instructions && <div style={{ fontSize:14, color:'var(--text-muted)', marginBottom:4 }}><strong>Consigne :</strong> {m.instructions}</div>}
+                          <div style={{ fontSize:14, color:'var(--text-muted)' }}><strong>Analyse IA :</strong> {m.analysis}</div>
                         </div>
                       ))}
                     </div>
@@ -1322,7 +1322,7 @@ export default function AdminSuggestionsPage() {
 
                 <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:4 }}>
                   <div>
-                    <label style={{ display:'block', fontSize:12, fontWeight:700, color:'#2563eb', marginBottom:6 }}>
+                    <label style={{ display:'block', fontSize:14.5, fontWeight:700, color:'#2563eb', marginBottom:6 }}>
                       <i className="fas fa-sitemap" style={{ marginRight:5 }} />Pôle
                     </label>
                     <select className="form-control" value={filterPole} onChange={e => { setFilterPole(e.target.value); setFilterFormation(''); setEcId('') }}>
@@ -1331,7 +1331,7 @@ export default function AdminSuggestionsPage() {
                     </select>
                   </div>
                   <div>
-                    <label style={{ display:'block', fontSize:12, fontWeight:600, color:'var(--text-muted)', marginBottom:6 }}>
+                    <label style={{ display:'block', fontSize:14.5, fontWeight:600, color:'var(--text-muted)', marginBottom:6 }}>
                       <i className="fas fa-university" style={{ color:'var(--primary)', marginRight:5 }} />Formation
                     </label>
                     <select className="form-control" value={filterFormation} onChange={e => { setFilterFormation(e.target.value); setEcId('') }}>
@@ -1342,10 +1342,10 @@ export default function AdminSuggestionsPage() {
                 </div>
 
                 <div>
-                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:8 }}>
+                  <label style={{ display:'block', fontSize:15.5, fontWeight:600, color:'var(--text)', marginBottom:8 }}>
                     <i className="fas fa-layer-group" style={{ color:'var(--primary)', marginRight:6 }} />
                     Élément Constitutif
-                    <span style={{ fontSize:11, color:'#b45309', fontWeight:400, marginLeft:6, background:'var(--background)', border:'1px solid var(--border)', padding:'2px 8px', borderRadius:99 }}>requis pour enregistrer le sujet</span>
+                    <span style={{ fontSize:13, color:'#b45309', fontWeight:400, marginLeft:6, background:'var(--background)', border:'1px solid var(--border)', padding:'2px 8px', borderRadius:99 }}>requis pour enregistrer le sujet</span>
                   </label>
                   <SearchableSelect
                     value={ecId} onChange={setEcId}
@@ -1356,7 +1356,7 @@ export default function AdminSuggestionsPage() {
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ width:'100%', padding:16, fontSize:15, fontWeight:700, borderRadius:12, justifyContent:'center' }}>
+            <button type="submit" className="btn btn-primary" style={{ width:'100%', padding:16, fontSize:18, fontWeight:700, borderRadius:12, justifyContent:'center' }}>
               <i className="fas fa-wand-magic-sparkles" /> Générer les Suggestions
             </button>
           </form>
@@ -1367,7 +1367,7 @@ export default function AdminSuggestionsPage() {
               <div className="card-header">
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <i className="fas fa-circle-info" style={{ color:'var(--primary)', fontSize:17 }} />
-                  <h4 style={{ margin:0, fontSize:14 }}>Comment ça marche ?</h4>
+                  <h4 style={{ margin:0, fontSize:17 }}>Comment ça marche ?</h4>
                 </div>
               </div>
               <div style={{ padding:'16px 18px', display:'flex', flexDirection:'column', gap:16 }}>
@@ -1382,8 +1382,8 @@ export default function AdminSuggestionsPage() {
                       <i className={`fas ${icon}`} style={{ color, fontSize:18 }} />
                     </div>
                     <div>
-                      <div style={{ fontSize:13, fontWeight:700, color:'var(--text)' }}>{title}</div>
-                      <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{sub}</div>
+                      <div style={{ fontSize:15.5, fontWeight:700, color:'var(--text)' }}>{title}</div>
+                      <div style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{sub}</div>
                     </div>
                   </div>
                 ))}
@@ -1394,7 +1394,7 @@ export default function AdminSuggestionsPage() {
               <div className="card-header">
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <i className="fas fa-paperclip" style={{ color:'var(--text-muted)', fontSize:17 }} />
-                  <h4 style={{ margin:0, fontSize:14 }}>Formats acceptés</h4>
+                  <h4 style={{ margin:0, fontSize:17 }}>Formats acceptés</h4>
                 </div>
               </div>
               <div style={{ padding:'12px 16px', display:'flex', flexDirection:'column', gap:6 }}>
@@ -1406,8 +1406,8 @@ export default function AdminSuggestionsPage() {
                   <div key={type} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:8, background:'var(--background)' }}>
                     <i className={`fas ${icon}`} style={{ color, fontSize:22, width:22, textAlign:'center' }} />
                     <div>
-                      <div style={{ fontSize:12, fontWeight:700, color:'var(--text)' }}>{type}</div>
-                      <div style={{ fontSize:11, color:'var(--text-muted)' }}>{desc}</div>
+                      <div style={{ fontSize:14.5, fontWeight:700, color:'var(--text)' }}>{type}</div>
+                      <div style={{ fontSize:13, color:'var(--text-muted)' }}>{desc}</div>
                     </div>
                   </div>
                 ))}
@@ -1417,8 +1417,8 @@ export default function AdminSuggestionsPage() {
             <div style={{ background:'#fffbeb', border:'1px solid #fde68a', borderRadius:12, padding:'14px 16px', display:'flex', gap:10 }}>
               <i className="fas fa-lightbulb" style={{ color:'#f59e0b', fontSize:22, flexShrink:0, marginTop:2 }} />
               <div>
-                <div style={{ fontSize:12, fontWeight:700, color:'#92400e', marginBottom:4 }}>Conseil</div>
-                <div style={{ fontSize:11, color:'#78350f', lineHeight:1.6 }}>
+                <div style={{ fontSize:14.5, fontWeight:700, color:'#92400e', marginBottom:4 }}>Conseil</div>
+                <div style={{ fontSize:13, color:'#78350f', lineHeight:1.6 }}>
                   Plus votre cours est détaillé, plus les suggestions seront pertinentes. Privilégiez des cours complets plutôt que des résumés.
                 </div>
               </div>
@@ -1437,20 +1437,20 @@ export default function AdminSuggestionsPage() {
                   <i className="fas fa-book-open" style={{ color:'#10b981', fontSize:17 }} />
                 </div>
                 <div>
-                  <h3 style={{ margin:0, fontSize:15 }}>Résumé du cours analysé</h3>
-                  <p style={{ margin:0, fontSize:12, color:'var(--text-muted)' }}>Contenu extrait et analysé par l'IA</p>
+                  <h3 style={{ margin:0, fontSize:18 }}>Résumé du cours analysé</h3>
+                  <p style={{ margin:0, fontSize:14.5, color:'var(--text-muted)' }}>Contenu extrait et analysé par l'IA</p>
                 </div>
               </div>
             </div>
             <div style={{ padding:'20px 24px' }}>
-              <p style={{ margin:'0 0 16px', color:'var(--text-muted)', lineHeight:1.8, fontSize:14 }}>{result.course_summary}</p>
+              <p style={{ margin:'0 0 16px', color:'var(--text-muted)', lineHeight:1.8, fontSize:17 }}>{result.course_summary}</p>
               {result.main_topics?.length > 0 && (
                 <div style={{ display:'flex', flexWrap:'wrap', gap:8, alignItems:'center' }}>
-                  <span style={{ fontSize:12, color:'var(--text-muted)', fontWeight:700 }}>
+                  <span style={{ fontSize:14.5, color:'var(--text-muted)', fontWeight:700 }}>
                     <i className="fas fa-tags" style={{ marginRight:5 }} />Thèmes :
                   </span>
                   {result.main_topics.map((t, i) => (
-                    <span key={i} className="status-badge secondary" style={{ fontSize:12 }}>
+                    <span key={i} className="status-badge secondary" style={{ fontSize:14.5 }}>
                       <i className="fas fa-bookmark" style={{ fontSize:12 }} /> {t}
                     </span>
                   ))}
@@ -1466,7 +1466,7 @@ export default function AdminSuggestionsPage() {
               </div>
               <div>
                 <h3 style={{ margin:0 }}>Suggestions de Sujets d'Examen</h3>
-                <p style={{ margin:0, fontSize:13, color:'var(--text-muted)' }}>
+                <p style={{ margin:0, fontSize:15.5, color:'var(--text-muted)' }}>
                   {result.suggestions.length} suggestion(s) — cliquez "Utiliser" pour générer le sujet complet avec questions et barème
                 </p>
               </div>
@@ -1487,43 +1487,43 @@ export default function AdminSuggestionsPage() {
                   <div style={{ padding:'20px 24px', display:'flex', flexDirection:'column', flex:1 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
                       <div style={{ width:30, height:30, background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                        <span style={{ fontWeight:800, color:'#2563eb', fontSize:13 }}>{i + 1}</span>
+                        <span style={{ fontWeight:800, color:'#2563eb', fontSize:15.5 }}>{i + 1}</span>
                       </div>
-                      <h4 style={{ margin:0, fontSize:15, fontWeight:700, lineHeight:1.3 }}>{s.title}</h4>
+                      <h4 style={{ margin:0, fontSize:18, fontWeight:700, lineHeight:1.3 }}>{s.title}</h4>
                     </div>
 
                     <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:14 }}>
-                      <span style={{ background:diffStyle.bg, color:diffStyle.color, border:`1px solid ${diffStyle.border}`, borderRadius:99, padding:'3px 12px', fontSize:12, fontWeight:600 }}>
+                      <span style={{ background:diffStyle.bg, color:diffStyle.color, border:`1px solid ${diffStyle.border}`, borderRadius:99, padding:'3px 12px', fontSize:14.5, fontWeight:600 }}>
                         <i className="fas fa-signal" style={{ marginRight:5 }} />{s.difficulty}
                       </span>
-                      <span className="status-badge secondary" style={{ fontSize:12 }}>
+                      <span className="status-badge secondary" style={{ fontSize:14.5 }}>
                         <i className="fas fa-clock" /> {s.duration} min
                       </span>
-                      <span className="status-badge secondary" style={{ fontSize:12 }}>
+                      <span className="status-badge secondary" style={{ fontSize:14.5 }}>
                         <i className="fas fa-book" /> {s.exam_type}
                       </span>
                       {s.detected_domain && (
-                        <span className="status-badge secondary" style={{ fontSize:12 }}>
+                        <span className="status-badge secondary" style={{ fontSize:14.5 }}>
                           <i className="fas fa-graduation-cap" /> {s.detected_domain}
                         </span>
                       )}
                       {s.student_level && (
-                        <span className="status-badge secondary" style={{ fontSize:12 }}>
+                        <span className="status-badge secondary" style={{ fontSize:14.5 }}>
                           <i className="fas fa-user" /> {s.student_level}
                         </span>
                       )}
                     </div>
 
-                    <p style={{ margin:'0 0 16px', color:'var(--text-muted)', fontSize:14, lineHeight:1.7 }}>{s.description}</p>
+                    <p style={{ margin:'0 0 16px', color:'var(--text-muted)', fontSize:17, lineHeight:1.7 }}>{s.description}</p>
 
                     {s.key_points?.length > 0 && (
                       <div style={{ background:'var(--background)', borderRadius:10, padding:'12px 16px', marginBottom:12 }}>
-                        <div style={{ fontSize:12, fontWeight:700, color:'var(--text-muted)', marginBottom:8 }}>
+                        <div style={{ fontSize:14.5, fontWeight:700, color:'var(--text-muted)', marginBottom:8 }}>
                           <i className="fas fa-list-check" style={{ color:'var(--primary)', marginRight:6 }} />Points clés du cours
                         </div>
                         <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                           {s.key_points.map((p, j) => (
-                            <div key={j} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:13, color:'var(--text-muted)' }}>
+                            <div key={j} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:15.5, color:'var(--text-muted)' }}>
                               <i className="fas fa-circle" style={{ fontSize:6, color:'var(--primary)', marginTop:7, flexShrink:0 }} />{p}
                             </div>
                           ))}
@@ -1534,14 +1534,14 @@ export default function AdminSuggestionsPage() {
                     {examples && examples.length > 0 && (
                       <div style={{ marginBottom:14 }}>
                         <button onClick={() => setExpandedSuggestion(expanded ? null : i)}
-                          style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', color:'var(--primary)', fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0 }}>
+                          style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', color:'var(--primary)', fontSize:15, fontWeight:700, cursor:'pointer', padding:0 }}>
                           <i className={`fas ${expanded ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={{ fontSize:12 }} />
                           {expanded ? 'Masquer' : 'Voir'} un aperçu des questions ({examples.length})
                         </button>
                         {expanded && (
                           <ol style={{ margin:'10px 0 0', paddingLeft:20, display:'flex', flexDirection:'column', gap:8 }}>
                             {examples.map((q, j) => (
-                              <li key={j} style={{ fontSize:13, color:'#334155', lineHeight:1.6 }}>{q}</li>
+                              <li key={j} style={{ fontSize:15.5, color:'#334155', lineHeight:1.6 }}>{q}</li>
                             ))}
                           </ol>
                         )}
@@ -1551,7 +1551,7 @@ export default function AdminSuggestionsPage() {
                     {s.grading_criteria && (
                       <div style={{ marginBottom:14 }}>
                         <button onClick={() => setExpandedGrading(expandedGrading === i ? null : i)}
-                          style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', color:'#15803d', fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0 }}>
+                          style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', color:'#15803d', fontSize:15, fontWeight:700, cursor:'pointer', padding:0 }}>
                           <i className={`fas ${expandedGrading === i ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={{ fontSize:12 }} />
                           {expandedGrading === i ? 'Masquer' : 'Voir'} la philosophie de notation (qualitatif)
                         </button>
@@ -1561,9 +1561,9 @@ export default function AdminSuggestionsPage() {
                               value={editedGrading[i] ?? s.grading_criteria}
                               onChange={e => setEditedGrading(p => ({ ...p, [i]: e.target.value }))}
                               rows={4}
-                              style={{ width:'100%', padding:10, background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, fontSize:12.5, lineHeight:1.6, fontFamily:'monospace', resize:'vertical', boxSizing:'border-box', color:'var(--text)', outline:'none' }}
+                              style={{ width:'100%', padding:10, background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, fontSize:15, lineHeight:1.6, fontFamily:'monospace', resize:'vertical', boxSizing:'border-box', color:'var(--text)', outline:'none' }}
                             />
-                            <p style={{ margin:'6px 0 0', fontSize:11, color:'var(--text-muted)' }}>
+                            <p style={{ margin:'6px 0 0', fontSize:13, color:'var(--text-muted)' }}>
                               <i className="fas fa-pencil-alt" style={{ marginRight:4 }} />Modifiable — critères qualitatifs uniquement (ce qui doit être valorisé/pénalisé). Le barème chiffré, lui, est celui défini ci-dessus dans « Barème »
                             </p>
                           </div>
@@ -1572,7 +1572,7 @@ export default function AdminSuggestionsPage() {
                     )}
 
                     <button onClick={() => useSuggestion(s, i)} disabled={creating !== null}
-                      className="btn btn-primary" style={{ marginTop:'auto', width:'100%', padding:'12px 22px', fontSize:14, fontWeight:700 }}>
+                      className="btn btn-primary" style={{ marginTop:'auto', width:'100%', padding:'12px 22px', fontSize:17, fontWeight:700 }}>
                       <i className={`fas ${creating === i ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`} />
                       {creating === i ? 'Génération…' : 'Utiliser ce Sujet'}
                     </button>

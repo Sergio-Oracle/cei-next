@@ -380,7 +380,7 @@ export default function LoginPage() {
           </form>
 
           <p style={{ textAlign: 'center', margin: '14px 0 0' }}>
-            <Link href="/forgot-password" style={{ background: 'none', color: '#3b82f6', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Link href="/forgot-password" style={{ background: 'none', color: '#3b82f6', fontSize:15.5, cursor: 'pointer', textDecoration: 'underline', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <i className="fas fa-key" /> {t.forgot}
             </Link>
           </p>

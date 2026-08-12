@@ -177,7 +177,7 @@ export default function AdminAffectationsPage() {
         <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <i className="fas fa-list" style={{ color: 'var(--text-muted)', fontSize: 17 }} />
           <h3 style={{ margin: 0 }}>Liste des ECs</h3>
-          <span className="status-badge secondary" style={{ marginLeft: 4, fontSize: 11, padding: '2px 9px' }}>
+          <span className="status-badge secondary" style={{ marginLeft: 4, fontSize:13, padding: '2px 9px' }}>
             {ecs.length}
           </span>
         </div>
@@ -213,7 +213,7 @@ export default function AdminAffectationsPage() {
                     <tr key={ec.id}>
                       {/* Code EC */}
                       <td>
-                        <span style={{ display: 'inline-block', background: '#dbeafe', color: '#1d4ed8', padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 700 }}>
+                        <span style={{ display: 'inline-block', background: '#dbeafe', color: '#1d4ed8', padding: '3px 10px', borderRadius: 6, fontSize:14.5, fontWeight: 700 }}>
                           {ec.code}
                         </span>
                       </td>
@@ -225,7 +225,7 @@ export default function AdminAffectationsPage() {
 
                       {/* UE */}
                       <td>
-                        <span className="status-badge secondary" style={{ fontSize: 11, fontFamily: 'monospace' }}>
+                        <span className="status-badge secondary" style={{ fontSize:13, fontFamily: 'monospace' }}>
                           {ec.ue_code || '—'}
                         </span>
                       </td>
@@ -261,7 +261,7 @@ export default function AdminAffectationsPage() {
                             value={selections[ec.id] ?? ''}
                             onChange={e => setSelections(prev => ({ ...prev, [ec.id]: e.target.value }))}
                             className="form-control"
-                            style={{ fontSize: 13, padding: '7px 10px', minWidth: 200, maxWidth: 240 }}>
+                            style={{ fontSize:15.5, padding: '7px 10px', minWidth: 200, maxWidth: 240 }}>
                             <option value="">— Sélectionner un professeur —</option>
                             {professors.map(p => (
                               <option key={p.id} value={p.id}>{p.full_name}</option>
@@ -307,7 +307,7 @@ export default function AdminAffectationsPage() {
                 <i className="fas fa-users" style={{ color: 'var(--primary)' }} />
                 Affecter des professeurs
               </h3>
-              <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)', fontWeight: 400 }}>
+              <p style={{ margin: '4px 0 0', fontSize:15.5, color: 'var(--text-muted)', fontWeight: 400 }}>
                 EC : <strong>{multiModal.ecName}</strong>
               </p>
             </div>
@@ -317,7 +317,7 @@ export default function AdminAffectationsPage() {
               {professors.length === 0 ? (
                 <p className="empty-message">Aucun professeur disponible</p>
               ) : professors.every(p => multiModal.assignedIds.includes(p.id)) ? (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, fontSize: 13, color: '#92400e' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, fontSize:15.5, color: '#92400e' }}>
                   <i className="fas fa-circle-info" style={{ marginTop: 2 }} />
                   <span>Tous les professeurs disponibles sont déjà affectés à cet EC. Créez d'abord un nouveau compte professeur pour pouvoir en affecter un supplémentaire.</span>
                 </div>
@@ -337,21 +337,21 @@ export default function AdminAffectationsPage() {
                       onChange={() => !isAssigned && toggleMulti(p.id)}
                       style={{ width: 16, height: 16, accentColor: '#3b82f6', flexShrink: 0, cursor: isAssigned ? 'default' : 'pointer' }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: isAssigned ? 700 : 500, fontSize: 14, color: isAssigned ? '#15803d' : 'var(--text)' }}>
+                      <div style={{ fontWeight: isAssigned ? 700 : 500, fontSize:17, color: isAssigned ? '#15803d' : 'var(--text)' }}>
                         {p.full_name}
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.email}</div>
+                      <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>{p.email}</div>
                     </div>
                     {isAssigned && (
                       <>
-                        <span className="status-badge success" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>
+                        <span className="status-badge success" style={{ fontSize:13, whiteSpace: 'nowrap' }}>
                           <i className="fas fa-check-circle" /> Assigné
                         </span>
                         <button type="button"
                           onClick={e => { e.preventDefault(); e.stopPropagation(); unassign(multiModal.assignmentIdByProf[p.id]) }}
                           disabled={unassigning === multiModal.assignmentIdByProf[p.id]}
                           title="Retirer ce professeur de cet EC"
-                          style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: 6, padding: '3px 8px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: 6, padding: '3px 8px', fontSize:13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                           <i className={`fas ${unassigning === multiModal.assignmentIdByProf[p.id] ? 'fa-spinner fa-spin' : 'fa-times'}`} /> Retirer
                         </button>
                       </>

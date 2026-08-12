@@ -77,23 +77,23 @@ export default function ProfilePage() {
       <div className="grid" style={{ gridTemplateColumns: '280px 1fr', alignItems: 'start' }}>
         {/* Avatar / Info card */}
         <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 32, color: 'white', fontWeight: 700 }}>
+          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize:35, color: 'white', fontWeight: 700 }}>
             {profile?.full_name.charAt(0).toUpperCase()}
           </div>
           <h3 style={{ marginBottom: 4 }}>{profile?.full_name}</h3>
           <div style={{ color: 'var(--text-muted)', marginBottom: 8 }}>{profile?.email}</div>
           <span className="status-badge info">{profile?.role ? roleLabels[profile.role] : '—'}</span>
           {profile?.formation_name && (
-            <div style={{ marginTop: 12, fontSize: 13, color: 'var(--text-muted)' }}>
+            <div style={{ marginTop: 12, fontSize:15.5, color: 'var(--text-muted)' }}>
               <i className="fa-solid fa-building-columns" /> {profile.formation_name}
               {profile.niveau && ` · ${profile.niveau}`}
             </div>
           )}
-          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-muted)' }}>
+          <div style={{ marginTop: 12, fontSize:14.5, color: 'var(--text-muted)' }}>
             <span className={`status-badge ${profile?.is_active ? 'success' : 'danger'}`}>{profile?.is_active ? 'Compte actif' : 'Compte inactif'}</span>
           </div>
           {profile?.last_login && (
-            <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)' }}>
+            <div style={{ marginTop: 8, fontSize:14.5, color: 'var(--text-muted)' }}>
               Dernière connexion : {new Date(profile.last_login).toLocaleString('fr-FR')}
             </div>
           )}

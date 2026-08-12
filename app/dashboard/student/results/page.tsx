@@ -124,12 +124,12 @@ export default function StudentResultsPage() {
                 return (
                   <tr key={r.attempt_id}>
                     <td><div style={{ fontWeight: 600 }}>{r.exam_title}</div></td>
-                    <td><span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{r.subject_title ?? '—'}</span></td>
+                    <td><span style={{ color: 'var(--text-muted)', fontSize:15.5 }}>{r.subject_title ?? '—'}</span></td>
                     <td>
                       {r.score != null
-                        ? <strong style={{ fontSize: 16, color: (r.score ?? 0) >= 10 ? 'var(--success)' : 'var(--danger)' }}>{fmtScore(r.score ?? 0)}/20</strong>
+                        ? <strong style={{ fontSize:19, color: (r.score ?? 0) >= 10 ? 'var(--success)' : 'var(--danger)' }}>{fmtScore(r.score ?? 0)}/20</strong>
                         : r.pending_publication
-                          ? <span style={{ color: '#f59e0b', fontSize: 13 }}><i className="fa-solid fa-gavel" style={{ marginRight: 4 }} />En délibération</span>
+                          ? <span style={{ color: '#f59e0b', fontSize:15.5 }}><i className="fa-solid fa-gavel" style={{ marginRight: 4 }} />En délibération</span>
                           : <span style={{ color: 'var(--text-muted)' }}>—</span>
                       }
                     </td>
@@ -154,7 +154,7 @@ export default function StudentResultsPage() {
                           </button>
                         )}
                         {r.has_reclamation && (
-                          <span className={`status-badge ${r.reclamation_status === 'resolved' ? 'success' : r.reclamation_status === 'rejected' ? 'danger' : 'warning'}`} style={{ fontSize: 11 }}>
+                          <span className={`status-badge ${r.reclamation_status === 'resolved' ? 'success' : r.reclamation_status === 'rejected' ? 'danger' : 'warning'}`} style={{ fontSize:13 }}>
                             {RECLAMATION_LABELS[r.reclamation_status ?? ''] ?? r.reclamation_status}
                           </span>
                         )}
@@ -196,7 +196,7 @@ export default function StudentResultsPage() {
           {viewItem.feedback && (
             <div className="form-group">
               <label>Feedback du correcteur</label>
-              <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize: 14, whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}>
+              <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize:17, whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}>
                 {viewItem.feedback}
               </div>
             </div>

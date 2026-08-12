@@ -848,7 +848,7 @@ export default function ProctorMonitorPage() {
   if (loading) return (
     <div style={{ position: 'fixed', inset: 0, background: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
       <div style={{ width: 48, height: 48, border: '4px solid rgba(255,255,255,.1)', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: 16 }} />
-      <div style={{ fontSize: 15, fontWeight: 600 }}>Chargement du tableau de bord…</div>
+      <div style={{ fontSize:18, fontWeight: 600 }}>Chargement du tableau de bord…</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -1121,8 +1121,8 @@ export default function ProctorMonitorPage() {
             <i className={`fas ${isSurveillant ? 'fa-user-shield' : 'fa-chalkboard-teacher'}`} style={{ fontSize: 22 }} />
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.2 }}>{examTitle}</div>
-            <div style={{ fontSize: 11, opacity: .8, marginTop: 2 }}>
+            <div style={{ fontSize:19, fontWeight: 700, lineHeight: 1.2 }}>{examTitle}</div>
+            <div style={{ fontSize:13, opacity: .8, marginTop: 2 }}>
               {isSurveillant ? `Vue surveillance — Mon groupe · Statut: ${examStatus}` : `Vue pédagogique enseignant · Statut: ${examStatus}`}
             </div>
           </div>
@@ -1131,60 +1131,60 @@ export default function ProctorMonitorPage() {
         {/* Centre : pills stats — identiques à l'original */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'center' }}>
           {/* LIVE */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(255,255,255,.15)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(255,255,255,.15)', borderRadius: 20, fontSize:14.5, fontWeight: 600 }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', animation: 'pulse 2s infinite', display: 'inline-block', flexShrink: 0 }} />
             LIVE
           </div>
           {/* Rôle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(37,99,235,.4)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(37,99,235,.4)', borderRadius: 20, fontSize:14.5, fontWeight: 600 }}>
             <i className="fas fa-user-shield" />
             {isSurveillant ? 'Surveillant' : 'Enseignant'}
           </div>
           {/* Actifs */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(255,255,255,.15)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(255,255,255,.15)', borderRadius: 20, fontSize:14.5, fontWeight: 600 }}>
             <i className="fas fa-users" />
             {inProgress.length} actifs
           </div>
           {/* Risque élevé — toujours visible */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(239,68,68,.3)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(239,68,68,.3)', borderRadius: 20, fontSize:14.5, fontWeight: 600 }}>
             <i className="fas fa-exclamation-triangle" />
             {highRisk.length} risque élevé
           </div>
           {/* Bannis — toujours visible */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(239,68,68,.2)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(239,68,68,.2)', borderRadius: 20, fontSize:14.5, fontWeight: 600 }}>
             <i className="fas fa-ban" />
             {banned.length} bannis
           </div>
           {/* Total étudiants */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(255,255,255,.15)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(255,255,255,.15)', borderRadius: 20, fontSize:14.5, fontWeight: 600 }}>
             <i className="fas fa-users" />
             {students.length} étud.
           </div>
           {/* Messages — toujours visible, cliquable */}
           <button onClick={() => { setStudentMsgsModal(true); setNewMsgCount(0) }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: newMsgCount > 0 ? 'rgba(37,99,235,.6)' : 'rgba(37,99,235,.3)', borderRadius: 20, fontSize: 12, fontWeight: 600, border: 'none', color: 'white', cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: newMsgCount > 0 ? 'rgba(37,99,235,.6)' : 'rgba(37,99,235,.3)', borderRadius: 20, fontSize:14.5, fontWeight: 600, border: 'none', color: 'white', cursor: 'pointer' }}>
             <i className="fas fa-comment-dots" />
             {Math.max(msgsCount, studentMsgs.length)} message(s)
-            {newMsgCount > 0 && <span style={{ background: '#ef4444', borderRadius: '50%', width: 16, height: 16, fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{newMsgCount}</span>}
+            {newMsgCount > 0 && <span style={{ background: '#ef4444', borderRadius: '50%', width: 16, height: 16, fontSize:11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{newMsgCount}</span>}
           </button>
           {/* Niveau de vigilance superviseur (surveillant seulement) */}
           {isSurveillant && vigilanceLevel === 'C' && (
             <div title="Une vérification périodique de présence par votre caméra est active pour ce groupe — aucune image n'est transmise ni stockée, seule une détection de présence (oui/non) est envoyée."
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: cameraCheckActive ? 'rgba(16,185,129,.25)' : 'rgba(245,158,11,.25)', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'help' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: cameraCheckActive ? 'rgba(16,185,129,.25)' : 'rgba(245,158,11,.25)', borderRadius: 20, fontSize:14.5, fontWeight: 600, cursor: 'help' }}>
               <i className={`fas ${cameraCheckActive ? 'fa-video' : 'fa-video-slash'}`} />
               {cameraCheckActive ? 'Vérification présence active' : 'Caméra de vérification indisponible'}
             </div>
           )}
           {/* Terminés (enseignant seulement) — toujours visible */}
           {!isSurveillant && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(16,185,129,.3)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(16,185,129,.3)', borderRadius: 20, fontSize:14.5, fontWeight: 600 }}>
               <i className="fas fa-check-circle" />
               {completed.length} terminés
             </div>
           )}
           {/* Note moy. (enseignant seulement) — toujours visible */}
           {!isSurveillant && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(59,130,246,.3)', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(59,130,246,.3)', borderRadius: 20, fontSize:14.5, fontWeight: 600 }}>
               <i className="fas fa-star" />
               Note moy. {avgScore != null ? `${avgScore.toFixed(1)}/20` : '—'}
             </div>
@@ -1197,7 +1197,7 @@ export default function ProctorMonitorPage() {
             style={{ background: alertBadge > 0 ? 'rgba(239,68,68,.3)' : 'rgba(255,255,255,.2)', color: 'white', padding: '7px 14px', position: 'relative' }}>
             <i className="fas fa-bell" />
             {alertBadge > 0 && (
-              <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: 'white', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 700, lineHeight: '18px', textAlign: 'center', display: 'block' }}>
+              <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: 'white', borderRadius: '50%', width: 18, height: 18, fontSize:12, fontWeight: 700, lineHeight: '18px', textAlign: 'center', display: 'block' }}>
                 {alertBadge > 99 ? '99+' : alertBadge}
               </span>
             )}
@@ -1206,7 +1206,7 @@ export default function ProctorMonitorPage() {
             <div style={{ position: 'absolute', top: 44, right: 0, width: 380, maxHeight: 480, overflowY: 'auto', background: '#1e293b', borderRadius: 12, border: '1px solid #334155', boxShadow: '0 8px 32px rgba(0,0,0,.5)', zIndex: 9999 }}
               onClick={e => e.stopPropagation()}>
               <div style={{ padding: '14px 16px', borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontWeight: 700, fontSize: 14 }}>
+                <span style={{ fontWeight: 700, fontSize:17 }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: 6 }}>
                     <rect x="4" y="7" width="16" height="11" rx="2"/><circle cx="9" cy="12" r="1.5" fill="#60a5fa" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="#60a5fa" stroke="none"/>
                     <line x1="12" y1="7" x2="12" y2="4"/><circle cx="12" cy="3" r="1" fill="#38bdf8" stroke="none"/>
@@ -1216,17 +1216,17 @@ export default function ProctorMonitorPage() {
                 <div style={{ display: 'flex', gap: 6 }}>
                   {agentAlerts.length > 0 && (
                     <button onClick={() => { agentAlerts.forEach(a => markAlertRead(a.attempt_id)) }}
-                      style={{ background: 'none', border: '1px solid #475569', color: '#94a3b8', padding: '3px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>
+                      style={{ background: 'none', border: '1px solid #475569', color: '#94a3b8', padding: '3px 10px', borderRadius: 6, fontSize:13, cursor: 'pointer' }}>
                       Tout marquer lu
                     </button>
                   )}
-                  <button onClick={() => setAgentPanel(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.4)', cursor: 'pointer', fontSize: 16 }}>
+                  <button onClick={() => setAgentPanel(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.4)', cursor: 'pointer', fontSize:19 }}>
                     <i className="fas fa-times" />
                   </button>
                 </div>
               </div>
               {agentAlerts.length === 0 ? (
-                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
+                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b', fontSize:15.5 }}>
                   <i className="fas fa-shield-check" style={{ fontSize: 26, display: 'block', marginBottom: 8 }} />Aucune alerte active
                 </div>
               ) : agentAlerts.map((a: any, i: number) => {
@@ -1236,19 +1236,19 @@ export default function ProctorMonitorPage() {
                   <div key={`${a.attempt_id}-${a.timestamp || i}`} style={{ padding: '12px 16px', borderBottom: '1px solid #1e293b' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ background: col, color: '#fff', padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 700 }}>{a.level}</span>
-                        <strong style={{ fontSize: 13, color: '#f1f5f9' }}>{a.student_name}</strong>
+                        <span style={{ background: col, color: '#fff', padding: '2px 8px', borderRadius: 10, fontSize:13, fontWeight: 700 }}>{a.level}</span>
+                        <strong style={{ fontSize:15.5, color: '#f1f5f9' }}>{a.student_name}</strong>
                       </div>
-                      <span style={{ fontSize: 11, color: '#64748b' }}>{ts}</span>
+                      <span style={{ fontSize:13, color: '#64748b' }}>{ts}</span>
                     </div>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>
+                    <div style={{ fontSize:14.5, color: '#94a3b8', marginBottom: 6 }}>
                       Risque <strong style={{ color: col }}>{a.risk_score}/100</strong>
                       &nbsp;&middot;&nbsp; Sans visage {a.no_face || 0}&times;
                       &nbsp;&middot;&nbsp; Multi-visage {a.multi_face || 0}&times;
                       &nbsp;&middot;&nbsp; Tab switch {a.tab_switches || 0}&times;
                     </div>
                     {a.ai_note && (
-                      <div style={{ fontSize: 11, color: '#7dd3fc', background: '#0c1929', padding: '6px 10px', borderRadius: 6, marginBottom: 8, borderLeft: '3px solid #2563eb' }}>
+                      <div style={{ fontSize:13, color: '#7dd3fc', background: '#0c1929', padding: '6px 10px', borderRadius: 6, marginBottom: 8, borderLeft: '3px solid #2563eb' }}>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: 4 }}>
                           <rect x="4" y="7" width="16" height="11" rx="2"/><circle cx="9" cy="12" r="1.5" fill="#7dd3fc" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="#7dd3fc" stroke="none"/>
                           <line x1="12" y1="7" x2="12" y2="4"/><circle cx="12" cy="3" r="1" fill="#38bdf8" stroke="none"/>
@@ -1258,19 +1258,19 @@ export default function ProctorMonitorPage() {
                     )}
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                       <button onClick={() => { setAgentPanel(false); setMsgModal({ attemptId: a.attempt_id, name: a.student_name, type: 'warning' }); setMsgText('') }}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#f59e0b', color: '#fff', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#f59e0b', color: '#fff', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize:13, cursor: 'pointer', fontWeight: 600 }}>
                         <i className="fas fa-exclamation-triangle" /> Avertir
                       </button>
                       <button onClick={() => { setAgentPanel(false); startPrivateCall(a.attempt_id, a.student_name) }}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#2563eb', color: '#fff', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#2563eb', color: '#fff', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize:13, cursor: 'pointer', fontWeight: 600 }}>
                         <i className="fas fa-phone" /> Appel privé
                       </button>
                       <button onClick={() => { setAgentPanel(false); setBanModal({ attemptId: a.attempt_id, name: a.student_name }); setBanReason('') }}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#dc2626', color: '#fff', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#dc2626', color: '#fff', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize:13, cursor: 'pointer', fontWeight: 600 }}>
                         <i className="fas fa-ban" /> Exclure
                       </button>
                       <button onClick={() => markAlertRead(a.attempt_id)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#1e293b', color: '#94a3b8', border: '1px solid #334155', padding: '5px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#1e293b', color: '#94a3b8', border: '1px solid #334155', padding: '5px 10px', borderRadius: 6, fontSize:13, cursor: 'pointer' }}>
                         <i className="fas fa-check" /> Lu
                       </button>
                     </div>
@@ -1299,7 +1299,7 @@ export default function ProctorMonitorPage() {
           </button>
           {/* REC Groupe (surveillant) ou REC Salle (enseignant) */}
           <button className="hdr-btn" onClick={toggleGroupRec}
-            style={{ background: recording ? '#ef4444' : 'rgba(239,68,68,.15)', color: recording ? 'white' : '#ef4444', border: recording ? 'none' : '1px solid rgba(239,68,68,.4)', fontSize: 12 }}>
+            style={{ background: recording ? '#ef4444' : 'rgba(239,68,68,.15)', color: recording ? 'white' : '#ef4444', border: recording ? 'none' : '1px solid rgba(239,68,68,.4)', fontSize:14.5 }}>
             <i className={`fas ${recording ? 'fa-stop-circle' : 'fa-circle'}`} style={{ fontSize: recording ? 12 : 9, color: recording ? 'white' : '#ef4444' }} />
             {recording ? 'Arrêter REC' : (isSurveillant ? 'REC Groupe' : 'REC Salle')}
           </button>
@@ -1319,7 +1319,7 @@ export default function ProctorMonitorPage() {
         {/* Surveillants connectés (prof uniquement) */}
         {!isSurveillant && proctors.length > 0 && (
           <div style={{ padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,.07)', marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.4)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8, marginTop: 6 }}>
+            <div style={{ fontSize:13, fontWeight: 700, color: 'rgba(255,255,255,.4)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8, marginTop: 6 }}>
               <i className="fas fa-user-tie" style={{ marginRight: 5 }} />Surveillants humains connectés
             </div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -1339,18 +1339,18 @@ export default function ProctorMonitorPage() {
                     {/* Ligne titre */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                       <span style={{ width: 8, height: 8, borderRadius: '50%', background: st.online ? '#10b981' : '#475569', display: 'inline-block', flexShrink: 0 }} />
-                      <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.9)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize:15.5, fontWeight: 700, color: 'rgba(255,255,255,.9)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {p.proctor_name}
                       </span>
                       {diffuse && (
-                        <span style={{ fontSize: 9, fontWeight: 800, color: '#ef4444', background: 'rgba(239,68,68,.15)', border: '1px solid rgba(239,68,68,.4)', borderRadius: 4, padding: '1px 5px', letterSpacing: '.05em' }}>
+                        <span style={{ fontSize:11, fontWeight: 800, color: '#ef4444', background: 'rgba(239,68,68,.15)', border: '1px solid rgba(239,68,68,.4)', borderRadius: 4, padding: '1px 5px', letterSpacing: '.05em' }}>
                           DIFFUSE
                         </span>
                       )}
                     </div>
                     {/* Groupe(s) Surveillants d'origine */}
                     {!!p.group_names?.length && (
-                      <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,.45)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize:12.5, color: 'rgba(255,255,255,.45)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         <i className="fas fa-user-shield" style={{ fontSize: 11 }} />
                         {p.group_names.join(', ')}
                       </div>
@@ -1359,7 +1359,7 @@ export default function ProctorMonitorPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: groupStudents.length > 0 ? 8 : 0 }}>
                       <i className={`fas fa-video`} style={{ fontSize: 13, color: st.camOn ? '#10b981' : 'rgba(255,255,255,.25)' }} />
                       <i className={`fas fa-microphone`} style={{ fontSize: 13, color: st.micOn ? '#10b981' : 'rgba(255,255,255,.25)' }} />
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', marginLeft: 'auto' }}>
+                      <span style={{ fontSize:13, color: 'rgba(255,255,255,.35)', marginLeft: 'auto' }}>
                         {groupStudents.length} étud.
                       </span>
                     </div>
@@ -1373,7 +1373,7 @@ export default function ProctorMonitorPage() {
                             : s.student_name
                           return (
                             <span key={s.attempt_id} style={{
-                              fontSize: 10,
+                              fontSize:12,
                               color: s.status === 'banned' ? '#f87171' : s.status === 'submitted' ? '#34d399' : 'rgba(255,255,255,.6)',
                               background: 'rgba(255,255,255,.06)',
                               borderRadius: 4,
@@ -1384,7 +1384,7 @@ export default function ProctorMonitorPage() {
                           )
                         })}
                         {groupStudents.length > 8 && (
-                          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', padding: '2px 4px' }}>+{groupStudents.length - 8}</span>
+                          <span style={{ fontSize:12, color: 'rgba(255,255,255,.35)', padding: '2px 4px' }}>+{groupStudents.length - 8}</span>
                         )}
                       </div>
                     )}
@@ -1405,8 +1405,8 @@ export default function ProctorMonitorPage() {
             ...(avgScore != null ? [{ label: 'Moy.', val: `${avgScore.toFixed(1)}/20`, color: '#93c5fd' }] : []),
           ].map(s => (
             <div key={s.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 16px', background: 'rgba(255,255,255,.04)', borderRadius: 10, border: '1px solid rgba(255,255,255,.07)', minWidth: 80 }}>
-              <div style={{ fontSize: 20, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.val}</div>
-              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.07em', color: 'rgba(255,255,255,.35)', marginTop: 3 }}>{s.label}</div>
+              <div style={{ fontSize:24, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.val}</div>
+              <div style={{ fontSize:12, textTransform: 'uppercase', letterSpacing: '.07em', color: 'rgba(255,255,255,.35)', marginTop: 3 }}>{s.label}</div>
             </div>
           ))}
           <div style={{ flex: 1 }} />
@@ -1417,7 +1417,7 @@ export default function ProctorMonitorPage() {
             </button>
           ))}
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher…"
-            style={{ padding: '7px 14px', border: '2px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.05)', color: 'white', borderRadius: 20, fontSize: 12, outline: 'none', width: 180 }} />
+            style={{ padding: '7px 14px', border: '2px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.05)', color: 'white', borderRadius: 20, fontSize:14.5, outline: 'none', width: 180 }} />
         </div>
 
         {/* ═══════════ TABLES PROFESSEUR uniquement ═══════════════════════ */}
@@ -1452,11 +1452,11 @@ export default function ProctorMonitorPage() {
                               <strong style={{ color: 'rgba(255,255,255,.9)' }}>{s.student_name}</strong>
                               {offSec != null && (
                                 <span title="Aucun signal du navigateur depuis ce délai — n'affecte pas le score de risque"
-                                  style={{ marginLeft: 8, fontSize: 9.5, fontWeight: 800, color: '#fcd34d', background: 'rgba(245,158,11,.15)', border: '1px solid rgba(245,158,11,.4)', borderRadius: 4, padding: '1px 6px', letterSpacing: '.03em' }}>
+                                  style={{ marginLeft: 8, fontSize:11.5, fontWeight: 800, color: '#fcd34d', background: 'rgba(245,158,11,.15)', border: '1px solid rgba(245,158,11,.4)', borderRadius: 4, padding: '1px 6px', letterSpacing: '.03em' }}>
                                   <i className="fas fa-wifi" style={{ marginRight: 3 }} />HORS LIGNE {elapsed(s.last_seen_at)}
                                 </span>
                               )}
-                              <br /><span style={{ color: 'rgba(255,255,255,.35)', fontSize: 10 }}>{s.student_email}</span>
+                              <br /><span style={{ color: 'rgba(255,255,255,.35)', fontSize:12 }}>{s.student_email}</span>
                             </td>
                             <td>{fmtTime(s.started_at)}</td>
                             <td>{elapsed(s.started_at)}</td>
@@ -1513,10 +1513,10 @@ export default function ProctorMonitorPage() {
                         <tr key={s.attempt_id}>
                           <td>
                             <strong style={{ color: 'rgba(255,255,255,.9)' }}>{s.student_name}</strong>
-                            <br /><span style={{ color: 'rgba(255,255,255,.35)', fontSize: 10 }}>{s.student_email}</span>
+                            <br /><span style={{ color: 'rgba(255,255,255,.35)', fontSize:12 }}>{s.student_email}</span>
                           </td>
                           <td>
-                            <span style={{ background: isAuto ? 'rgba(37,99,235,.2)' : 'rgba(16,185,129,.2)', color: isAuto ? '#bfdbfe' : '#6ee7b7', borderRadius: 4, padding: '2px 7px', fontSize: 10 }}>
+                            <span style={{ background: isAuto ? 'rgba(37,99,235,.2)' : 'rgba(16,185,129,.2)', color: isAuto ? '#bfdbfe' : '#6ee7b7', borderRadius: 4, padding: '2px 7px', fontSize:12 }}>
                               {isAuto ? 'Auto-soumis' : 'Soumis'}
                             </span>
                           </td>
@@ -1566,23 +1566,23 @@ export default function ProctorMonitorPage() {
         {/* ═══════════ ÉTUDIANTS HORS LIGNE — signal heartbeat perdu ═══ */}
         {offlineInProgress.length > 0 && (
           <div style={{ marginTop: !isSurveillant ? 24 : 0, marginBottom: 18, padding: '12px 16px', background: 'rgba(245,158,11,.08)', border: '1px solid rgba(245,158,11,.25)', borderRadius: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#fcd34d', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize:13, fontWeight: 700, color: '#fcd34d', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
               <i className="fas fa-wifi-slash" />
               {offlineInProgress.length} étudiant{offlineInProgress.length > 1 ? 's' : ''} hors ligne (examen toujours en cours)
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {offlineInProgress.map(s => (
                 <div key={s.attempt_id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.05)', borderRadius: 8, padding: '6px 12px' }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,.85)' }}>{s.student_name}</span>
-                  <span style={{ fontSize: 10.5, color: '#fcd34d' }}>hors ligne depuis {elapsed(s.last_seen_at)}</span>
-                  <button className="mon-act" style={{ background: 'rgba(37,99,235,.2)', color: '#93c5fd', fontSize: 10.5 }}
+                  <span style={{ fontSize:15, fontWeight: 700, color: 'rgba(255,255,255,.85)' }}>{s.student_name}</span>
+                  <span style={{ fontSize:12.5, color: '#fcd34d' }}>hors ligne depuis {elapsed(s.last_seen_at)}</span>
+                  <button className="mon-act" style={{ background: 'rgba(37,99,235,.2)', color: '#93c5fd', fontSize:12.5 }}
                     onClick={() => startPrivateCall(s.attempt_id, s.student_name)}>
                     <i className="fas fa-phone" /> Appeler
                   </button>
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', marginTop: 8 }}>
+            <div style={{ fontSize:12, color: 'rgba(255,255,255,.35)', marginTop: 8 }}>
               Une déconnexion ne compte jamais comme une violation — l'étudiant conserve son code de reprise et sera signalé à sa reconnexion.
             </div>
           </div>
@@ -1591,7 +1591,7 @@ export default function ProctorMonitorPage() {
         {/* ═══════════ GRILLE VIDÉO — uniquement les étudiants connectés (LiveKit) ═══ */}
         <div style={{ marginTop: !isSurveillant ? 24 : 0 }}>
           {liveStudents.length > 0 && (
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.35)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontSize:12, fontWeight: 700, color: 'rgba(255,255,255,.35)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block', animation: 'pulse 2s infinite' }} />
               Vues en direct ({liveStudents.length})
             </div>
@@ -1631,15 +1631,15 @@ export default function ProctorMonitorPage() {
       {/* Message / Avertissement */}
       {msgModal && (
         <Modal onClose={() => setMsgModal(null)}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2 style={{ fontSize:21.5, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
             <i className={`fas ${msgModal.type === 'warning' ? 'fa-exclamation-triangle' : 'fa-comment'}`}
               style={{ color: msgModal.type === 'warning' ? '#f59e0b' : '#3b82f6' }} />
             {msgModal.type === 'warning' ? 'Envoyer un avertissement' : 'Envoyer un message'}
           </h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>À : <strong>{msgModal.name}</strong></p>
+          <p style={{ fontSize:15.5, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>À : <strong>{msgModal.name}</strong></p>
           <textarea value={msgText} onChange={e => setMsgText(e.target.value)} rows={4}
             placeholder={msgModal.type === 'warning' ? "Motif de l'avertissement…" : 'Votre message…'}
-            style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,.05)', border: '2px solid rgba(255,255,255,.12)', color: 'white', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', marginBottom: 16, outline: 'none', boxSizing: 'border-box' }} />
+            style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,.05)', border: '2px solid rgba(255,255,255,.12)', color: 'white', borderRadius: 8, fontSize:15.5, fontFamily: 'inherit', resize: 'none', marginBottom: 16, outline: 'none', boxSizing: 'border-box' }} />
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={() => setMsgModal(null)} style={btnSecondary}>Annuler</button>
             <button onClick={sendMsg} disabled={sending || !msgText.trim()}
@@ -1654,12 +1654,12 @@ export default function ProctorMonitorPage() {
       {/* Exclusion */}
       {banModal && (
         <Modal onClose={() => setBanModal(null)}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: '#fca5a5' }}>
+          <h2 style={{ fontSize:21.5, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: '#fca5a5' }}>
             <i className="fas fa-ban" /> Exclure {banModal.name}
           </h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>Cette action est définitive. L'étudiant ne pourra plus continuer son examen.</p>
+          <p style={{ fontSize:15.5, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>Cette action est définitive. L'étudiant ne pourra plus continuer son examen.</p>
           <input value={banReason} onChange={e => setBanReason(e.target.value)} placeholder="Motif d'exclusion (optionnel)"
-            style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,.05)', border: '2px solid rgba(255,255,255,.12)', color: 'white', borderRadius: 8, fontSize: 13, marginBottom: 16, outline: 'none', boxSizing: 'border-box' }} />
+            style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,.05)', border: '2px solid rgba(255,255,255,.12)', color: 'white', borderRadius: 8, fontSize:15.5, marginBottom: 16, outline: 'none', boxSizing: 'border-box' }} />
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={() => setBanModal(null)} style={btnSecondary}>Annuler</button>
             <button onClick={banStudent} disabled={banning}
@@ -1673,20 +1673,20 @@ export default function ProctorMonitorPage() {
       {/* Temps supplémentaire */}
       {extraModal && (
         <Modal onClose={() => setExtraModal(null)}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: '#fcd34d' }}>
+          <h2 style={{ fontSize:21.5, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: '#fcd34d' }}>
             <i className="fas fa-clock" /> Temps supplémentaire
           </h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>Étudiant : <strong>{extraModal.name}</strong></p>
+          <p style={{ fontSize:15.5, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>Étudiant : <strong>{extraModal.name}</strong></p>
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
             {['5', '10', '15', '20', '30'].map(m => (
               <button key={m} onClick={() => setExtraMins(m)}
-                style={{ padding: '8px 16px', border: `2px solid ${extraMins === m ? '#f59e0b' : 'rgba(255,255,255,.12)'}`, background: extraMins === m ? 'rgba(245,158,11,.2)' : 'transparent', color: extraMins === m ? '#f59e0b' : 'rgba(255,255,255,.7)', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+                style={{ padding: '8px 16px', border: `2px solid ${extraMins === m ? '#f59e0b' : 'rgba(255,255,255,.12)'}`, background: extraMins === m ? 'rgba(245,158,11,.2)' : 'transparent', color: extraMins === m ? '#f59e0b' : 'rgba(255,255,255,.7)', borderRadius: 8, cursor: 'pointer', fontSize:15.5, fontWeight: 700 }}>
                 +{m} min
               </button>
             ))}
           </div>
           <input type="number" min={1} max={120} value={extraMins} onChange={e => setExtraMins(e.target.value)}
-            style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,.05)', border: '2px solid rgba(255,255,255,.12)', color: 'white', borderRadius: 8, fontSize: 13, marginBottom: 16, outline: 'none', boxSizing: 'border-box' }} />
+            style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,.05)', border: '2px solid rgba(255,255,255,.12)', color: 'white', borderRadius: 8, fontSize:15.5, marginBottom: 16, outline: 'none', boxSizing: 'border-box' }} />
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={() => setExtraModal(null)} style={btnSecondary}>Annuler</button>
             <button onClick={grantExtraTime} disabled={grantingTime}
@@ -1700,13 +1700,13 @@ export default function ProctorMonitorPage() {
       {/* Note de surveillance */}
       {noteModal && (
         <Modal onClose={() => setNoteModal(null)}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: '#2dd4bf' }}>
+          <h2 style={{ fontSize:21.5, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: '#2dd4bf' }}>
             <i className="fas fa-sticky-note" /> Note de surveillance
           </h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>Étudiant : <strong>{noteModal.name}</strong></p>
+          <p style={{ fontSize:15.5, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>Étudiant : <strong>{noteModal.name}</strong></p>
           <textarea value={noteText} onChange={e => setNoteText(e.target.value)} rows={5}
             placeholder="Votre observation de surveillance…"
-            style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,.05)', border: '2px solid rgba(255,255,255,.12)', color: 'white', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', marginBottom: 16, outline: 'none', boxSizing: 'border-box' }} />
+            style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,.05)', border: '2px solid rgba(255,255,255,.12)', color: 'white', borderRadius: 8, fontSize:15.5, fontFamily: 'inherit', resize: 'none', marginBottom: 16, outline: 'none', boxSizing: 'border-box' }} />
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={() => setNoteModal(null)} style={btnSecondary}>Annuler</button>
             <button onClick={saveNote} disabled={savingNote || !noteText.trim()}
@@ -1722,11 +1722,11 @@ export default function ProctorMonitorPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.85)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 24 }}>
           <div style={{ background: '#0f172a', borderRadius: 14, overflow: 'hidden', maxWidth: 1000, width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,.6)' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 700 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize:18, fontWeight: 700 }}>
                 <i className="fas fa-desktop" style={{ color: '#0d9488' }} />
                 Écran de {screenModal.name}
               </div>
-              <button onClick={() => setScreenModal(null)} style={{ background: 'rgba(255,255,255,.1)', border: 'none', color: 'white', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+              <button onClick={() => setScreenModal(null)} style={{ background: 'rgba(255,255,255,.1)', border: 'none', color: 'white', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize:14.5, fontWeight: 600 }}>
                 <i className="fas fa-times" /> Fermer
               </button>
             </div>
@@ -1736,7 +1736,7 @@ export default function ProctorMonitorPage() {
               {!screenTracksRef.current.has(screenModal.identity) && (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.4)', gap: 10 }}>
                   <i className="fas fa-desktop" style={{ fontSize: 53 }} />
-                  <span style={{ fontSize: 13 }}>Partage d'écran non disponible</span>
+                  <span style={{ fontSize:15.5 }}>Partage d'écran non disponible</span>
                 </div>
               )}
             </div>
@@ -1755,8 +1755,8 @@ export default function ProctorMonitorPage() {
           onClick={e => { if (e.target === e.currentTarget) setStudentMsgsModal(false) }}>
           <div style={{ background: '#1e293b', color: 'white', borderRadius: 16, maxWidth: 560, width: '95%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,.6)' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 15, fontWeight: 700 }}><i className="fas fa-comments" style={{ marginRight: 8, color: '#60a5fa' }} />Messages des étudiants</div>
-              <button onClick={() => setStudentMsgsModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.5)', cursor: 'pointer', fontSize: 18 }}><i className="fas fa-times" /></button>
+              <div style={{ fontSize:18, fontWeight: 700 }}><i className="fas fa-comments" style={{ marginRight: 8, color: '#60a5fa' }} />Messages des étudiants</div>
+              <button onClick={() => setStudentMsgsModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.5)', cursor: 'pointer', fontSize:21.5 }}><i className="fas fa-times" /></button>
             </div>
             <div style={{ overflowY: 'auto', flex: 1, padding: 18 }}>
               {studentMsgs.length === 0 ? (
@@ -1768,23 +1768,23 @@ export default function ProctorMonitorPage() {
                 return (
                 <div key={i} style={{ background: isCallRequest ? 'rgba(217,119,6,.15)' : 'rgba(37,99,235,.12)', borderLeft: `3px solid ${isCallRequest ? '#f59e0b' : '#3b82f6'}`, borderRadius: 4, padding: '10px 12px', marginBottom: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <strong style={{ color: isCallRequest ? '#fcd34d' : '#93c5fd', fontSize: 13 }}>
+                    <strong style={{ color: isCallRequest ? '#fcd34d' : '#93c5fd', fontSize:15.5 }}>
                       {isCallRequest && <i className="fas fa-phone-volume" style={{ marginRight: 5, animation: 'pulse 1.5s infinite' }} />}
                       <i className="fas fa-user-graduate" style={{ marginRight: 5 }} />{m.student_name}
                     </strong>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{m.timestamp ? new Date(m.timestamp).toLocaleTimeString('fr-FR') : ''}</span>
+                    <span style={{ fontSize:13, color: 'rgba(255,255,255,.5)' }}>{m.timestamp ? new Date(m.timestamp).toLocaleTimeString('fr-FR') : ''}</span>
                   </div>
-                  <div style={{ fontSize: 13, color: 'white', marginBottom: 6 }}>{m.message}</div>
+                  <div style={{ fontSize:15.5, color: 'white', marginBottom: 6 }}>{m.message}</div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {!isCallRequest && (
                       <button onClick={() => { setStudentMsgsModal(false); setMsgModal({ attemptId: m.attempt_id, name: m.student_name, type: 'message' }); setMsgText('') }}
-                        style={{ fontSize: 11, background: 'rgba(37,99,235,.3)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
+                        style={{ fontSize:13, background: 'rgba(37,99,235,.3)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
                         <i className="fas fa-reply" /> Répondre
                       </button>
                     )}
                     {isCallRequest && (
                       <button onClick={() => { setStudentMsgsModal(false); startPrivateCall(m.attempt_id, m.student_name) }}
-                        style={{ fontSize: 11, background: 'rgba(16,185,129,.4)', color: '#a7f3d0', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
+                        style={{ fontSize:13, background: 'rgba(16,185,129,.4)', color: '#a7f3d0', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
                         <i className="fas fa-phone" /> Rejoindre l'appel
                       </button>
                     )}
@@ -1816,8 +1816,8 @@ export default function ProctorMonitorPage() {
 
               {/* Header */}
               <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}><i className="fas fa-film" style={{ marginRight: 8, color: '#60a5fa' }} />Enregistrements</div>
-                <button onClick={() => setRecModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.5)', cursor: 'pointer', fontSize: 20 }}><i className="fas fa-times" /></button>
+                <div style={{ fontSize:18, fontWeight: 700 }}><i className="fas fa-film" style={{ marginRight: 8, color: '#60a5fa' }} />Enregistrements</div>
+                <button onClick={() => setRecModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.5)', cursor: 'pointer', fontSize:24 }}><i className="fas fa-times" /></button>
               </div>
 
               {/* Onglets */}
@@ -1828,7 +1828,7 @@ export default function ProctorMonitorPage() {
                     if (t === 'snapshots' && !snapRecs) { await loadSnapRecs(); setSelectedSnapIdx(0) }
                     if (t === 'videos'    && !videoRecs) await loadVideoRecs()
                   }}
-                    style={{ flex: 1, padding: '13px 0', border: 'none', background: recTab === t ? 'rgba(59,130,246,.15)' : 'transparent', color: recTab === t ? 'white' : 'rgba(255,255,255,.45)', fontWeight: 700, fontSize: 13, cursor: 'pointer', borderBottom: `2px solid ${recTab === t ? '#3b82f6' : 'transparent'}` }}>
+                    style={{ flex: 1, padding: '13px 0', border: 'none', background: recTab === t ? 'rgba(59,130,246,.15)' : 'transparent', color: recTab === t ? 'white' : 'rgba(255,255,255,.45)', fontWeight: 700, fontSize:15.5, cursor: 'pointer', borderBottom: `2px solid ${recTab === t ? '#3b82f6' : 'transparent'}` }}>
                     <i className={`fas ${t === 'videos' ? 'fa-video' : 'fa-camera'}`} style={{ marginRight: 7 }} />
                     {t === 'videos' ? 'Vidéos enregistrées' : 'Snapshots caméra'}
                   </button>
@@ -1848,17 +1848,17 @@ export default function ProctorMonitorPage() {
                     {!videoRecs || (videoRecs.videos || []).length === 0 ? (
                       <div style={{ textAlign: 'center', padding: '30px 20px', color: 'rgba(255,255,255,.5)' }}>
                         <i className="fas fa-video-slash" style={{ fontSize: 40, display: 'block', marginBottom: 14, opacity: .4 }} />
-                        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, color: 'rgba(255,255,255,.7)' }}>
+                        <div style={{ fontSize:18, fontWeight: 600, marginBottom: 8, color: 'rgba(255,255,255,.7)' }}>
                           {videoRecs?.error || 'Aucun enregistrement vidéo pour cet examen'}
                         </div>
-                        <div style={{ fontSize: 12, lineHeight: 1.8, maxWidth: 420, margin: '0 auto', color: 'rgba(255,255,255,.45)' }}>
+                        <div style={{ fontSize:14.5, lineHeight: 1.8, maxWidth: 420, margin: '0 auto', color: 'rgba(255,255,255,.45)' }}>
                           L'enregistrement ne fonctionne que <strong style={{ color: 'rgba(255,255,255,.7)' }}>pendant que l'examen est en cours</strong> et que les étudiants sont connectés à la salle LiveKit.
                         </div>
                         <div style={{ marginTop: 20, background: 'rgba(245,158,11,.08)', border: '1px solid rgba(245,158,11,.25)', borderRadius: 10, padding: '14px 16px', textAlign: 'left', maxWidth: 420, margin: '20px auto 0' }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', marginBottom: 10, letterSpacing: '.5px' }}>
+                          <div style={{ fontSize:13, fontWeight: 700, color: '#f59e0b', marginBottom: 10, letterSpacing: '.5px' }}>
                             <i className="fas fa-info-circle" /> COMMENT ENREGISTRER
                           </div>
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', lineHeight: 1.8 }}>
+                          <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.6)', lineHeight: 1.8 }}>
                             1. Ouvrez ce tableau de bord <strong style={{ color: 'rgba(255,255,255,.8)' }}>pendant l'examen</strong><br />
                             2. Cliquez sur <span style={{ background: 'rgba(239,68,68,.3)', color: '#fca5a5', padding: '1px 7px', borderRadius: 4, fontWeight: 700 }}>REC Salle</span> (en-tête) pour enregistrer toute la salle<br />
                             3. Cliquez sur <span style={{ background: 'rgba(239,68,68,.5)', color: '#fca5a5', padding: '1px 7px', borderRadius: 4, fontWeight: 700 }}>STOP Salle</span> avant la fin de l'examen<br />
@@ -1866,11 +1866,11 @@ export default function ProctorMonitorPage() {
                           </div>
                         </div>
                         <button onClick={() => { setRecModal(false); toggleGroupRec() }}
-                          style={{ marginTop: 20, background: 'rgba(239,68,68,.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,.4)', padding: '10px 20px', fontSize: 13, borderRadius: 8, cursor: 'pointer' }}>
+                          style={{ marginTop: 20, background: 'rgba(239,68,68,.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,.4)', padding: '10px 20px', fontSize:15.5, borderRadius: 8, cursor: 'pointer' }}>
                           <i className="fas fa-circle" style={{ marginRight: 7 }} />Démarrer l'enregistrement maintenant
                         </button>
                         {(videoRecs?.attempts_total || 0) > 0 && (
-                          <div style={{ marginTop: 14, fontSize: 11, color: 'rgba(255,255,255,.25)' }}>
+                          <div style={{ marginTop: 14, fontSize:13, color: 'rgba(255,255,255,.25)' }}>
                             {videoRecs.attempts_total} étudiant(s) ont participé à cet examen.
                           </div>
                         )}
@@ -1879,17 +1879,17 @@ export default function ProctorMonitorPage() {
                       <>
                         {/* Résumé */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-                          <div style={{ fontSize: 13, color: 'rgba(255,255,255,.5)' }}>
+                          <div style={{ fontSize:15.5, color: 'rgba(255,255,255,.5)' }}>
                             <i className="fas fa-film" style={{ marginRight: 5, color: '#60a5fa' }} />
                             <strong style={{ color: 'rgba(255,255,255,.8)' }}>{videoRecs.recorded_count || (videoRecs.videos || []).length}</strong> enregistrement(s) sur{' '}
                             <strong style={{ color: 'rgba(255,255,255,.8)' }}>{videoRecs.attempts_total || (videoRecs.videos || []).length}</strong> étudiant(s)
                           </div>
-                          <button onClick={loadVideoRecs} style={{ padding: '6px 12px', background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.12)', color: 'rgba(255,255,255,.7)', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                          <button onClick={loadVideoRecs} style={{ padding: '6px 12px', background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.12)', color: 'rgba(255,255,255,.7)', borderRadius: 7, cursor: 'pointer', fontSize:14.5, fontWeight: 600 }}>
                             <i className="fas fa-sync-alt" style={{ marginRight: 5 }} />Actualiser
                           </button>
                         </div>
                         {videoRecs.error && (
-                          <div style={{ color: '#f59e0b', background: 'rgba(245,158,11,.1)', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 12 }}>
+                          <div style={{ color: '#f59e0b', background: 'rgba(245,158,11,.1)', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize:14.5 }}>
                             <i className="fas fa-exclamation-triangle" style={{ marginRight: 6 }} />{videoRecs.error}
                           </div>
                         )}
@@ -1909,12 +1909,12 @@ export default function ProctorMonitorPage() {
                               </div>
                               {/* Infos */}
                               <div style={{ flex: 1, minWidth: 180 }}>
-                                <div style={{ fontSize: 14, fontWeight: 700, color: 'white', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                <div style={{ fontSize:17, fontWeight: 700, color: 'white', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                   <i className="fas fa-user-graduate" style={{ color: '#60a5fa', fontSize: 14 }} />
                                   {v.student_name}
-                                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: `${rt.color}22`, color: rt.color, fontWeight: 700 }}>{rt.label}</span>
+                                  <span style={{ fontSize:12, padding: '2px 8px', borderRadius: 99, background: `${rt.color}22`, color: rt.color, fontWeight: 700 }}>{rt.label}</span>
                                 </div>
-                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', lineHeight: 1.8 }}>
+                                <div style={{ fontSize:13, color: 'rgba(255,255,255,.4)', lineHeight: 1.8 }}>
                                   <i className="fas fa-file-video" style={{ marginRight: 3 }} />{v.filename}
                                   {v.size_mb && <>&nbsp;·&nbsp;<i className="fas fa-weight-hanging" style={{ marginRight: 3 }} />{v.size_mb} Mo</>}
                                   &nbsp;·&nbsp;<i className="fas fa-save" style={{ marginRight: 3 }} />{ts}
@@ -1924,24 +1924,24 @@ export default function ProctorMonitorPage() {
                               </div>
                               {/* Droite */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                {sl && <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 99, background: `${sc}22`, color: sc, fontWeight: 600 }}>{sl}</span>}
+                                {sl && <span style={{ fontSize:13, padding: '3px 10px', borderRadius: 99, background: `${sc}22`, color: sc, fontWeight: 600 }}>{sl}</span>}
                                 {v.url ? (
                                   <>
                                     <a href={v.url} target="_blank" rel="noreferrer"
-                                      style={{ padding: '7px 14px', background: 'rgba(59,130,246,.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,.3)', borderRadius: 7, textDecoration: 'none', fontSize: 12, fontWeight: 600, display: 'inline-flex', gap: 5, alignItems: 'center' }}>
+                                      style={{ padding: '7px 14px', background: 'rgba(59,130,246,.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,.3)', borderRadius: 7, textDecoration: 'none', fontSize:14.5, fontWeight: 600, display: 'inline-flex', gap: 5, alignItems: 'center' }}>
                                       <i className="fas fa-play" /> Lire
                                     </a>
                                     <a href={v.url} download={v.filename} target="_blank" rel="noreferrer"
-                                      style={{ padding: '7px 14px', background: 'rgba(16,185,129,.15)', color: '#10b981', border: '1px solid rgba(16,185,129,.3)', borderRadius: 7, textDecoration: 'none', fontSize: 12, fontWeight: 600, display: 'inline-flex', gap: 5, alignItems: 'center' }}>
+                                      style={{ padding: '7px 14px', background: 'rgba(16,185,129,.15)', color: '#10b981', border: '1px solid rgba(16,185,129,.3)', borderRadius: 7, textDecoration: 'none', fontSize:14.5, fontWeight: 600, display: 'inline-flex', gap: 5, alignItems: 'center' }}>
                                       <i className="fas fa-download" /> Télécharger
                                     </a>
                                   </>
-                                ) : <span style={{ fontSize: 11, color: 'rgba(255,255,255,.3)' }}><i className="fas fa-clock" /> Lien expiré — Actualisez</span>}
+                                ) : <span style={{ fontSize:13, color: 'rgba(255,255,255,.3)' }}><i className="fas fa-clock" /> Lien expiré — Actualisez</span>}
                               </div>
                             </div>
                           )
                         })}
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', marginTop: 10, textAlign: 'center' }}>
+                        <div style={{ fontSize:13, color: 'rgba(255,255,255,.3)', marginTop: 10, textAlign: 'center' }}>
                           <i className="fas fa-info-circle" /> Les liens sont valables 4h. Cliquez sur Actualiser pour les renouveler.
                         </div>
                       </>
@@ -1959,7 +1959,7 @@ export default function ProctorMonitorPage() {
                     <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
                       {/* Sidebar étudiants */}
                       <div style={{ width: 220, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,.08)', overflowY: 'auto', padding: '12px 10px' }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.35)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10, paddingLeft: 4 }}>
+                        <div style={{ fontSize:12, fontWeight: 700, color: 'rgba(255,255,255,.35)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10, paddingLeft: 4 }}>
                           {snapStudents.length} étudiant(s)
                         </div>
                         {snapStudents.map((stu: any, i: number) => {
@@ -1973,10 +1973,10 @@ export default function ProctorMonitorPage() {
                                 <i className="fas fa-user" style={{ fontSize: 16 }} />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 12, fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stu.student_name}</div>
-                                <div style={{ fontSize: 10, color: 'rgba(255,255,255,.4)' }}>{stu.snapshots_count} snapshot(s)</div>
+                                <div style={{ fontSize:14.5, fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stu.student_name}</div>
+                                <div style={{ fontSize:12, color: 'rgba(255,255,255,.4)' }}>{stu.snapshots_count} snapshot(s)</div>
                               </div>
-                              {sl && <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 99, background: `${sc}22`, color: sc, fontWeight: 700, flexShrink: 0 }}>{sl}</span>}
+                              {sl && <span style={{ fontSize:11, padding: '2px 6px', borderRadius: 99, background: `${sc}22`, color: sc, fontWeight: 700, flexShrink: 0 }}>{sl}</span>}
                             </div>
                           )
                         })}
@@ -1989,19 +1989,19 @@ export default function ProctorMonitorPage() {
                             {/* En-tête étudiant */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
                               <div>
-                                <div style={{ fontSize: 15, fontWeight: 700, color: 'white' }}>{curSnap.student_name}</div>
-                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)' }}>{curSnap.student_email}</div>
+                                <div style={{ fontSize:18, fontWeight: 700, color: 'white' }}>{curSnap.student_name}</div>
+                                <div style={{ fontSize:13, color: 'rgba(255,255,255,.4)' }}>{curSnap.student_email}</div>
                               </div>
                               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                                 {STATUS_LABEL[curSnap.status] && (
-                                  <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 99, background: `${STATUS_COLOR[curSnap.status] || '#64748b'}22`, color: STATUS_COLOR[curSnap.status] || '#94a3b8' }}>
+                                  <span style={{ fontSize:13, padding: '3px 10px', borderRadius: 99, background: `${STATUS_COLOR[curSnap.status] || '#64748b'}22`, color: STATUS_COLOR[curSnap.status] || '#94a3b8' }}>
                                     {STATUS_LABEL[curSnap.status]}
                                   </span>
                                 )}
-                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,.4)' }}>
+                                <span style={{ fontSize:13, color: 'rgba(255,255,255,.4)' }}>
                                   <i className="fas fa-camera" style={{ marginRight: 4 }} />{curSnap.snapshots_count} snapshot(s)
                                 </span>
-                                <button onClick={loadSnapRecs} style={{ padding: '5px 10px', background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.6)', borderRadius: 6, cursor: 'pointer', fontSize: 11 }}>
+                                <button onClick={loadSnapRecs} style={{ padding: '5px 10px', background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.6)', borderRadius: 6, cursor: 'pointer', fontSize:13 }}>
                                   <i className="fas fa-sync-alt" />
                                 </button>
                               </div>
@@ -2028,10 +2028,10 @@ export default function ProctorMonitorPage() {
                                         onClick={() => setZoomedSnapshot({ src, ts, et })}
                                         onError={e => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }} />
                                       <div style={{ padding: '5px 8px' }}>
-                                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)' }}>{ts}</div>
-                                        {et && <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 1 }}>{et}</div>}
+                                        <div style={{ fontSize:12, color: 'rgba(255,255,255,.55)' }}>{ts}</div>
+                                        {et && <div style={{ fontSize:12, color: '#f59e0b', marginTop: 1 }}>{et}</div>}
                                         {brightness !== null && (
-                                          <div style={{ fontSize: 9.5, color: poorLight ? '#f59e0b' : 'rgba(255,255,255,.35)', marginTop: 1 }}>
+                                          <div style={{ fontSize:11.5, color: poorLight ? '#f59e0b' : 'rgba(255,255,255,.35)', marginTop: 1 }}>
                                             <i className="fas fa-lightbulb" style={{ marginRight: 3 }} />{brightness}/255{poorLight ? ' — faible' : ''}
                                           </div>
                                         )}
@@ -2056,10 +2056,10 @@ export default function ProctorMonitorPage() {
                 style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.88)', zIndex: 99999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, cursor: 'zoom-out' }}>
                 <img src={zoomedSnapshot.src} alt="snapshot agrandi"
                   style={{ maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 8, boxShadow: '0 12px 40px rgba(0,0,0,.5)' }} />
-                <div style={{ marginTop: 14, color: 'rgba(255,255,255,.85)', fontSize: 13, display: 'flex', gap: 12, alignItems: 'center' }}>
+                <div style={{ marginTop: 14, color: 'rgba(255,255,255,.85)', fontSize:15.5, display: 'flex', gap: 12, alignItems: 'center' }}>
                   <span>{zoomedSnapshot.ts}</span>
                   {zoomedSnapshot.et && <span style={{ color: '#f59e0b' }}>{zoomedSnapshot.et}</span>}
-                  <button onClick={() => setZoomedSnapshot(null)} style={{ padding: '6px 14px', background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.2)', color: '#fff', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
+                  <button onClick={() => setZoomedSnapshot(null)} style={{ padding: '6px 14px', background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.2)', color: '#fff', borderRadius: 6, cursor: 'pointer', fontSize:14.5 }}>
                     <i className="fas fa-times" /> Fermer
                   </button>
                 </div>
@@ -2075,11 +2075,11 @@ export default function ProctorMonitorPage() {
           {/* Header bleu */}
           <div style={{ background: '#3b82f6', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <i className="fas fa-phone" style={{ color: 'white' }} />
-            <span style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>
+            <span style={{ color: 'white', fontWeight: 700, fontSize:18 }}>
               Appel privé — {privateCall?.name}
             </span>
             <button onClick={endPrivateCall}
-              style={{ marginLeft: 'auto', background: 'rgba(239,68,68,.85)', color: 'white', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+              style={{ marginLeft: 'auto', background: 'rgba(239,68,68,.85)', color: 'white', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontWeight: 700, fontSize:15.5 }}>
               <i className="fas fa-phone-slash" /> Terminer
             </button>
           </div>
@@ -2092,26 +2092,26 @@ export default function ProctorMonitorPage() {
               <audio id="private-student-audio" autoPlay style={{ display: 'none' }} />
               <div id="private-student-placeholder" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, color: 'rgba(255,255,255,.25)', pointerEvents: 'none' }}>
                 <i className="fas fa-user" style={{ fontSize: 44 }} />
-                <span style={{ fontSize: 10, letterSpacing: '.06em', textTransform: 'uppercase' }}>Étudiant</span>
+                <span style={{ fontSize:12, letterSpacing: '.06em', textTransform: 'uppercase' }}>Étudiant</span>
               </div>
             </div>
             {/* Contrôles professeur */}
             <div style={{ width: 170, background: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, borderLeft: '1px solid #334155', padding: 12 }}>
-              <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Ma prévisualisation</div>
+              <div style={{ fontSize:12, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Ma prévisualisation</div>
               <div style={{ width: 140, height: 90, borderRadius: 8, background: '#1e293b', overflow: 'hidden', border: '1px solid #334155', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <video id="private-my-preview" autoPlay playsInline muted
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 {!privateCamOn && <i className="fas fa-video-slash" style={{ position: 'absolute', color: 'rgba(255,255,255,.25)', fontSize: 24 }} />}
               </div>
               <button onClick={togglePrivateCam}
-                style={{ width: 140, background: privateCamOn ? 'rgba(37,99,235,.5)' : 'rgba(37,99,235,.2)', color: privateCamOn ? '#bfdbfe' : '#93c5fd', border: `1px solid ${privateCamOn ? 'rgba(37,99,235,.6)' : 'rgba(37,99,235,.3)'}`, borderRadius: 8, padding: 7, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                style={{ width: 140, background: privateCamOn ? 'rgba(37,99,235,.5)' : 'rgba(37,99,235,.2)', color: privateCamOn ? '#bfdbfe' : '#93c5fd', border: `1px solid ${privateCamOn ? 'rgba(37,99,235,.6)' : 'rgba(37,99,235,.3)'}`, borderRadius: 8, padding: 7, cursor: 'pointer', fontSize:13, fontWeight: 600 }}>
                 <i className={`fas ${privateCamOn ? 'fa-video' : 'fa-video-slash'}`} /> {privateCamOn ? 'Caméra on' : 'Caméra'}
               </button>
               <button onClick={togglePrivateMic}
-                style={{ width: 140, background: privateMicOn ? 'rgba(16,185,129,.5)' : 'rgba(16,185,129,.2)', color: privateMicOn ? '#a7f3d0' : '#6ee7b7', border: `1px solid ${privateMicOn ? 'rgba(16,185,129,.6)' : 'rgba(16,185,129,.3)'}`, borderRadius: 8, padding: 7, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                style={{ width: 140, background: privateMicOn ? 'rgba(16,185,129,.5)' : 'rgba(16,185,129,.2)', color: privateMicOn ? '#a7f3d0' : '#6ee7b7', border: `1px solid ${privateMicOn ? 'rgba(16,185,129,.6)' : 'rgba(16,185,129,.3)'}`, borderRadius: 8, padding: 7, cursor: 'pointer', fontSize:13, fontWeight: 600 }}>
                 <i className={`fas ${privateMicOn ? 'fa-microphone' : 'fa-microphone-slash'}`} /> {privateMicOn ? 'Micro on' : 'Micro'}
               </button>
-              <div style={{ fontSize: 10, color: '#64748b', textAlign: 'center', marginTop: 4 }}>{privateStatus}</div>
+              <div style={{ fontSize:12, color: '#64748b', textAlign: 'center', marginTop: 4 }}>{privateStatus}</div>
             </div>
           </div>
           {/* Code de reprise — à générer après vérification d'identité de
@@ -2124,7 +2124,7 @@ export default function ProctorMonitorPage() {
             const studentRow = data?.attempts?.find(s => s.attempt_id === privateCall?.attemptId)
             const hasOtherProctor = !isSurveillant && !!studentRow?.proctor_id
             if (hasOtherProctor) return (
-              <div style={{ padding: '12px 16px', borderTop: '1px solid #334155', background: '#0b1220', fontSize: 12, color: '#94a3b8' }}>
+              <div style={{ padding: '12px 16px', borderTop: '1px solid #334155', background: '#0b1220', fontSize:14.5, color: '#94a3b8' }}>
                 <i className="fas fa-circle-info" style={{ marginRight: 6 }} />
                 Un surveillant ({studentRow?.proctor_name}) est assigné à cet étudiant — seul lui peut générer le code de reprise.
               </div>
@@ -2134,18 +2134,18 @@ export default function ProctorMonitorPage() {
             {accessCode ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
                 <div>
-                  <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>Code de reprise — à communiquer à l'étudiant</div>
-                  <div style={{ fontSize: 26, fontWeight: 800, color: '#fbbf24', letterSpacing: 6 }}>{accessCode.code}</div>
-                  <div style={{ fontSize: 11, color: '#94a3b8' }}>Expire à {new Date(accessCode.expires_at).toLocaleTimeString('fr-FR')} — usage unique</div>
+                  <div style={{ fontSize:12, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>Code de reprise — à communiquer à l'étudiant</div>
+                  <div style={{ fontSize:28.5, fontWeight: 800, color: '#fbbf24', letterSpacing: 6 }}>{accessCode.code}</div>
+                  <div style={{ fontSize:13, color: '#94a3b8' }}>Expire à {new Date(accessCode.expires_at).toLocaleTimeString('fr-FR')} — usage unique</div>
                 </div>
                 <button onClick={generateAccessCode} disabled={generatingCode}
-                  style={{ fontSize: 11, background: 'rgba(255,255,255,.1)', color: 'white', border: 'none', padding: '7px 12px', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
+                  style={{ fontSize:13, background: 'rgba(255,255,255,.1)', color: 'white', border: 'none', padding: '7px 12px', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
                   <i className={`fas ${generatingCode ? 'fa-spinner fa-spin' : 'fa-rotate'}`} /> Régénérer
                 </button>
               </div>
             ) : (
               <button onClick={generateAccessCode} disabled={generatingCode}
-                style={{ width: '100%', background: 'rgba(217,119,6,.25)', color: '#fcd34d', border: '1px solid rgba(217,119,6,.4)', borderRadius: 8, padding: '9px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>
+                style={{ width: '100%', background: 'rgba(217,119,6,.25)', color: '#fcd34d', border: '1px solid rgba(217,119,6,.4)', borderRadius: 8, padding: '9px', cursor: 'pointer', fontWeight: 700, fontSize:14.5 }}>
                 <i className={`fas ${generatingCode ? 'fa-spinner fa-spin' : 'fa-key'}`} /> Générer un code de reprise (après vérification d'identité)
               </button>
             )}
@@ -2160,11 +2160,11 @@ export default function ProctorMonitorPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', zIndex: 9999, padding: 20 }}>
           <div style={{ background: '#1e293b', borderRadius: 14, width: 420, maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 50px rgba(0,0,0,.5)' }}>
             <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontSize: 14, fontWeight: 700 }}>
+              <div style={{ fontSize:17, fontWeight: 700 }}>
                 <i className="fas fa-list-alt" style={{ marginRight: 8, color: '#94a3b8' }} />
                 Logs — {logsPanel.name}
               </div>
-              <button onClick={() => setLogsPanel(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.5)', cursor: 'pointer', fontSize: 16 }}>
+              <button onClick={() => setLogsPanel(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.5)', cursor: 'pointer', fontSize:19 }}>
                 <i className="fas fa-times" />
               </button>
             </div>
@@ -2174,7 +2174,7 @@ export default function ProctorMonitorPage() {
                   <i className="fas fa-spinner fa-spin" style={{ fontSize: 26 }} />
                 </div>
               ) : logsPanel.logs.length === 0 ? (
-                <p style={{ color: 'rgba(255,255,255,.35)', fontSize: 13, textAlign: 'center', padding: 24 }}>Aucun log disponible</p>
+                <p style={{ color: 'rgba(255,255,255,.35)', fontSize:15.5, textAlign: 'center', padding: 24 }}>Aucun log disponible</p>
               ) : logsPanel.logs.map((log: any, i: number) => {
                 const labelMap = EVENT_LABEL_MAP
                 const iconMap: Record<string, { icon: string; color: string }> = {
@@ -2216,14 +2216,14 @@ export default function ProctorMonitorPage() {
                 const label = labelMap[et] || et.replace(/_/g, ' ')
                 const meta  = iconMap[et]  || { icon: 'circle', color: 'rgba(255,255,255,.4)' }
                 return (
-                  <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: 12, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize:14.5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                     <i className={`fas fa-${meta.icon}`} style={{ color: meta.color, marginTop: 2, flexShrink: 0 }} />
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
                         <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{label}</span>
                         <span style={{ color: 'rgba(255,255,255,.3)' }}>{fmtTime(log.created_at || log.timestamp)}</span>
                       </div>
-                      {log.description && <div style={{ color: 'rgba(255,255,255,.5)', fontSize: 11 }}>{log.description}</div>}
+                      {log.description && <div style={{ color: 'rgba(255,255,255,.5)', fontSize:13 }}>{log.description}</div>}
                     </div>
                   </div>
                 )
@@ -2239,11 +2239,11 @@ export default function ProctorMonitorPage() {
 /* ── Helpers styles ────────────────────────────────────────────────────────── */
 const btnSecondary: React.CSSProperties = {
   padding: '8px 16px', background: 'rgba(255,255,255,.1)', color: 'white',
-  border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+  border: 'none', borderRadius: 8, cursor: 'pointer', fontSize:15.5, fontWeight: 600,
 }
 const btnPrimary: React.CSSProperties = {
   padding: '8px 16px', color: 'white', border: 'none', borderRadius: 8,
-  cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6,
+  cursor: 'pointer', fontSize:15.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6,
 }
 
 /* ── Sub-components ──────────────────────────────────────────────────────── */
@@ -2261,7 +2261,7 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
 
 function Pill({ label, icon, dot, color }: { label: string; icon?: string; dot?: string; color?: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', background: color || 'rgba(255,255,255,.12)', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', background: color || 'rgba(255,255,255,.12)', borderRadius: 20, fontSize:13, fontWeight: 600 }}>
       {dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, animation: 'pulse 2s infinite', display: 'inline-block' }} />}
       {icon && <i className={`fas ${icon}`} />}
       {label}
@@ -2279,8 +2279,8 @@ function Section({ title, count, dot, icon, iconColor, badgeBg, badgeColor, chil
         {dot
           ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, display: 'inline-block' }} />
           : <i className={`fas ${icon}`} style={{ color: iconColor, fontSize: 16 }} />}
-        <h3 style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.4)' }}>{title}</h3>
-        <span style={{ background: badgeBg, color: badgeColor, borderRadius: 99, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{count}</span>
+        <h3 style={{ margin: 0, fontSize:13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,.4)' }}>{title}</h3>
+        <span style={{ background: badgeBg, color: badgeColor, borderRadius: 99, padding: '2px 9px', fontSize:13, fontWeight: 700 }}>{count}</span>
       </div>
       <div style={{ overflowX: 'auto', background: 'rgba(255,255,255,.02)', borderRadius: 10, border: '1px solid rgba(255,255,255,.06)' }}>
         {children}
@@ -2305,23 +2305,23 @@ function AgentBanner({ agent, lastCheck, studentsCount }: { agent: AgentStatus |
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, display: 'inline-block', animation: alive ? 'ripple 2s infinite' : 'none' }} />
-          <span style={{ fontSize: 13, fontWeight: 700 }}>Agent IA Autonome</span>
-          <span style={{ background: badgeBg, color: badgeClr, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>{badgeLbl}</span>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.35)' }}>Dernier cycle : {lastCheck}</span>
+          <span style={{ fontSize:15.5, fontWeight: 700 }}>Agent IA Autonome</span>
+          <span style={{ background: badgeBg, color: badgeClr, fontSize:12, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>{badgeLbl}</span>
+          <span style={{ fontSize:13, color: 'rgba(255,255,255,.35)' }}>Dernier cycle : {lastCheck}</span>
         </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)' }}>
+        <div style={{ fontSize:13, color: 'rgba(255,255,255,.4)' }}>
           {alive
             ? `Seuil alerte ≥ ${agent?.risk_alert ?? 60} · Alertes session : ${agent?.exam?.alerts_sent ?? 0}`
             : 'Service agent inactif — redémarrez cei-agent.service'}
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 18, fontSize: 11, color: 'rgba(255,255,255,.4)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: 18, fontSize:13, color: 'rgba(255,255,255,.4)', flexShrink: 0 }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#6ee7b7' }}>{studentsCount}</div>
+          <div style={{ fontSize:19, fontWeight: 700, color: '#6ee7b7' }}>{studentsCount}</div>
           <div>étudiant(s)</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#fbbf24' }}>{agent?.exam?.alerts_sent ?? 0}</div>
+          <div style={{ fontSize:19, fontWeight: 700, color: '#fbbf24' }}>{agent?.exam?.alerts_sent ?? 0}</div>
           <div>alerte(s)</div>
         </div>
       </div>
@@ -2359,7 +2359,7 @@ function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, o
         <div id={`ph-${s.livekit_identity}`}
           style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           <i className="fas fa-video-slash" style={{ fontSize: 29, color: 'rgba(255,255,255,.18)' }} />
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.18)' }}>Flux vidéo</span>
+          <span style={{ fontSize:12, color: 'rgba(255,255,255,.18)' }}>Flux vidéo</span>
         </div>
         <video id={`video-${s.livekit_identity}`} autoPlay playsInline
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'none' }} />
@@ -2368,7 +2368,7 @@ function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, o
         {isBanned && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(239,68,68,.55)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, color: 'white', fontWeight: 700, zIndex: 2 }}>
             <i className="fas fa-ban" style={{ fontSize: 24 }} />EXCLU
-            {s.ban_reason && <span style={{ fontSize: 10, fontWeight: 400, textAlign: 'center', maxWidth: 140 }}>{s.ban_reason}</span>}
+            {s.ban_reason && <span style={{ fontSize:12, fontWeight: 400, textAlign: 'center', maxWidth: 140 }}>{s.ban_reason}</span>}
           </div>
         )}
 
@@ -2376,24 +2376,24 @@ function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, o
         {isSubmitted && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, zIndex: 2 }}>
             <i className="fas fa-check-circle" style={{ fontSize: 33, color: '#10b981' }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#10b981', letterSpacing: '.05em', textTransform: 'uppercase' }}>{statusLabel}</span>
-            {s.submitted_at && <span style={{ fontSize: 10, color: 'rgba(255,255,255,.4)' }}>{fmtTime(s.submitted_at)}</span>}
+            <span style={{ fontSize:13, fontWeight: 700, color: '#10b981', letterSpacing: '.05em', textTransform: 'uppercase' }}>{statusLabel}</span>
+            {s.submitted_at && <span style={{ fontSize:12, color: 'rgba(255,255,255,.4)' }}>{fmtTime(s.submitted_at)}</span>}
           </div>
         )}
 
         {/* Barre top : nom + risque */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '6px 8px', background: 'linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 3 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: 'white', background: 'rgba(0,0,0,.45)', padding: '2px 6px', borderRadius: 4 }}>
+          <span style={{ fontSize:12, fontWeight: 700, color: 'white', background: 'rgba(0,0,0,.45)', padding: '2px 6px', borderRadius: 4 }}>
             {s.student_name.split(' ')[0]}
           </span>
-          <span style={{ fontSize: 10, fontWeight: 700, background: RB[rc], color: RC[rc], padding: '2px 6px', borderRadius: 4 }}>
+          <span style={{ fontSize:12, fontWeight: 700, background: RB[rc], color: RC[rc], padding: '2px 6px', borderRadius: 4 }}>
             {s.risk_score || 0}%
           </span>
         </div>
 
         {/* Badge REC */}
         {recActive && (
-          <div style={{ position: 'absolute', bottom: 6, left: 6, background: 'rgba(239,68,68,.85)', color: 'white', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, zIndex: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+          <div style={{ position: 'absolute', bottom: 6, left: 6, background: 'rgba(239,68,68,.85)', color: 'white', fontSize:11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, zIndex: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'white', display: 'inline-block', animation: 'pulse 1s infinite' }} /> REC
           </div>
         )}
@@ -2401,28 +2401,28 @@ function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, o
 
       {/* Info panneau */}
       <div style={{ padding: '10px 12px' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 1 }}>{s.student_name}</div>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', marginBottom: 8 }}>{s.student_email}</div>
+        <div style={{ fontSize:15.5, fontWeight: 700, color: 'white', marginBottom: 1 }}>{s.student_name}</div>
+        <div style={{ fontSize:12, color: 'rgba(255,255,255,.35)', marginBottom: 8 }}>{s.student_email}</div>
 
         {/* Statut */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 10, background: statusBg, color: statusColor, marginBottom: 8 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize:12, fontWeight: 600, padding: '3px 8px', borderRadius: 10, background: statusBg, color: statusColor, marginBottom: 8 }}>
           <span style={{ width: 5, height: 5, borderRadius: '50%', background: statusColor, display: 'inline-block' }} />{statusLabel}
         </div>
 
         {/* Metrics */}
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
           {s.tab_switches > 0 && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: s.tab_switches > 2 ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.06)', color: s.tab_switches > 2 ? '#f59e0b' : 'rgba(255,255,255,.5)', borderRadius: 5, fontSize: 10 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: s.tab_switches > 2 ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.06)', color: s.tab_switches > 2 ? '#f59e0b' : 'rgba(255,255,255,.5)', borderRadius: 5, fontSize:12 }}>
               <i className="fas fa-exchange-alt" style={{ fontSize: 11 }} />{s.tab_switches} onglets
             </span>
           )}
           {s.warnings_count > 0 && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: 'rgba(239,68,68,.12)', color: '#ef4444', borderRadius: 5, fontSize: 10 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: 'rgba(239,68,68,.12)', color: '#ef4444', borderRadius: 5, fontSize:12 }}>
               <i className="fas fa-exclamation-triangle" style={{ fontSize: 11 }} />{s.warnings_count} alertes
             </span>
           )}
           {s.no_face_count > 0 && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: 'rgba(245,158,11,.12)', color: '#f59e0b', borderRadius: 5, fontSize: 10 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 6px', background: 'rgba(245,158,11,.12)', color: '#f59e0b', borderRadius: 5, fontSize:12 }}>
               <i className="fas fa-user-slash" style={{ fontSize: 11 }} />{s.no_face_count} hors champ
             </span>
           )}
@@ -2475,7 +2475,7 @@ function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, o
               </button>
             </>
           ) : (
-            <span style={{ fontSize: 10, color: '#fca5a5' }}>
+            <span style={{ fontSize:12, color: '#fca5a5' }}>
               <i className="fas fa-ban" style={{ marginRight: 4 }} />{s.ban_reason || 'Exclu'}
             </span>
           )}

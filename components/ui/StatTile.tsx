@@ -18,8 +18,8 @@ export default function StatTile({ icon, label, value, color }: Props) {
         <i className={`fa-solid ${icon}`} style={{ color, fontSize: 22 }} />
       </div>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', lineHeight: 1.15 }}>{value}</div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500, marginTop: 2 }}>{label}</div>
+        <div style={{ fontSize:26.5, fontWeight: 700, color: 'var(--text)', lineHeight: 1.15 }}>{value}</div>
+        <div style={{ fontSize:14.5, color: 'var(--text-muted)', fontWeight: 500, marginTop: 2 }}>{label}</div>
       </div>
     </div>
   )

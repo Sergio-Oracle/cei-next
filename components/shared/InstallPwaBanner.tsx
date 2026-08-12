@@ -50,7 +50,7 @@ export default function InstallPwaBanner() {
       flexWrap:       'wrap',
       alignItems:     'center',
       gap:            '12px',
-      fontSize:       '13.5px',
+      fontSize: '16px',
       color:          'var(--text)',
     }}>
       <i className="fas fa-mobile-alt" style={{ color: 'var(--primary)', fontSize: 19, flexShrink: 0 }} />
@@ -61,7 +61,7 @@ export default function InstallPwaBanner() {
           <button onClick={promptInstall}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8,
               background: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer',
-              fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+              fontSize:15.5, fontWeight: 600, flexShrink: 0 }}>
             <i className="fas fa-download" style={{ fontSize: 14 }} />
             Installer
           </button>

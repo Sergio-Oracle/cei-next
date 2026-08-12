@@ -149,21 +149,21 @@ export default function ProfessorNotificationsPage() {
       {/* En-tête */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h1 style={{ fontSize:24, fontWeight: 800, color: '#0f172a', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <i className="fas fa-bell" style={{ color: '#2563eb' }} />
             Notifications d'Incidents
           </h1>
-          <p style={{ color: '#64748b', margin: 0, fontSize: 14 }}>Incidents détectés lors de vos examens dans les dernières 24h</p>
+          <p style={{ color: '#64748b', margin: 0, fontSize:17 }}>Incidents détectés lors de vos examens dans les dernières 24h</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {visible.length > 0 && (
             <button onClick={dismissAll} disabled={clearingAll}
-              style={{ padding: '9px 16px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 600, cursor: clearingAll ? 'not-allowed' : 'pointer', fontSize: 13 }}>
+              style={{ padding: '9px 16px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 600, cursor: clearingAll ? 'not-allowed' : 'pointer', fontSize:15.5 }}>
               {clearingAll ? <i className="fas fa-spinner fa-spin" style={{ marginRight: 6 }} /> : <i className="fas fa-check-double" style={{ marginRight: 6 }} />}
               Tout marquer comme lu
             </button>
           )}
-          <button onClick={load} style={{ padding: '9px 16px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
+          <button onClick={load} style={{ padding: '9px 16px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize:15.5 }}>
             <i className="fas fa-rotate-right" style={{ marginRight: 6 }} />Actualiser
           </button>
         </div>
@@ -181,8 +181,8 @@ export default function ProfessorNotificationsPage() {
               <i className={`fas ${icon}`} style={{ color, fontSize: 24 }} />
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{value}</p>
-              <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>{label}</p>
+              <p style={{ margin: 0, fontSize:26.5, fontWeight: 800, color: '#0f172a' }}>{value}</p>
+              <p style={{ margin: 0, fontSize:14.5, color: '#64748b' }}>{label}</p>
             </div>
           </div>
         ))}
@@ -190,7 +190,7 @@ export default function ProfessorNotificationsPage() {
 
       {/* Filtres */}
       <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 18px', marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginRight: 4 }}>Filtrer :</span>
+        <span style={{ fontSize:15.5, fontWeight: 600, color: '#475569', marginRight: 4 }}>Filtrer :</span>
         {([
           ['all',    'Tous',    '#0f172a', 'white',   '#f1f5f9'],
           ['high',   'Haute',   '#dc2626', '#fee2e2', '#f1f5f9'],
@@ -201,12 +201,12 @@ export default function ProfessorNotificationsPage() {
           const isActive = filterSeverity === val
           return (
             <button key={val} onClick={() => setFilterSeverity(val as any)}
-              style={{ padding: '6px 14px', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 12,
+              style={{ padding: '6px 14px', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize:14.5,
                 background: isActive ? (val === 'all' ? '#0f172a' : activeBg) : '#f1f5f9',
                 color:      isActive ? (val === 'all' ? 'white'   : activeColor) : '#475569' }}>
               {label}
               {count !== null && (
-                <span style={{ marginLeft: 6, background: isActive ? activeColor : '#e2e8f0', color: isActive ? 'white' : '#64748b', borderRadius: 99, padding: '1px 7px', fontSize: 11 }}>
+                <span style={{ marginLeft: 6, background: isActive ? activeColor : '#e2e8f0', color: isActive ? 'white' : '#64748b', borderRadius: 99, padding: '1px 7px', fontSize:13 }}>
                   {count}
                 </span>
               )}
@@ -227,8 +227,8 @@ export default function ProfessorNotificationsPage() {
             {incidents.length === 0 ? (
               <>
                 <i className="fas fa-check-circle" style={{ fontSize: 48, color: '#10b981', display: 'block', marginBottom: 14 }} />
-                <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: 16, color: '#059669' }}>Aucun incident détecté</p>
-                <p style={{ margin: 0, fontSize: 13 }}>Tout va bien — aucune anomalie dans les dernières 24h.</p>
+                <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize:19, color: '#059669' }}>Aucun incident détecté</p>
+                <p style={{ margin: 0, fontSize:15.5 }}>Tout va bien — aucune anomalie dans les dernières 24h.</p>
               </>
             ) : (
               <>
@@ -243,7 +243,7 @@ export default function ProfessorNotificationsPage() {
               <thead>
                 <tr style={{ background: '#f8fafc' }}>
                   {['Quand', 'Examen', 'Étudiant', 'Type d\'incident', ...(hasSnapshots ? ['Capture'] : []), 'Sévérité', ''].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize:14.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -259,33 +259,33 @@ export default function ProfessorNotificationsPage() {
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = idx % 2 === 0 ? 'white' : '#fafafa' }}>
 
                       {/* Quand */}
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#64748b', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '12px 16px', fontSize:15.5, color: '#64748b', whiteSpace: 'nowrap' }}>
                         <i className="fas fa-clock" style={{ marginRight: 6 }} />
                         {timeAgo(inc.timestamp)}
                       </td>
 
                       {/* Examen */}
-                      <td style={{ padding: '12px 16px', fontWeight: 600, color: '#0f172a', fontSize: 13 }}>
+                      <td style={{ padding: '12px 16px', fontWeight: 600, color: '#0f172a', fontSize:15.5 }}>
                         {inc.exam_title ? (
                           <><i className="fas fa-laptop-code" style={{ color: '#2563eb', marginRight: 7 }} />{inc.exam_title}</>
                         ) : (
-                          <span style={{ color: '#94a3b8', fontSize: 12 }}>—</span>
+                          <span style={{ color: '#94a3b8', fontSize:14.5 }}>—</span>
                         )}
                       </td>
 
                       {/* Étudiant */}
-                      <td style={{ padding: '12px 16px', color: '#334155', fontSize: 13 }}>
+                      <td style={{ padding: '12px 16px', color: '#334155', fontSize:15.5 }}>
                         {inc.student_name ? (
                           <><i className="fas fa-user" style={{ color: '#94a3b8', marginRight: 7 }} />{inc.student_name}</>
                         ) : (
-                          <span style={{ color: '#94a3b8', fontSize: 12 }}>—</span>
+                          <span style={{ color: '#94a3b8', fontSize:14.5 }}>—</span>
                         )}
                       </td>
 
                       {/* Type d'incident */}
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#334155' }}>
+                      <td style={{ padding: '12px 16px', fontSize:15.5, color: '#334155' }}>
                         {isInfo && inc.details ? (
-                          <span title={inc.details}>{label} <span style={{ color: '#94a3b8', fontSize: 11 }}>— {inc.details}</span></span>
+                          <span title={inc.details}>{label} <span style={{ color: '#94a3b8', fontSize:13 }}>— {inc.details}</span></span>
                         ) : label}
                       </td>
 
@@ -303,14 +303,14 @@ export default function ProfessorNotificationsPage() {
                               />
                             </button>
                           ) : (
-                            <span style={{ color: '#cbd5e1', fontSize: 18 }}><i className="fas fa-image" /></span>
+                            <span style={{ color: '#cbd5e1', fontSize:21.5 }}><i className="fas fa-image" /></span>
                           )}
                         </td>
                       )}
 
                       {/* Sévérité */}
                       <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                        <span style={{ background: sev.bg, color: sev.color, borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ background: sev.bg, color: sev.color, borderRadius: 99, padding: '4px 12px', fontSize:14.5, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           <i className={`fas ${sev.icon}`} style={{ fontSize: 13 }} />
                           {sev.label}
                         </span>
@@ -320,7 +320,7 @@ export default function ProfessorNotificationsPage() {
                       <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
                         <button onClick={() => dismiss(inc.id)} disabled={dismissing === String(inc.id)}
                           title="Supprimer cette notification"
-                          style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: dismissing === String(inc.id) ? 'not-allowed' : 'pointer', padding: 6, borderRadius: 6, fontSize: 13 }}
+                          style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: dismissing === String(inc.id) ? 'not-allowed' : 'pointer', padding: 6, borderRadius: 6, fontSize:15.5 }}
                           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ef4444'; (e.currentTarget as HTMLElement).style.background = '#fef2f2' }}
                           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#94a3b8'; (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
                           <i className={`fas ${dismissing === String(inc.id) ? 'fa-spinner fa-spin' : 'fa-times'}`} />
@@ -336,11 +336,11 @@ export default function ProfessorNotificationsPage() {
 
         {!loading && visible.length > 0 && (
           <div style={{ padding: '12px 18px', borderTop: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>
+            <p style={{ margin: 0, fontSize:15.5, color: '#64748b' }}>
               <i className="fas fa-table" style={{ marginRight: 6 }} />
               {visible.length} incident(s) affiché(s)
             </p>
-            <p style={{ margin: 0, fontSize: 12, color: '#94a3b8' }}>Mis à jour toutes les minutes</p>
+            <p style={{ margin: 0, fontSize:14.5, color: '#94a3b8' }}>Mis à jour toutes les minutes</p>
           </div>
         )}
       </div>
@@ -352,7 +352,7 @@ export default function ProfessorNotificationsPage() {
           <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
             <img src={lightboxSrc} alt="Capture caméra" style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 10, objectFit: 'contain', boxShadow: '0 20px 60px rgba(0,0,0,.6)' }} />
             <button onClick={() => setLightboxSrc(null)}
-              style={{ position: 'absolute', top: -14, right: -14, width: 30, height: 30, borderRadius: '50%', background: '#ef4444', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              style={{ position: 'absolute', top: -14, right: -14, width: 30, height: 30, borderRadius: '50%', background: '#ef4444', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize:17, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <i className="fas fa-times" />
             </button>
           </div>

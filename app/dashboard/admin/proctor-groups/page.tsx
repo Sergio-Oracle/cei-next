@@ -200,7 +200,7 @@ export default function ProctorGroupsPage() {
       {/* Création */}
       <div className="card" style={{ padding: 20, marginBottom: 20, display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 240 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Nouveau groupe</label>
+          <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 6 }}>Nouveau groupe</label>
           <input className="form-control" value={newName} onChange={e => setNewName(e.target.value)}
             placeholder="Ex : Surveillants Informatique L1" onKeyDown={e => e.key === 'Enter' && createGroup()} />
         </div>
@@ -224,24 +224,24 @@ export default function ProctorGroupsPage() {
             <div key={g.id} className="card" style={{ padding: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{g.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Créé par {g.created_by || '—'}</div>
-                  <div style={{ fontSize: 12, color: g.supervisors.length > 0 ? '#0891b2' : 'var(--text-muted)' }}>
+                  <div style={{ fontWeight: 700, fontSize:18 }}>{g.name}</div>
+                  <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>Créé par {g.created_by || '—'}</div>
+                  <div style={{ fontSize:14.5, color: g.supervisors.length > 0 ? '#0891b2' : 'var(--text-muted)' }}>
                     <i className="fas fa-user-shield" style={{ marginRight: 4 }} />
                     {g.supervisors.length > 0 ? g.supervisors.map(s => s.supervisor_name).join(', ') : 'Aucun superviseur'}
                   </div>
                 </div>
                 <button onClick={() => deleteGroup(g)} title="Supprimer"
-                  style={{ background: '#fef2f2', border: 'none', color: '#ef4444', padding: '5px 9px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
+                  style={{ background: '#fef2f2', border: 'none', color: '#ef4444', padding: '5px 9px', borderRadius: 6, cursor: 'pointer', fontSize:14.5 }}>
                   <i className="fas fa-trash" />
                 </button>
               </div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-                <span className="status-badge secondary" style={{ fontSize: 11 }}><i className="fas fa-users" /> {g.members.length} surveillant(s)</span>
-                <span className="status-badge secondary" style={{ fontSize: 11 }}><i className="fas fa-book" /> {g.ec_ids.length} EC</span>
-                <span className="status-badge secondary" style={{ fontSize: 11 }}><i className="fas fa-shield-halved" /> Vigilance {g.vigilance_level || 'A'}</span>
+                <span className="status-badge secondary" style={{ fontSize:13 }}><i className="fas fa-users" /> {g.members.length} surveillant(s)</span>
+                <span className="status-badge secondary" style={{ fontSize:13 }}><i className="fas fa-book" /> {g.ec_ids.length} EC</span>
+                <span className="status-badge secondary" style={{ fontSize:13 }}><i className="fas fa-shield-halved" /> Vigilance {g.vigilance_level || 'A'}</span>
               </div>
-              <button className="btn btn-secondary" style={{ width: '100%', fontSize: 13 }} onClick={() => openManage(g)}>
+              <button className="btn btn-secondary" style={{ width: '100%', fontSize:15.5 }} onClick={() => openManage(g)}>
                 <i className="fas fa-gear" /> Gérer
               </button>
             </div>
@@ -259,7 +259,7 @@ export default function ProctorGroupsPage() {
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <i className="fas fa-user-shield" style={{ color: 'var(--primary)' }} /> {manageGroup.name}
               </h3>
-              <button onClick={() => setManageGroup(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize: 17, cursor: 'pointer', color: 'var(--text-muted)' }}>
+              <button onClick={() => setManageGroup(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize:20.5, cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <i className="fas fa-times" />
               </button>
             </div>
@@ -267,21 +267,21 @@ export default function ProctorGroupsPage() {
             <div style={{ overflowY: 'auto', flex: 1, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
               {/* Superviseurs actuels */}
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                   Superviseurs ({manageGroup.supervisors.length})
                 </div>
                 {manageGroup.supervisors.length === 0 ? (
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Aucun superviseur pour l'instant</p>
+                  <p style={{ fontSize:15.5, color: 'var(--text-muted)' }}>Aucun superviseur pour l'instant</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {manageGroup.supervisors.map(s => (
                       <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--background)', borderRadius: 8, border: '1px solid var(--border)' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{s.supervisor_name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.supervisor_email}</div>
+                          <div style={{ fontWeight: 600, fontSize:15.5 }}>{s.supervisor_name}</div>
+                          <div style={{ fontSize:13, color: 'var(--text-muted)' }}>{s.supervisor_email}</div>
                         </div>
                         <button onClick={() => removeSupervisor(s)} title="Retirer"
-                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 13 }}>
+                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize:15.5 }}>
                           <i className="fas fa-times" />
                         </button>
                       </div>
@@ -294,8 +294,8 @@ export default function ProctorGroupsPage() {
               {availableSuperviseurs.length > 0 && (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ajouter des superviseurs</div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>
+                    <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ajouter des superviseurs</div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:14.5, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>
                       <input type="checkbox"
                         checked={availableSuperviseurs.length > 0 && availableSuperviseurs.every(s => supervisorSelected.has(s.id))}
                         onChange={e => setSupervisorSelected(e.target.checked ? new Set(availableSuperviseurs.map(s => s.id)) : new Set())}
@@ -309,46 +309,46 @@ export default function ProctorGroupsPage() {
                         <input type="checkbox" checked={supervisorSelected.has(s.id)} onChange={() => toggleSupervisorSel(s.id)}
                           style={{ width: 15, height: 15, accentColor: 'var(--primary)' }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 500 }}>{s.full_name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.email}</div>
+                          <div style={{ fontSize:15.5, fontWeight: 500 }}>{s.full_name}</div>
+                          <div style={{ fontSize:13, color: 'var(--text-muted)' }}>{s.email}</div>
                         </div>
                       </label>
                     ))}
                   </div>
-                  <button className="btn btn-primary" style={{ fontSize: 13 }} onClick={addSupervisors} disabled={addingSupervisors}
+                  <button className="btn btn-primary" style={{ fontSize:15.5 }} onClick={addSupervisors} disabled={addingSupervisors}
                     title={supervisorSelected.size === 0 ? 'Cochez au moins un superviseur' : undefined}>
                     <i className={`fas ${addingSupervisors ? 'fa-spinner fa-spin' : 'fa-user-plus'}`} /> Ajouter ({supervisorSelected.size})
                   </button>
                 </div>
               )}
               {superviseurs.length === 0 && (
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '-12px 0 0' }}>
+                <p style={{ fontSize:14.5, color: 'var(--text-muted)', margin: '-12px 0 0' }}>
                   Aucun compte superviseur — créez-en un depuis « Utilisateurs ».
                 </p>
               )}
 
               {/* Niveau de vigilance */}
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                   Niveau de vigilance
                 </div>
                 <select value={manageGroup.vigilance_level || 'A'} disabled={assigningVigilance}
                   onChange={e => assignVigilance(e.target.value as 'A' | 'B' | 'C')}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13 }}>
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize:15.5 }}>
                   {(['A', 'B', 'C'] as const).map(l => <option key={l} value={l}>{VIGILANCE_META[l].label}</option>)}
                 </select>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '6px 0 0' }}>
+                <p style={{ fontSize:14.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
                   {VIGILANCE_META[manageGroup.vigilance_level || 'A'].hint}
                 </p>
               </div>
 
               {/* Membres actuels */}
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                   Membres ({manageGroup.members.length})
                 </div>
                 {manageGroup.members.length === 0 ? (
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Aucun membre pour l'instant</p>
+                  <p style={{ fontSize:15.5, color: 'var(--text-muted)' }}>Aucun membre pour l'instant</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {manageGroup.members.map(m => {
@@ -356,12 +356,12 @@ export default function ProctorGroupsPage() {
                       return (
                         <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--background)', borderRadius: 8, border: '1px solid var(--border)' }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 600, fontSize: 13 }}>{m.proctor_name}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{m.proctor_email}</div>
+                            <div style={{ fontWeight: 600, fontSize:15.5 }}>{m.proctor_name}</div>
+                            <div style={{ fontSize:13, color: 'var(--text-muted)' }}>{m.proctor_email}</div>
                           </div>
-                          <span style={{ fontSize: 11, color: seen.color, whiteSpace: 'nowrap' }}><i className="fas fa-circle" style={{ fontSize: 8, marginRight: 4 }} />{seen.text}</span>
+                          <span style={{ fontSize:13, color: seen.color, whiteSpace: 'nowrap' }}><i className="fas fa-circle" style={{ fontSize: 8, marginRight: 4 }} />{seen.text}</span>
                           <button onClick={() => removeMember(m)} title="Retirer"
-                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 13 }}>
+                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize:15.5 }}>
                             <i className="fas fa-times" />
                           </button>
                         </div>
@@ -375,8 +375,8 @@ export default function ProctorGroupsPage() {
               {availableSurveillants.length > 0 && (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ajouter des surveillants</div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>
+                    <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ajouter des surveillants</div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:14.5, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>
                       <input type="checkbox"
                         checked={availableSurveillants.length > 0 && availableSurveillants.every(s => memberSelected.has(s.id))}
                         onChange={e => setMemberSelected(e.target.checked ? new Set(availableSurveillants.map(s => s.id)) : new Set())}
@@ -390,13 +390,13 @@ export default function ProctorGroupsPage() {
                         <input type="checkbox" checked={memberSelected.has(s.id)} onChange={() => toggleMemberSel(s.id)}
                           style={{ width: 15, height: 15, accentColor: 'var(--primary)' }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 500 }}>{s.full_name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.email}</div>
+                          <div style={{ fontSize:15.5, fontWeight: 500 }}>{s.full_name}</div>
+                          <div style={{ fontSize:13, color: 'var(--text-muted)' }}>{s.email}</div>
                         </div>
                       </label>
                     ))}
                   </div>
-                  <button className="btn btn-primary" style={{ fontSize: 13 }} onClick={addMembers} disabled={addingMembers}
+                  <button className="btn btn-primary" style={{ fontSize:15.5 }} onClick={addMembers} disabled={addingMembers}
                     title={memberSelected.size === 0 ? 'Cochez au moins un surveillant' : undefined}>
                     <i className={`fas ${addingMembers ? 'fa-spinner fa-spin' : 'fa-user-plus'}`} /> Ajouter ({memberSelected.size})
                   </button>
@@ -405,28 +405,28 @@ export default function ProctorGroupsPage() {
 
               {/* ECs rattachés */}
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                   ECs rattachés ({manageGroup.ec_ids.length})
                 </div>
                 {manageGroup.ec_ids.length === 0 ? (
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Aucun EC rattaché — le groupe ne sera pas auto-affecté</p>
+                  <p style={{ fontSize:15.5, color: 'var(--text-muted)' }}>Aucun EC rattaché — le groupe ne sera pas auto-affecté</p>
                 ) : (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
                     {manageGroup.ec_ids.map(ecId => (
-                      <span key={ecId} className="status-badge secondary" style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <span key={ecId} className="status-badge secondary" style={{ fontSize:13, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         {ecName(ecId)}
-                        <button onClick={() => unlinkEc(ecId)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 11 }}><i className="fas fa-times" /></button>
+                        <button onClick={() => unlinkEc(ecId)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize:13 }}><i className="fas fa-times" /></button>
                       </span>
                     ))}
                   </div>
                 )}
                 {availableEcs.length > 0 && (
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <select className="form-control" value={ecToLink} onChange={e => setEcToLink(e.target.value)} style={{ flex: 1, fontSize: 13 }}>
+                    <select className="form-control" value={ecToLink} onChange={e => setEcToLink(e.target.value)} style={{ flex: 1, fontSize:15.5 }}>
                       <option value="">— Sélectionner un EC —</option>
                       {availableEcs.map(e => <option key={e.id} value={e.id}>{e.code} — {e.name}</option>)}
                     </select>
-                    <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={linkEc} disabled={linkingEc}
+                    <button className="btn btn-secondary" style={{ fontSize:15.5 }} onClick={linkEc} disabled={linkingEc}
                       title={!ecToLink ? 'Sélectionnez un EC' : undefined}>
                       <i className={`fas ${linkingEc ? 'fa-spinner fa-spin' : 'fa-link'}`} /> Rattacher
                     </button>

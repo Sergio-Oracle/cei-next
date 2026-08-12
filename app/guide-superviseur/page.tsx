@@ -125,7 +125,7 @@ export default function GuideSuperviseur() {
           <div className="section-header"><div className="section-icon"><i className="fas fa-circle-info" /></div><h2>5. Ce que vous ne gérez pas</h2></div>
           <div className="section-body">
             <p style={{color:'#475569'}}>Pour rester cohérent avec votre rôle de supervision d&apos;équipe (et non de surveillance directe des étudiants), certaines actions restent réservées aux surveillants, enseignants ou administrateurs :</p>
-            <ul style={{marginTop:12,paddingLeft:20,color:'#475569',fontSize:14,lineHeight:1.8}}>
+            <ul style={{marginTop:12,paddingLeft:20,color:'#475569',fontSize:17,lineHeight:1.8}}>
               <li>Vous ne voyez pas les flux caméra des étudiants pendant l&apos;examen.</li>
               <li>Vous ne pouvez pas bannir un étudiant ni lui envoyer d&apos;avertissement.</li>
               <li>Vous ne pouvez générer un code de reprise que si <strong>aucun surveillant</strong> n&apos;est assigné à l&apos;étudiant concerné — sinon, c&apos;est au surveillant assigné de le faire.</li>
@@ -138,8 +138,8 @@ export default function GuideSuperviseur() {
 
       <footer className="doc-footer">
         <p>Centre d&apos;Examen Intelligent — <a href="/">Retour à l&apos;accueil</a> · <a href="/guide-enseignant">Guide Enseignant</a> · <a href="/guide-surveillant">Guide Surveillant</a> · <a href="/guide-etudiant">Guide Étudiant</a> · <a href="/conditions">Conditions d&apos;Utilisation</a></p>
-        <p style={{marginTop:16,fontSize:12,opacity:.8,fontWeight:600}}>Contact</p>
-        <p style={{marginTop:6,fontSize:12,opacity:.6}}><i className="fas fa-map-marker-alt" /> Cité du Savoir – Diamniadio, Castors, avenue Bourguiba, rue n°13<br /><i className="fas fa-phone" /> +221 30 108 41 53<br /><i className="fas fa-envelope" /> visioplus@unchk.edu.sn</p>
+        <p style={{marginTop:16,fontSize:14.5,opacity:.8,fontWeight:600}}>Contact</p>
+        <p style={{marginTop:6,fontSize:14.5,opacity:.6}}><i className="fas fa-map-marker-alt" /> Cité du Savoir – Diamniadio, Castors, avenue Bourguiba, rue n°13<br /><i className="fas fa-phone" /> +221 30 108 41 53<br /><i className="fas fa-envelope" /> visioplus@unchk.edu.sn</p>
         <p style={{marginTop:12,opacity:.6}}>© 2026 CEI — Université Cheikh Hamidou Kane (UNCHK)</p>
       </footer>
     </>

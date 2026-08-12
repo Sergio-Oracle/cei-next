@@ -32,7 +32,7 @@ const STATUS_META: Record<ExamStatus, { label: string; color: string; bg: string
 function StatusBadge({ status }: { status: ExamStatus }) {
   const m = STATUS_META[status] ?? STATUS_META.draft
   return (
-    <span style={{ background: m.bg, color: m.color, border: `1px solid ${m.border}`, borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>
+    <span style={{ background: m.bg, color: m.color, border: `1px solid ${m.border}`, borderRadius: 99, padding: '3px 10px', fontSize:13, fontWeight: 700 }}>
       {m.label}
     </span>
   )
@@ -40,7 +40,7 @@ function StatusBadge({ status }: { status: ExamStatus }) {
 
 function SecPill({ icon, value, title, color = '#64748b', bg = '#f1f5f9' }: { icon: string; value: string | number; title?: string; color?: string; bg?: string }) {
   return (
-    <span title={title} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: bg, color, border: `1px solid ${color}20`, borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
+    <span title={title} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: bg, color, border: `1px solid ${color}20`, borderRadius: 99, padding: '2px 8px', fontSize:13, fontWeight: 600 }}>
       <i className={`fas ${icon}`} style={{ fontSize: 11 }} />{value}
     </span>
   )
@@ -149,7 +149,7 @@ export default function AdminExamsPage() {
           </div>
           <div>
             <h2 style={{ margin: 0 }}>Examens en Ligne</h2>
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>Créez et gérez des examens avec surveillance anti-triche</p>
+            <p style={{ margin: 0, fontSize:15.5, color: 'var(--text-muted)' }}>Créez et gérez des examens avec surveillance anti-triche</p>
           </div>
         </div>
         <Link href="/dashboard/admin/exams/new" className="btn btn-primary">
@@ -170,8 +170,8 @@ export default function AdminExamsPage() {
               <i className={`fas ${s.icon}`} style={{ color: s.color, fontSize: 22 }} />
             </div>
             <div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: 12, color: s.color, fontWeight: 600, marginTop: 4, opacity: .8 }}>{s.label}</div>
+              <div style={{ fontSize:31, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize:14.5, color: s.color, fontWeight: 600, marginTop: 4, opacity: .8 }}>{s.label}</div>
             </div>
           </div>
         ))}
@@ -194,8 +194,8 @@ export default function AdminExamsPage() {
           <div style={{ width: 64, height: 64, background: '#eff6ff', borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <i className="fas fa-desktop" style={{ fontSize: 31, color: 'var(--primary)' }} />
           </div>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Aucun examen créé</div>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>Créez votre premier examen en ligne avec surveillance IA</div>
+          <div style={{ fontWeight: 700, fontSize:19, marginBottom: 8 }}>Aucun examen créé</div>
+          <div style={{ fontSize:15.5, color: 'var(--text-muted)', marginBottom: 24 }}>Créez votre premier examen en ligne avec surveillance IA</div>
           <Link href="/dashboard/admin/exams/new" className="btn btn-primary">
             <i className="fas fa-plus" /> Créer un Examen
           </Link>
@@ -218,7 +218,7 @@ export default function AdminExamsPage() {
                 {/* Card top */}
                 <div style={{ padding: '16px 18px 12px', flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.4, flex: 1 }}>{exam.title}</div>
+                    <div style={{ fontWeight: 700, fontSize:18, lineHeight: 1.4, flex: 1 }}>{exam.title}</div>
                     <StatusBadge status={exam.status as ExamStatus} />
                   </div>
 
@@ -226,7 +226,7 @@ export default function AdminExamsPage() {
                   {exam.subject_title && (
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 6 }}>
                       <i className="fas fa-book" style={{ color: 'var(--primary)', fontSize: 13, marginTop: 3, flexShrink: 0 }} />
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.4 }}>{exam.subject_title}</span>
+                      <span style={{ fontSize:14.5, color: 'var(--text-muted)', lineHeight: 1.4 }}>{exam.subject_title}</span>
                     </div>
                   )}
 
@@ -234,23 +234,23 @@ export default function AdminExamsPage() {
                   {exam.creator_name && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                       <i className="fas fa-user-tie" style={{ color: 'var(--text-muted)', fontSize: 13 }} />
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{exam.creator_name}</span>
+                      <span style={{ fontSize:14.5, color: 'var(--text-muted)' }}>{exam.creator_name}</span>
                     </div>
                   )}
 
                   {/* Dates + durée */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize:14.5 }}>
                         <i className="fas fa-play" style={{ color: '#10b981', fontSize: 11 }} />
                         <span style={{ color: 'var(--text)' }}>{exam.start_time ? fmtDate(exam.start_time) : '—'}</span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize:14.5 }}>
                         <i className="fas fa-stop" style={{ color: '#ef4444', fontSize: 11 }} />
                         <span style={{ color: 'var(--text)' }}>{exam.end_time ? fmtDate(exam.end_time) : '—'}</span>
                       </div>
                     </div>
-                    <div style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 99, padding: '4px 12px', fontSize: 13, fontWeight: 800, color: 'var(--primary)', flexShrink: 0 }}>
+                    <div style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 99, padding: '4px 12px', fontSize:15.5, fontWeight: 800, color: 'var(--primary)', flexShrink: 0 }}>
                       {fmtDuration(exam.duration_minutes)}
                     </div>
                   </div>
@@ -273,14 +273,14 @@ export default function AdminExamsPage() {
                 <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border)', display: 'flex', gap: 6, flexWrap: 'wrap', background: 'var(--background)' }}>
                   {/* Détails — toujours présent */}
                   <button onClick={() => setDetailExam(exam)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, fontWeight: 600, color: 'var(--text)', cursor: 'pointer' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: 'var(--text)', cursor: 'pointer' }}>
                     <i className="fas fa-eye" />Détails
                   </button>
 
                   {/* Copies (clôturé uniquement) */}
                   {isClosed && (
                     <button onClick={() => { setCopiesExamId(exam.id); setCopiesTitle(exam.title) }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, fontSize: 12, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>
                       <i className="fas fa-file-lines" />Copies
                     </button>
                   )}
@@ -288,7 +288,7 @@ export default function AdminExamsPage() {
                   {/* Activer (brouillon ou planifié) */}
                   {(isDraft || isScheduled) && (
                     <button onClick={() => activate(exam.id)} disabled={busy}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: 12, fontWeight: 700, color: '#059669', cursor: busy ? 'not-allowed' : 'pointer' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontSize:14.5, fontWeight: 700, color: '#059669', cursor: busy ? 'not-allowed' : 'pointer' }}>
                       {busy ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-play" />}Activer
                     </button>
                   )}
@@ -296,7 +296,7 @@ export default function AdminExamsPage() {
                   {/* Rallonger (actif ou planifié) */}
                   {(isActive || isScheduled) && (
                     <button onClick={() => { setExtendId(exam.id); setExtendMin('15') }} disabled={busy}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#92400e', cursor: busy ? 'not-allowed' : 'pointer' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: '#92400e', cursor: busy ? 'not-allowed' : 'pointer' }}>
                       <i className="fas fa-clock" />Rallonger
                     </button>
                   )}
@@ -304,7 +304,7 @@ export default function AdminExamsPage() {
                   {/* Clôturer (actif) */}
                   {isActive && (
                     <button onClick={() => closeExam(exam.id)} disabled={busy}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#dc2626', cursor: busy ? 'not-allowed' : 'pointer' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: '#dc2626', cursor: busy ? 'not-allowed' : 'pointer' }}>
                       <i className="fas fa-flag-checkered" />Clôturer
                     </button>
                   )}
@@ -312,7 +312,7 @@ export default function AdminExamsPage() {
                   {/* Éditer (brouillon ou planifié) */}
                   {(isDraft || isScheduled) && (
                     <Link href={`/dashboard/admin/exams/${exam.id}?tab=edit`}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>
                       <i className="fas fa-pencil" />Éditer
                     </Link>
                   )}
@@ -339,28 +339,28 @@ export default function AdminExamsPage() {
                 <i className="fas fa-clock" style={{ color: '#d97706' }} />
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Rallonger l'examen</h3>
-                <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>Ajouter du temps supplémentaire</p>
+                <h3 style={{ margin: 0, fontSize:18, fontWeight: 700 }}>Rallonger l'examen</h3>
+                <p style={{ margin: 0, fontSize:14.5, color: 'var(--text-muted)' }}>Ajouter du temps supplémentaire</p>
               </div>
-              <button onClick={() => setExtendId(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize: 17, cursor: 'pointer', color: 'var(--text-muted)' }}>
+              <button onClick={() => setExtendId(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize:20.5, cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <i className="fas fa-times" />
               </button>
             </div>
             <div style={{ padding: '20px 22px' }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+              <label style={{ display: 'block', fontSize:15.5, fontWeight: 600, marginBottom: 8 }}>
                 <i className="fas fa-plus-circle" style={{ color: 'var(--primary)', marginRight: 6 }} />
                 Durée supplémentaire (minutes)
               </label>
               <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                 {[5, 10, 15, 30].map(v => (
                   <button key={v} onClick={() => setExtendMin(String(v))}
-                    style={{ flex: 1, padding: '8px 0', border: `1.5px solid ${extendMin === String(v) ? 'var(--primary)' : 'var(--border)'}`, borderRadius: 8, background: extendMin === String(v) ? '#eff6ff' : 'var(--surface)', color: extendMin === String(v) ? 'var(--primary)' : 'var(--text)', fontWeight: extendMin === String(v) ? 700 : 400, fontSize: 13, cursor: 'pointer' }}>
+                    style={{ flex: 1, padding: '8px 0', border: `1.5px solid ${extendMin === String(v) ? 'var(--primary)' : 'var(--border)'}`, borderRadius: 8, background: extendMin === String(v) ? '#eff6ff' : 'var(--surface)', color: extendMin === String(v) ? 'var(--primary)' : 'var(--text)', fontWeight: extendMin === String(v) ? 700 : 400, fontSize:15.5, cursor: 'pointer' }}>
                     {v} min
                   </button>
                 ))}
               </div>
               <input type="number" min={1} max={300} value={extendMin} onChange={e => setExtendMin(e.target.value)}
-                className="form-control" style={{ fontSize: 16, fontWeight: 700, textAlign: 'center' }} />
+                className="form-control" style={{ fontSize:19, fontWeight: 700, textAlign: 'center' }} />
             </div>
             <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setExtendId(null)} className="btn btn-secondary">Annuler</button>

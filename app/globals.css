@@ -66,7 +66,7 @@ body {
     background: var(--background);
     color: var(--text);
     line-height: 1.6;
-    font-size: 15px;
+    font-size: 18px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -135,14 +135,14 @@ body {
 }
 
 .auth-logo i {
-    font-size: 36px;
+    font-size: 39.5px;
     color: white;
 }
 
 .auth-container h2,
 .auth-header h1 {
     color: var(--text);
-    font-size: 28px;
+    font-size: 31px;
     font-weight: 700;
     margin-bottom: 8px;
     text-align: center;
@@ -154,7 +154,7 @@ body {
 }
 
 .auth-header > i {
-    font-size: 64px;
+    font-size: 70.5px;
     color: #3b82f6;
     margin-bottom: 16px;
     display: inline-block;
@@ -162,7 +162,7 @@ body {
 
 .auth-header p {
     color: var(--text-light);
-    font-size: 15px;
+    font-size: 18px;
 }
 
 .auth-form .form-group,
@@ -176,7 +176,7 @@ body {
     margin-bottom: 8px;
     font-weight: 600;
     color: var(--text);
-    font-size: 14px;
+    font-size: 17px;
 }
 
 .auth-form label i,
@@ -191,7 +191,7 @@ body {
     padding: 12px 16px;
     border: 2px solid var(--border);
     border-radius: var(--radius);
-    font-size: 15px;
+    font-size: 18px;
     transition: var(--transition);
     background: var(--surface);
     font-family: inherit;
@@ -213,7 +213,7 @@ body {
     text-align: center;
     margin-top: 24px;
     color: var(--text-light);
-    font-size: 14px;
+    font-size: 17px;
 }
 
 .auth-footer a {
@@ -231,7 +231,7 @@ body {
 .auth-container .btn {
     width: 100%;
     padding: 14px;
-    font-size: 16px;
+    font-size: 19px;
     font-weight: 600;
     margin-top: 10px;
 }
@@ -289,18 +289,18 @@ body.pwa-banner-visible .app-header {
     border: 1px solid var(--border);
     color: var(--text);
     cursor: pointer;
-    font-size: 16px;
+    font-size: 19px;
     flex-shrink: 0;
 }
 
 .header-icon {
-    font-size: 28px;
+    font-size: 31px;
     color: var(--primary);
 }
 
 .header-content h1,
 .app-header h1 {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 700;
     color: var(--text);
     margin: 0;
@@ -325,14 +325,14 @@ body.pwa-banner-visible .app-header {
 .user-info strong {
     display: block;
     color: var(--text);
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 600;
 }
 
 .user-name {
     font-weight: 600;
     color: var(--text);
-    font-size: 14px;
+    font-size: 17px;
 }
 
 .user-badge,
@@ -341,7 +341,7 @@ body.pwa-banner-visible .app-header {
     color: white;
     padding: 2px 8px;
     border-radius: 12px;
-    font-size: 12px;
+    font-size: 14.5px;
     margin-top: 2px;
     display: inline-block;
 }
@@ -350,7 +350,7 @@ body.pwa-banner-visible .app-header {
     background: transparent;
     border: none;
     cursor: pointer;
-    font-size: 20px;
+    font-size: 24px;
     color: var(--text-light);
     transition: var(--transition);
     padding: 8px;
@@ -378,8 +378,8 @@ body.pwa-banner-visible .app-header {
 }
 
 .sidebar {
-    width: 230px;
-    min-width: 230px;
+    width: 300px;
+    min-width: 300px;
     min-height: calc(100vh - 65px);
     background: white;
     border-right: 1px solid var(--border);
@@ -410,7 +410,7 @@ body.pwa-banner-visible .app-header {
     background: white;
     cursor: pointer;
     color: #94a3b8;
-    font-size: 11px;
+    font-size: 13px;
     transition: all 0.2s;
     position: absolute;
     right: -14px;
@@ -443,7 +443,7 @@ body.pwa-banner-visible .app-header {
     border-left: 3px solid transparent;
     border-radius: 8px;
     color: #64748b;
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.18s;
@@ -456,8 +456,13 @@ body.pwa-banner-visible .app-header {
     overflow: hidden;
 }
 
+.nav-tab span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .nav-tab i {
-    font-size: 18px;
+    font-size: 21.5px;
     flex-shrink: 0;
     width: 22px;
     text-align: center;
@@ -485,7 +490,7 @@ body.pwa-banner-visible .app-header {
     border-bottom: 3px solid transparent;
 }
 .sidebar.collapsed .nav-tab i {
-    font-size: 20px;
+    font-size: 24px;
     width: auto;
 }
 .sidebar.collapsed .nav-tab.active {
@@ -499,7 +504,7 @@ body.pwa-banner-visible .app-header {
 
 /* ── Séparateurs de section dans la nav ── */
 .nav-divider {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -541,7 +546,7 @@ body.pwa-banner-visible .app-header {
 
 .page-header h2 {
     color: var(--text);
-    font-size: 28px;
+    font-size: 31px;
     margin: 0 0 8px 0;
 }
 
@@ -578,13 +583,13 @@ body.pwa-banner-visible .app-header {
 .card-header h3 {
     margin: 0;
     color: var(--text);
-    font-size: 18px;
+    font-size: 21.5px;
 }
 
 .card-header h4 {
     margin: 0;
     color: var(--text);
-    font-size: 16px;
+    font-size: 19px;
 }
 
 .card > p,
@@ -612,7 +617,7 @@ body.pwa-banner-visible .app-header {
 
 .stat-label {
     color: var(--text-light);
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 500;
     margin-bottom: 8px;
 }
@@ -622,7 +627,7 @@ body.pwa-banner-visible .app-header {
 }
 
 .stat-value {
-    font-size: 36px;
+    font-size: 39.5px;
     font-weight: 700;
     color: var(--primary);
 }
@@ -639,7 +644,7 @@ body.pwa-banner-visible .app-header {
     color: var(--text);
     font-weight: 500;
     margin-bottom: 8px;
-    font-size: 14px;
+    font-size: 17px;
 }
 
 .form-group label i {
@@ -660,7 +665,7 @@ body.pwa-banner-visible .app-header {
     padding: 10px 14px;
     border: 2px solid var(--border);
     border-radius: var(--radius);
-    font-size: 14px;
+    font-size: 17px;
     transition: var(--transition);
     font-family: inherit;
 }
@@ -698,7 +703,7 @@ body.pwa-banner-visible .app-header {
     padding: 10px 14px;
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
-    font-size: 14px;
+    font-size: 17px;
     font-family: inherit;
     background: var(--surface);
     color: var(--text);
@@ -715,7 +720,7 @@ body.pwa-banner-visible .app-header {
 .form-help {
     display: block;
     margin-top: 6px;
-    font-size: 13px;
+    font-size: 15.5px;
     color: var(--text-muted);
 }
 
@@ -739,7 +744,7 @@ body.pwa-banner-visible .app-header {
     padding: 10px 20px;
     border: none;
     border-radius: var(--radius);
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
@@ -752,7 +757,7 @@ body.pwa-banner-visible .app-header {
 }
 
 .btn i {
-    font-size: 16px;
+    font-size: 19px;
 }
 
 .btn-primary {
@@ -813,7 +818,7 @@ body.pwa-banner-visible .app-header {
 
 .btn-sm {
     padding: 6px 12px;
-    font-size: 13px;
+    font-size: 15.5px;
 }
 
 .btn-icon {
@@ -833,7 +838,7 @@ body.pwa-banner-visible .app-header {
    ============================================================================ */
 .btn-icon-sm {
     padding: 6px 12px;
-    font-size: 13px;
+    font-size: 15.5px;
     border-radius: var(--radius-sm);
     display: inline-flex;
     align-items: center;
@@ -851,7 +856,7 @@ body.pwa-banner-visible .app-header {
 }
 
 .btn-icon-sm i {
-    font-size: 14px;
+    font-size: 17px;
 }
 
 /* Style spécifique pour le bouton Modifier (Warning/Jaune) */
@@ -893,7 +898,7 @@ th {
     text-align: left;
     font-weight: 600;
     color: var(--text);
-    font-size: 14px;
+    font-size: 17px;
     border-bottom: 2px solid var(--border);
 }
 
@@ -906,7 +911,7 @@ td {
     padding: 12px;
     border-bottom: 1px solid var(--border);
     color: var(--text);
-    font-size: 14px;
+    font-size: 17px;
 }
 
 tr:hover {
@@ -930,12 +935,12 @@ tbody tr:last-child td {
     gap: 6px;
     padding: 4px 12px;
     border-radius: 12px;
-    font-size: 13px;
+    font-size: 15.5px;
     font-weight: 600;
 }
 
 .status-badge i {
-    font-size: 12px;
+    font-size: 14.5px;
 }
 
 .status-badge.success {
@@ -968,7 +973,7 @@ tbody tr:last-child td {
     align-items: center;
     padding: 6px 12px;
     border-radius: var(--radius-sm);
-    font-size: 12px;
+    font-size: 14.5px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -989,7 +994,7 @@ tbody tr:last-child td {
 }
 
 .alert i {
-    font-size: 20px;
+    font-size: 24px;
     flex-shrink: 0;
 }
 
@@ -1106,7 +1111,7 @@ tbody tr:last-child td {
     position: absolute;
     top: 16px;
     right: 16px;
-    font-size: 24px;
+    font-size: 26.5px;
     color: var(--text-muted);
     cursor: pointer;
     background: none;
@@ -1154,7 +1159,7 @@ tbody tr:last-child td {
 }
 
 .empty-message i {
-    font-size: 48px;
+    font-size: 53px;
     display: block;
     margin-bottom: 12px;
     opacity: 0.5;
@@ -1223,7 +1228,7 @@ tbody tr:last-child td {
 
 .formation-header h4 {
     margin: 0;
-    font-size: 20px;
+    font-size: 24px;
 }
 
 .formation-actions {
@@ -1314,7 +1319,7 @@ tbody tr:last-child td {
     background: var(--primary);
     color: white;
     border-radius: var(--radius);
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 600;
     box-shadow: var(--shadow);
     display: flex;
@@ -1323,7 +1328,7 @@ tbody tr:last-child td {
 }
 
 .user-stats span i {
-    font-size: 16px;
+    font-size: 19px;
 }
 
 .create-buttons {
@@ -1346,7 +1351,7 @@ tbody tr:last-child td {
     margin: 0 0 20px 0;
     padding-bottom: 12px;
     border-bottom: 3px solid var(--primary);
-    font-size: 18px;
+    font-size: 21.5px;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -1355,7 +1360,7 @@ tbody tr:last-child td {
 
 .user-section h3 i {
     color: var(--primary);
-    font-size: 20px;
+    font-size: 24px;
 }
 
 /* ============================================================================
@@ -1398,8 +1403,8 @@ tbody tr:last-child td {
         transform: translateX(-100%);
         transition: transform 0.25s cubic-bezier(.4,0,.2,1), width 0.22s;
         box-shadow: 4px 0 20px rgba(0,0,0,.15);
-        width: 230px !important;
-        min-width: 230px !important;
+        width: 300px !important;
+        min-width: 300px !important;
     }
     body.pwa-banner-visible .sidebar {
         top: calc(65px + var(--pwa-banner-height, 44px));
@@ -1433,11 +1438,11 @@ tbody tr:last-child td {
 
     .nav-tabs {
         padding: 52px 8px 16px;
-        font-size: 14px;
+        font-size: 17px;
     }
 
     .nav-tab {
-        font-size: 14px;
+        font-size: 17px;
         padding: 12px 14px;
     }
     
@@ -1454,7 +1459,7 @@ tbody tr:last-child td {
     }
     
     .stat-value {
-        font-size: 28px;
+        font-size: 31px;
     }
     
     .modal-content {
@@ -1477,7 +1482,7 @@ tbody tr:last-child td {
     }
     
     .page-header h2 {
-        font-size: 24px;
+        font-size: 26.5px;
     }
     
     .card {
@@ -1489,7 +1494,7 @@ tbody tr:last-child td {
     }
     
     table {
-        font-size: 13px;
+        font-size: 15.5px;
     }
     
     th, td {
@@ -1516,7 +1521,7 @@ tbody tr:last-child td {
 
     /* Navbar on mobile: compact */
     .navbar-brand {
-        font-size: 15px;
+        font-size: 18px;
     }
     .user-avatar-info {
         display: none;
@@ -1533,7 +1538,7 @@ tbody tr:last-child td {
 
     /* Exam composition textarea */
     #exam-answers {
-        font-size: 16px; /* Évite le zoom auto sur iOS */
+        font-size: 19px; /* Évite le zoom auto sur iOS */
         min-height: 200px;
     }
 
@@ -1585,10 +1590,10 @@ tbody tr:last-child td {
 /* Small phones */
 @media (max-width: 480px) {
     .page-header h2 {
-        font-size: 20px;
+        font-size: 24px;
     }
     .nav-tab {
-        font-size: 13px;
+        font-size: 15.5px;
         padding: 10px 12px;
     }
 }
@@ -1801,7 +1806,7 @@ a { color: inherit; text-decoration: none; }
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 500;
     box-shadow: var(--shadow-lg);
     animation: slideInRight 0.3s ease-out;
@@ -1829,7 +1834,7 @@ a { color: inherit; text-decoration: none; }
     box-shadow: 0 4px 12px rgba(0,0,0,.1);
     transition: all .2s ease;
     z-index: 10;
-    font-size: 14px;
+    font-size: 17px;
 }
 .btn-home:hover { background: white; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.15); }
 
@@ -1838,7 +1843,7 @@ a { color: inherit; text-decoration: none; }
 .lang-btn {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 6px 11px; border: 1px solid #e2e8f0; border-radius: 8px;
-    background: #f8fafc; cursor: pointer; font-size: 13px; font-weight: 600;
+    background: #f8fafc; cursor: pointer; font-size: 15.5px; font-weight: 600;
     color: #334155; transition: all .15s; font-family: inherit; white-space: nowrap;
 }
 .lang-btn:hover { background: #e2e8f0; }
@@ -1850,11 +1855,11 @@ a { color: inherit; text-decoration: none; }
 }
 .lang-option {
     display: flex; align-items: center; gap: 9px;
-    padding: 10px 14px; font-size: 13.5px; font-weight: 500; color: #334155;
+    padding: 10px 14px; font-size: 16px; font-weight: 500; color: #334155;
     cursor: pointer; border: none; background: none;
     width: 100%; text-align: left; font-family: inherit; transition: background .12s;
 }
 .lang-option:hover { background: #f1f5f9; }
 .lang-option.active { background: #eff6ff; color: #2563eb; font-weight: 700; }
-.lang-flag { font-size: 18px; }
+.lang-flag { font-size: 21.5px; }
 .toast.info    { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }

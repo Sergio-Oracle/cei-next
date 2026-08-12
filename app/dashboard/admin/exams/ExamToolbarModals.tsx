@@ -23,10 +23,10 @@ function ModalHeader({ icon, color, title, subtitle, onClose }: { icon: string; 
         <i className={`fas ${icon}`} style={{ color, fontSize: 20 }} />
       </div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 700, fontSize: 15 }}>{title}</div>
-        {subtitle && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{subtitle}</div>}
+        <div style={{ fontWeight: 700, fontSize:18 }}>{title}</div>
+        {subtitle && <div style={{ fontSize:14.5, color: 'var(--text-muted)', marginTop: 2 }}>{subtitle}</div>}
       </div>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}>
+      <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize:21.5, cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}>
         <i className="fas fa-times" />
       </button>
     </div>
@@ -37,7 +37,7 @@ function ModalFooter({ onClose, children }: { onClose: () => void; children?: Re
   return (
     <div style={{ padding: '14px 24px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
       {children}
-      <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }}>
+      <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize:15.5, fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }}>
         <i className="fas fa-times" />Fermer
       </button>
     </div>
@@ -45,7 +45,7 @@ function ModalFooter({ onClose, children }: { onClose: () => void; children?: Re
 }
 
 function Spinner() {
-  return <div style={{ textAlign: 'center', padding: '40px 24px', color: 'var(--text-muted)', fontSize: 13 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 24, marginBottom: 10, display: 'block' }} />Chargement…</div>
+  return <div style={{ textAlign: 'center', padding: '40px 24px', color: 'var(--text-muted)', fontSize:15.5 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 24, marginBottom: 10, display: 'block' }} />Chargement…</div>
 }
 
 async function triggerDownload(blob: Blob, filename: string) {
@@ -98,8 +98,8 @@ export function StatsModal({ examId, examTitle, onClose }: { examId: number; exa
   function Kpi({ label, value, color = '#1e293b' }: { label: string; value?: string | number | null; color?: string }) {
     return (
       <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 16px', flex: 1, minWidth: 100 }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: color ?? '#1e293b' }}>{value ?? '—'}</div>
-        <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 3 }}>{label}</div>
+        <div style={{ fontSize:24, fontWeight: 800, color: color ?? '#1e293b' }}>{value ?? '—'}</div>
+        <div style={{ fontSize:12, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 3 }}>{label}</div>
       </div>
     )
   }
@@ -134,13 +134,13 @@ export function StatsModal({ examId, examTitle, onClose }: { examId: number; exa
               <Kpi label="Sig. pré"   value={(s.pre_sig_rate ?? 0) + '%'} color="#2563eb" />
             </div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>Distribution des notes</div>
+              <div style={{ fontSize:13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>Distribution des notes</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {(s.distribution ?? []).map((n, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 12, color: '#64748b', width: 44, flexShrink: 0 }}>{distLabels[i]}</span>
+                    <span style={{ fontSize:14.5, color: '#64748b', width: 44, flexShrink: 0 }}>{distLabels[i]}</span>
                     {bar(maxDist ? n / maxDist * 100 : 0, distColors[i])}
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#1e293b', width: 24, textAlign: 'right', flexShrink: 0 }}>{n}</span>
+                    <span style={{ fontSize:14.5, fontWeight: 700, color: '#1e293b', width: 24, textAlign: 'right', flexShrink: 0 }}>{n}</span>
                   </div>
                 ))}
               </div>
@@ -150,7 +150,7 @@ export function StatsModal({ examId, examTitle, onClose }: { examId: number; exa
       </div>
       <ModalFooter onClose={onClose}>
         <button onClick={downloadCsv} disabled={dlCsv}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#d1fae5', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#059669', cursor: dlCsv ? 'not-allowed' : 'pointer', opacity: dlCsv ? .7 : 1 }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#d1fae5', border: 'none', borderRadius: 8, fontSize:15.5, fontWeight: 600, color: '#059669', cursor: dlCsv ? 'not-allowed' : 'pointer', opacity: dlCsv ? .7 : 1 }}>
           <i className={`fas ${dlCsv ? 'fa-spinner fa-spin' : 'fa-file-csv'}`} />{dlCsv ? 'Export…' : 'Export CSV'}
         </button>
       </ModalFooter>
@@ -189,7 +189,7 @@ export function PlagiatModal({ examId, examTitle, onClose }: { examId: number; e
               <thead>
                 <tr style={{ background: '#f8fafc' }}>
                   {['Étudiant A', 'Étudiant B', 'Similarité', 'Niveau'].map(h => (
-                    <th key={h} style={{ padding: '9px 12px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', color: '#64748b', fontWeight: 600, borderBottom: '2px solid #e2e8f0' }}>{h}</th>
+                    <th key={h} style={{ padding: '9px 12px', textAlign: 'left', fontSize:13, textTransform: 'uppercase', color: '#64748b', fontWeight: 600, borderBottom: '2px solid #e2e8f0' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -201,21 +201,21 @@ export function PlagiatModal({ examId, examTitle, onClose }: { examId: number; e
                     </td></tr>
                   : pairs.map((p, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '10px 12px', fontSize: 12 }}>
+                      <td style={{ padding: '10px 12px', fontSize:14.5 }}>
                         <strong>{p.student1_name}</strong><br />
-                        <span style={{ color: '#94a3b8', fontSize: 10 }}>Tentative #{p.attempt1_id}</span>
+                        <span style={{ color: '#94a3b8', fontSize:12 }}>Tentative #{p.attempt1_id}</span>
                       </td>
-                      <td style={{ padding: '10px 12px', fontSize: 12 }}>
+                      <td style={{ padding: '10px 12px', fontSize:14.5 }}>
                         <strong>{p.student2_name}</strong><br />
-                        <span style={{ color: '#94a3b8', fontSize: 10 }}>Tentative #{p.attempt2_id}</span>
+                        <span style={{ color: '#94a3b8', fontSize:12 }}>Tentative #{p.attempt2_id}</span>
                       </td>
                       <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                        <strong style={{ fontSize: 16, color: p.similarity >= 90 ? '#ef4444' : '#f59e0b' }}>{p.similarity}%</strong>
+                        <strong style={{ fontSize:19, color: p.similarity >= 90 ? '#ef4444' : '#f59e0b' }}>{p.similarity}%</strong>
                       </td>
                       <td style={{ padding: '10px 12px' }}>
                         {p.level === 'CRITIQUE'
-                          ? <span style={{ background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700 }}>CRITIQUE</span>
-                          : <span style={{ background: '#fef3c7', color: '#d97706', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700 }}>SUSPECT</span>}
+                          ? <span style={{ background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: 99, fontSize:13, fontWeight: 700 }}>CRITIQUE</span>
+                          : <span style={{ background: '#fef3c7', color: '#d97706', padding: '2px 8px', borderRadius: 99, fontSize:13, fontWeight: 700 }}>SUSPECT</span>}
                       </td>
                     </tr>
                   ))
@@ -294,7 +294,7 @@ export function BilanModal({ examId, examTitle, onClose }: { examId: number; exa
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                   {['Étudiant', 'Statut', 'Note', 'Risque', 'Durée', 'Extra', 'Notes surv.', 'Actions'].map(h => (
-                    <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>{h}</th>
+                    <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize:13, color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -309,34 +309,34 @@ export function BilanModal({ examId, examTitle, onClose }: { examId: number; exa
                     const busy = dlPdf === a.attempt_id
                     return (
                       <tr key={a.attempt_id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '8px 10px', fontSize: 13, fontWeight: 500 }}>{a.student_name}</td>
+                        <td style={{ padding: '8px 10px', fontSize:15.5, fontWeight: 500 }}>{a.student_name}</td>
                         <td style={{ padding: '8px 10px' }}>
-                          <span style={{ background: sc + '20', color: sc, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{sl}</span>
+                          <span style={{ background: sc + '20', color: sc, fontSize:13, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{sl}</span>
                         </td>
-                        <td style={{ padding: '8px 10px', fontSize: 13, fontWeight: 700, color: scoreColor }}>
+                        <td style={{ padding: '8px 10px', fontSize:15.5, fontWeight: 700, color: scoreColor }}>
                           {a.score !== null ? a.score + '/20' : '—'}
                         </td>
-                        <td style={{ padding: '8px 10px', color: riskColor, fontSize: 12, fontWeight: 600 }}>
+                        <td style={{ padding: '8px 10px', color: riskColor, fontSize:14.5, fontWeight: 600 }}>
                           {a.risk_score}%
                         </td>
-                        <td style={{ padding: '8px 10px', fontSize: 12, color: '#64748b' }}>
+                        <td style={{ padding: '8px 10px', fontSize:14.5, color: '#64748b' }}>
                           {a.duration_min !== null ? a.duration_min + ' min' : '—'}
                         </td>
-                        <td style={{ padding: '8px 10px', fontSize: 12, color: a.extra_minutes > 0 ? '#d97706' : '#94a3b8' }}>
+                        <td style={{ padding: '8px 10px', fontSize:14.5, color: a.extra_minutes > 0 ? '#d97706' : '#94a3b8' }}>
                           {a.extra_minutes > 0 ? '+' + a.extra_minutes + ' min' : '—'}
                         </td>
-                        <td style={{ padding: '8px 10px', fontSize: 12, color: a.note_count > 0 ? '#2563eb' : '#94a3b8' }}>
+                        <td style={{ padding: '8px 10px', fontSize:14.5, color: a.note_count > 0 ? '#2563eb' : '#94a3b8' }}>
                           {a.note_count > 0 ? a.note_count + ' note(s)' : '—'}
                         </td>
                         <td style={{ padding: '8px 10px' }}>
                           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                             <a href={`/dashboard/admin/exams/${examId}`} target="_blank" rel="noreferrer"
-                              style={{ padding: '3px 9px', fontSize: 11, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: 5, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 600 }}>
+                              style={{ padding: '3px 9px', fontSize:13, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: 5, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 600 }}>
                               <i className="fas fa-eye" />Réviser
                             </a>
                             {a.score !== null && (
                               <button onClick={() => downloadReport(a.attempt_id)} disabled={busy}
-                                style={{ padding: '3px 9px', fontSize: 11, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 5, cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3, opacity: busy ? .7 : 1 }}>
+                                style={{ padding: '3px 9px', fontSize:13, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 5, cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3, opacity: busy ? .7 : 1 }}>
                                 <i className={`fas ${busy ? 'fa-spinner fa-spin' : 'fa-file-pdf'}`} />PDF
                               </button>
                             )}
@@ -353,11 +353,11 @@ export function BilanModal({ examId, examTitle, onClose }: { examId: number; exa
       </div>
       <ModalFooter onClose={onClose}>
         <button onClick={downloadZip} disabled={dlZip}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#0369a1', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#fff', cursor: dlZip ? 'not-allowed' : 'pointer', opacity: dlZip ? .7 : 1 }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#0369a1', border: 'none', borderRadius: 8, fontSize:15.5, fontWeight: 600, color: '#fff', cursor: dlZip ? 'not-allowed' : 'pointer', opacity: dlZip ? .7 : 1 }}>
           <i className={`fas ${dlZip ? 'fa-spinner fa-spin' : 'fa-file-zipper'}`} />{dlZip ? 'Export…' : 'ZIP copies'}
         </button>
         <button onClick={downloadBilanPdf} disabled={dlBilan}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#1e293b', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#fff', cursor: dlBilan ? 'not-allowed' : 'pointer', opacity: dlBilan ? .7 : 1 }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#1e293b', border: 'none', borderRadius: 8, fontSize:15.5, fontWeight: 600, color: '#fff', cursor: dlBilan ? 'not-allowed' : 'pointer', opacity: dlBilan ? .7 : 1 }}>
           <i className={`fas ${dlBilan ? 'fa-spinner fa-spin' : 'fa-file-pdf'}`} />{dlBilan ? 'Génération…' : 'PDF Bilan'}
         </button>
       </ModalFooter>
@@ -470,7 +470,7 @@ export function IncidentsModal({ examId, examTitle, onClose }: { examId: number;
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
                     {['Horodatage', 'Étudiant', 'Type d\'incident', 'Détails'].map(h => (
-                      <th key={h} style={{ padding: '9px 12px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', color: '#64748b', fontWeight: 600, borderBottom: '2px solid #e2e8f0' }}>{h}</th>
+                      <th key={h} style={{ padding: '9px 12px', textAlign: 'left', fontSize:13, textTransform: 'uppercase', color: '#64748b', fontWeight: 600, borderBottom: '2px solid #e2e8f0' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -484,17 +484,17 @@ export function IncidentsModal({ examId, examTitle, onClose }: { examId: number;
                       const isHigh = inc.severity === 'high' || inc.event_type === 'tab_switch' || inc.event_type === 'devtools_attempt'
                       return (
                         <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', background: isHigh ? '#fff5f5' : undefined }}>
-                          <td style={{ padding: '10px 12px', fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '10px 12px', fontSize:14.5, color: '#64748b', whiteSpace: 'nowrap' }}>
                             {new Date(inc.timestamp).toLocaleString('fr-FR')}
                           </td>
-                          <td style={{ padding: '10px 12px', fontSize: 13, fontWeight: 500 }}>{inc.student_name}</td>
-                          <td style={{ padding: '10px 12px', fontSize: 12 }}>
+                          <td style={{ padding: '10px 12px', fontSize:15.5, fontWeight: 500 }}>{inc.student_name}</td>
+                          <td style={{ padding: '10px 12px', fontSize:14.5 }}>
                             <span style={{ color: isHigh ? '#ef4444' : '#f59e0b', fontWeight: 700 }}>
                               <i className={`fas fa-${isHigh ? 'circle-exclamation' : 'triangle-exclamation'}`} style={{ marginRight: 5 }} />
                               {EVENT_LABELS[inc.event_type] ?? inc.event_type}
                             </span>
                           </td>
-                          <td style={{ padding: '10px 12px', fontSize: 12, color: '#64748b' }}>
+                          <td style={{ padding: '10px 12px', fontSize:14.5, color: '#64748b' }}>
                             {parseDetails(inc.event_type, inc.event_data)}
                           </td>
                         </tr>
@@ -515,8 +515,8 @@ export function IncidentsModal({ examId, examTitle, onClose }: { examId: number;
 function StatChip({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 16px', flex: 1 }}>
-      <div style={{ fontSize: 22, fontWeight: 800, color }}>{value}</div>
-      <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{label}</div>
+      <div style={{ fontSize:24, fontWeight: 800, color }}>{value}</div>
+      <div style={{ fontSize:13, color: '#64748b', marginTop: 2 }}>{label}</div>
     </div>
   )
 }

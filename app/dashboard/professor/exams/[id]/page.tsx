@@ -434,13 +434,13 @@ export default function ProfessorExamDetailPage() {
                 { label: 'Questions mélangées', ok: !!exam.randomize_questions },
                 { label: 'Bannir DevTools', ok: !!exam.ban_on_devtools },
               ].map(({ label, ok }) => (
-                <span key={label} style={{ padding: '5px 12px', borderRadius: 99, fontSize: 12.5, fontWeight: 500, background: ok ? '#dcfce7' : 'var(--background)', color: ok ? '#166534' : 'var(--text-muted)', border: `1px solid ${ok ? '#bbf7d0' : 'var(--border)'}` }}>
+                <span key={label} style={{ padding: '5px 12px', borderRadius: 99, fontSize:15, fontWeight: 500, background: ok ? '#dcfce7' : 'var(--background)', color: ok ? '#166534' : 'var(--text-muted)', border: `1px solid ${ok ? '#bbf7d0' : 'var(--border)'}` }}>
                   <i className={`fa-solid ${ok ? 'fa-check' : 'fa-times'}`} style={{ marginRight: 5 }} />{label}
                 </span>
               ))}
             </div>
             {exam.instructions && (
-              <div style={{ marginTop: 14, padding: '12px 16px', background: 'var(--background)', borderRadius: 'var(--radius)', fontSize: 13, color: 'var(--text-muted)', borderLeft: '3px solid var(--primary)' }}>
+              <div style={{ marginTop: 14, padding: '12px 16px', background: 'var(--background)', borderRadius: 'var(--radius)', fontSize:15.5, color: 'var(--text-muted)', borderLeft: '3px solid var(--primary)' }}>
                 <strong style={{ color: 'var(--text)' }}>Instructions :</strong> {exam.instructions}
               </div>
             )}
@@ -465,7 +465,7 @@ export default function ProfessorExamDetailPage() {
           <h3 style={{ margin: 0 }}>
             <i className="fa-solid fa-users" style={{ color: 'var(--primary)', marginRight: 8 }} />Tentatives ({attempts.length})
             {toCorrect > 0 && (
-              <span style={{ marginLeft: 10, background: '#fef3c7', color: '#92400e', padding: '3px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
+              <span style={{ marginLeft: 10, background: '#fef3c7', color: '#92400e', padding: '3px 10px', borderRadius: 99, fontSize:14.5, fontWeight: 600 }}>
                 {toCorrect} à corriger
               </span>
             )}
@@ -493,11 +493,11 @@ export default function ProfessorExamDetailPage() {
                 <tr key={a.id} style={{ background: a.needs_correction ? '#fffbeb' : undefined }}>
                   <td>
                     <div style={{ fontWeight: 600 }}>{a.student_name ?? `Étudiant #${a.student_id}`}</div>
-                    {a.student_email && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.student_email}</div>}
+                    {a.student_email && <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>{a.student_email}</div>}
                   </td>
                   <td><StatusBadge status={a.status} /></td>
-                  <td style={{ fontSize: 13 }}>{fmt(a.started_at)}</td>
-                  <td style={{ fontSize: 13 }}>{a.submitted_at ? fmt(a.submitted_at) : '—'}</td>
+                  <td style={{ fontSize:15.5 }}>{fmt(a.started_at)}</td>
+                  <td style={{ fontSize:15.5 }}>{a.submitted_at ? fmt(a.submitted_at) : '—'}</td>
                   <td>
                     {a.score != null
                       ? <strong style={{ color: a.score >= 10 ? 'var(--success)' : 'var(--danger)' }}>{fmtScore(a.score)}/20</strong>
@@ -505,7 +505,7 @@ export default function ProfessorExamDetailPage() {
                   </td>
                   <td>
                     {a.risk_score != null ? (
-                      <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 12, fontWeight: 700,
+                      <span style={{ padding: '2px 8px', borderRadius: 99, fontSize:14.5, fontWeight: 700,
                         background: a.risk_score >= 70 ? '#fee2e2' : a.risk_score >= 40 ? '#fef3c7' : '#dcfce7',
                         color: a.risk_score >= 70 ? '#991b1b' : a.risk_score >= 40 ? '#92400e' : '#166534' }}>
                         {a.risk_score}%
@@ -518,12 +518,12 @@ export default function ProfessorExamDetailPage() {
                       {(a.status === 'submitted' || a.status === 'auto_submitted') && (
                         <>
                           <button onClick={() => openGradeModal(a)} title={a.score != null ? 'Modifier la note' : 'Noter'}
-                            style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640', borderRadius: 6, cursor: 'pointer' }}>
+                            style={{ fontSize:14.5, padding: '5px 10px', fontWeight: 600, background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640', borderRadius: 6, cursor: 'pointer' }}>
                             <i className="fa-solid fa-pen" /> Note
                           </button>
                           {exam.auto_correct && a.score == null && (
                             <button onClick={() => autoCorrect(a.id)} disabled={correcting === a.id} title="Correction IA"
-                              style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640', borderRadius: 6, cursor: 'pointer' }}>
+                              style={{ fontSize:14.5, padding: '5px 10px', fontWeight: 600, background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f640', borderRadius: 6, cursor: 'pointer' }}>
                               <i className={`fa-solid ${correcting === a.id ? 'fa-spinner fa-spin' : 'fa-robot'}`} /> IA
                             </button>
                           )}
@@ -531,19 +531,19 @@ export default function ProfessorExamDetailPage() {
                       )}
                       {a.status === 'in_progress' && (
                         <button onClick={() => { setExtraModal(a); setExtraMin(10) }}
-                          style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#10b98120', color: '#10b981', border: '1px solid #10b98140', borderRadius: 6, cursor: 'pointer' }}>
+                          style={{ fontSize:14.5, padding: '5px 10px', fontWeight: 600, background: '#10b98120', color: '#10b981', border: '1px solid #10b98140', borderRadius: 6, cursor: 'pointer' }}>
                           <i className="fa-solid fa-clock" /> +Temps
                         </button>
                       )}
                       {a.status === 'in_progress' && (
                         <button onClick={() => { setBanModal(a); setBanReason('') }}
-                          style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: 6, cursor: 'pointer' }}>
+                          style={{ fontSize:14.5, padding: '5px 10px', fontWeight: 600, background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: 6, cursor: 'pointer' }}>
                           <i className="fa-solid fa-ban" /> Exclure
                         </button>
                       )}
                       {a.status === 'banned' && (
                         <button onClick={() => unban(a)}
-                          style={{ fontSize: 12, padding: '5px 10px', fontWeight: 600, background: '#10b98120', color: '#10b981', border: '1px solid #10b98140', borderRadius: 6, cursor: 'pointer' }}>
+                          style={{ fontSize:14.5, padding: '5px 10px', fontWeight: 600, background: '#10b98120', color: '#10b981', border: '1px solid #10b98140', borderRadius: 6, cursor: 'pointer' }}>
                           <i className="fa-solid fa-undo" /> Réintégrer
                         </button>
                       )}
@@ -562,12 +562,12 @@ export default function ProfessorExamDetailPage() {
           <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 28, width: 380, maxWidth: '95vw' }}>
             <h3 style={{ marginBottom: 20 }}><i className="fas fa-calendar-days" /> Reprogrammer l'examen</h3>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Nouvelle date/heure de début</label>
+              <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 6 }}>Nouvelle date/heure de début</label>
               <input type="datetime-local" className="form-control" value={rescheduleForm.start_time}
                 onChange={e => onRescheduleStartChange(e.target.value)} />
             </div>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Nouvelle date/heure de fin</label>
+              <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 6 }}>Nouvelle date/heure de fin</label>
               <input type="datetime-local" className="form-control" value={rescheduleForm.end_time}
                 min={rescheduleForm.start_time || undefined}
                 onChange={e => onRescheduleEndChange(e.target.value)} />
@@ -588,20 +588,20 @@ export default function ProfessorExamDetailPage() {
           <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 28, width: 420, maxWidth: '95vw' }}>
             <h3 style={{ marginBottom: 20 }}><i className="fas fa-random" /> Composition de l'examen</h3>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Questions par page</label>
+              <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 6 }}>Questions par page</label>
               <input type="number" min={0} max={50} className="form-control"
                 value={Number.isNaN(compositionForm.questions_per_page) ? '' : compositionForm.questions_per_page}
                 onChange={e => setCompositionForm(f => ({ ...f, questions_per_page: parseInt(e.target.value, 10) }))}
                 onBlur={() => setCompositionForm(f => ({ ...f, questions_per_page: Math.max(0, Math.min(50, Number.isNaN(f.questions_per_page) ? 5 : f.questions_per_page)) }))} />
-              <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginTop: 4 }}>0 = tout sur une page</small>
+              <small style={{ color: 'var(--text-muted)', fontSize:14.5, display: 'block', marginTop: 4 }}>0 = tout sur une page</small>
             </div>
             <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <input type="checkbox" id="comp_randomize" checked={compositionForm.randomize_questions}
                 onChange={e => setCompositionForm(f => ({ ...f, randomize_questions: e.target.checked }))}
                 style={{ width: 'auto', marginTop: 3, flexShrink: 0 }} />
               <div>
-                <label htmlFor="comp_randomize" style={{ fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Ordre des questions aléatoire</label>
-                <small style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block' }}>Chaque étudiant reçoit un ordre différent, stable une fois l'examen commencé</small>
+                <label htmlFor="comp_randomize" style={{ fontSize:15.5, fontWeight: 600, cursor: 'pointer' }}>Ordre des questions aléatoire</label>
+                <small style={{ color: 'var(--text-muted)', fontSize:14.5, display: 'block' }}>Chaque étudiant reçoit un ordre différent, stable une fois l'examen commencé</small>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
@@ -620,9 +620,9 @@ export default function ProfessorExamDetailPage() {
           <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 28, width: 380, maxWidth: '95vw' }}>
             <h3 style={{ marginBottom: 20 }}><i className="fas fa-clock" /> Temps supplémentaire — {extraModal.student_name}</h3>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Minutes à ajouter : <strong style={{ color: 'var(--primary)' }}>{extraMin} min</strong></label>
+              <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 6 }}>Minutes à ajouter : <strong style={{ color: 'var(--primary)' }}>{extraMin} min</strong></label>
               <input type="range" min={5} max={60} step={5} value={extraMin} onChange={e => setExtraMin(+e.target.value)} style={{ width: '100%' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}><span>5 min</span><span>60 min</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize:14.5, color: 'var(--text-muted)', marginTop: 4 }}><span>5 min</span><span>60 min</span></div>
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setExtraModal(null)} className="btn btn-secondary">Annuler</button>
@@ -640,9 +640,9 @@ export default function ProfessorExamDetailPage() {
           <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 28, width: 420, maxWidth: '95vw' }}>
             <h3 style={{ marginBottom: 20, color: '#ef4444' }}><i className="fas fa-ban" /> Exclure {banModal.student_name}</h3>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Motif d'exclusion</label>
+              <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 6 }}>Motif d'exclusion</label>
               <textarea value={banReason} onChange={e => setBanReason(e.target.value)} rows={3} placeholder="Fraude, comportement suspect…"
-                style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #ef4444', fontSize: 14, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box', resize: 'vertical' }} />
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #ef4444', fontSize:17, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box', resize: 'vertical' }} />
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setBanModal(null)} className="btn btn-secondary">Annuler</button>
@@ -674,7 +674,7 @@ export default function ProfessorExamDetailPage() {
                 onChange={e => setGradeForm(f => ({ ...f, score: e.target.value }))}
                 placeholder="Ex: 14.5"
                 autoFocus
-                style={{ fontSize: 18, fontWeight: 700 }}
+                style={{ fontSize:21.5, fontWeight: 700 }}
               />
             </div>
 
@@ -685,7 +685,7 @@ export default function ProfessorExamDetailPage() {
                 value={gradeForm.feedback}
                 onChange={e => setGradeForm(f => ({ ...f, feedback: e.target.value }))}
                 placeholder="Commentaires sur la copie..."
-                style={{ width: '100%', padding: '10px 14px', border: '2px solid var(--border)', borderRadius: 'var(--radius)', fontFamily: 'inherit', fontSize: 14, resize: 'vertical' }}
+                style={{ width: '100%', padding: '10px 14px', border: '2px solid var(--border)', borderRadius: 'var(--radius)', fontFamily: 'inherit', fontSize:17, resize: 'vertical' }}
               />
             </div>
 

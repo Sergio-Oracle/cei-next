@@ -50,9 +50,9 @@ export default function ExamDetailModal({ exam, onClose, onViewCopies, onActivat
             <i className="fas fa-desktop" style={{ color: 'var(--primary)' }} />
           </div>
           <div style={{ flex: 1 }}>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Détails de l'Examen</h3>
+            <h3 style={{ margin: 0, fontSize:19, fontWeight: 700 }}>Détails de l'Examen</h3>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize:21.5, cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}>
             <i className="fas fa-times" />
           </button>
         </div>
@@ -63,16 +63,16 @@ export default function ExamDetailModal({ exam, onClose, onViewCopies, onActivat
           <div style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <i className="fas fa-info-circle" style={{ color: 'var(--primary)' }} />
-              <span style={{ fontWeight: 700, fontSize: 14 }}>Informations Générales</span>
+              <span style={{ fontWeight: 700, fontSize:17 }}>Informations Générales</span>
             </div>
             <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Row icon="fa-heading"      label="Titre"      value={exam.title} />
               {exam.subject_title && <Row icon="fa-book"    label="Sujet"      value={exam.subject_title} />}
               {exam.creator_name  && <Row icon="fa-user-tie" label="Créé par"  value={exam.creator_name} />}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize:15.5 }}>
                 <i className="fas fa-circle-dot" style={{ color: 'var(--text-muted)', width: 16, textAlign: 'center' }} />
                 <span style={{ color: 'var(--text-muted)', fontWeight: 600, minWidth: 80 }}>Statut</span>
-                <span style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`, borderRadius: 99, padding: '2px 10px', fontSize: 12, fontWeight: 700 }}>{meta.label}</span>
+                <span style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`, borderRadius: 99, padding: '2px 10px', fontSize:14.5, fontWeight: 700 }}>{meta.label}</span>
               </div>
               <Row icon="fa-clock"       label="Durée"      value={`${exam.duration_minutes} minutes (${fmtDuration(exam.duration_minutes)})`} />
               <Row icon="fa-calendar"    label="Début"      value={exam.start_time ? fmtFull(exam.start_time) : '—'} />
@@ -86,9 +86,9 @@ export default function ExamDetailModal({ exam, onClose, onViewCopies, onActivat
             <div style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <i className="fas fa-file-lines" style={{ color: 'var(--primary)' }} />
-                <span style={{ fontWeight: 700, fontSize: 14 }}>Instructions</span>
+                <span style={{ fontWeight: 700, fontSize:17 }}>Instructions</span>
               </div>
-              <div style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text)', whiteSpace: 'pre-wrap', background: '#f8fafc', lineHeight: 1.6 }}>
+              <div style={{ padding: '14px 16px', fontSize:15.5, color: 'var(--text)', whiteSpace: 'pre-wrap', background: '#f8fafc', lineHeight: 1.6 }}>
                 {exam.instructions}
               </div>
             </div>
@@ -98,7 +98,7 @@ export default function ExamDetailModal({ exam, onClose, onViewCopies, onActivat
           <div style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <i className="fas fa-shield-alt" style={{ color: '#d97706' }} />
-              <span style={{ fontWeight: 700, fontSize: 14 }}>Paramètres de Sécurité</span>
+              <span style={{ fontWeight: 700, fontSize:17 }}>Paramètres de Sécurité</span>
             </div>
             <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Row icon="fa-window-restore" label="Changements de fenêtre autorisés" value={String(exam.max_tab_switches ?? 2)} />
@@ -118,7 +118,7 @@ export default function ExamDetailModal({ exam, onClose, onViewCopies, onActivat
                   <i className="fas fa-file-alt" style={{ marginRight: 6 }} />Voir les Copies Soumises
                 </button>
                 <button onClick={() => setShowIncidents(true)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, fontWeight: 600, fontSize: 13, color: '#92400e', cursor: 'pointer' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, fontWeight: 600, fontSize:15.5, color: '#92400e', cursor: 'pointer' }}>
                   <i className="fas fa-triangle-exclamation" />Incidents
                 </button>
               </>
@@ -126,7 +126,7 @@ export default function ExamDetailModal({ exam, onClose, onViewCopies, onActivat
             {isActive && (
               <>
                 <button onClick={() => { onClose(); onClose_(exam.id) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontWeight: 600, fontSize: 13, color: '#dc2626', cursor: 'pointer' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontWeight: 600, fontSize:15.5, color: '#dc2626', cursor: 'pointer' }}>
                   <i className="fas fa-flag-checkered" />Clôturer l'Examen
                 </button>
               </>
@@ -134,17 +134,17 @@ export default function ExamDetailModal({ exam, onClose, onViewCopies, onActivat
             {(isDraft || isScheduled) && (
               <>
                 <button onClick={() => { onClose(); onActivate(exam.id) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontWeight: 700, fontSize: 13, color: '#059669', cursor: 'pointer' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontWeight: 700, fontSize:15.5, color: '#059669', cursor: 'pointer' }}>
                   <i className="fas fa-play" />Activer l'Examen
                 </button>
                 <button onClick={() => { onClose(); onDelete(exam.id) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontWeight: 600, fontSize: 13, color: '#dc2626', cursor: 'pointer' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontWeight: 600, fontSize:15.5, color: '#dc2626', cursor: 'pointer' }}>
                   <i className="fas fa-trash" />Supprimer
                 </button>
               </>
             )}
             <button onClick={onClose}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontWeight: 600, fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer', marginLeft: 'auto' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontWeight: 600, fontSize:15.5, color: 'var(--text-muted)', cursor: 'pointer', marginLeft: 'auto' }}>
               <i className="fas fa-times" />Fermer
             </button>
           </div>
@@ -160,7 +160,7 @@ export default function ExamDetailModal({ exam, onClose, onViewCopies, onActivat
 
 function Row({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13 }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize:15.5 }}>
       <i className={`fas ${icon}`} style={{ color: 'var(--text-muted)', width: 16, textAlign: 'center', marginTop: 2 }} />
       <span style={{ color: 'var(--text-muted)', fontWeight: 600, minWidth: 80, flexShrink: 0 }}>{label}</span>
       <span style={{ color: 'var(--text)', flex: 1 }}>{value}</span>
@@ -170,7 +170,7 @@ function Row({ icon, label, value }: { icon: string; label: string; value: strin
 
 function BoolRow({ icon, label, value }: { icon: string; label: string; value: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize:15.5 }}>
       <i className={`fas ${icon}`} style={{ color: 'var(--text-muted)', width: 16, textAlign: 'center' }} />
       <span style={{ color: 'var(--text-muted)', fontWeight: 600, minWidth: 80, flexShrink: 0 }}>{label}</span>
       {value
@@ -183,7 +183,7 @@ function BoolRow({ icon, label, value }: { icon: string; label: string; value: b
 /* ban_on_devtools=true → blocage actif (pas "Autorisé") */
 function RestrictionRow({ icon, label, active }: { icon: string; label: string; active: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize:15.5 }}>
       <i className={`fas ${icon}`} style={{ color: 'var(--text-muted)', width: 16, textAlign: 'center' }} />
       <span style={{ color: 'var(--text-muted)', fontWeight: 600, minWidth: 80, flexShrink: 0 }}>{label}</span>
       {active

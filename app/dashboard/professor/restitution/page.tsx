@@ -77,10 +77,10 @@ export default function RestitutionPage() {
   return (
     <div style={{ padding: '28px 32px' }}>
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <h1 style={{ fontSize:24, fontWeight: 800, color: '#0f172a', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="fas fa-people-group" style={{ color: '#0f766e' }} />Restitution — copies-exemples
         </h1>
-        <p style={{ color: '#64748b', margin: 0, fontSize: 14 }}>
+        <p style={{ color: '#64748b', margin: 0, fontSize:17 }}>
           Sélectionnez des copies corrigées comme exemples anonymisés pour une séance de restitution collective. Rien n'est visible aux étudiants tant que vous n'avez pas publié.
         </p>
       </div>
@@ -94,12 +94,12 @@ export default function RestitutionPage() {
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '60px 24px', textAlign: 'center', color: '#64748b' }}>
           <i className="fas fa-inbox" style={{ fontSize: 40, display: 'block', marginBottom: 14, opacity: .4 }} />
           <p style={{ margin: '0 0 6px', fontWeight: 600 }}>Aucune copie-exemple pour l'instant</p>
-          <p style={{ margin: 0, fontSize: 13 }}>Créez-en une depuis <b>Copies Corrigées</b>, avec le bouton « Exemple » sur une copie notée.</p>
+          <p style={{ margin: 0, fontSize:15.5 }}>Créez-en une depuis <b>Copies Corrigées</b>, avec le bouton « Exemple » sur une copie notée.</p>
         </div>
       ) : (
         Object.entries(groups).map(([subjectTitle, list]) => (
           <div key={subjectTitle} style={{ marginBottom: 32 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 14, paddingBottom: 8, borderBottom: '2px solid #e2e8f0' }}>
+            <h3 style={{ fontSize:18, fontWeight: 700, color: '#0f172a', marginBottom: 14, paddingBottom: 8, borderBottom: '2px solid #e2e8f0' }}>
               {subjectTitle}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -110,13 +110,13 @@ export default function RestitutionPage() {
                   <div key={e.id} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: 18 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ padding: '5px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: meta.bg, color: meta.color, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ padding: '5px 12px', borderRadius: 99, fontSize:14.5, fontWeight: 700, background: meta.bg, color: meta.color, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <i className={`fas ${meta.icon}`} />{meta.text}
                         </span>
                         {e.score != null && (
-                          <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{fmtScore(e.score)}/{e.max_score ?? 20}</span>
+                          <span style={{ fontSize:15.5, fontWeight: 700, color: '#0f172a' }}>{fmtScore(e.score)}/{e.max_score ?? 20}</span>
                         )}
-                        <span style={{ padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: e.is_published ? '#d1fae5' : '#f1f5f9', color: e.is_published ? '#059669' : '#64748b' }}>
+                        <span style={{ padding: '4px 10px', borderRadius: 99, fontSize:13, fontWeight: 700, background: e.is_published ? '#d1fae5' : '#f1f5f9', color: e.is_published ? '#059669' : '#64748b' }}>
                           <i className={`fas ${e.is_published ? 'fa-eye' : 'fa-eye-slash'}`} style={{ marginRight: 4 }} />
                           {e.is_published ? 'Publié' : 'Brouillon'}
                         </span>
@@ -124,28 +124,28 @@ export default function RestitutionPage() {
                       <div style={{ display: 'flex', gap: 6 }}>
                         {isDirty(e) && (
                           <button onClick={() => saveEdit(e)} disabled={savingId === e.id}
-                            style={{ padding: '7px 14px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 7, fontWeight: 600, cursor: 'pointer', fontSize: 12.5 }}>
+                            style={{ padding: '7px 14px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 7, fontWeight: 600, cursor: 'pointer', fontSize:15 }}>
                             {savingId === e.id ? <><i className="fas fa-spinner fa-spin" /> Enregistrement…</> : <><i className="fas fa-save" /> Enregistrer</>}
                           </button>
                         )}
                         <button onClick={() => togglePublish(e)} disabled={publishingId === e.id}
-                          style={{ padding: '7px 14px', background: e.is_published ? '#f1f5f9' : '#0f766e', color: e.is_published ? '#475569' : 'white', border: 'none', borderRadius: 7, fontWeight: 700, cursor: 'pointer', fontSize: 12.5 }}>
+                          style={{ padding: '7px 14px', background: e.is_published ? '#f1f5f9' : '#0f766e', color: e.is_published ? '#475569' : 'white', border: 'none', borderRadius: 7, fontWeight: 700, cursor: 'pointer', fontSize:15 }}>
                           {publishingId === e.id ? <i className="fas fa-spinner fa-spin" /> : e.is_published ? <><i className="fas fa-eye-slash" /> Dépublier</> : <><i className="fas fa-bullhorn" /> Publier</>}
                         </button>
                         <button onClick={() => deleteExample(e)} disabled={deletingId === e.id}
-                          style={{ padding: '7px 11px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 7, fontWeight: 600, cursor: 'pointer', fontSize: 12.5 }}>
+                          style={{ padding: '7px 11px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 7, fontWeight: 600, cursor: 'pointer', fontSize:15 }}>
                           {deletingId === e.id ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-trash" />}
                         </button>
                       </div>
                     </div>
 
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 5 }}>Copie anonymisée</label>
+                    <label style={{ display: 'block', fontSize:13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 5 }}>Copie anonymisée</label>
                     <textarea value={ed.content} onChange={ev => setEdits(p => ({ ...p, [e.id]: { ...ed, content: ev.target.value } }))}
-                      rows={5} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 13, resize: 'vertical', marginBottom: 12, boxSizing: 'border-box' }} />
+                      rows={5} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontFamily: 'inherit', fontSize:15.5, resize: 'vertical', marginBottom: 12, boxSizing: 'border-box' }} />
 
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 5 }}>Feedback anonymisé (optionnel)</label>
+                    <label style={{ display: 'block', fontSize:13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 5 }}>Feedback anonymisé (optionnel)</label>
                     <textarea value={ed.feedback} onChange={ev => setEdits(p => ({ ...p, [e.id]: { ...ed, feedback: ev.target.value } }))}
-                      rows={3} placeholder="Aucun feedback" style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 13, resize: 'vertical', boxSizing: 'border-box' }} />
+                      rows={3} placeholder="Aucun feedback" style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontFamily: 'inherit', fontSize:15.5, resize: 'vertical', boxSizing: 'border-box' }} />
                   </div>
                 )
               })}

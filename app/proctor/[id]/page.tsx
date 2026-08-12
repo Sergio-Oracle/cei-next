@@ -183,7 +183,7 @@ export default function ProctorPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'white', gap: 16 }}>
-      <div className="lk-spin" /><div style={{ fontSize: 15, fontWeight: 600 }}>Chargement du dashboard…</div>
+      <div className="lk-spin" /><div style={{ fontSize:18, fontWeight: 600 }}>Chargement du dashboard…</div>
     </div>
   )
 
@@ -217,8 +217,8 @@ export default function ProctorPage() {
             <i className="fas fa-shield-alt" style={{ fontSize: 22 }} />
           </div>
           <div>
-            <h1 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>{data?.exam_title || 'Surveillance'}</h1>
-            <p style={{ fontSize: 11, opacity: .8, margin: 0 }}>Actualisation auto · {data?.my_role === 'surveillant' ? 'Surveillant' : 'Enseignant'}</p>
+            <h1 style={{ fontSize:18, fontWeight: 700, margin: 0 }}>{data?.exam_title || 'Surveillance'}</h1>
+            <p style={{ fontSize:13, opacity: .8, margin: 0 }}>Actualisation auto · {data?.my_role === 'surveillant' ? 'Surveillant' : 'Enseignant'}</p>
           </div>
         </div>
 
@@ -282,8 +282,8 @@ export default function ProctorPage() {
           <div style={{ marginTop: 20, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12, overflow: 'hidden' }}>
             <div onClick={() => setCompletedOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'rgba(255,255,255,.04)', cursor: 'pointer', userSelect: 'none' }}>
               <i className="fas fa-check-circle" style={{ color: '#10b981', fontSize: 18 }} />
-              <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.8)' }}>Copies terminées</h4>
-              <span style={{ background: 'rgba(16,185,129,.2)', color: '#10b981', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>{done.length}</span>
+              <h4 style={{ margin: 0, fontSize:15.5, fontWeight: 700, color: 'rgba(255,255,255,.8)' }}>Copies terminées</h4>
+              <span style={{ background: 'rgba(16,185,129,.2)', color: '#10b981', fontSize:13, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>{done.length}</span>
               <i className="fas fa-chevron-down" style={{ marginLeft: 'auto', color: 'rgba(255,255,255,.4)', fontSize: 14, transform: completedOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
             </div>
             {completedOpen && (
@@ -297,17 +297,17 @@ export default function ProctorPage() {
                   <tbody>
                     {done.map(s => (
                       <tr key={s.attempt_id}>
-                        <td className="pc-comp-td"><div style={{ fontWeight: 600, color: 'white' }}>{s.student_name}</div><div style={{ fontSize: 10, color: 'rgba(255,255,255,.4)' }}>{s.student_email}</div></td>
+                        <td className="pc-comp-td"><div style={{ fontWeight: 600, color: 'white' }}>{s.student_name}</div><div style={{ fontSize:12, color: 'rgba(255,255,255,.4)' }}>{s.student_email}</div></td>
                         <td className="pc-comp-td">
                           {s.status === 'auto_submitted'
-                            ? <span style={{ background: 'rgba(245,158,11,.18)', color: '#d97706', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}><i className="fas fa-clock" style={{ marginRight: 4 }} />Auto-soumis</span>
-                            : <span style={{ background: 'rgba(16,185,129,.15)', color: '#10b981', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}><i className="fas fa-check" style={{ marginRight: 4 }} />Soumis</span>}
+                            ? <span style={{ background: 'rgba(245,158,11,.18)', color: '#d97706', fontSize:12, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}><i className="fas fa-clock" style={{ marginRight: 4 }} />Auto-soumis</span>
+                            : <span style={{ background: 'rgba(16,185,129,.15)', color: '#10b981', fontSize:12, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}><i className="fas fa-check" style={{ marginRight: 4 }} />Soumis</span>}
                         </td>
                         <td className="pc-comp-td">{fmtTime(s.submitted_at)}</td>
                         <td className="pc-comp-td">{s.duration_minutes != null ? `${s.duration_minutes} min${s.extra_minutes ? ` (+${s.extra_minutes})` : ''}` : '—'}</td>
                         <td className="pc-comp-td" style={{ fontWeight: 700, color: s.risk_score >= 70 ? '#ef4444' : s.risk_score >= 40 ? '#d97706' : '#10b981' }}>{s.risk_score}%</td>
                         <td className="pc-comp-td" style={{ fontWeight: 700, color: s.score != null ? '#93c5fd' : 'rgba(255,255,255,.3)' }}>{s.score != null ? `${fmtScore(s.score)}/20` : '—'}</td>
-                        <td className="pc-comp-td" style={{ color: 'rgba(255,255,255,.5)', fontSize: 11 }}>{s.proctor_name || '—'}</td>
+                        <td className="pc-comp-td" style={{ color: 'rgba(255,255,255,.5)', fontSize:13 }}>{s.proctor_name || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -336,7 +336,7 @@ export default function ProctorPage() {
       {banModal && (
         <PcModal onClose={() => { setBanModal(null); setBanReason('') }}>
           <h2 style={mTitle}><i className="fas fa-ban" style={{ color: '#ef4444' }} />Exclure — {banModal.name}</h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', marginBottom: 16 }}>Cette action est irréversible. Veuillez préciser la raison.</p>
+          <p style={{ fontSize:15.5, color: 'rgba(255,255,255,.6)', marginBottom: 16 }}>Cette action est irréversible. Veuillez préciser la raison.</p>
           <textarea className="pc-modal-inp" value={banReason} onChange={e => setBanReason(e.target.value)} rows={3} placeholder="Raison de l'exclusion…" style={{ marginBottom: 16 }} />
           <div style={mFoot}>
             <button onClick={() => { setBanModal(null); setBanReason('') }} style={btnGhost}>Annuler</button>
@@ -365,10 +365,10 @@ export default function ProctorPage() {
       {timeModal && (
         <PcModal onClose={() => setTimeModal(null)}>
           <h2 style={mTitle}><i className="fas fa-clock" style={{ color: '#f59e0b' }} />Temps supplémentaire — {timeModal.name}</h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', marginBottom: 16 }}>Accordez des minutes supplémentaires à cet étudiant (max 60 min).</p>
+          <p style={{ fontSize:15.5, color: 'rgba(255,255,255,.6)', marginBottom: 16 }}>Accordez des minutes supplémentaires à cet étudiant (max 60 min).</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
             <input type="range" min={5} max={60} step={5} value={timeMin} onChange={e => setTimeMin(+e.target.value)} style={{ flex: 1 }} />
-            <span style={{ fontSize: 20, fontWeight: 700, minWidth: 60, textAlign: 'center', color: '#f59e0b' }}>+{timeMin} min</span>
+            <span style={{ fontSize:24, fontWeight: 700, minWidth: 60, textAlign: 'center', color: '#f59e0b' }}>+{timeMin} min</span>
           </div>
           <div style={mFoot}>
             <button onClick={() => setTimeModal(null)} style={btnGhost}>Annuler</button>
@@ -385,11 +385,11 @@ export default function ProctorPage() {
           {logsLoading ? <SpinCenter /> : logsPanel.logs.length === 0 ? (
             <EmptySide icon="fa-shield-alt" text="Aucun événement enregistré" />
           ) : logsPanel.logs.map((log: any, i: number) => (
-            <div key={i} style={{ display: 'flex', gap: 8, padding: 8, borderBottom: '1px solid rgba(255,255,255,.05)', fontSize: 11 }}>
+            <div key={i} style={{ display: 'flex', gap: 8, padding: 8, borderBottom: '1px solid rgba(255,255,255,.05)', fontSize:13 }}>
               <i className="fas fa-circle" style={{ color: '#60a5fa', fontSize: 7, marginTop: 4, flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
                 <div style={{ color: 'rgba(255,255,255,.8)' }}>{log.event_type || log.type || '—'}</div>
-                {log.created_at && <div style={{ color: 'rgba(255,255,255,.4)', fontSize: 9, marginTop: 2 }}>{new Date(log.created_at).toLocaleTimeString('fr-FR')}</div>}
+                {log.created_at && <div style={{ color: 'rgba(255,255,255,.4)', fontSize:11, marginTop: 2 }}>{new Date(log.created_at).toLocaleTimeString('fr-FR')}</div>}
               </div>
             </div>
           ))}
@@ -403,9 +403,9 @@ export default function ProctorPage() {
             <EmptySide icon="fa-comments" text="Aucun message reçu" />
           ) : msgsPanel.msgs.map((m, i) => (
             <div key={i} style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,.05)', background: m.read ? 'transparent' : 'rgba(139,92,246,.08)' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#60a5fa', marginBottom: 4 }}>{m.student_name}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.8)', lineHeight: 1.5 }}>{m.content}</div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', marginTop: 4 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR')}</div>
+              <div style={{ fontSize:13, fontWeight: 700, color: '#60a5fa', marginBottom: 4 }}>{m.student_name}</div>
+              <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.8)', lineHeight: 1.5 }}>{m.content}</div>
+              <div style={{ fontSize:12, color: 'rgba(255,255,255,.35)', marginTop: 4 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR')}</div>
             </div>
           ))}
         </SidePanel>
@@ -428,45 +428,45 @@ function StudentCard({ s, onWarn, onMessage, onBan, onNote, onTime, onRec, onLog
       <div style={{ position: 'relative', aspectRatio: '16/9', background: '#000', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.25)', gap: 8 }}>
           <i className="fas fa-video-slash" style={{ fontSize: 31 }} />
-          <span style={{ fontSize: 11 }}>Connexion en attente…</span>
+          <span style={{ fontSize:13 }}>Connexion en attente…</span>
         </div>
 
         {/* Overlay soumis */}
         {isDone && !s.banned && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,.88)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <i className="fas fa-check-circle" style={{ fontSize: 35, color: '#10b981' }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '.05em' }}>{s.status === 'auto_submitted' ? 'Auto-soumis' : 'Copie soumise'}</span>
-            {s.submitted_at && <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{fmtTime(s.submitted_at)}</span>}
+            <span style={{ fontSize:14.5, fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '.05em' }}>{s.status === 'auto_submitted' ? 'Auto-soumis' : 'Copie soumise'}</span>
+            {s.submitted_at && <span style={{ fontSize:13, color: 'rgba(255,255,255,.5)' }}>{fmtTime(s.submitted_at)}</span>}
           </div>
         )}
 
         {/* Overlay exclu */}
         {s.banned && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(239,68,68,.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 16, fontWeight: 700 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(239,68,68,.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize:19, fontWeight: 700 }}>
             <i className="fas fa-ban" style={{ fontSize: 31 }} />EXCLU
           </div>
         )}
 
         {/* Badge risque */}
         <div style={{ position: 'absolute', top: 8, right: 8 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, color: 'white', background: rc === 'high' ? 'rgba(239,68,68,.9)' : rc === 'medium' ? 'rgba(245,158,11,.9)' : 'rgba(16,185,129,.9)' }}>{s.risk_score}%</span>
+          <span style={{ fontSize:12, fontWeight: 700, padding: '3px 8px', borderRadius: 4, color: 'white', background: rc === 'high' ? 'rgba(239,68,68,.9)' : rc === 'medium' ? 'rgba(245,158,11,.9)' : 'rgba(16,185,129,.9)' }}>{s.risk_score}%</span>
         </div>
 
         {/* Badge extra time */}
         {s.extra_minutes && s.extra_minutes > 0 && (
           <div style={{ position: 'absolute', top: 8, left: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, color: 'white', background: 'rgba(245,158,11,.9)' }}>+{s.extra_minutes}min</span>
+            <span style={{ fontSize:12, fontWeight: 700, padding: '3px 8px', borderRadius: 4, color: 'white', background: 'rgba(245,158,11,.9)' }}>+{s.extra_minutes}min</span>
           </div>
         )}
       </div>
 
       {/* Info */}
       <div style={{ padding: '12px 14px' }}>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{s.student_name}</div>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,.5)', marginBottom: 8 }}>{s.student_email}</div>
+        <div style={{ fontSize:17, fontWeight: 700, marginBottom: 2 }}>{s.student_name}</div>
+        <div style={{ fontSize:12, color: 'rgba(255,255,255,.5)', marginBottom: 8 }}>{s.student_email}</div>
 
         {/* Statut */}
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 10, marginBottom: 8, background: s.banned ? 'rgba(239,68,68,.15)' : isDone ? 'rgba(37,99,235,.15)' : 'rgba(16,185,129,.15)', color: s.banned ? '#ef4444' : isDone ? '#60a5fa' : '#10b981' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize:12, fontWeight: 600, padding: '3px 8px', borderRadius: 10, marginBottom: 8, background: s.banned ? 'rgba(239,68,68,.15)' : isDone ? 'rgba(37,99,235,.15)' : 'rgba(16,185,129,.15)', color: s.banned ? '#ef4444' : isDone ? '#60a5fa' : '#10b981' }}>
           <i className="fas fa-circle" style={{ fontSize: 7 }} />
           {s.banned ? 'Exclu' : isDone ? (s.status === 'auto_submitted' ? 'Auto-soumis' : 'Soumis') : 'En cours'}
         </span>
@@ -490,17 +490,17 @@ function StudentCard({ s, onWarn, onMessage, onBan, onNote, onTime, onRec, onLog
         <div style={{ height: 5, background: 'rgba(255,255,255,.1)', borderRadius: 3, overflow: 'hidden', marginBottom: 4 }}>
           <div style={{ height: '100%', borderRadius: 3, width: `${Math.min(s.risk_score, 100)}%`, transition: 'width .5s', background: rc === 'high' ? '#ef4444' : rc === 'medium' ? '#f59e0b' : '#10b981' }} />
         </div>
-        <div style={{ fontSize: 10, marginBottom: 8, fontWeight: 700, color: rc === 'high' ? '#ef4444' : rc === 'medium' ? '#f59e0b' : '#10b981' }}>
+        <div style={{ fontSize:12, marginBottom: 8, fontWeight: 700, color: rc === 'high' ? '#ef4444' : rc === 'medium' ? '#f59e0b' : '#10b981' }}>
           Score de risque &nbsp;{s.risk_score}% — {rc === 'high' ? 'ÉLEVÉ' : rc === 'medium' ? 'MOYEN' : 'FAIBLE'}
         </div>
 
-        {s.proctor_name && <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginBottom: 8 }}><i className="fas fa-user-tie" style={{ marginRight: 5, fontSize: 12 }} />{s.proctor_name}</div>}
+        {s.proctor_name && <div style={{ fontSize:13, color: 'rgba(255,255,255,.4)', marginBottom: 8 }}><i className="fas fa-user-tie" style={{ marginRight: 5, fontSize: 12 }} />{s.proctor_name}</div>}
 
         {/* Actions */}
         {s.banned ? (
-          <div style={{ fontSize: 11, color: '#ef4444' }}><i className="fas fa-ban" style={{ marginRight: 5 }} />Exclu — {s.ban_reason || ''}</div>
+          <div style={{ fontSize:13, color: '#ef4444' }}><i className="fas fa-ban" style={{ marginRight: 5 }} />Exclu — {s.ban_reason || ''}</div>
         ) : isDone ? (
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)' }}><i className="fas fa-lock" style={{ marginRight: 5 }} />Copie soumise — aucune action</div>
+          <div style={{ fontSize:13, color: 'rgba(255,255,255,.4)' }}><i className="fas fa-lock" style={{ marginRight: 5 }} />Copie soumise — aucune action</div>
         ) : (
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             <button className="pc-action" onClick={onWarn} title="Avertir" style={{ background: 'rgba(245,158,11,.2)', color: '#f59e0b' }}><i className="fas fa-exclamation-triangle" /> Avertir</button>
@@ -534,7 +534,7 @@ function EmptyState({ filter, done, banned, search }: { filter: Filter; done: nu
   return (
     <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: 'rgba(255,255,255,.3)' }}>
       <i className={`fas ${icon}`} style={{ fontSize: 53, display: 'block', marginBottom: 16 }} />
-      <p style={{ fontSize: 14 }}>{msg}</p>
+      <p style={{ fontSize:17 }}>{msg}</p>
     </div>
   )
 }
@@ -543,8 +543,8 @@ function SidePanel({ title, children, onClose }: { title: string; children: Reac
   return (
     <div style={{ position: 'fixed', top: 0, right: 0, width: 380, height: '100vh', background: '#1e293b', borderLeft: '1px solid rgba(255,255,255,.1)', zIndex: 500, display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 20px rgba(0,0,0,.4)' }}>
       <div style={{ padding: 16, background: '#2563eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>{title}</h3>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: 18 }}><i className="fas fa-times" /></button>
+        <h3 style={{ margin: 0, fontSize:17, fontWeight: 700 }}>{title}</h3>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize:21.5 }}><i className="fas fa-times" /></button>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>{children}</div>
     </div>
@@ -563,11 +563,11 @@ function PcModal({ children, onClose }: { children: React.ReactNode; onClose: ()
 
 function SpinCenter() { return <div style={{ textAlign: 'center', padding: 40 }}><i className="fas fa-spinner fa-spin" style={{ fontSize: 26 }} /></div> }
 function EmptySide({ icon, text }: { icon: string; text: string }) {
-  return <div style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,.3)', fontSize: 13 }}><i className={`fas ${icon}`} style={{ fontSize: 26, display: 'block', marginBottom: 8 }} />{text}</div>
+  return <div style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,.3)', fontSize:15.5 }}><i className={`fas ${icon}`} style={{ fontSize: 26, display: 'block', marginBottom: 8 }} />{text}</div>
 }
 
-const mTitle: React.CSSProperties = { fontSize: 16, fontWeight: 700, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }
+const mTitle: React.CSSProperties = { fontSize:19, fontWeight: 700, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }
 const mFoot:  React.CSSProperties = { display: 'flex', gap: 8, justifyContent: 'flex-end' }
-const btnGhost:   React.CSSProperties = { padding: '8px 16px', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer', background: 'rgba(255,255,255,.1)', color: 'white' }
-const btnPrimary: React.CSSProperties = { padding: '8px 16px', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer', background: '#3b82f6', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6 }
-const btnDanger:  React.CSSProperties = { padding: '8px 16px', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer', background: '#ef4444', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6 }
+const btnGhost:   React.CSSProperties = { padding: '8px 16px', border: 'none', borderRadius: 7, fontSize:15.5, fontWeight: 600, cursor: 'pointer', background: 'rgba(255,255,255,.1)', color: 'white' }
+const btnPrimary: React.CSSProperties = { padding: '8px 16px', border: 'none', borderRadius: 7, fontSize:15.5, fontWeight: 600, cursor: 'pointer', background: '#3b82f6', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6 }
+const btnDanger:  React.CSSProperties = { padding: '8px 16px', border: 'none', borderRadius: 7, fontSize:15.5, fontWeight: 600, cursor: 'pointer', background: '#ef4444', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6 }

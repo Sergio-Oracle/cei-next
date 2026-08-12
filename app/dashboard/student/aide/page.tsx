@@ -82,21 +82,21 @@ export default function StudentAidePage() {
           <i className="fas fa-headset" style={{ fontSize: 24, color: 'white' }} />
         </div>
         <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontWeight: 700, color: 'white', fontSize: 15, marginBottom: 3 }}>Besoin d'une aide personnalisée ?</div>
-          <div style={{ color: 'rgba(255,255,255,.75)', fontSize: 13 }}>Contactez votre administration pour toute question sur vos examens ou vos notes.</div>
+          <div style={{ fontWeight: 700, color: 'white', fontSize:18, marginBottom: 3 }}>Besoin d'une aide personnalisée ?</div>
+          <div style={{ color: 'rgba(255,255,255,.75)', fontSize:15.5 }}>Contactez votre administration pour toute question sur vos examens ou vos notes.</div>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)', borderRadius: 8, padding: '8px 14px' }}>
             <i className="fas fa-phone" style={{ color: '#93c5fd', fontSize: 16 }} />
-            <span style={{ color: 'white', fontSize: 13, fontWeight: 600 }}>+221 30 108 41 53</span>
+            <span style={{ color: 'white', fontSize:15.5, fontWeight: 600 }}>+221 30 108 41 53</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)', borderRadius: 8, padding: '8px 14px' }}>
             <i className="fas fa-envelope" style={{ color: '#93c5fd', fontSize: 16 }} />
-            <span style={{ color: 'white', fontSize: 13, fontWeight: 600 }}>visioplus@unchk.edu.sn</span>
+            <span style={{ color: 'white', fontSize:15.5, fontWeight: 600 }}>visioplus@unchk.edu.sn</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)', borderRadius: 8, padding: '8px 14px' }}>
             <i className="fas fa-map-marker-alt" style={{ color: '#93c5fd', fontSize: 16 }} />
-            <span style={{ color: 'white', fontSize: 13, fontWeight: 600 }}>Cité du Savoir – Diamniadio</span>
+            <span style={{ color: 'white', fontSize:15.5, fontWeight: 600 }}>Cité du Savoir – Diamniadio</span>
           </div>
         </div>
       </div>
@@ -111,11 +111,11 @@ export default function StudentAidePage() {
               onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}
             >
               <div style={{ width: 38, height: 38, borderRadius: 9, background: l.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <i className={l.icon} style={{ color: 'white', fontSize: 16 }} />
+                <i className={l.icon} style={{ color: 'white', fontSize:19 }} />
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 13, color: '#1e293b' }}>{l.label}</div>
-                <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{l.sub}</div>
+                <div style={{ fontWeight: 700, fontSize:15.5, color: '#1e293b' }}>{l.label}</div>
+                <div style={{ fontSize:13, color: '#64748b', marginTop: 2 }}>{l.sub}</div>
               </div>
             </div>
           </Link>
@@ -127,10 +127,10 @@ export default function StudentAidePage() {
         <div key={cat.id} className="card" style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, paddingBottom: 12, borderBottom: `1.5px solid ${cat.bd}` }}>
             <div style={{ width: 36, height: 36, borderRadius: 8, background: cat.bg, border: `1px solid ${cat.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className={cat.icon} style={{ color: cat.color, fontSize: 16 }} />
+              <i className={cat.icon} style={{ color: cat.color, fontSize:19 }} />
             </div>
-            <span style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>{cat.label}</span>
-            <span style={{ marginLeft: 'auto', background: cat.bg, border: `1px solid ${cat.bd}`, borderRadius: 99, padding: '2px 10px', fontSize: 12, color: cat.color, fontWeight: 700 }}>
+            <span style={{ fontWeight: 700, fontSize:18, color: '#1e293b' }}>{cat.label}</span>
+            <span style={{ marginLeft: 'auto', background: cat.bg, border: `1px solid ${cat.bd}`, borderRadius: 99, padding: '2px 10px', fontSize:14.5, color: cat.color, fontWeight: 700 }}>
               {cat.faqs.length} question{cat.faqs.length > 1 ? 's' : ''}
             </span>
           </div>
@@ -144,12 +144,12 @@ export default function StudentAidePage() {
                     onClick={() => toggle(cat.id, i)}
                     style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, background: isOpen ? cat.bg : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background .2s' }}
                   >
-                    <i className={faq.icon} style={{ fontSize: 14, color: cat.color, flexShrink: 0, width: 18, textAlign: 'center' }} />
-                    <span style={{ flex: 1, fontWeight: 600, fontSize: 13.5, color: '#1e293b' }}>{faq.q}</span>
+                    <i className={faq.icon} style={{ fontSize:17, color: cat.color, flexShrink: 0, width: 18, textAlign: 'center' }} />
+                    <span style={{ flex: 1, fontWeight: 600, fontSize:16, color: '#1e293b' }}>{faq.q}</span>
                     <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'}`} style={{ fontSize: 13, color: '#94a3b8', flexShrink: 0 }} />
                   </button>
                   {isOpen && (
-                    <div style={{ padding: '0 16px 14px 50px', fontSize: 13.5, color: '#475569', lineHeight: 1.65, background: cat.bg }}>
+                    <div style={{ padding: '0 16px 14px 50px', fontSize:16, color: '#475569', lineHeight: 1.65, background: cat.bg }}>
                       {faq.r}
                     </div>
                   )}
@@ -164,7 +164,7 @@ export default function StudentAidePage() {
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <i className="fas fa-shield-alt" style={{ color: '#2563eb', fontSize: 22 }} />
-          <span style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>Règles à respecter pendant l'examen</span>
+          <span style={{ fontWeight: 700, fontSize:18, color: '#1e293b' }}>Règles à respecter pendant l'examen</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
           {RULES.map((r, i) => (
@@ -173,12 +173,12 @@ export default function StudentAidePage() {
               background: r.bad ? '#fff1f2' : '#ecfdf5',
               border: `1px solid ${r.bad ? '#fecdd3' : '#a7f3d0'}`,
             }}>
-              <i className={r.icon} style={{ fontSize: 16, color: r.bad ? '#ef4444' : '#059669', flexShrink: 0 }} />
-              <span style={{ fontSize: 12.5, fontWeight: 600, color: r.bad ? '#9f1239' : '#065f46' }}>{r.text}</span>
+              <i className={r.icon} style={{ fontSize:19, color: r.bad ? '#ef4444' : '#059669', flexShrink: 0 }} />
+              <span style={{ fontSize:15, fontWeight: 600, color: r.bad ? '#9f1239' : '#065f46' }}>{r.text}</span>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 14, background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#92400e' }}>
+        <div style={{ marginTop: 14, background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'flex-start', fontSize:15.5, color: '#92400e' }}>
           <i className="fas fa-exclamation-triangle" style={{ color: '#f59e0b', marginTop: 1, flexShrink: 0 }} />
           <span>
             <strong>Important :</strong> Le dépassement des seuils configurés (changements de fenêtre, absence du visage, outils développeur) entraîne un <strong>bannissement immédiat et irréversible</strong> de l'examen. Votre tentative sera notée 0.

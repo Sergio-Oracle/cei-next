@@ -64,21 +64,21 @@ export default function PostSubmitLockGuard() {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.94)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: 'var(--surface)', borderRadius: 16, padding: '36px 32px', maxWidth: 440, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,.5)' }}>
         <i className="fas fa-hourglass-half" style={{ fontSize: 44, color: '#d97706', marginBottom: 16, display: 'block' }} />
-        <h2 style={{ margin: '0 0 10px', fontSize: 19 }}>Merci d&apos;avoir soumis votre copie</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.5, marginBottom: 16 }}>
+        <h2 style={{ margin: '0 0 10px', fontSize:23 }}>Merci d&apos;avoir soumis votre copie</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize:17, lineHeight: 1.5, marginBottom: 16 }}>
           {status.exam_title && <>« {status.exam_title} » n&apos;est pas encore terminé pour tous les étudiants. </>}
           Par équité, l&apos;accès à la plateforme reste bloqué quelques minutes après votre soumission.
         </p>
         <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '12px 14px', marginBottom: 20, textAlign: 'left', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <i className="fas fa-triangle-exclamation" style={{ color: '#b45309', fontSize: 15, marginTop: 2, flexShrink: 0 }} />
-          <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#92400e' }}>
+          <p style={{ margin: 0, fontSize:15, lineHeight: 1.5, color: '#92400e' }}>
             Restez sur cette page jusqu&apos;à la fin du décompte. Fermer cet onglet ou quitter la plateforme pendant cette période ne débloque rien — c&apos;est enregistré et fait partie des règles d&apos;intégrité à respecter pour la composition en ligne, au même titre que les autres consignes de surveillance de l&apos;examen. Un comportement de ce type peut être signalé comme suspect.
           </p>
         </div>
-        <div style={{ fontSize: 32, fontWeight: 800, color: '#d97706', fontVariantNumeric: 'tabular-nums', marginBottom: 8 }}>
+        <div style={{ fontSize:35, fontWeight: 800, color: '#d97706', fontVariantNumeric: 'tabular-nums', marginBottom: 8 }}>
           {formatRemaining(remaining)}
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>avant de pouvoir continuer</div>
+        <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>avant de pouvoir continuer</div>
       </div>
     </div>
   )

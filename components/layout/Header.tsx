@@ -229,7 +229,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               <i className="fas fa-bell" style={{ fontSize: 20 }} />
               {unreadCount > 0 && (
                 <span style={{ position: 'absolute', top: -3, right: -3, background: '#ef4444', color: 'white',
-                  borderRadius: '50%', width: 17, height: 17, fontSize: 10, fontWeight: 700,
+                  borderRadius: '50%', width: 17, height: 17, fontSize:12, fontWeight: 700,
                   display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
@@ -242,7 +242,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             <button onClick={() => setLangOpen(o => !o)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
                 background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 20,
-                cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                cursor: 'pointer', fontSize:15.5, fontWeight: 600, color: 'var(--text)' }}>
               <i className="fas fa-globe" style={{ color: 'var(--primary)', fontSize: 16 }} />
               <span>{currentLangObj.flag}</span>
               <i className="fas fa-chevron-down" style={{ fontSize: 11, color: 'var(--text-muted)' }} />
@@ -255,9 +255,9 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                   <button key={l.code} onClick={() => selectLang(l.code)}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px',
                       background: currentLang === l.code ? 'var(--primary)1a' : 'transparent',
-                      border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--text)',
+                      border: 'none', cursor: 'pointer', fontSize:17, color: 'var(--text)',
                       fontWeight: currentLang === l.code ? 700 : 400 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', minWidth: 22 }}>{l.flag}</span>
+                    <span style={{ fontSize:13, fontWeight: 700, color: 'var(--primary)', minWidth: 22 }}>{l.flag}</span>
                     {l.label}
                   </button>
                 ))}
@@ -274,7 +274,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                 <div style={{ width: 38, height: 38, borderRadius: '50%',
                   background: roleColor[user.role] || 'var(--primary)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', fontWeight: 700, fontSize: 13, letterSpacing: .5, flexShrink: 0 }}>
+                  color: 'white', fontWeight: 700, fontSize:15.5, letterSpacing: .5, flexShrink: 0 }}>
                   {initials}
                 </div>
                 <i className="fas fa-chevron-down" style={{ fontSize: 11, color: 'var(--text-muted)' }} />
@@ -290,27 +290,27 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                       <div style={{ width: 44, height: 44, borderRadius: '50%',
                         background: roleColor[user.role] || 'var(--primary)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'white', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+                        color: 'white', fontWeight: 700, fontSize:19, flexShrink: 0 }}>
                         {initials}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{user.full_name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{user.email}</div>
+                        <div style={{ fontWeight: 700, fontSize:17, color: 'var(--text)' }}>{user.full_name}</div>
+                        <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>{user.email}</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
+                      <span style={{ fontSize:12, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
                         background: roleColor[user.role], color: 'white', textTransform: 'uppercase' }}>
                         {roleLabel[user.role]}
                       </span>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
+                      <span style={{ fontSize:12, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
                         background: profileExtra.is_active !== false ? '#dcfce7' : '#fef2f2',
                         color: profileExtra.is_active !== false ? '#059669' : '#dc2626' }}>
                         {profileExtra.is_active !== false ? 'Compte actif' : 'Compte inactif'}
                       </span>
                     </div>
                     {profileExtra.last_login && (
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <div style={{ fontSize:13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
                         <i className="fas fa-clock" style={{ fontSize: 12 }} />
                         Dernière connexion : {new Date(profileExtra.last_login).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </div>
@@ -329,7 +329,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                   <button onClick={handleLogout}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px',
                       width: '100%', border: 'none', background: 'transparent', cursor: 'pointer',
-                      color: '#ef4444', fontSize: 14 }}
+                      color: '#ef4444', fontSize:17 }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                     <i className="fas fa-sign-out-alt" style={{ width: 16 }} />
@@ -349,15 +349,15 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
       <div style={{ position: 'fixed', top: 70, right: 20, zIndex: 9400, background: '#0f172a', color: 'white', borderRadius: 12, padding: '14px 18px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(16,185,129,.4)' }}>
         <i className="fas fa-phone-volume fa-shake" style={{ color: '#10b981', fontSize: 24 }} />
         <div>
-          <div style={{ fontWeight: 700, fontSize: 13 }}>Appel entrant</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)' }}>{incomingSupervisorCall.supervisorName}</div>
+          <div style={{ fontWeight: 700, fontSize:15.5 }}>Appel entrant</div>
+          <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.7)' }}>{incomingSupervisorCall.supervisorName}</div>
         </div>
         <button onClick={() => setAnsweringSupervisorCall(true)}
-          style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+          style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize:14.5, cursor: 'pointer' }}>
           <i className="fas fa-phone" /> Répondre
         </button>
         <button onClick={() => setIncomingSupervisorCall(null)}
-          style={{ background: 'rgba(239,68,68,.2)', color: '#fca5a5', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+          style={{ background: 'rgba(239,68,68,.2)', color: '#fca5a5', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize:14.5, cursor: 'pointer' }}>
           <i className="fas fa-phone-slash" /> Refuser
         </button>
       </div>
@@ -380,7 +380,7 @@ function DropdownLink({ href, icon, children, onClick }: {
   return (
     <Link href={href} onClick={onClick}
       style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px',
-        textDecoration: 'none', color: 'var(--text)', fontSize: 14 }}
+        textDecoration: 'none', color: 'var(--text)', fontSize:17 }}
       onMouseEnter={e => (e.currentTarget.style.background = 'var(--background)')}
       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
       <i className={`fas ${icon}`} style={{ color: 'var(--primary)', width: 16 }} />

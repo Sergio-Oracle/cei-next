@@ -206,7 +206,7 @@ export default function ProfessorTranscriptsPage() {
             {semEntries.length > 0 && (
               <>
                 <select id="bulk-semester-select" defaultValue={semEntries[0][0]}
-                  style={{ padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }}>
+                  style={{ padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize:15.5, background: 'var(--surface)', color: 'var(--text)' }}>
                   {semEntries.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
                 </select>
                 <button className="btn btn-secondary" disabled={downloading === 'bulk'}
@@ -219,7 +219,7 @@ export default function ProfessorTranscriptsPage() {
               </>
             )}
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher…"
-              style={{ padding: '7px 12px', border: '1px solid var(--border)', borderRadius: 7, background: 'var(--surface)', color: 'var(--text)', fontSize: 13, outline: 'none', width: 210 }} />
+              style={{ padding: '7px 12px', border: '1px solid var(--border)', borderRadius: 7, background: 'var(--surface)', color: 'var(--text)', fontSize:15.5, outline: 'none', width: 210 }} />
           </div>
         </div>
 
@@ -232,7 +232,7 @@ export default function ProfessorTranscriptsPage() {
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 10, padding: 20 }}>
               <i className="fas fa-file-circle-plus" style={{ fontSize: 40, color: '#94a3b8', flexShrink: 0, marginTop: 4 }} />
               <div>
-                <strong style={{ fontSize: '1.05em', color: '#334155' }}>Aucun relevé n'a encore été généré</strong>
+                <strong style={{ fontSize: '1.21em', color: '#334155' }}>Aucun relevé n'a encore été généré</strong>
                 <p style={{ margin: '8px 0 4px', color: '#64748b' }}>Pour créer le premier relevé d'un étudiant, utilisez le formulaire ci-dessous. Assurez-vous que :</p>
                 <ul style={{ margin: '6px 0 0 20px', color: '#64748b', lineHeight: 1.9 }}>
                   <li>L'étudiant a passé au moins un examen pour ce semestre</li>
@@ -264,15 +264,15 @@ export default function ProfessorTranscriptsPage() {
                   return (
                     <tr key={t.id}>
                       <td>
-                        <strong style={{ fontSize: 14 }}>{t.student_name}</strong>
+                        <strong style={{ fontSize:17 }}>{t.student_name}</strong>
                         <br /><small style={{ color: '#64748b' }}>{t.student_email}</small>
                       </td>
-                      <td style={{ fontSize: 13 }}>{t.formation_name}</td>
-                      <td style={{ fontSize: 13 }}>{t.semester_name}</td>
+                      <td style={{ fontSize:15.5 }}>{t.formation_name}</td>
+                      <td style={{ fontSize:15.5 }}>{t.semester_name}</td>
                       <td>
-                        <strong style={{ color: gColor, fontSize: 16 }}>{t.gpa != null ? `${t.gpa}/20` : '—'}</strong>
+                        <strong style={{ color: gColor, fontSize:19 }}>{t.gpa != null ? `${t.gpa}/20` : '—'}</strong>
                       </td>
-                      <td style={{ fontSize: 13 }}>{t.obtained_credits ?? '—'}/{t.total_credits ?? '—'}</td>
+                      <td style={{ fontSize:15.5 }}>{t.obtained_credits ?? '—'}/{t.total_credits ?? '—'}</td>
                       <td>
                         <span className={`status-badge ${t.validated ? 'success' : 'danger'}`}>
                           {t.validated ? 'Validé' : 'Non validé'}
@@ -280,7 +280,7 @@ export default function ProfessorTranscriptsPage() {
                       </td>
                       <td>
                         <button onClick={() => togglePublish(t.id, t.is_published)}
-                          style={{ border: 'none', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 700,
+                          style={{ border: 'none', borderRadius: 20, padding: '4px 12px', fontSize:14.5, fontWeight: 700,
                             cursor: 'pointer', transition: 'all .2s',
                             background: t.is_published ? '#dcfce7' : '#f1f5f9',
                             color: t.is_published ? '#15803d' : '#64748b' }}
@@ -289,7 +289,7 @@ export default function ProfessorTranscriptsPage() {
                           {t.is_published ? 'Publié' : 'Masqué'}
                         </button>
                       </td>
-                      <td style={{ fontSize: 12 }}>
+                      <td style={{ fontSize:14.5 }}>
                         <div>{new Date(t.generated_at).toLocaleDateString('fr-FR')}</div>
                         {t.generated_by && <small style={{ color: '#64748b' }}>{t.generated_by}</small>}
                       </td>
@@ -323,7 +323,7 @@ export default function ProfessorTranscriptsPage() {
         <div style={{ padding: '0 20px' }}>
           <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '16px 18px', marginBottom: 20 }}>
             <i className="fas fa-lightbulb" style={{ fontSize: 24, marginTop: 2, flexShrink: 0, color: '#2563eb' }} />
-            <div style={{ fontSize: '0.93em' }}>
+            <div style={{ fontSize: '1.07em' }}>
               <strong style={{ color: '#1e40af' }}>Prérequis avant de générer un relevé :</strong>
               <ol style={{ margin: '6px 0 0 18px', lineHeight: 1.8, color: '#3b5998' }}>
                 <li>Sélectionnez l'étudiant concerné dans la liste</li>
@@ -343,7 +343,7 @@ export default function ProfessorTranscriptsPage() {
               <option value="">-- Sélectionner un étudiant --</option>
               {students.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
             </select>
-            <small style={{ color: '#64748b', fontSize: 12, marginTop: 4, display: 'block' }}>
+            <small style={{ color: '#64748b', fontSize:14.5, marginTop: 4, display: 'block' }}>
               <i className="fas fa-info-circle" style={{ marginRight: 4 }} />Sélectionnez d'abord l'étudiant pour charger ses semestres disponibles
             </small>
           </div>
@@ -365,7 +365,7 @@ export default function ProfessorTranscriptsPage() {
                     </>
               }
             </select>
-            <small style={{ color: semesters.length > 0 ? '#10b981' : '#64748b', fontSize: 12, marginTop: 4, display: 'block' }}>
+            <small style={{ color: semesters.length > 0 ? '#10b981' : '#64748b', fontSize:14.5, marginTop: 4, display: 'block' }}>
               {semesters.length > 0
                 ? <><i className="fas fa-check" style={{ marginRight: 4 }} />{semesters.length} semestre(s) disponible(s)</>
                 : <><i className="fas fa-arrow-up" style={{ marginRight: 4 }} />Sélectionnez d'abord un étudiant pour activer ce champ</>}
@@ -377,7 +377,7 @@ export default function ProfessorTranscriptsPage() {
               <i className="fas fa-exclamation-circle" style={{ fontSize: 24, color: '#ef4444', flexShrink: 0, marginTop: 2 }} />
               <div>
                 <strong style={{ color: '#dc2626' }}>Erreur lors de la génération</strong>
-                <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: 13 }}>{formError}</p>
+                <p style={{ margin: '6px 0 0', color: '#64748b', fontSize:15.5 }}>{formError}</p>
               </div>
             </div>
           )}

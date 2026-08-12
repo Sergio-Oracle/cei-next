@@ -441,8 +441,8 @@ export default function GuideEnseignant() {
 
       <footer className="doc-footer">
         <p>Centre d&apos;Examen Intelligent — <a href="/">Retour à l&apos;accueil</a> · <a href="/guide-etudiant">Guide Étudiant</a> · <a href="/guide-surveillant">Guide Surveillant</a> · <a href="/guide-superviseur">Guide Superviseur</a> · <a href="/conditions">Conditions d&apos;Utilisation</a></p>
-        <p style={{marginTop:16,fontSize:12,opacity:.8,fontWeight:600}}>Contact</p>
-        <p style={{marginTop:6,fontSize:12,opacity:.6}}>
+        <p style={{marginTop:16,fontSize:14.5,opacity:.8,fontWeight:600}}>Contact</p>
+        <p style={{marginTop:6,fontSize:14.5,opacity:.6}}>
           <i className="fas fa-map-marker-alt" /> Cité du Savoir – Diamniadio, Castors, avenue Bourguiba, rue n°13<br />
           <i className="fas fa-phone" /> +221 30 108 41 53<br />
           <i className="fas fa-envelope" /> visioplus@unchk.edu.sn

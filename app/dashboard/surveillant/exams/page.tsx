@@ -93,10 +93,10 @@ export default function SurveillantExamsPage() {
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                  <span style={{ background: sc.bg, color: sc.color, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>{sc.label}</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{exam.title}</span>
+                  <span style={{ background: sc.bg, color: sc.color, fontSize:13, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>{sc.label}</span>
+                  <span style={{ fontSize:18, fontWeight: 700, color: 'var(--text)' }}>{exam.title}</span>
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <div style={{ fontSize:14.5, color: 'var(--text-muted)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                   <span><i className="fas fa-calendar" style={{ marginRight: 4 }} />{dt}</span>
                   <span><i className="fas fa-clock" style={{ marginRight: 4 }} />{exam.duration_minutes} min</span>
                   <span><i className="fas fa-users" style={{ marginRight: 4 }} />{students.length} étudiant(s)</span>
@@ -104,7 +104,7 @@ export default function SurveillantExamsPage() {
               </div>
               {exam.status === 'active' && (
                 <Link href={`/proctor/monitor/${exam.id}`}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#2563eb', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#2563eb', color: 'white', borderRadius: 8, fontSize:15.5, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
                   <i className="fas fa-shield-alt" /> Surveiller
                 </Link>
               )}
@@ -112,10 +112,10 @@ export default function SurveillantExamsPage() {
 
             {/* Barre progression mini-stats */}
             <div style={{ padding: '8px 20px', background: 'var(--background)', borderBottom: '1px solid var(--border)', display: 'flex', gap: 18, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 12, color: '#3b82f6', fontWeight: 600 }}><strong>{inProgress}</strong> en cours</span>
-              <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}><strong>{submitted}</strong> soumis</span>
-              <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}><strong>{notStarted}</strong> pas commencé</span>
-              {bannedCount > 0 && <span style={{ fontSize: 12, color: '#ef4444', fontWeight: 600 }}><strong>{bannedCount}</strong> exclu(s)</span>}
+              <span style={{ fontSize:14.5, color: '#3b82f6', fontWeight: 600 }}><strong>{inProgress}</strong> en cours</span>
+              <span style={{ fontSize:14.5, color: '#10b981', fontWeight: 600 }}><strong>{submitted}</strong> soumis</span>
+              <span style={{ fontSize:14.5, color: '#94a3b8', fontWeight: 600 }}><strong>{notStarted}</strong> pas commencé</span>
+              {bannedCount > 0 && <span style={{ fontSize:14.5, color: '#ef4444', fontWeight: 600 }}><strong>{bannedCount}</strong> exclu(s)</span>}
             </div>
 
             {/* Tableau étudiants */}
@@ -124,7 +124,7 @@ export default function SurveillantExamsPage() {
                 <thead>
                   <tr style={{ background: 'var(--background)' }}>
                     {['Étudiant','Statut','Risque'].map(h => (
-                      <th key={h} style={{ padding: '7px 14px', textAlign: 'left', fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                      <th key={h} style={{ padding: '7px 14px', textAlign: 'left', fontSize:12, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -134,14 +134,14 @@ export default function SurveillantExamsPage() {
                     const riskColor = s.risk_score >= 70 ? '#ef4444' : s.risk_score >= 40 ? '#f59e0b' : '#10b981'
                     return (
                       <tr key={idx} style={{ borderBottom: '1px solid var(--border)', background: idx % 2 === 0 ? 'var(--background)' : 'transparent' }}>
-                        <td style={{ padding: '8px 14px', fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>
+                        <td style={{ padding: '8px 14px', fontSize:15.5, color: 'var(--text)', fontWeight: 500 }}>
                           {idx + 1}. {s.student_name}
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.student_email}</div>
+                          <div style={{ fontSize:13, color: 'var(--text-muted)' }}>{s.student_email}</div>
                         </td>
                         <td style={{ padding: '8px 14px' }}>
-                          <span style={{ background: sbg, color: sc2, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{sl}</span>
+                          <span style={{ background: sbg, color: sc2, fontSize:12, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{sl}</span>
                         </td>
-                        <td style={{ padding: '8px 14px', fontSize: 12, fontWeight: 700, color: riskColor }}>
+                        <td style={{ padding: '8px 14px', fontSize:14.5, fontWeight: 700, color: riskColor }}>
                           {exam.status === 'active' || exam.status === 'closed' ? `${s.risk_score}%` : '—'}
                         </td>
                       </tr>
@@ -150,7 +150,7 @@ export default function SurveillantExamsPage() {
                 </tbody>
               </table>
             ) : (
-              <p style={{ padding: '16px 20px', color: 'var(--text-muted)', fontSize: 13 }}>Aucun étudiant assigné.</p>
+              <p style={{ padding: '16px 20px', color: 'var(--text-muted)', fontSize:15.5 }}>Aucun étudiant assigné.</p>
             )}
           </div>
         )

@@ -97,8 +97,8 @@ export default function ProfessorSubjectsPage() {
             <i className="fas fa-upload" style={{ color: 'var(--primary)', fontSize: 24 }} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', marginBottom: 4 }}>Créer un Sujet</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            <div style={{ fontWeight: 700, fontSize:18, color: 'var(--text)', marginBottom: 4 }}>Créer un Sujet</div>
+            <div style={{ fontSize:14.5, color: 'var(--text-muted)', lineHeight: 1.5 }}>
               Uploadez un fichier PDF/DOCX — extraction texte + annotation + barème IA
             </div>
           </div>
@@ -115,8 +115,8 @@ export default function ProfessorSubjectsPage() {
             <i className="fas fa-wand-magic-sparkles" style={{ color: '#d97706', fontSize: 24 }} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', marginBottom: 4 }}>Générer avec l'IA</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            <div style={{ fontWeight: 700, fontSize:18, color: 'var(--text)', marginBottom: 4 }}>Générer avec l'IA</div>
+            <div style={{ fontSize:14.5, color: 'var(--text-muted)', lineHeight: 1.5 }}>
               Uploadez un cours — l'IA propose 3 sujets complets avec questions et barème
             </div>
           </div>
@@ -129,11 +129,11 @@ export default function ProfessorSubjectsPage() {
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <i className="fas fa-list" style={{ color: 'var(--text-muted)', fontSize: 17 }} />
-            <span style={{ fontWeight: 600, fontSize: 14 }}>
+            <span style={{ fontWeight: 600, fontSize:17 }}>
               {loading ? '…' : `${subjects.length} sujet${subjects.length !== 1 ? 's' : ''} au total`}
             </span>
           </div>
-          <button onClick={reload} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button onClick={reload} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize:15.5, display: 'flex', alignItems: 'center', gap: 6 }}>
             <i className="fas fa-rotate-right" style={{ fontSize: 14 }} />Actualiser
           </button>
         </div>
@@ -164,8 +164,8 @@ export default function ProfessorSubjectsPage() {
                       <div style={{ width: 56, height: 56, background: '#eff6ff', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
                         <i className="fas fa-file-lines" style={{ fontSize: 26, color: 'var(--primary)' }} />
                       </div>
-                      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Aucun sujet pour le moment</div>
-                      <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 18 }}>
+                      <div style={{ fontWeight: 700, fontSize:18, marginBottom: 6 }}>Aucun sujet pour le moment</div>
+                      <div style={{ fontSize:15.5, color: 'var(--text-muted)', marginBottom: 18 }}>
                         Créez votre premier sujet en uploadant un fichier ou en laissant l'IA vous aider.
                       </div>
                       <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
@@ -187,23 +187,23 @@ export default function ProfessorSubjectsPage() {
                 return (
                   <tr key={s.id}>
                     <td style={{ maxWidth: 320 }}>
-                      <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.4 }}>{s.title}</div>
+                      <div style={{ fontWeight: 600, fontSize:17, lineHeight: 1.4 }}>{s.title}</div>
                       {hasRubric && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', padding: '1px 7px', borderRadius: 99, fontSize: 10, fontWeight: 600, marginTop: 4 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', padding: '1px 7px', borderRadius: 99, fontSize:12, fontWeight: 600, marginTop: 4 }}>
                           <i className="fas fa-scale-balanced" style={{ fontSize: 10 }} /> Barème
                         </span>
                       )}
                     </td>
                     <td>
                       {s.ec_code
-                        ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
+                        ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 99, fontSize:13, fontWeight: 600 }}>
                             <i className="fas fa-book" style={{ fontSize: 11 }} /> {s.ec_code}
                           </span>
-                        : <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>—</span>}
+                        : <span style={{ color: 'var(--text-muted)', fontSize:15.5 }}>—</span>}
                     </td>
                     <td><span className="status-badge secondary">{s.papers_count ?? 0}</span></td>
                     <td><span className="status-badge secondary">{s.exam_count ?? 0}</span></td>
-                    <td style={{ fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    <td style={{ fontSize:15.5, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                       <i className="fas fa-calendar-day" style={{ marginRight: 5, fontSize: 13 }} />{dateStr}
                     </td>
                     <td>
@@ -238,15 +238,15 @@ export default function ProfessorSubjectsPage() {
               <>
                 <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                   <div style={{ flex: 1 }}>
-                    <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, lineHeight: 1.3 }}>{previewSubject.title}</h3>
+                    <h3 style={{ margin: '0 0 6px', fontSize:19, fontWeight: 700, lineHeight: 1.3 }}>{previewSubject.title}</h3>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                       {previewSubject.ec_code && (
-                        <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
+                        <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 99, fontSize:13, fontWeight: 600 }}>
                           <i className="fas fa-book" style={{ marginRight: 4, fontSize: 11 }} />{previewSubject.ec_code}
                         </span>
                       )}
                       {previewSubject.created_at && (
-                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                        <span style={{ fontSize:14.5, color: 'var(--text-muted)' }}>
                           <i className="fas fa-calendar-day" style={{ marginRight: 4 }} />
                           {new Date(previewSubject.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </span>
@@ -254,7 +254,7 @@ export default function ProfessorSubjectsPage() {
                     </div>
                   </div>
                   <button onClick={() => setPreviewSubject(null)}
-                    style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)', lineHeight: 1, padding: 4 }}>
+                    style={{ background: 'none', border: 'none', fontSize:21.5, cursor: 'pointer', color: 'var(--text-muted)', lineHeight: 1, padding: 4 }}>
                     <i className="fas fa-times" />
                   </button>
                 </div>
@@ -262,12 +262,12 @@ export default function ProfessorSubjectsPage() {
                 <div style={{ flex: 1, overflow: 'auto', padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {previewSubject.content ? (
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>
+                      <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>
                         <i className="fas fa-file-lines" style={{ marginRight: 6 }} />Contenu du sujet
                       </div>
                       <textarea readOnly={!editMode} value={editMode ? editContent : previewSubject.content}
                         onChange={e => editMode && setEditContent(e.target.value)}
-                        style={{ width: '100%', minHeight: 260, padding: '12px 14px', border: `1.5px solid ${editMode ? 'var(--primary)' : 'var(--border)'}`, borderRadius: 10, fontSize: 13, lineHeight: 1.7, fontFamily: 'monospace', background: editMode ? 'var(--surface)' : 'var(--background)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
+                        style={{ width: '100%', minHeight: 260, padding: '12px 14px', border: `1.5px solid ${editMode ? 'var(--primary)' : 'var(--border)'}`, borderRadius: 10, fontSize:15.5, lineHeight: 1.7, fontFamily: 'monospace', background: editMode ? 'var(--surface)' : 'var(--background)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
                     </div>
                   ) : (
                     <div style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
@@ -277,12 +277,12 @@ export default function ProfessorSubjectsPage() {
                   )}
                   {(previewSubject.rubric || editMode) && (
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>
+                      <div style={{ fontSize:14.5, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>
                         <i className="fas fa-scale-balanced" style={{ marginRight: 6 }} />Barème de notation
                       </div>
                       <textarea readOnly={!editMode} value={editMode ? editRubric : (previewSubject.rubric || '')}
                         onChange={e => editMode && setEditRubric(e.target.value)}
-                        style={{ width: '100%', minHeight: 200, padding: '12px 14px', border: `1.5px solid ${editMode ? '#10b981' : '#bbf7d0'}`, borderRadius: 10, fontSize: 13, lineHeight: 1.7, fontFamily: 'monospace', background: '#f0fdf4', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
+                        style={{ width: '100%', minHeight: 200, padding: '12px 14px', border: `1.5px solid ${editMode ? '#10b981' : '#bbf7d0'}`, borderRadius: 10, fontSize:15.5, lineHeight: 1.7, fontFamily: 'monospace', background: '#f0fdf4', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
                     </div>
                   )}
                 </div>

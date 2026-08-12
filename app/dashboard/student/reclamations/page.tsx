@@ -128,10 +128,10 @@ function ReclamationsContent() {
                 <tr key={r.id}>
                   <td>
                     <div style={{ fontWeight: 600 }}>{r.exam_title ?? r.subject_title}</div>
-                    {r.exam_title && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.subject_title}</div>}
+                    {r.exam_title && <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>{r.subject_title}</div>}
                   </td>
                   <td>
-                    <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99,
+                    <span style={{ fontSize:14.5, padding: '2px 8px', borderRadius: 99,
                       background: r.type === 'online_exam' ? '#eff6ff' : '#f0fdf4',
                       color: r.type === 'online_exam' ? '#1d4ed8' : '#166534' }}>
                       {r.type === 'online_exam' ? 'En ligne' : 'Copie papier'}
@@ -143,7 +143,7 @@ function ReclamationsContent() {
                       : '—'}
                   </td>
                   <td><StatusBadge status={r.status} /></td>
-                  <td style={{ fontSize: 13 }}>{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
+                  <td style={{ fontSize:15.5 }}>{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
                   <td>
                     <button className="btn btn-sm btn-secondary" onClick={() => setViewItem(r)} title="Voir détails">
                       <i className="fa-solid fa-eye" />
@@ -211,7 +211,7 @@ function ReclamationsContent() {
         <Modal title={`Réclamation #${viewItem.id}`} onClose={() => setViewItem(null)}>
           <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
             <StatusBadge status={viewItem.status} />
-            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+            <span style={{ fontSize:15.5, color: 'var(--text-muted)' }}>
               {new Date(viewItem.created_at).toLocaleString('fr-FR')}
             </span>
           </div>
@@ -227,7 +227,7 @@ function ReclamationsContent() {
 
           <div className="form-group">
             <label>Votre motif</label>
-            <div style={{ padding: 12, background: 'var(--bg)', borderRadius: 'var(--radius)', fontSize: 14, whiteSpace: 'pre-wrap', border: '1px solid var(--border)' }}>
+            <div style={{ padding: 12, background: 'var(--bg)', borderRadius: 'var(--radius)', fontSize:17, whiteSpace: 'pre-wrap', border: '1px solid var(--border)' }}>
               {viewItem.reason}
             </div>
           </div>
@@ -235,7 +235,7 @@ function ReclamationsContent() {
           {viewItem.response && (
             <div className="form-group">
               <label>Réponse {viewItem.responder_name ? `de ${viewItem.responder_name}` : ''}</label>
-              <div style={{ padding: 12, background: '#f0fdf4', borderRadius: 'var(--radius)', fontSize: 14, border: '1px solid #bbf7d0', whiteSpace: 'pre-wrap' }}>
+              <div style={{ padding: 12, background: '#f0fdf4', borderRadius: 'var(--radius)', fontSize:17, border: '1px solid #bbf7d0', whiteSpace: 'pre-wrap' }}>
                 {viewItem.response}
               </div>
             </div>
@@ -247,7 +247,7 @@ function ReclamationsContent() {
               Score {viewItem.ia_proposed_score}
               {viewItem.ia_proposed_grade && ` (${viewItem.ia_proposed_grade})`}
               {viewItem.ia_proposed_reason && (
-                <div style={{ marginTop: 6, fontSize: 13 }}>{viewItem.ia_proposed_reason}</div>
+                <div style={{ marginTop: 6, fontSize:15.5 }}>{viewItem.ia_proposed_reason}</div>
               )}
             </div>
           )}

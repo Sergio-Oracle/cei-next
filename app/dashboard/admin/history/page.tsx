@@ -80,11 +80,11 @@ export default function AdminHistoryPage() {
       {/* Page header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h2 style={{ margin: 0, fontSize:24, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 10 }}>
             <i className="fas fa-clock-rotate-left" style={{ color: 'var(--primary)' }} />
             Historique des Examens
           </h2>
-          <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: 13 }}>Statistiques et journaux des examens terminés</p>
+          <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize:15.5 }}>Statistiques et journaux des examens terminés</p>
         </div>
       </div>
 
@@ -105,8 +105,8 @@ export default function AdminHistoryPage() {
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <i className="fas fa-list" style={{ color: 'var(--text-muted)', fontSize: 16 }} />
-          <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--text)' }}>Liste des examens</span>
-          <span style={{ background: 'var(--background)', color: 'var(--text-muted)', padding: '1px 8px', borderRadius: 99, fontSize: 12, marginLeft: 4 }}>{exams.length}</span>
+          <span style={{ fontWeight: 600, fontSize:18, color: 'var(--text)' }}>Liste des examens</span>
+          <span style={{ background: 'var(--background)', color: 'var(--text-muted)', padding: '1px 8px', borderRadius: 99, fontSize:14.5, marginLeft: 4 }}>{exams.length}</span>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
@@ -114,7 +114,7 @@ export default function AdminHistoryPage() {
             <thead>
               <tr style={{ background: 'var(--background)' }}>
                 {['Examen', 'Créateur', 'Date de clôture', 'Participants', 'Moyenne', 'Incidents', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize:13, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', borderBottom: '1px solid var(--border)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -139,23 +139,23 @@ export default function AdminHistoryPage() {
                   <tr key={exam.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     {/* Examen */}
                     <td style={{ padding: '14px 16px', maxWidth: 260 }}>
-                      <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)', fontSize: 13, lineHeight: 1.4 }}>{exam.title}</p>
-                      {exam.subject_title && <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>{exam.subject_title}</p>}
+                      <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)', fontSize:15.5, lineHeight: 1.4 }}>{exam.title}</p>
+                      {exam.subject_title && <p style={{ margin: '3px 0 0', fontSize:13, color: 'var(--text-muted)' }}>{exam.subject_title}</p>}
                     </td>
 
                     {/* Créateur */}
                     <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#dbeafe', color: '#1d4ed8', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#dbeafe', color: '#1d4ed8', fontSize:12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {initials(exam.creator_name)}
                         </div>
-                        <span style={{ fontSize: 13, color: 'var(--text)' }}>{exam.creator_name ?? '—'}</span>
+                        <span style={{ fontSize:15.5, color: 'var(--text)' }}>{exam.creator_name ?? '—'}</span>
                       </div>
                     </td>
 
                     {/* Date de clôture */}
                     <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:15.5, color: 'var(--text-muted)' }}>
                         <i className="fas fa-calendar-day" style={{ color: 'var(--text-muted)', fontSize: 13 }} />
                         {fmtDate(exam.end_time)}
                       </div>
@@ -163,8 +163,8 @@ export default function AdminHistoryPage() {
 
                     {/* Participants */}
                     <td style={{ padding: '14px 16px' }}>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{exam.total_attempts} participant(s)</p>
-                      <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>
+                      <p style={{ margin: 0, fontSize:15.5, fontWeight: 600, color: 'var(--text)' }}>{exam.total_attempts} participant(s)</p>
+                      <p style={{ margin: '2px 0 0', fontSize:13, color: 'var(--text-muted)' }}>
                         {exam.submitted_count} soumis · {exam.corrected_count} corrigés
                         {exam.banned_count > 0 && <span style={{ color: '#ef4444', fontWeight: 600 }}> · {exam.banned_count} exclus</span>}
                       </p>
@@ -172,7 +172,7 @@ export default function AdminHistoryPage() {
 
                     {/* Moyenne */}
                     <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                      <span style={{ display: 'inline-block', background: scBg, color: scColor, padding: '4px 10px', borderRadius: 8, fontWeight: 700, fontSize: 15 }}>
+                      <span style={{ display: 'inline-block', background: scBg, color: scColor, padding: '4px 10px', borderRadius: 8, fontWeight: 700, fontSize:18 }}>
                         {sc}/20
                       </span>
                     </td>
@@ -180,10 +180,10 @@ export default function AdminHistoryPage() {
                     {/* Incidents */}
                     <td style={{ padding: '14px 16px', textAlign: 'center' }}>
                       {exam.incidents_count > 0
-                        ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fee2e2', color: '#991b1b', padding: '3px 9px', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
+                        ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fee2e2', color: '#991b1b', padding: '3px 9px', borderRadius: 99, fontSize:14.5, fontWeight: 600 }}>
                             <i className="fas fa-triangle-exclamation" style={{ fontSize: 12 }} />{exam.incidents_count}
                           </span>
-                        : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#dcfce7', color: '#15803d', padding: '3px 9px', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
+                        : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#dcfce7', color: '#15803d', padding: '3px 9px', borderRadius: 99, fontSize:14.5, fontWeight: 600 }}>
                             <i className="fas fa-check" style={{ fontSize: 12 }} />Aucun
                           </span>}
                     </td>
@@ -192,11 +192,11 @@ export default function AdminHistoryPage() {
                     <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => openDetail(exam.id)} disabled={isBusy}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 11px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: isBusy ? 'not-allowed' : 'pointer', opacity: isBusy ? .7 : 1 }}>
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 11px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 6, fontSize:14.5, fontWeight: 600, cursor: isBusy ? 'not-allowed' : 'pointer', opacity: isBusy ? .7 : 1 }}>
                           <i className={`fas ${isBusy ? 'fa-spinner fa-spin' : 'fa-eye'}`} />{isBusy ? '…' : 'Détails'}
                         </button>
                         <button onClick={() => { setIncidentsId(exam.id); setIncidentsTitle(exam.title) }}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 11px', background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 11px', background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a', borderRadius: 6, fontSize:14.5, fontWeight: 600, cursor: 'pointer' }}>
                           <i className="fas fa-list-ul" />Logs
                         </button>
                       </div>
@@ -254,8 +254,8 @@ function KpiCard({ icon, iconColor, bg, label, value }: { icon: string; iconColo
         <i className={`fas ${icon}`} style={{ color: iconColor, fontSize: 19 }} />
       </div>
       <div>
-        <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>{value}</p>
-        <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>{label}</p>
+        <p style={{ margin: 0, fontSize:24, fontWeight: 800, color: 'var(--text)' }}>{value}</p>
+        <p style={{ margin: 0, fontSize:14.5, color: 'var(--text-muted)' }}>{label}</p>
       </div>
     </div>
   )

@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
           <div style={{ width: 64, height: 64, background: 'var(--primary)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <i className="fa-solid fa-lock" style={{ fontSize: 31, color: 'white' }} />
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Mot de passe oublié</h1>
+          <h1 style={{ fontSize:26.5, fontWeight: 700, marginBottom: 4 }}>Mot de passe oublié</h1>
           <p style={{ color: 'var(--text-muted)' }}>CEI – Centre d'Examen Intelligent</p>
         </div>
 
@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
             <div style={{ textAlign: 'center' }}>
               <i className="fa-solid fa-envelope-circle-check" style={{ fontSize: 53, color: 'var(--success)', marginBottom: 16, display: 'block' }} />
               <h3 style={{ marginBottom: 8 }}>Email envoyé !</h3>
-              <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: 14 }}>
+              <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize:17 }}>
                 Si un compte existe avec l'adresse <strong>{email}</strong>, vous recevrez un email avec les instructions de réinitialisation.
               </p>
               <Link href="/login" className="btn btn-primary btn-block">
@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: 14 }}>
+              <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize:17 }}>
                 Entrez votre adresse email et nous vous enverrons les instructions pour réinitialiser votre mot de passe.
               </p>
 
@@ -88,7 +88,7 @@ export default function ForgotPasswordPage() {
               </button>
 
               <div style={{ textAlign: 'center', marginTop: 16 }}>
-                <Link href="/login" style={{ color: 'var(--primary)', fontSize: 14 }}>
+                <Link href="/login" style={{ color: 'var(--primary)', fontSize:17 }}>
                   <i className="fa-solid fa-arrow-left" /> Retour à la connexion
                 </Link>
               </div>

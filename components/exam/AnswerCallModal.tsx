@@ -144,8 +144,8 @@ export default function AnswerCallModal({ attemptId, examTitle, studentName, onC
         <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="fas fa-phone-volume" style={{ color: '#10b981' }} />
           <div>
-            <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>Appel — {studentName}</div>
-            <div style={{ color: 'rgba(255,255,255,.5)', fontSize: 11 }}>{examTitle}</div>
+            <div style={{ color: 'white', fontWeight: 700, fontSize:17 }}>Appel — {studentName}</div>
+            <div style={{ color: 'rgba(255,255,255,.5)', fontSize:13 }}>{examTitle}</div>
           </div>
         </div>
 
@@ -168,7 +168,7 @@ export default function AnswerCallModal({ attemptId, examTitle, studentName, onC
             <i className={`fas ${camOn ? 'fa-video' : 'fa-video-slash'}`} />
           </button>
           <button onClick={hangUp} title="Raccrocher"
-            style={{ width: 54, height: 44, borderRadius: 22, border: 'none', background: '#ef4444', color: 'white', cursor: 'pointer', fontSize: 16 }}>
+            style={{ width: 54, height: 44, borderRadius: 22, border: 'none', background: '#ef4444', color: 'white', cursor: 'pointer', fontSize:19 }}>
             <i className="fas fa-phone-slash" />
           </button>
           <button title={micOn ? 'Micro actif' : 'Micro indisponible'} disabled
@@ -181,18 +181,18 @@ export default function AnswerCallModal({ attemptId, examTitle, studentName, onC
           {accessCode ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
               <div>
-                <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>Code — à communiquer à {studentName}</div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: '#fbbf24', letterSpacing: 5 }}>{accessCode.code}</div>
-                <div style={{ fontSize: 11, color: '#94a3b8' }}>Expire à {new Date(accessCode.expires_at).toLocaleTimeString('fr-FR')} — usage unique</div>
+                <div style={{ fontSize:12, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>Code — à communiquer à {studentName}</div>
+                <div style={{ fontSize:26.5, fontWeight: 800, color: '#fbbf24', letterSpacing: 5 }}>{accessCode.code}</div>
+                <div style={{ fontSize:13, color: '#94a3b8' }}>Expire à {new Date(accessCode.expires_at).toLocaleTimeString('fr-FR')} — usage unique</div>
               </div>
               <button onClick={() => { void generateAccessCode() }} disabled={generatingCode}
-                style={{ fontSize: 11, background: 'rgba(255,255,255,.1)', color: 'white', border: 'none', padding: '7px 12px', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
+                style={{ fontSize:13, background: 'rgba(255,255,255,.1)', color: 'white', border: 'none', padding: '7px 12px', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
                 <i className={`fas ${generatingCode ? 'fa-spinner fa-spin' : 'fa-rotate'}`} /> Régénérer
               </button>
             </div>
           ) : (
             <button onClick={() => { void generateAccessCode() }} disabled={generatingCode}
-              style={{ width: '100%', background: 'rgba(217,119,6,.25)', color: '#fcd34d', border: '1px solid rgba(217,119,6,.4)', borderRadius: 8, padding: '9px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>
+              style={{ width: '100%', background: 'rgba(217,119,6,.25)', color: '#fcd34d', border: '1px solid rgba(217,119,6,.4)', borderRadius: 8, padding: '9px', cursor: 'pointer', fontWeight: 700, fontSize:14.5 }}>
               <i className={`fas ${generatingCode ? 'fa-spinner fa-spin' : 'fa-key'}`} /> Générer un code de reprise (après vérification d'identité)
             </button>
           )}

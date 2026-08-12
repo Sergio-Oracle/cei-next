@@ -44,9 +44,9 @@ export default function SupervisorCallListener() {
         <div style={{ position: 'fixed', top: incoming ? 96 : 16, right: 20, zIndex: 9599, background: '#0f172a', color: 'white', borderRadius: 12, padding: '12px 16px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid rgba(59,130,246,.4)', cursor: 'pointer', maxWidth: 320 }}
           onClick={() => { router.push(`/proctor/monitor/${resumedAlert.examId}`); setResumedAlert(null) }}>
           <i className="fas fa-bell" style={{ color: '#60a5fa', fontSize: 22, flexShrink: 0 }} />
-          <div style={{ fontSize: 12.5, flex: 1 }}>{resumedAlert.message}</div>
+          <div style={{ fontSize:15, flex: 1 }}>{resumedAlert.message}</div>
           <button onClick={(e) => { e.stopPropagation(); setResumedAlert(null) }}
-            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.6)', cursor: 'pointer', fontSize: 14 }}>
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.6)', cursor: 'pointer', fontSize:17 }}>
             <i className="fas fa-times" />
           </button>
         </div>
@@ -55,15 +55,15 @@ export default function SupervisorCallListener() {
         <div style={{ position: 'fixed', top: 16, right: 20, zIndex: 9600, background: '#0f172a', color: 'white', borderRadius: 12, padding: '14px 18px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(16,185,129,.4)' }}>
           <i className="fas fa-phone-volume fa-shake" style={{ color: '#10b981', fontSize: 24 }} />
           <div>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>Appel entrant</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)' }}>{incoming.supervisorName}</div>
+            <div style={{ fontWeight: 700, fontSize:15.5 }}>Appel entrant</div>
+            <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.7)' }}>{incoming.supervisorName}</div>
           </div>
           <button onClick={() => setAnswering(true)}
-            style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+            style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize:14.5, cursor: 'pointer' }}>
             <i className="fas fa-phone" /> Répondre
           </button>
           <button onClick={() => setIncoming(null)}
-            style={{ background: 'rgba(239,68,68,.2)', color: '#fca5a5', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+            style={{ background: 'rgba(239,68,68,.2)', color: '#fca5a5', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize:14.5, cursor: 'pointer' }}>
             <i className="fas fa-phone-slash" /> Refuser
           </button>
         </div>

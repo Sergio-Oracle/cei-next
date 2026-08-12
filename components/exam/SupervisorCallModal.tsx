@@ -142,8 +142,8 @@ export default function SupervisorCallModal({ proctorId, proctorName, onClose }:
         <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="fas fa-phone-volume" style={{ color: '#10b981' }} />
           <div>
-            <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>Appel — {proctorName}</div>
-            <div style={{ color: 'rgba(255,255,255,.5)', fontSize: 11 }}>Surveillant</div>
+            <div style={{ color: 'white', fontWeight: 700, fontSize:17 }}>Appel — {proctorName}</div>
+            <div style={{ color: 'rgba(255,255,255,.5)', fontSize:13 }}>Surveillant</div>
           </div>
         </div>
 
@@ -170,7 +170,7 @@ export default function SupervisorCallModal({ proctorId, proctorName, onClose }:
             <i className={`fas ${camOn ? 'fa-video' : 'fa-video-slash'}`} />
           </button>
           <button onClick={hangUp} title="Raccrocher"
-            style={{ width: 54, height: 44, borderRadius: 22, border: 'none', background: '#ef4444', color: 'white', cursor: 'pointer', fontSize: 16 }}>
+            style={{ width: 54, height: 44, borderRadius: 22, border: 'none', background: '#ef4444', color: 'white', cursor: 'pointer', fontSize:19 }}>
             <i className="fas fa-phone-slash" />
           </button>
           <button title={micOn ? 'Micro actif' : 'Micro indisponible'} disabled

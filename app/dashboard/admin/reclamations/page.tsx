@@ -163,7 +163,7 @@ export default function AdminReclamationsPage() {
 
       {selectedIds.size > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginBottom: 14 }}>
-          <span style={{ fontSize: 13, fontWeight: 600 }}>{selectedIds.size} sélectionnée{selectedIds.size > 1 ? 's' : ''}</span>
+          <span style={{ fontSize:15.5, fontWeight: 600 }}>{selectedIds.size} sélectionnée{selectedIds.size > 1 ? 's' : ''}</span>
           <button className="btn btn-sm btn-danger" onClick={deleteSelected} disabled={deleting}>
             {deleting ? <><i className="fa-solid fa-spinner spin" /> Suppression...</> : <><i className="fa-solid fa-trash" /> Supprimer la sélection</>}
           </button>
@@ -201,12 +201,12 @@ export default function AdminReclamationsPage() {
                   <td>
                     {r.student_name ?? `Étudiant #${r.student_id}`}
                     {hasProposal && (
-                      <div style={{ fontSize: 11, color: 'var(--warning)', fontWeight: 600, marginTop: 2 }}>
+                      <div style={{ fontSize:13, color: 'var(--warning)', fontWeight: 600, marginTop: 2 }}>
                         <i className="fa-solid fa-lightbulb" /> Proposition IA disponible
                       </div>
                     )}
                     {!r.paper_id && !r.attempt_id && (
-                      <div style={{ fontSize: 11, color: 'var(--danger)', fontWeight: 600, marginTop: 2 }}>
+                      <div style={{ fontSize:13, color: 'var(--danger)', fontWeight: 600, marginTop: 2 }}>
                         <i className="fa-solid fa-link-slash" /> Copie d'origine supprimée
                       </div>
                     )}
@@ -246,7 +246,7 @@ export default function AdminReclamationsPage() {
 
           <div className="form-group">
             <label>Contenu de la réclamation</label>
-            <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize: 14, whiteSpace: 'pre-wrap' }}>
+            <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize:17, whiteSpace: 'pre-wrap' }}>
               {selected.reason}
             </div>
           </div>
@@ -256,8 +256,8 @@ export default function AdminReclamationsPage() {
               <strong><i className="fa-solid fa-robot" /> Proposition IA :</strong>{' '}
               {selected.ia_proposed_status === 'resolved' ? '✅ Accepter' : '❌ Rejeter'}
               {selected.ia_proposed_score != null && ` — Note proposée : ${fmtScore(selected.ia_proposed_score)}/20`}<br />
-              {selected.ia_proposed_reason && <span style={{ fontSize: 13 }}>{selected.ia_proposed_reason}</span>}
-              <div style={{ marginTop: 6, fontSize: 12, opacity: .8 }}>Pré-remplie ci-dessous — modifiez-la si vous n'êtes pas d'accord.</div>
+              {selected.ia_proposed_reason && <span style={{ fontSize:15.5 }}>{selected.ia_proposed_reason}</span>}
+              <div style={{ marginTop: 6, fontSize:14.5, opacity: .8 }}>Pré-remplie ci-dessous — modifiez-la si vous n'êtes pas d'accord.</div>
             </div>
           )}
 
@@ -272,7 +272,7 @@ export default function AdminReclamationsPage() {
           {respondStatus === 'resolved' && (
             <div className="form-group">
               <label>Nouvelle note (sur 20)</label>
-              {selected.attempt_score != null && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Note actuelle : {fmtScore(selected.attempt_score)}/20</div>}
+              {selected.attempt_score != null && <div style={{ fontSize:14.5, color: 'var(--text-muted)', marginBottom: 4 }}>Note actuelle : {fmtScore(selected.attempt_score)}/20</div>}
               <input className="form-control" type="number" min={0} max={20} step={0.5} value={newScore} onChange={e => setNewScore(e.target.value)} />
             </div>
           )}
@@ -303,14 +303,14 @@ export default function AdminReclamationsPage() {
                   strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s linear' }} />
               </svg>
             </div>
-            <div style={{ fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtElapsed(aiElapsed)}</div>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 16px' }}>
+            <div style={{ fontSize:24, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtElapsed(aiElapsed)}</div>
+            <p style={{ fontSize:15.5, color: 'var(--text-muted)', margin: '4px 0 16px' }}>
               Réclamation de <strong>{aiModal.studentName}</strong>
             </p>
-            <p style={{ fontSize: 14, minHeight: 20 }}>
+            <p style={{ fontSize:17, minHeight: 20 }}>
               {[...AI_STEPS].reverse().find(s => aiElapsed >= s.at)?.label}
             </p>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12 }}>
+            <p style={{ fontSize:14.5, color: 'var(--text-muted)', marginTop: 12 }}>
               Peut prendre jusqu'à 3 minutes selon la charge du modèle IA — vous pouvez fermer cette fenêtre, l'analyse continue en arrière-plan.
             </p>
           </div>
@@ -331,30 +331,30 @@ export default function AdminReclamationsPage() {
                 }}>
                   <i className={`fa-solid ${accepted ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ fontSize: 31, color: tint }} />
                 </div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: tint }}>
+                <div style={{ fontSize:20.5, fontWeight: 700, color: tint }}>
                   {accepted ? 'Réclamation à accepter' : 'Réclamation à rejeter'}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Proposition de l'IA — {aiResult.student_name ?? `Étudiant #${aiResult.student_id}`}</div>
+                <div style={{ fontSize:14.5, color: 'var(--text-muted)', marginTop: 2 }}>Proposition de l'IA — {aiResult.student_name ?? `Étudiant #${aiResult.student_id}`}</div>
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
+                <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
                   <i className="fa-solid fa-comment-dots" style={{ marginRight: 6 }} />Justification
                 </div>
-                <div style={{ padding: 14, background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 220, overflowY: 'auto' }}>
+                <div style={{ padding: 14, background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', fontSize:17, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 220, overflowY: 'auto' }}>
                   {aiResult.ia_proposed_reason || 'Aucune justification fournie'}
                 </div>
               </div>
 
               {accepted && aiResult.ia_proposed_score != null && (
                 <div style={{ textAlign: 'center', padding: '14px 16px', background: 'rgba(16,185,129,.08)', border: '1px solid rgba(16,185,129,.25)', borderRadius: 'var(--radius)', marginBottom: 16 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Note proposée</div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: tint, margin: '2px 0' }}>{fmtScore(aiResult.ia_proposed_score)}/20</div>
-                  {aiResult.attempt_score != null && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Note actuelle : {fmtScore(aiResult.attempt_score)}/20</div>}
+                  <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Note proposée</div>
+                  <div style={{ fontSize:31, fontWeight: 700, color: tint, margin: '2px 0' }}>{fmtScore(aiResult.ia_proposed_score)}/20</div>
+                  {aiResult.attempt_score != null && <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>Note actuelle : {fmtScore(aiResult.attempt_score)}/20</div>}
                 </div>
               )}
 
-              <div className="alert alert-warning" style={{ fontSize: 13, marginBottom: 0 }}>
+              <div className="alert alert-warning" style={{ fontSize:15.5, marginBottom: 0 }}>
                 <i className="fa-solid fa-triangle-exclamation" />
                 <span>Cette proposition est une aide à la décision — vous devez la valider ou la corriger via « Répondre ».</span>
               </div>

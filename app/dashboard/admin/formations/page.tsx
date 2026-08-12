@@ -69,7 +69,7 @@ function ModalOverlay({ children, onClose, wide }: { children: React.ReactNode; 
 /* ── Small button ───────────────────────────────────────────────────────────── */
 const Btn = ({ color, onClick, children, title }: { color: string; onClick: () => void; children: React.ReactNode; title?: string }) => (
   <button title={title} onClick={onClick}
-    style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: color, color: 'white', cursor: 'pointer', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
+    style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: color, color: 'white', cursor: 'pointer', fontSize:14.5, display: 'inline-flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
     {children}
   </button>
 )
@@ -315,21 +315,21 @@ export default function AdminFormationsPage() {
   /* ── Field helpers ────────────────────────────────────────────────────────── */
   const inp = (key: string, label: string, opts?: { type?: string; placeholder?: string; min?: number; max?: number }) => (
     <div className="form-group" key={key}>
-      <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>{label}</label>
+      <label style={{ fontWeight: 600, fontSize:15.5, marginBottom: 6, display: 'block' }}>{label}</label>
       <input type={opts?.type || 'text'} className="form-control" placeholder={opts?.placeholder}
         min={opts?.min} max={opts?.max} autoComplete="off"
         value={form[key] ?? (opts?.type === 'number' ? 0 : '')}
         onChange={e => setForm((p: any) => ({ ...p, [key]: opts?.type === 'number' ? Number(e.target.value) : e.target.value }))}
-        style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }} />
+        style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize:17, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }} />
     </div>
   )
 
   const sel = (key: string, label: string, options: { value: string | number; label: string }[]) => (
     <div className="form-group" key={key}>
-      <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>{label}</label>
+      <label style={{ fontWeight: 600, fontSize:15.5, marginBottom: 6, display: 'block' }}>{label}</label>
       <select value={form[key] ?? ''}
         onChange={e => setForm((p: any) => ({ ...p, [key]: e.target.value === '' ? null : (typeof options[0]?.value === 'number' ? Number(e.target.value) : e.target.value) }))}
-        style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }}>
+        style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize:17, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }}>
         <option value="">— Sélectionner —</option>
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
@@ -341,7 +341,7 @@ export default function AdminFormationsPage() {
       <input type="checkbox" id={`chk-${key}`} checked={!!form[key]}
         onChange={e => setForm((p: any) => ({ ...p, [key]: e.target.checked }))}
         style={{ width: 16, height: 16, cursor: 'pointer' }} />
-      <label htmlFor={`chk-${key}`} style={{ margin: 0, fontSize: 14, cursor: 'pointer' }}>{label}</label>
+      <label htmlFor={`chk-${key}`} style={{ margin: 0, fontSize:17, cursor: 'pointer' }}>{label}</label>
     </div>
   )
 
@@ -350,25 +350,25 @@ export default function AdminFormationsPage() {
     if (!modal) return null
     switch (modal.kind) {
       case 'edit_pole': return (<>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Code : <strong style={{ color: 'var(--text)' }}>{modal.item?.code}</strong> (non modifiable)</div>
+        <div style={{ fontSize:15.5, color: 'var(--text-muted)', marginBottom: 12 }}>Code : <strong style={{ color: 'var(--text)' }}>{modal.item?.code}</strong> (non modifiable)</div>
         {inp('name', 'Nom *', { placeholder: 'Ex: Sciences et Technologies du Numérique' })}
         <div className="form-group">
-          <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Description</label>
+          <label style={{ fontWeight: 600, fontSize:15.5, marginBottom: 6, display: 'block' }}>Description</label>
           <textarea className="form-control" rows={3} value={form.description ?? ''}
             onChange={e => setForm((p: any) => ({ ...p, description: e.target.value }))}
-            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box' }} />
+            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize:17, background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box' }} />
         </div>
         {chk('is_active', 'Pôle actif')}
       </>)
       case 'edit_niveau': return (<>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Code : <strong style={{ color: 'var(--text)' }}>{modal.item?.code}</strong> (non modifiable)</div>
+        <div style={{ fontSize:15.5, color: 'var(--text-muted)', marginBottom: 12 }}>Code : <strong style={{ color: 'var(--text)' }}>{modal.item?.code}</strong> (non modifiable)</div>
         {sel('pole_id', 'Pôle *', poles.map(p => ({ value: p.id, label: `${p.code} — ${p.name}` })))}
         {inp('name', 'Nom *', { placeholder: 'Ex: Licence 1' })}
         <div className="form-group">
-          <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Description</label>
+          <label style={{ fontWeight: 600, fontSize:15.5, marginBottom: 6, display: 'block' }}>Description</label>
           <textarea className="form-control" rows={3} value={form.description ?? ''}
             onChange={e => setForm((p: any) => ({ ...p, description: e.target.value }))}
-            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box' }} />
+            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize:17, background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box' }} />
         </div>
         {chk('is_active', 'Niveau actif')}
       </>)
@@ -376,9 +376,9 @@ export default function AdminFormationsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div className="form-group">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <label style={{ fontWeight: 600, fontSize: 13 }}>Pôle</label>
+              <label style={{ fontWeight: 600, fontSize:15.5 }}>Pôle</label>
               <button type="button" onClick={() => setInlinePoleOpen(o => !o)}
-                style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize:14.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <i className={`fas ${inlinePoleOpen ? 'fa-xmark' : 'fa-plus'}`} /> {inlinePoleOpen ? 'Annuler' : 'Nouveau'}
               </button>
             </div>
@@ -386,12 +386,12 @@ export default function AdminFormationsPage() {
               <div style={{ border: '1.5px dashed var(--border)', borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
                 <input placeholder="Code (ex: STN)" value={inlinePoleForm.code}
                   onChange={e => setInlinePoleForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
-                  style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+                  style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize:15.5, background: 'var(--surface)', color: 'var(--text)' }} />
                 <input placeholder="Nom du pôle" value={inlinePoleForm.name}
                   onChange={e => setInlinePoleForm(p => ({ ...p, name: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+                  style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize:15.5, background: 'var(--surface)', color: 'var(--text)' }} />
                 <button type="button" onClick={createInlinePole} disabled={inlinePoleBusy || !inlinePoleForm.code || !inlinePoleForm.name}
-                  style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (!inlinePoleForm.code || !inlinePoleForm.name) ? .5 : 1 }}>
+                  style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontSize:15.5, fontWeight: 700, cursor: 'pointer', opacity: (!inlinePoleForm.code || !inlinePoleForm.name) ? .5 : 1 }}>
                   <i className={`fas ${inlinePoleBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 6 }} />
                   {inlinePoleBusy ? 'Création…' : 'Créer et sélectionner'}
                 </button>
@@ -407,7 +407,7 @@ export default function AdminFormationsPage() {
                     return { ...p, pole_id: pid, niveau_id: stillValid ? p.niveau_id : null }
                   })
                 }}
-                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }}>
+                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize:17, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }}>
                 <option value="">— Sélectionner —</option>
                 {poles.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
               </select>
@@ -415,9 +415,9 @@ export default function AdminFormationsPage() {
           </div>
           <div className="form-group">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <label style={{ fontWeight: 600, fontSize: 13 }}>Niveau {form.pole_id ? '' : <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}>(pôle d&apos;abord)</span>}</label>
+              <label style={{ fontWeight: 600, fontSize:15.5 }}>Niveau {form.pole_id ? '' : <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize:13 }}>(pôle d&apos;abord)</span>}</label>
               <button type="button" disabled={!form.pole_id} onClick={() => setInlineNiveauOpen(o => !o)}
-                style={{ background: 'none', border: 'none', color: form.pole_id ? 'var(--primary)' : 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: form.pole_id ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 4 }}>
+                style={{ background: 'none', border: 'none', color: form.pole_id ? 'var(--primary)' : 'var(--text-muted)', fontSize:14.5, fontWeight: 600, cursor: form.pole_id ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <i className={`fas ${inlineNiveauOpen ? 'fa-xmark' : 'fa-plus'}`} /> {inlineNiveauOpen ? 'Annuler' : 'Nouveau'}
               </button>
             </div>
@@ -425,12 +425,12 @@ export default function AdminFormationsPage() {
               <div style={{ border: '1.5px dashed var(--border)', borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
                 <input placeholder="Code (ex: L1)" value={inlineNiveauForm.code}
                   onChange={e => setInlineNiveauForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
-                  style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+                  style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize:15.5, background: 'var(--surface)', color: 'var(--text)' }} />
                 <input placeholder="Nom du niveau (ex: Licence 1)" value={inlineNiveauForm.name}
                   onChange={e => setInlineNiveauForm(p => ({ ...p, name: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--surface)', color: 'var(--text)' }} />
+                  style={{ padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize:15.5, background: 'var(--surface)', color: 'var(--text)' }} />
                 <button type="button" onClick={createInlineNiveau} disabled={inlineNiveauBusy || !inlineNiveauForm.code || !inlineNiveauForm.name || !form.pole_id}
-                  style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (!inlineNiveauForm.code || !inlineNiveauForm.name) ? .5 : 1 }}>
+                  style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontSize:15.5, fontWeight: 700, cursor: 'pointer', opacity: (!inlineNiveauForm.code || !inlineNiveauForm.name) ? .5 : 1 }}>
                   <i className={`fas ${inlineNiveauBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 6 }} />
                   {inlineNiveauBusy ? 'Création…' : `Créer sous ${poles.find(p => p.id === form.pole_id)?.code || 'ce pôle'}`}
                 </button>
@@ -438,7 +438,7 @@ export default function AdminFormationsPage() {
             ) : (
               <select value={form.niveau_id ?? ''} disabled={!form.pole_id}
                 onChange={e => setForm((p: any) => ({ ...p, niveau_id: e.target.value === '' ? null : Number(e.target.value) }))}
-                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box', opacity: form.pole_id ? 1 : .6 }}>
+                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize:17, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box', opacity: form.pole_id ? 1 : .6 }}>
                 <option value="">— Sélectionner —</option>
                 {niveaux.filter(n => n.pole_id === form.pole_id).map(n => <option key={n.id} value={n.id}>{n.code} — {n.name}</option>)}
               </select>
@@ -449,10 +449,10 @@ export default function AdminFormationsPage() {
         {inp('name', 'Nom *', { placeholder: 'Ex: Licence Sociologie' })}
         {inp('department', 'Département', { placeholder: 'Ex: Sciences Humaines' })}
         <div className="form-group">
-          <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Description</label>
+          <label style={{ fontWeight: 600, fontSize:15.5, marginBottom: 6, display: 'block' }}>Description</label>
           <textarea className="form-control" rows={3} value={form.description ?? ''}
             onChange={e => setForm((p: any) => ({ ...p, description: e.target.value }))}
-            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box' }} />
+            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize:17, background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box' }} />
         </div>
         {modal.kind === 'edit_formation' && chk('is_active', 'Formation active')}
       </>)
@@ -484,14 +484,14 @@ export default function AdminFormationsPage() {
           {inp('coefficient', 'Coefficient', { type: 'number', min: 1 })}
         </div>
         <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '12px 16px', marginTop: 4 }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: '#0369a1', marginBottom: 10 }}>
+          <div style={{ fontWeight: 700, fontSize:15.5, color: '#0369a1', marginBottom: 10 }}>
             <i className="fas fa-percentage" style={{ marginRight: 6 }} />Modalité d'évaluation
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {inp('cc_percentage', 'CC % (contrôle continu)', { type: 'number', min: 0, max: 100 })}
             {inp('ex_percentage', 'EX % (examen final)', { type: 'number', min: 0, max: 100 })}
           </div>
-          <p style={{ margin: 0, fontSize: 11, color: '#0284c7' }}>CC% + EX% doivent totalisé 100%</p>
+          <p style={{ margin: 0, fontSize:13, color: '#0284c7' }}>CC% + EX% doivent totalisé 100%</p>
         </div>
         {modal.kind === 'edit_ec' && chk('is_active', 'EC actif')}
       </>)
@@ -503,11 +503,11 @@ export default function AdminFormationsPage() {
   function wizardStepBody() {
     const wInp = (key: string, label: string, opts?: { type?: string; placeholder?: string }) => (
       <div style={{ marginBottom: 10 }}>
-        <label style={{ fontWeight: 600, fontSize: 12.5, marginBottom: 4, display: 'block' }}>{label}</label>
+        <label style={{ fontWeight: 600, fontSize:15, marginBottom: 4, display: 'block' }}>{label}</label>
         <input type={opts?.type || 'text'} placeholder={opts?.placeholder}
           value={wizardForm[key] ?? (opts?.type === 'number' ? 0 : '')}
           onChange={e => setWizardForm((p: any) => ({ ...p, [key]: opts?.type === 'number' ? Number(e.target.value) : e.target.value }))}
-          style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 13.5, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }} />
+          style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize:16, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }} />
       </div>
     )
 
@@ -525,14 +525,14 @@ export default function AdminFormationsPage() {
       const { existing, onPick, createFields, onCreateSubmit, createDisabled, pickLabel, createLabel } = args
       return existing.length > 0 && !wizardCreatingNew ? (
         <div>
-          <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>{pickLabel}</label>
+          <label style={{ fontWeight: 600, fontSize:15.5, marginBottom: 6, display: 'block' }}>{pickLabel}</label>
           <select value="" onChange={e => e.target.value && onPick(Number(e.target.value))}
-            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--surface)', color: 'var(--text)', marginBottom: 10, boxSizing: 'border-box' }}>
+            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize:17, background: 'var(--surface)', color: 'var(--text)', marginBottom: 10, boxSizing: 'border-box' }}>
             <option value="">— Sélectionner —</option>
             {existing.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
           <button type="button" onClick={() => { setWizardCreatingNew(true); setWizardForm({}) }}
-            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize:15, fontWeight: 600, cursor: 'pointer' }}>
             <i className="fas fa-plus" style={{ marginRight: 4 }} />{createLabel} à la place
           </button>
         </div>
@@ -541,12 +541,12 @@ export default function AdminFormationsPage() {
           {createFields}
           {existing.length > 0 && (
             <button type="button" onClick={() => setWizardCreatingNew(false)}
-              style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', marginBottom: 12, display: 'block' }}>
+              style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize:15, fontWeight: 600, cursor: 'pointer', marginBottom: 12, display: 'block' }}>
               <i className="fas fa-arrow-left" style={{ marginRight: 4 }} />{pickLabel} à la place
             </button>
           )}
           <button onClick={onCreateSubmit} disabled={wizardBusy || createDisabled}
-            style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, opacity: createDisabled ? .5 : 1 }}>
+            style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700, opacity: createDisabled ? .5 : 1 }}>
             <i className={`fas ${wizardBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 6 }} />
             {wizardBusy ? 'Création…' : `${createLabel} et continuer`}
           </button>
@@ -622,11 +622,11 @@ export default function AdminFormationsPage() {
           <div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
               <button type="button" onClick={() => { setWizardUeMode('manual'); setExcelPreview(null); setExcelFile(null) }}
-                style={{ padding: '7px 14px', borderRadius: 8, border: wizardUeMode === 'manual' ? 'none' : '1.5px solid var(--border)', background: wizardUeMode === 'manual' ? '#db2777' : 'transparent', color: wizardUeMode === 'manual' ? 'white' : 'var(--text)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+                style={{ padding: '7px 14px', borderRadius: 8, border: wizardUeMode === 'manual' ? 'none' : '1.5px solid var(--border)', background: wizardUeMode === 'manual' ? '#db2777' : 'transparent', color: wizardUeMode === 'manual' ? 'white' : 'var(--text)', fontSize:15, fontWeight: 700, cursor: 'pointer' }}>
                 UE par UE (manuel)
               </button>
               <button type="button" onClick={() => setWizardUeMode('excel')}
-                style={{ padding: '7px 14px', borderRadius: 8, border: wizardUeMode === 'excel' ? 'none' : '1.5px solid var(--border)', background: wizardUeMode === 'excel' ? '#0891b2' : 'transparent', color: wizardUeMode === 'excel' ? 'white' : 'var(--text)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+                style={{ padding: '7px 14px', borderRadius: 8, border: wizardUeMode === 'excel' ? 'none' : '1.5px solid var(--border)', background: wizardUeMode === 'excel' ? '#0891b2' : 'transparent', color: wizardUeMode === 'excel' ? 'white' : 'var(--text)', fontSize:15, fontWeight: 700, cursor: 'pointer' }}>
                 <i className="fas fa-file-excel" style={{ marginRight: 6 }} />Importer via Excel (toutes les UE/EC)
               </button>
             </div>
@@ -634,39 +634,39 @@ export default function AdminFormationsPage() {
             {wizardUeMode === 'excel' ? (
               !excelPreview ? (
                 <div>
-                  <p style={{ fontSize: 12.5, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.6 }}>
+                  <p style={{ fontSize:15, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.6 }}>
                     Fichier au format réel de l&apos;établissement (colonnes Code/Nom/Crédit/Type UE puis Code/Nom/Coef EC, pourcentages CC/EX entre crochets dans le nom de l&apos;EC) — importe toutes les UE et EC de ce semestre d&apos;un coup.
                   </p>
                   <button onClick={downloadExcelTemplate}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700, marginBottom: 14 }}>
                     <i className="fas fa-download" /> Télécharger Template Excel
                   </button>
                   <div style={{ marginBottom: 14 }}>
-                    <label style={{ fontWeight: 600, fontSize: 12.5, marginBottom: 4, display: 'block' }}>Fichier Excel (.xlsx) *</label>
-                    <input type="file" accept=".xlsx,.xls" style={{ width: '100%', fontSize: 13.5 }}
+                    <label style={{ fontWeight: 600, fontSize:15, marginBottom: 4, display: 'block' }}>Fichier Excel (.xlsx) *</label>
+                    <input type="file" accept=".xlsx,.xls" style={{ width: '100%', fontSize:16 }}
                       onChange={e => setExcelFile(e.target.files?.[0] || null)} />
                   </div>
                   <button onClick={handleExcelPreview} disabled={excelBusy || !excelFile}
-                    style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#0891b2', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, opacity: !excelFile ? .5 : 1 }}>
+                    style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#0891b2', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700, opacity: !excelFile ? .5 : 1 }}>
                     <i className={`fas ${excelBusy ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} style={{ marginRight: 7 }} />
                     {excelBusy ? 'Analyse…' : 'Analyser le fichier'}
                   </button>
                 </div>
               ) : (
                 <div>
-                  <div style={{ background: '#ecfeff', border: '1px solid #a5f3fc', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12.5, color: '#0e7490' }}>
+                  <div style={{ background: '#ecfeff', border: '1px solid #a5f3fc', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize:15, color: '#0e7490' }}>
                     <strong>{excelPreview.ue_count} UE</strong> et <strong>{excelPreview.ec_count} EC</strong> détectés — vérifiez avant de valider.
                   </div>
                   <div style={{ maxHeight: '32vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
                     {excelPreview.ues.map((u: any) => (
                       <div key={u.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-                        <div style={{ padding: '8px 12px', background: u.already_exists ? '#fef3c7' : '#f0fdf4', fontSize: 12.5 }}>
+                        <div style={{ padding: '8px 12px', background: u.already_exists ? '#fef3c7' : '#f0fdf4', fontSize:15 }}>
                           <strong>{u.code}</strong> — {u.name} <span style={{ color: 'var(--text-muted)' }}>({u.credits} crédits)</span>
-                          {u.already_exists && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: '#92400e' }}><i className="fas fa-triangle-exclamation" /> déjà existante</span>}
+                          {u.already_exists && <span style={{ marginLeft: 8, fontSize:13, fontWeight: 700, color: '#92400e' }}><i className="fas fa-triangle-exclamation" /> déjà existante</span>}
                         </div>
                         <div style={{ padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: 3 }}>
                           {u.ecs.map((e: any) => (
-                            <div key={e.code} style={{ fontSize: 11.5, color: e.already_exists ? 'var(--text-muted)' : 'var(--text)' }}>
+                            <div key={e.code} style={{ fontSize:14, color: e.already_exists ? 'var(--text-muted)' : 'var(--text)' }}>
                               <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{e.code}</span> — {e.name} <span style={{ color: 'var(--text-muted)' }}>(Coef.{e.coefficient}, CC:{e.cc_percentage}%/EX:{e.ex_percentage}%)</span>
                               {e.already_exists && <span style={{ marginLeft: 6, fontWeight: 700, color: '#b45309' }}>ignoré</span>}
                             </div>
@@ -677,12 +677,12 @@ export default function AdminFormationsPage() {
                   </div>
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={handleExcelConfirm} disabled={excelBusy}
-                      style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+                      style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700 }}>
                       <i className={`fas ${excelBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 7 }} />
                       {excelBusy ? 'Import…' : "Confirmer l'import et terminer"}
                     </button>
                     <button onClick={() => setExcelPreview(null)}
-                      style={{ padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                      style={{ padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize:15.5, fontWeight: 600 }}>
                       Revenir
                     </button>
                   </div>
@@ -710,7 +710,7 @@ export default function AdminFormationsPage() {
         return (
           <div>
             {wizardEcCount > 0 && (
-              <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12.5, color: '#166534' }}>
+              <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize:15, color: '#166534' }}>
                 <i className="fas fa-check-circle" style={{ marginRight: 6 }} />{wizardEcCount} EC déjà créé(s) sous {currentUe?.code}
               </div>
             )}
@@ -730,15 +730,15 @@ export default function AdminFormationsPage() {
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               <button onClick={() => wizardCreateEc('another_ec')} disabled={wizardBusy || !wizardForm.code || !wizardForm.name}
-                style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
+                style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize:15, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
                 <i className="fas fa-plus" style={{ marginRight: 6 }} />Créer et ajouter un autre EC
               </button>
               <button onClick={() => wizardCreateEc('another_ue')} disabled={wizardBusy || !wizardForm.code || !wizardForm.name}
-                style={{ padding: '10px 16px', borderRadius: 10, border: '1.5px solid #db2777', background: 'transparent', color: '#db2777', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
+                style={{ padding: '10px 16px', borderRadius: 10, border: '1.5px solid #db2777', background: 'transparent', color: '#db2777', cursor: 'pointer', fontSize:15, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
                 Créer et ajouter une autre UE
               </button>
               <button onClick={() => wizardCreateEc('done')} disabled={wizardBusy || !wizardForm.code || !wizardForm.name}
-                style={{ padding: '10px 16px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
+                style={{ padding: '10px 16px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize:15, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
                 Créer et terminer
               </button>
             </div>
@@ -903,14 +903,14 @@ export default function AdminFormationsPage() {
         {/* Formation header */}
         <div style={{ background: poleColor(f.pole_code), color: 'white', padding: '16px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontWeight: 800, fontSize:19, display: 'flex', alignItems: 'center', gap: 8 }}>
               <i className="fas fa-graduation-cap" />
               {f.code} — {f.name}
             </div>
-            <div style={{ fontSize: 12, opacity: .82, marginTop: 3 }}>
+            <div style={{ fontSize:14.5, opacity: .82, marginTop: 3 }}>
               {[f.level, f.department].filter(Boolean).join(' | ')}
             </div>
-            <div style={{ fontSize: 11, opacity: .68, marginTop: 2 }}>
+            <div style={{ fontSize:13, opacity: .68, marginTop: 2 }}>
               <i className="fas fa-book" style={{ marginRight: 4 }} />{f.semesters.length} semestre(s)
             </div>
           </div>
@@ -930,17 +930,17 @@ export default function AdminFormationsPage() {
         {/* Semesters */}
         <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {f.semesters.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>
+            <p style={{ color: 'var(--text-muted)', fontSize:15.5, margin: 0 }}>
               <i className="fas fa-inbox" style={{ marginRight: 6 }} />Aucun semestre — cliquez &quot;+ Semestre&quot;
             </p>
           ) : f.semesters.map(s => (
             <div key={s.id} style={{ border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
               {/* Semester header */}
               <div style={{ background: '#f8fafc', padding: '11px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
+                <div style={{ fontWeight: 700, fontSize:17, color: '#0f172a' }}>
                   <i className="fas fa-calendar-alt" style={{ marginRight: 7, color: '#3b82f6' }} />
                   Semestre {s.number}{s.name ? ` — ${s.name}` : ''}
-                  <span style={{ color: '#64748b', marginLeft: 12, fontWeight: 400, fontSize: 13 }}>
+                  <span style={{ color: '#64748b', marginLeft: 12, fontWeight: 400, fontSize:15.5 }}>
                     <i className="fas fa-star" style={{ marginRight: 4, color: '#f59e0b' }} />{s.total_credits} crédits
                   </span>
                 </div>
@@ -954,19 +954,19 @@ export default function AdminFormationsPage() {
               {/* UEs */}
               <div style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {s.ues.length === 0 ? (
-                  <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Aucune UE</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize:15.5, margin: 0 }}>Aucune UE</p>
                 ) : s.ues.map(u => (
                   <div key={u.id} style={{ borderLeft: '4px solid #10b981', background: '#fafcff', borderRadius: '0 10px 10px 0', border: '1px solid #e2e8f0', borderLeftWidth: 4, borderLeftColor: '#10b981' }}>
                     <div style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ fontSize: 13, color: '#0f172a' }}>
+                      <div style={{ fontSize:15.5, color: '#0f172a' }}>
                         <i className="fas fa-book-open" style={{ marginRight: 6, color: '#10b981' }} />
                         <strong>{u.code}</strong> — {u.name}
-                        <span style={{ color: '#64748b', marginLeft: 10, fontSize: 12 }}>
+                        <span style={{ color: '#64748b', marginLeft: 10, fontSize:14.5 }}>
                           <i className="fas fa-award" style={{ marginRight: 3, color: '#f59e0b' }} />{u.credits} crédits
                         </span>
                         {u.ue_type && (
                           <span style={{
-                            marginLeft: 8, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 12,
+                            marginLeft: 8, fontSize:13, fontWeight: 700, padding: '2px 8px', borderRadius: 12,
                             background: u.ue_type === 'obligatoire' ? '#dbeafe' : '#fef9c3',
                             color: u.ue_type === 'obligatoire' ? '#1d4ed8' : '#a16207'
                           }}>
@@ -987,9 +987,9 @@ export default function AdminFormationsPage() {
                         {u.ecs.map(ec => (
                           <div key={ec.id} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 9, padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: '#78350f' }}>{ec.code}</span>
-                              <span style={{ fontSize: 13, color: '#92400e' }}> — {ec.name}</span>
-                              <div style={{ fontSize: 11, color: '#b45309', marginTop: 3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize:15.5, fontWeight: 700, color: '#78350f' }}>{ec.code}</span>
+                              <span style={{ fontSize:15.5, color: '#92400e' }}> — {ec.name}</span>
+                              <div style={{ fontSize:13, color: '#b45309', marginTop: 3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                                 <span>Coef: {ec.coefficient}</span>
                                 {(ec.cm || 0) > 0 && <span>CM: {ec.cm}h</span>}
                                 {(ec.td || 0) > 0 && <span>TD: {ec.td}h</span>}
@@ -1024,11 +1024,11 @@ export default function AdminFormationsPage() {
     <div>
       {/* Page header */}
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <h2 style={{ margin: 0, fontSize:24, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="fas fa-layer-group" style={{ color: 'var(--primary)' }} />
           Maquette Pédagogique — UNCHK
         </h2>
-        <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: 14 }}>
+        <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize:17 }}>
           Gérez la hiérarchie : <strong>Pôle → Niveau → Formation → Semestre → UE → EC</strong>
         </p>
       </div>
@@ -1036,18 +1036,18 @@ export default function AdminFormationsPage() {
       {/* ══ Section unique : Pôle → Niveau → Formation → Semestre → UE → EC ═══════ */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
         <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h3 style={{ margin: 0, fontSize:19, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
             <i className="fas fa-sitemap" style={{ color: '#2563eb' }} /> Pôles, Niveaux &amp; Formations UNCHK
           </h3>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={openWizard}
               title="Créer pas-à-pas : Pôle → Niveau → Formation → Semestre → UE → EC"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700 }}>
               <i className="fas fa-shoe-prints" /> Créer la hiérarchie (pas-à-pas)
             </button>
             <button onClick={() => { setModal({ kind: 'import_csv' }); setCsvFile(null); setImportResult(null) }}
               title="Import en masse — crée aussi le Pôle et le Niveau à la volée s'ils n'existent pas encore"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700 }}>
               <i className="fas fa-file-csv" /> Import CSV
             </button>
           </div>
@@ -1075,15 +1075,15 @@ export default function AdminFormationsPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: poleColor(p.code) + '18', padding: '12px 18px' }}>
                       <div style={{ width: 10, height: 10, borderRadius: '50%', background: poleColor(p.code) }} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 800, fontSize: 14, color: poleColor(p.code) }}>Pôle {p.code} — {p.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.formations_count} formation(s) · {pnv.length} niveau(x)</div>
+                        <div style={{ fontWeight: 800, fontSize:17, color: poleColor(p.code) }}>Pôle {p.code} — {p.name}</div>
+                        <div style={{ fontSize:13, color: 'var(--text-muted)' }}>{p.formations_count} formation(s) · {pnv.length} niveau(x)</div>
                       </div>
                       <button onClick={() => openEdit('edit_pole', p)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: poleColor(p.code), fontSize: 13, padding: 2, marginRight: 4 }} title="Modifier le pôle">
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: poleColor(p.code), fontSize:15.5, padding: 2, marginRight: 4 }} title="Modifier le pôle">
                         <i className="fas fa-pen" />
                       </button>
                       <button onClick={() => deletePole(p.id, p.code)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 13, padding: 2 }} title="Supprimer le pôle et ses niveaux">
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize:15.5, padding: 2 }} title="Supprimer le pôle et ses niveaux">
                         <i className="fas fa-times" />
                       </button>
                     </div>
@@ -1091,7 +1091,7 @@ export default function AdminFormationsPage() {
                     {/* Niveaux imbriqués sous ce pôle, chacun avec ses formations imbriquées */}
                     <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                       {pnv.length === 0 && quickNiveauPoleId !== p.id && (
-                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Aucun niveau sous ce pôle</span>
+                        <span style={{ fontSize:14.5, color: 'var(--text-muted)' }}>Aucun niveau sous ce pôle</span>
                       )}
                       {pnv.map(n => {
                         const nf = formations.filter(f => f.niveau_id === n.id)
@@ -1100,21 +1100,21 @@ export default function AdminFormationsPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0d948812', padding: '10px 16px' }}>
                               <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#0d9488' }} />
                               <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 800, fontSize: 12.5, color: '#0d9488' }}>Niveau {n.code} — {n.name}</div>
-                                <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{nf.length} formation(s)</div>
+                                <div style={{ fontWeight: 800, fontSize:15, color: '#0d9488' }}>Niveau {n.code} — {n.name}</div>
+                                <div style={{ fontSize:12.5, color: 'var(--text-muted)' }}>{nf.length} formation(s)</div>
                               </div>
                               <button onClick={() => openEdit('edit_niveau', n)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize: 12, padding: 2 }} title="Modifier">
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize:14.5, padding: 2 }} title="Modifier">
                                 <i className="fas fa-pen" />
                               </button>
                               <button onClick={() => deleteNiveau(n.id, n.code)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Supprimer">
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize:14.5, padding: 2 }} title="Supprimer">
                                 <i className="fas fa-times" />
                               </button>
                             </div>
                             <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                               {nf.length === 0 ? (
-                                <p style={{ color: 'var(--text-muted)', fontSize: 12.5, margin: 0 }}>
+                                <p style={{ color: 'var(--text-muted)', fontSize:15, margin: 0 }}>
                                   Aucune formation sous ce niveau — cliquez &quot;Créer la hiérarchie (pas-à-pas)&quot; en haut
                                 </p>
                               ) : nf.map(f => renderFormationCard(f))}
@@ -1126,22 +1126,22 @@ export default function AdminFormationsPage() {
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                           <input placeholder="Code (ex: L1)" autoFocus value={niveauForm.code}
                             onChange={e => setNiveauForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
-                            style={{ width: 90, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }} />
+                            style={{ width: 90, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize:14.5, background: 'var(--surface)', color: 'var(--text)' }} />
                           <input placeholder="Nom (ex: Licence 1)" value={niveauForm.name}
                             onChange={e => setNiveauForm(f => ({ ...f, name: e.target.value }))}
-                            style={{ width: 150, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }} />
+                            style={{ width: 150, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize:14.5, background: 'var(--surface)', color: 'var(--text)' }} />
                           <button onClick={() => createNiveau(p.id)} disabled={niveauSubmitting || !niveauForm.code || !niveauForm.name}
-                            style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: '#0d9488', color: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: (!niveauForm.code || !niveauForm.name) ? .5 : 1 }}>
+                            style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: '#0d9488', color: 'white', cursor: 'pointer', fontSize:14.5, fontWeight: 700, opacity: (!niveauForm.code || !niveauForm.name) ? .5 : 1 }}>
                             <i className={`fas ${niveauSubmitting ? 'fa-spinner fa-spin' : 'fa-check'}`} />
                           </button>
                           <button onClick={() => { setQuickNiveauPoleId(null); setNiveauForm({ code: '', name: '', description: '' }) }}
-                            style={{ padding: '6px 10px', borderRadius: 7, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 12 }}>
+                            style={{ padding: '6px 10px', borderRadius: 7, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize:14.5 }}>
                             <i className="fas fa-xmark" />
                           </button>
                         </div>
                       ) : (
                         <button onClick={() => { setQuickNiveauPoleId(p.id); setNiveauForm({ code: '', name: '', description: '' }) }}
-                          style={{ alignSelf: 'flex-start', background: 'none', border: '1.5px dashed #0d948870', borderRadius: 8, padding: '6px 12px', color: '#0d9488', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                          style={{ alignSelf: 'flex-start', background: 'none', border: '1.5px dashed #0d948870', borderRadius: 8, padding: '6px 12px', color: '#0d9488', fontSize:14.5, fontWeight: 700, cursor: 'pointer' }}>
                           <i className="fas fa-plus" style={{ marginRight: 5 }} />Niveau
                         </button>
                       )}
@@ -1154,7 +1154,7 @@ export default function AdminFormationsPage() {
               {/* Niveaux orphelins (sans pôle) — cas hérité, à corriger via modification */}
               {niveaux.some(n => !n.pole_id) && (
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Niveaux sans pôle</div>
+                  <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Niveaux sans pôle</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {niveaux.filter(n => !n.pole_id).map(n => {
                       const nf = formations.filter(f => f.niveau_id === n.id)
@@ -1162,15 +1162,15 @@ export default function AdminFormationsPage() {
                         <div key={n.id} style={{ border: '1px solid #cbd5e1', borderRadius: 12, overflow: 'hidden' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f1f5f9', padding: '10px 16px' }}>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: 800, fontSize: 12.5 }}>{n.code} — {n.name}</div>
-                              <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{nf.length} formation(s)</div>
+                              <div style={{ fontWeight: 800, fontSize:15 }}>{n.code} — {n.name}</div>
+                              <div style={{ fontSize:12.5, color: 'var(--text-muted)' }}>{nf.length} formation(s)</div>
                             </div>
                             <button onClick={() => openEdit('edit_niveau', n)}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize: 12, padding: 2 }} title="Modifier">
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize:14.5, padding: 2 }} title="Modifier">
                               <i className="fas fa-pen" />
                             </button>
                             <button onClick={() => deleteNiveau(n.id, n.code)}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12, padding: 2 }} title="Supprimer">
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize:14.5, padding: 2 }} title="Supprimer">
                               <i className="fas fa-times" />
                             </button>
                           </div>
@@ -1189,7 +1189,7 @@ export default function AdminFormationsPage() {
               {/* Formations sans niveau (à rattacher via "Modifier") */}
               {formationsSansNiveau.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: '#b45309', marginBottom: 10 }}>
+                  <div style={{ fontSize:15.5, fontWeight: 800, color: '#b45309', marginBottom: 10 }}>
                     <i className="fas fa-triangle-exclamation" style={{ marginRight: 6 }} />
                     Formations sans niveau ({formationsSansNiveau.length}) — à rattacher via &quot;Modifier&quot;
                   </div>
@@ -1210,17 +1210,17 @@ export default function AdminFormationsPage() {
             <div style={{ width: 42, height: 42, borderRadius: 11, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <i className={`fas ${modal.kind.startsWith('create') ? 'fa-plus' : 'fa-pen'}`} style={{ color: '#3b82f6', fontSize: 19 }} />
             </div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{modalTitle()}</h3>
+            <h3 style={{ margin: 0, fontSize:21.5, fontWeight: 800 }}>{modalTitle()}</h3>
           </div>
           {modalBody()}
           <div style={{ display: 'flex', gap: 10, marginTop: 24, paddingTop: 18, borderTop: '1px solid var(--border)' }}>
             <button onClick={handleSubmit} disabled={submitting}
-              style={{ padding: '10px 26px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+              style={{ padding: '10px 26px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize:17, fontWeight: 700 }}>
               <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 7 }} />
               {submitting ? 'Enregistrement…' : 'Enregistrer'}
             </button>
             <button onClick={() => setModal(null)}
-              style={{ padding: '10px 22px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+              style={{ padding: '10px 22px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize:17, fontWeight: 600 }}>
               Annuler
             </button>
           </div>
@@ -1235,14 +1235,14 @@ export default function AdminFormationsPage() {
               <i className="fas fa-file-import" style={{ color: '#10b981', fontSize: 20 }} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Import Bulk Maquette</h3>
-              <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
+              <h3 style={{ margin: 0, fontSize:21.5, fontWeight: 800 }}>Import Bulk Maquette</h3>
+              <p style={{ margin: '2px 0 0', fontSize:15.5, color: 'var(--text-muted)' }}>
                 Importez toute la hiérarchie Pôle → Niveau → Formation → Semestre → UE → EC via CSV
               </p>
             </div>
           </div>
 
-          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '12px 16px', marginBottom: 18, fontSize: 13 }}>
+          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '12px 16px', marginBottom: 18, fontSize:15.5 }}>
             <strong style={{ color: '#1d4ed8' }}>Instructions :</strong>
             <ol style={{ margin: '8px 0 0 18px', color: '#1e40af', lineHeight: 1.9 }}>
               <li>Téléchargez le template CSV</li>
@@ -1254,25 +1254,25 @@ export default function AdminFormationsPage() {
           </div>
 
           <button onClick={downloadCsvTemplate}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 700, marginBottom: 18 }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700, marginBottom: 18 }}>
             <i className="fas fa-download" /> Télécharger Template CSV
           </button>
 
           <div className="form-group">
-            <label style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, display: 'block' }}>Fichier CSV *</label>
+            <label style={{ fontWeight: 600, fontSize:15.5, marginBottom: 6, display: 'block' }}>Fichier CSV *</label>
             <input type="file" accept=".csv"
-              style={{ width: '100%', fontSize: 14, padding: '8px 0' }}
+              style={{ width: '100%', fontSize:17, padding: '8px 0' }}
               onChange={e => { setCsvFile(e.target.files?.[0] || null); setImportResult(null) }} />
           </div>
 
           {importResult?.created && (
-            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: 14, marginBottom: 14, fontSize: 13 }}>
+            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: 14, marginBottom: 14, fontSize:15.5 }}>
               <strong style={{ color: '#166534' }}><i className="fas fa-check-circle" style={{ marginRight: 5 }} />Import réussi !</strong>
               <div style={{ marginTop: 5, color: '#166534' }}>
                 Formations: {importResult.created.formations || 0} · Semestres: {importResult.created.semesters || 0} · UEs: {importResult.created.ues || 0} · ECs: {importResult.created.ecs || 0}
               </div>
               {importResult.errors?.length > 0 && (
-                <ul style={{ margin: '8px 0 0 16px', color: '#92400e', fontSize: 12 }}>
+                <ul style={{ margin: '8px 0 0 16px', color: '#92400e', fontSize:14.5 }}>
                   {importResult.errors.map((e: string, i: number) => <li key={i}>{e}</li>)}
                 </ul>
               )}
@@ -1281,12 +1281,12 @@ export default function AdminFormationsPage() {
 
           <div style={{ display: 'flex', gap: 10, paddingTop: 8 }}>
             <button onClick={handleImportCsv} disabled={importing || !csvFile}
-              style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 700, opacity: !csvFile ? .5 : 1 }}>
+              style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize:17, fontWeight: 700, opacity: !csvFile ? .5 : 1 }}>
               <i className={`fas ${importing ? 'fa-spinner fa-spin' : 'fa-upload'}`} style={{ marginRight: 7 }} />
               {importing ? 'Import en cours…' : 'Importer'}
             </button>
             <button onClick={() => setModal(null)}
-              style={{ padding: '10px 22px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+              style={{ padding: '10px 22px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize:17, fontWeight: 600 }}>
               Annuler
             </button>
           </div>
@@ -1302,8 +1302,8 @@ export default function AdminFormationsPage() {
               <i className="fas fa-shoe-prints" style={{ color: '#db2777', fontSize: 20 }} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Créer la hiérarchie pas-à-pas</h3>
-              <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>À chaque étape : choisissez un existant ou créez-en un nouveau</p>
+              <h3 style={{ margin: 0, fontSize:21.5, fontWeight: 800 }}>Créer la hiérarchie pas-à-pas</h3>
+              <p style={{ margin: '2px 0 0', fontSize:15.5, color: 'var(--text-muted)' }}>À chaque étape : choisissez un existant ou créez-en un nouveau</p>
             </div>
           </div>
 
@@ -1315,7 +1315,7 @@ export default function AdminFormationsPage() {
               return (
                 <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{
-                    fontSize: 12.5, fontWeight: 800, padding: '4px 10px', borderRadius: 20,
+                    fontSize:15, fontWeight: 800, padding: '4px 10px', borderRadius: 20,
                     background: state === 'current' ? '#db2777' : state === 'done' ? '#fce7f3' : 'var(--border)',
                     color: state === 'current' ? 'white' : state === 'done' ? '#db2777' : 'var(--text-muted)',
                   }}>
@@ -1333,12 +1333,12 @@ export default function AdminFormationsPage() {
           <div style={{ display: 'flex', gap: 10, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
             {wizardCtx.poleId && wizardStep !== 'ec' && (
               <button onClick={() => { success('Hiérarchie enregistrée jusqu\'ici'); setModal(null); load() }}
-                style={{ padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                style={{ padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize:15.5, fontWeight: 600 }}>
                 Terminer ici
               </button>
             )}
             <button onClick={() => setModal(null)}
-              style={{ padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontWeight: 600, marginLeft: 'auto' }}>
+              style={{ padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize:15.5, fontWeight: 600, marginLeft: 'auto' }}>
               Annuler
             </button>
           </div>

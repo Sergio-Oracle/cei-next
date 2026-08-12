@@ -322,7 +322,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
               {routineEvents.length > 0 && (
                 <>
                   <div className="card-header" style={{ borderTop: '1px solid var(--border)' }}>
-                    <h3 style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>
+                    <h3 style={{ margin: 0, fontSize:15.5, color: 'var(--text-muted)', fontWeight: 600 }}>
                       <i className="fas fa-circle-info" /> Activité de la plateforme (hors incidents)
                     </h3>
                   </div>
@@ -331,18 +331,18 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
                       <tbody>
                         {routineEvents.map(e => (
                           <tr key={e.event}>
-                            <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                            <td style={{ color: 'var(--text-muted)', fontSize:15.5 }}>
                               <i className={`fas ${EVT_ICONS[e.event] || 'fa-circle'}`}
                                 style={{ color: '#94a3b8', marginRight: 8, width: 14, textAlign: 'center' }} />
                               {EVT_LABELS[e.event] || e.event}
                               {e.event === 'face_reference_captured' && (report?.reference_photos?.length ?? 0) > 0 && (
                                 <button onClick={() => setShowRefGallery(true)}
-                                  style={{ marginLeft: 10, background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', padding: '2px 9px', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>
+                                  style={{ marginLeft: 10, background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', padding: '2px 9px', borderRadius: 6, fontSize:13, cursor: 'pointer' }}>
                                   <i className="fas fa-camera" /> Photo
                                 </button>
                               )}
                             </td>
-                            <td style={{ fontWeight: 600, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>{e.count}</td>
+                            <td style={{ fontWeight: 600, textAlign: 'center', color: 'var(--text-muted)', fontSize:15.5 }}>{e.count}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -376,23 +376,23 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
                         const st = STATUS_MAP[a.status] ?? { label: a.status, color: '#64748b' }
                         return (
                           <tr key={a.attempt_id}>
-                            <td style={{ fontSize: 13 }}>{a.student_name}</td>
-                            <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.exam_title}</td>
+                            <td style={{ fontSize:15.5 }}>{a.student_name}</td>
+                            <td style={{ fontSize:14.5, color: 'var(--text-muted)' }}>{a.exam_title}</td>
                             <td style={{ textAlign: 'center' }}>
-                              <span style={{ fontWeight: 800, color: riskColor(a.risk_score), fontSize: 14 }}>{a.risk_score}</span>
+                              <span style={{ fontWeight: 800, color: riskColor(a.risk_score), fontSize:17 }}>{a.risk_score}</span>
                             </td>
-                            <td style={{ textAlign: 'center', fontSize: 12 }}>{a.warnings_count}</td>
-                            <td style={{ textAlign: 'center', fontSize: 12 }}>{a.tab_switches}</td>
-                            <td style={{ textAlign: 'center', fontSize: 12 }}>{a.no_face_count}</td>
+                            <td style={{ textAlign: 'center', fontSize:14.5 }}>{a.warnings_count}</td>
+                            <td style={{ textAlign: 'center', fontSize:14.5 }}>{a.tab_switches}</td>
+                            <td style={{ textAlign: 'center', fontSize:14.5 }}>{a.no_face_count}</td>
                             <td>
-                              <span style={{ fontSize: 11, fontWeight: 700, color: st.color, background: st.color + '18', padding: '3px 8px', borderRadius: 99 }}>
+                              <span style={{ fontSize:13, fontWeight: 700, color: st.color, background: st.color + '18', padding: '3px 8px', borderRadius: 99 }}>
                                 {st.label}
                               </span>
-                              {a.ban_reason && <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>{a.ban_reason}</div>}
+                              {a.ban_reason && <div style={{ fontSize:12, color: 'var(--text-muted)', marginTop: 2 }}>{a.ban_reason}</div>}
                             </td>
                             <td style={{ textAlign: 'center' }}>
                               <button onClick={() => viewFacePhoto(a.attempt_id)}
-                                style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', padding: '4px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+                                style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', padding: '4px 10px', borderRadius: 6, fontSize:14.5, cursor: 'pointer' }}>
                                 <i className="fas fa-camera" /> Photo
                               </button>
                             </td>
@@ -418,20 +418,20 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
                   <div key={s.attempt_id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 14 }}>{s.student_name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{s.exam_title}</div>
+                        <div style={{ fontWeight: 700, fontSize:17 }}>{s.student_name}</div>
+                        <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>{s.exam_title}</div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: (STATUS_MAP[s.status] ?? { color: '#64748b' }).color,
+                        <span style={{ fontSize:13, fontWeight: 700, color: (STATUS_MAP[s.status] ?? { color: '#64748b' }).color,
                           background: (STATUS_MAP[s.status] ?? { color: '#64748b' }).color + '18', padding: '3px 8px', borderRadius: 99 }}>
                           {(STATUS_MAP[s.status] ?? { label: s.status }).label}
                         </span>
-                        <span style={{ fontWeight: 800, color: riskColor(s.risk_score), fontSize: 14 }}>{s.risk_score}/100</span>
+                        <span style={{ fontWeight: 800, color: riskColor(s.risk_score), fontSize:17 }}>{s.risk_score}/100</span>
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: s.snapshots.length ? 12 : 0 }}>
                       {s.incidents.map(inc => (
-                        <span key={inc.event} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12,
+                        <span key={inc.event} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize:14.5,
                           background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: 99, padding: '3px 10px' }}>
                           <i className={`fas ${EVT_ICONS[inc.event] || 'fa-circle'}`} />
                           {EVT_LABELS[inc.event] || inc.event} × {inc.count}
@@ -455,7 +455,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
             )}
           </div>
 
-          <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '16px 18px', marginTop: 16, fontSize: 13, color: '#0369a1', lineHeight: 1.7 }}>
+          <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '16px 18px', marginTop: 16, fontSize:15.5, color: '#0369a1', lineHeight: 1.7 }}>
             <strong><i className="fas fa-circle-info" /> Interprétation du score de risque :</strong><br />
             Le score est calculé à partir du nombre d'avertissements, de changements d'onglet, de détections sans visage et d'autres incidents.{' '}
             <strong>0–30 : Normal · 30–70 : Attention · 70–100 : Risque élevé</strong>
@@ -471,13 +471,13 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
           <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 24, maxWidth: 700, width: '100%', maxHeight: '85vh', overflowY: 'auto' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <h3 style={{ margin: 0, fontSize: 16 }}><i className="fas fa-camera" style={{ marginRight: 8 }} />Photos de référence</h3>
+              <h3 style={{ margin: 0, fontSize:19 }}><i className="fas fa-camera" style={{ marginRight: 8 }} />Photos de référence</h3>
               <button onClick={() => setShowRefGallery(false)}
-                style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--text-muted)' }}>
+                style={{ background: 'none', border: 'none', fontSize:24, cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <i className="fas fa-times" />
               </button>
             </div>
-            <p style={{ margin: '0 0 16px', fontSize: 12, color: 'var(--text-muted)' }}>
+            <p style={{ margin: '0 0 16px', fontSize:14.5, color: 'var(--text-muted)' }}>
               {report.reference_photos.length} étudiant(s) — capturées au démarrage de l'examen
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14 }}>
@@ -487,9 +487,9 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
                     onClick={() => setZoomed({ image_url: p.image_url, event_type: 'face_reference_captured', timestamp: p.timestamp })}
                     style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)', cursor: 'zoom-in' }}
                     onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                  <div style={{ fontSize: 12, fontWeight: 600, marginTop: 6 }}>{p.student_name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.exam_title}</div>
-                  {p.timestamp && <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{new Date(p.timestamp).toLocaleString('fr-FR')}</div>}
+                  <div style={{ fontSize:14.5, fontWeight: 600, marginTop: 6 }}>{p.student_name}</div>
+                  <div style={{ fontSize:13, color: 'var(--text-muted)' }}>{p.exam_title}</div>
+                  {p.timestamp && <div style={{ fontSize:12, color: 'var(--text-muted)' }}>{new Date(p.timestamp).toLocaleString('fr-FR')}</div>}
                 </div>
               ))}
             </div>
@@ -504,7 +504,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
             flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, cursor: 'zoom-out' }}>
           <img src={zoomed.image_url} alt="capture incident"
             style={{ maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 8, boxShadow: '0 12px 40px rgba(0,0,0,.5)' }} />
-          <div style={{ marginTop: 14, color: 'rgba(255,255,255,.85)', fontSize: 13, display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div style={{ marginTop: 14, color: 'rgba(255,255,255,.85)', fontSize:15.5, display: 'flex', gap: 12, alignItems: 'center' }}>
             {zoomed.event_type && <span>{EVT_LABELS[zoomed.event_type] || zoomed.event_type}</span>}
             {zoomed.timestamp && <span>{new Date(zoomed.timestamp).toLocaleString('fr-FR')}</span>}
           </div>
@@ -520,15 +520,15 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: 16 }}><i className="fas fa-camera" style={{ marginRight: 8 }} />Photo de référence</h3>
+                <h3 style={{ margin: 0, fontSize:19 }}><i className="fas fa-camera" style={{ marginRight: 8 }} />Photo de référence</h3>
                 {facePhoto.student_name && (
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+                  <p style={{ margin: '4px 0 0', fontSize:14.5, color: 'var(--text-muted)' }}>
                     {facePhoto.student_name} — {facePhoto.exam_title}
                   </p>
                 )}
               </div>
               <button onClick={() => setFacePhoto(null)}
-                style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--text-muted)' }}>
+                style={{ background: 'none', border: 'none', fontSize:24, cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <i className="fas fa-times" />
               </button>
             </div>
@@ -542,11 +542,11 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
               <div style={{ width: '100%', height: 180, background: '#f1f5f9', borderRadius: 8,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 <i className="fas fa-camera-slash" style={{ fontSize: 35, color: '#94a3b8' }} />
-                <span style={{ fontSize: 13, color: '#64748b' }}>Photo non disponible</span>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>Les photos sont capturées au démarrage de l'examen</span>
+                <span style={{ fontSize:15.5, color: '#64748b' }}>Photo non disponible</span>
+                <span style={{ fontSize:13, color: '#94a3b8' }}>Les photos sont capturées au démarrage de l'examen</span>
               </div>
             )}
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 10, textAlign: 'center' }}>
+            <p style={{ fontSize:13, color: 'var(--text-muted)', marginTop: 10, textAlign: 'center' }}>
               Tentative #{facePhoto.attemptId}
             </p>
           </div>

@@ -25,7 +25,7 @@ function BarChart({ labels, data, colors }: { labels: string[]; data: number[]; 
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 150, padding: '0 2px' }}>
         {data.map((v, i) => (
           <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: v > 0 ? colors[i] : 'transparent' }}>{v}</span>
+            <span style={{ fontSize:14.5, fontWeight: 700, color: v > 0 ? colors[i] : 'transparent' }}>{v}</span>
             <div style={{ width: '80%', background: colors[i], borderRadius: '4px 4px 0 0',
               height: max > 0 ? Math.max((v / max) * 118, v > 0 ? 4 : 0) : 0 }} />
           </div>
@@ -33,7 +33,7 @@ function BarChart({ labels, data, colors }: { labels: string[]; data: number[]; 
       </div>
       <div style={{ display: 'flex', gap: 8, padding: '5px 2px 0', borderTop: '2px solid #e2e8f0' }}>
         {labels.map((l, i) => (
-          <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 10, color: '#64748b', fontWeight: 600 }}>{l}</div>
+          <div key={i} style={{ flex: 1, textAlign: 'center', fontSize:12, color: '#64748b', fontWeight: 600 }}>{l}</div>
         ))}
       </div>
     </div>
@@ -54,12 +54,12 @@ function Donut({ passed, failed, size = 130 }: { passed: number; failed: number;
           width: inner, height: inner, borderRadius: '50%', background: 'white',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ fontSize: Math.round(size * 0.15), fontWeight: 800, color: pct >= 50 ? '#10b981' : '#ef4444' }}>{pct}%</span>
-          <span style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase' }}>réussite</span>
+          <span style={{ fontSize:11, color: '#94a3b8', textTransform: 'uppercase' }}>réussite</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 12 }}>
         {[{ color: '#10b981', label: `Réussite (${passed})` }, { color: '#ef4444', label: `Échec (${failed})` }].map(({ color, label }) => (
-          <span key={label} style={{ fontSize: 11, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span key={label} style={{ fontSize:13, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ width: 9, height: 9, borderRadius: 2, background: color, display: 'inline-block' }} />{label}
           </span>
         ))}
@@ -71,7 +71,7 @@ function Donut({ passed, failed, size = 130 }: { passed: number; failed: number;
 /* ─── Courbe SVG (rendu serveur, zéro dépendance externe) ─── */
 function SVGLine({ scores, labels }: { scores: number[]; labels?: string[] }) {
   if (!scores.length) return (
-    <div style={{ height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 12 }}>
+    <div style={{ height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize:14.5 }}>
       Aucune donnée
     </div>
   )
@@ -113,7 +113,7 @@ function SVGLine({ scores, labels }: { scores: number[]; labels?: string[] }) {
 /* ─── Barres horizontales ─── */
 function HorizChart({ subjects }: { subjects: Subject[] }) {
   const rows = subjects.filter(s => s.stats?.averageScore != null && (s.stats.totalStudents ?? 0) > 0)
-  if (!rows.length) return <div style={{ color: '#94a3b8', fontSize: 12 }}>Aucune donnée</div>
+  if (!rows.length) return <div style={{ color: '#94a3b8', fontSize:14.5 }}>Aucune donnée</div>
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {rows.map(s => {
@@ -122,7 +122,7 @@ function HorizChart({ subjects }: { subjects: Subject[] }) {
         const pct = Math.max((avg / 20) * 100, avg > 0 ? 1 : 0)
         return (
           <div key={s.id}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize:14.5 }}>
               <span style={{ color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '72%' }}>
                 {s.title.length > 42 ? s.title.substring(0, 41) + '…' : s.title}
               </span>
@@ -173,13 +173,13 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
 
       <div style={{ background: '#2563eb', padding: '16px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <p style={{ color: '#bfdbfe', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', margin: '0 0 4px' }}>
+          <p style={{ color: '#bfdbfe', fontSize:13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', margin: '0 0 4px' }}>
             Statistiques détaillées
           </p>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'white' }}>{subject.title}</h3>
+          <h3 style={{ margin: 0, fontSize:19, fontWeight: 700, color: 'white' }}>{subject.title}</h3>
         </div>
         <button onClick={onClose} style={{ background: 'rgba(255,255,255,.2)', border: 'none', color: 'white',
-          width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 18,
+          width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize:21.5,
           display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <i className="fas fa-times" />
         </button>
@@ -195,8 +195,8 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
                 display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>
                 <i className={`fas ${icon}`} style={{ color, fontSize: 17 }} />
               </div>
-              <div style={{ fontSize: 19, fontWeight: 800, color: '#0f172a' }}>{value}</div>
-              <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, fontWeight: 600 }}>{label}</div>
+              <div style={{ fontSize:23, fontWeight: 800, color: '#0f172a' }}>{value}</div>
+              <div style={{ fontSize:12, color: '#64748b', marginTop: 2, fontWeight: 600 }}>{label}</div>
             </div>
           ))}
         </div>
@@ -204,7 +204,7 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
         {/* Graphiques 2×2 */}
         <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-            <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#374151' }}>
+            <p style={{ margin: '0 0 10px', fontSize:14.5, fontWeight: 700, color: '#374151' }}>
               <i className="fas fa-chart-bar" style={{ color: '#2563eb', marginRight: 5 }} />Distribution des notes
             </p>
             <BarChart labels={['0 – 5', '5 – 10', '10 – 15', '15 – 20']} data={dist}
@@ -212,7 +212,7 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
           </div>
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16,
             display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#374151', alignSelf: 'flex-start' }}>
+            <p style={{ margin: '0 0 10px', fontSize:14.5, fontWeight: 700, color: '#374151', alignSelf: 'flex-start' }}>
               <i className="fas fa-chart-pie" style={{ color: '#10b981', marginRight: 5 }} />Réussite / Échec
             </p>
             <Donut passed={passed} failed={failed} size={120} />
@@ -221,13 +221,13 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
 
         <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-            <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#374151' }}>
+            <p style={{ margin: '0 0 10px', fontSize:14.5, fontWeight: 700, color: '#374151' }}>
               <i className="fas fa-chart-line" style={{ color: '#3b82f6', marginRight: 5 }} />Scores individuels (classement)
             </p>
             <SVGLine scores={allScores} />
           </div>
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-            <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#374151' }}>
+            <p style={{ margin: '0 0 10px', fontSize:14.5, fontWeight: 700, color: '#374151' }}>
               <i className="fas fa-calendar-alt" style={{ color: '#2563eb', marginRight: 5 }} />Évolution dans le temps
             </p>
             <SVGLine scores={timeScores} labels={timeLabels} />
@@ -237,23 +237,23 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
         {/* Tableau copies papier */}
         {hasPapers && (
           <div>
-            <h4 style={{ fontSize: 14, fontWeight: 700, color: '#374151', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <h4 style={{ fontSize:17, fontWeight: 700, color: '#374151', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
               <i className="fas fa-file-alt" style={{ color: '#2563eb' }} />Copies Papier ({st.papers.length})
             </h4>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr>
                 {['Étudiant', 'Email', 'Note', 'Corrigé le'].map(h => (
-                  <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, color: '#64748b',
+                  <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize:13, color: '#64748b',
                     fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>{h}</th>
                 ))}
               </tr></thead>
               <tbody>
                 {st.papers.map((p, i) => (
                   <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '7px 10px', fontSize: 13 }}>{p.student_name}</td>
-                    <td style={{ padding: '7px 10px', fontSize: 12, color: '#64748b' }}>{p.student_email}</td>
+                    <td style={{ padding: '7px 10px', fontSize:15.5 }}>{p.student_name}</td>
+                    <td style={{ padding: '7px 10px', fontSize:14.5, color: '#64748b' }}>{p.student_email}</td>
                     <td style={{ padding: '7px 10px', fontWeight: 700, color: sc(p.score) }}>{p.score != null ? p.score + '/20' : '—'}</td>
-                    <td style={{ padding: '7px 10px', fontSize: 12, color: '#94a3b8' }}>
+                    <td style={{ padding: '7px 10px', fontSize:14.5, color: '#94a3b8' }}>
                       {p.corrected_at ? new Date(p.corrected_at).toLocaleDateString('fr-FR') : '—'}
                     </td>
                   </tr>
@@ -266,24 +266,24 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
         {/* Tableau examens en ligne */}
         {hasAttempts && (
           <div>
-            <h4 style={{ fontSize: 14, fontWeight: 700, color: '#374151', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <h4 style={{ fontSize:17, fontWeight: 700, color: '#374151', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
               <i className="fas fa-laptop-code" style={{ color: '#3b82f6' }} />Examens en Ligne ({st.attempts.length})
             </h4>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr>
                 {['Étudiant', 'Email', 'Examen', 'Note', 'Date'].map(h => (
-                  <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, color: '#64748b',
+                  <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize:13, color: '#64748b',
                     fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>{h}</th>
                 ))}
               </tr></thead>
               <tbody>
                 {st.attempts.map((a, i) => (
                   <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '7px 10px', fontSize: 13 }}>{a.student_name}</td>
-                    <td style={{ padding: '7px 10px', fontSize: 12, color: '#64748b' }}>{a.student_email}</td>
-                    <td style={{ padding: '7px 10px', fontSize: 12, color: '#64748b' }}>{a.exam_title}</td>
+                    <td style={{ padding: '7px 10px', fontSize:15.5 }}>{a.student_name}</td>
+                    <td style={{ padding: '7px 10px', fontSize:14.5, color: '#64748b' }}>{a.student_email}</td>
+                    <td style={{ padding: '7px 10px', fontSize:14.5, color: '#64748b' }}>{a.exam_title}</td>
                     <td style={{ padding: '7px 10px', fontWeight: 700, color: sc(a.score) }}>{a.score != null ? a.score + '/20' : '—'}</td>
-                    <td style={{ padding: '7px 10px', fontSize: 12, color: '#94a3b8' }}>
+                    <td style={{ padding: '7px 10px', fontSize:14.5, color: '#94a3b8' }}>
                       {a.corrected_at ? new Date(a.corrected_at).toLocaleDateString('fr-FR') : '—'}
                     </td>
                   </tr>
@@ -294,7 +294,7 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
         )}
 
         {!hasPapers && !hasAttempts && (
-          <p style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>Aucune copie disponible pour ce sujet.</p>
+          <p style={{ color: '#94a3b8', fontSize:15.5, margin: 0 }}>Aucune copie disponible pour ce sujet.</p>
         )}
       </div>
     </div>
@@ -350,7 +350,7 @@ export default function ProfessorResultsPage() {
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <i className="fas fa-chart-bar" style={{ color: '#2563eb' }} />Résultats &amp; Statistiques
           </h2>
-          <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize: 14 }}>Statistiques détaillées de vos examens</p>
+          <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize:17 }}>Statistiques détaillées de vos examens</p>
         </div>
         <button className="btn btn-secondary" onClick={load}><i className="fas fa-rotate" /> Actualiser</button>
       </div>
@@ -358,7 +358,7 @@ export default function ProfessorResultsPage() {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '80px 24px' }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: 35, color: 'var(--primary)', display: 'block', marginBottom: 14 }} />
-          <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>Chargement…</span>
+          <span style={{ color: 'var(--text-muted)', fontSize:17 }}>Chargement…</span>
         </div>
       ) : subjects.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 60 }}>
@@ -374,7 +374,7 @@ export default function ProfessorResultsPage() {
           {/* ── Bandeau global ── */}
           {hasGlobal && (
             <div style={{ background: '#2563eb', borderRadius: 14, padding: '20px 22px' }}>
-              <p style={{ color: '#bfdbfe', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 0 14px' }}>
+              <p style={{ color: '#bfdbfe', fontSize:13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 0 14px' }}>
                 <i className="fas fa-globe-africa" style={{ marginRight: 6 }} />Vue d'ensemble globale
               </p>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -391,8 +391,8 @@ export default function ProfessorResultsPage() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>
                       <i className={`fas ${icon}`} style={{ color: '#fff', fontSize: 17 }} />
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>{val}</div>
-                    <div style={{ fontSize: 10, color: '#bfdbfe', marginTop: 2, fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
+                    <div style={{ fontSize:24, fontWeight: 800, color: '#fff' }}>{val}</div>
+                    <div style={{ fontSize:12, color: '#bfdbfe', marginTop: 2, fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
                   </div>
                 ))}
               </div>
@@ -404,7 +404,7 @@ export default function ProfessorResultsPage() {
             <>
               <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 14, padding: '18px 20px' }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 700, color: '#374151', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <p style={{ margin: '0 0 14px', fontSize:15.5, fontWeight: 700, color: '#374151', display: 'flex', alignItems: 'center', gap: 7 }}>
                     <i className="fas fa-chart-bar" style={{ color: '#2563eb' }} />Distribution des notes
                   </p>
                   <BarChart labels={['0 – 5', '5 – 10', '10 – 15', '15 – 20']} data={gDist}
@@ -412,7 +412,7 @@ export default function ProfessorResultsPage() {
                 </div>
                 <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 14, padding: '18px 20px',
                   display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 700, color: '#374151', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <p style={{ margin: '0 0 14px', fontSize:15.5, fontWeight: 700, color: '#374151', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 7 }}>
                     <i className="fas fa-chart-pie" style={{ color: '#10b981' }} />Réussite / Échec
                   </p>
                   <Donut passed={gPassed} failed={gFailed} size={140} />
@@ -421,7 +421,7 @@ export default function ProfessorResultsPage() {
 
               {subjects.some(s => s.stats?.averageScore != null && (s.stats.totalStudents ?? 0) > 0) && (
                 <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 14, padding: '18px 20px' }}>
-                  <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 700, color: '#374151', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <p style={{ margin: '0 0 14px', fontSize:15.5, fontWeight: 700, color: '#374151', display: 'flex', alignItems: 'center', gap: 7 }}>
                     <i className="fas fa-chart-line" style={{ color: '#3b82f6' }} />Moyenne par sujet
                   </p>
                   <HorizChart subjects={subjects} />
@@ -432,7 +432,7 @@ export default function ProfessorResultsPage() {
 
           {/* ── Cartes sujets ── */}
           <div>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em', margin: '0 0 10px' }}>
+            <p style={{ fontSize:13, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em', margin: '0 0 10px' }}>
               <i className="fas fa-file-alt" style={{ marginRight: 6 }} />Détail par sujet
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -451,10 +451,10 @@ export default function ProfessorResultsPage() {
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         padding: '16px 20px', gap: 14, flexWrap: 'wrap' }}>
                         <div style={{ flex: 1, minWidth: 200 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 3 }}>{s.title}</div>
+                          <div style={{ fontSize:17, fontWeight: 700, color: '#0f172a', marginBottom: 3 }}>{s.title}</div>
                           {s.ec_name
-                            ? <div style={{ fontSize: 11, color: '#64748b' }}><i className="fas fa-book" style={{ marginRight: 4 }} />{s.ec_code} — {s.ec_name}</div>
-                            : <div style={{ fontSize: 11, color: '#94a3b8' }}>{new Date(s.created_at).toLocaleDateString('fr-FR')}</div>}
+                            ? <div style={{ fontSize:13, color: '#64748b' }}><i className="fas fa-book" style={{ marginRight: 4 }} />{s.ec_code} — {s.ec_name}</div>
+                            : <div style={{ fontSize:13, color: '#94a3b8' }}>{new Date(s.created_at).toLocaleDateString('fr-FR')}</div>}
                         </div>
 
                         {hasData ? (
@@ -467,20 +467,20 @@ export default function ProfessorResultsPage() {
                               { label: 'Max',      val: st!.maxScore != null ? st!.maxScore + '/20' : '—', color: '#3b82f6' },
                             ].map(({ label, val, color }) => (
                               <div key={label} style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: 15, fontWeight: 800, color }}>{val}</div>
-                                <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600 }}>{label}</div>
+                                <div style={{ fontSize:18, fontWeight: 800, color }}>{val}</div>
+                                <div style={{ fontSize:12, color: '#94a3b8', fontWeight: 600 }}>{label}</div>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <span style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>
+                          <span style={{ fontSize:14.5, color: '#94a3b8', fontStyle: 'italic' }}>
                             <i className="fas fa-clock" style={{ marginRight: 4 }} />Aucune copie corrigée
                           </span>
                         )}
 
                         <button onClick={() => setDetail(isOpen ? null : s)}
                           style={{ background: hasData ? '#2563eb' : '#f1f5f9', color: hasData ? '#fff' : '#64748b',
-                            border: 'none', padding: '9px 16px', borderRadius: 9, fontSize: 13, fontWeight: 600,
+                            border: 'none', padding: '9px 16px', borderRadius: 9, fontSize:15.5, fontWeight: 600,
                             cursor: 'pointer', whiteSpace: 'nowrap' }}>
                           <i className={`fas ${hasData ? (isOpen ? 'fa-times' : 'fa-chart-pie') : 'fa-search'}`} style={{ marginRight: 6 }} />
                           {hasData ? (isOpen ? 'Fermer' : 'Détails') : 'Consulter'}
@@ -490,8 +490,8 @@ export default function ProfessorResultsPage() {
                       {hasData && (
                         <div style={{ padding: '0 20px 14px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                            <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>Taux de réussite</span>
-                            <span style={{ fontSize: 10, color: prColor, fontWeight: 700 }}>{pr}%</span>
+                            <span style={{ fontSize:12, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>Taux de réussite</span>
+                            <span style={{ fontSize:12, color: prColor, fontWeight: 700 }}>{pr}%</span>
                           </div>
                           <div style={{ background: '#f1f5f9', borderRadius: 99, height: 5 }}>
                             <div style={{ width: `${Math.min(pr, 100)}%`, height: '100%', background: prColor, borderRadius: 99 }} />

@@ -22,7 +22,7 @@ function fmtDuration(min: number) {
 
 function SecChip({ icon, label, color, bg }: { icon: string; label: string; color: string; bg: string }) {
   return (
-    <span style={{ background: bg, color, padding: '3px 9px', borderRadius: 99, fontSize: 11, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+    <span style={{ background: bg, color, padding: '3px 9px', borderRadius: 99, fontSize:13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
       <i className={`fas ${icon}`} />{label}
     </span>
   )
@@ -107,12 +107,12 @@ export default function ProfessorExamsPage() {
             <i className="fas fa-laptop-code" style={{ color: 'white', fontSize: 22 }} />
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Examens en Ligne</h2>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Créez et gérez des examens avec surveillance anti-triche</p>
+            <h2 style={{ margin: 0, fontSize:24, fontWeight: 700, color: 'var(--text)' }}>Examens en Ligne</h2>
+            <p style={{ margin: '4px 0 0', fontSize:15.5, color: 'var(--text-muted)' }}>Créez et gérez des examens avec surveillance anti-triche</p>
           </div>
         </div>
         <Link href="/dashboard/professor/exams/new"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: '#3b82f6', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: '#3b82f6', color: 'white', borderRadius: 8, fontSize:15.5, fontWeight: 600, textDecoration: 'none' }}>
           <i className="fas fa-plus" /> Créer un Examen
         </Link>
       </div>
@@ -136,10 +136,10 @@ export default function ProfessorExamsPage() {
           {exams.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '64px 24px', background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)' }}>
               <i className="fas fa-laptop-code" style={{ fontSize: 57, color: '#cbd5e1', display: 'block', marginBottom: 16 }} />
-              <h3 style={{ color: '#475569', fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>Aucun examen disponible</h3>
-              <p style={{ color: '#94a3b8', fontSize: 14, margin: '0 0 24px' }}>Créez votre premier examen en ligne avec surveillance intégrée.</p>
+              <h3 style={{ color: '#475569', fontSize:21.5, fontWeight: 600, margin: '0 0 8px' }}>Aucun examen disponible</h3>
+              <p style={{ color: '#94a3b8', fontSize:17, margin: '0 0 24px' }}>Créez votre premier examen en ligne avec surveillance intégrée.</p>
               <Link href="/dashboard/professor/exams/new"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', background: '#3b82f6', color: 'white', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', background: '#3b82f6', color: 'white', borderRadius: 8, fontSize:17, fontWeight: 600, textDecoration: 'none' }}>
                 <i className="fas fa-plus" /> Créer un Examen
               </Link>
             </div>
@@ -190,36 +190,36 @@ function ExamCard({
       <div style={{ padding: '18px 20px', flex: 1 }}>
         {/* Titre + badge statut */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0, lineHeight: 1.35, flex: 1 }}>{exam.title}</h3>
-          <span style={{ background: sc.bg, color: sc.color, padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <h3 style={{ fontSize:18, fontWeight: 700, color: 'var(--text)', margin: 0, lineHeight: 1.35, flex: 1 }}>{exam.title}</h3>
+          <span style={{ background: sc.bg, color: sc.color, padding: '4px 10px', borderRadius: 99, fontSize:13, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <i className={`fas ${sc.icon}`} /> {sc.label}
           </span>
         </div>
 
         {/* Sujet */}
         {exam.subject_title && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--text-muted)', fontSize: 13, marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--text-muted)', fontSize:15.5, marginBottom: 6 }}>
             <i className="fas fa-book" style={{ color: '#3b82f6', width: 13 }} />{exam.subject_title}
           </div>
         )}
 
         {/* Participants */}
         {(exam.attempts_count ?? 0) > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#94a3b8', fontSize: 12, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#94a3b8', fontSize:14.5, marginBottom: 12 }}>
             <i className="fas fa-users" style={{ width: 13 }} />{exam.attempts_count} participant(s)
           </div>
         )}
 
         {/* Dates + durée */}
         <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 12px', marginBottom: 12, border: '1px solid #f1f5f9' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#475569', fontSize: 12, marginBottom: 5 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#475569', fontSize:14.5, marginBottom: 5 }}>
             <i className="fas fa-play" style={{ color: '#10b981', fontSize: 11 }} />
             <span style={{ flex: 1 }}>{start.toLocaleString('fr-FR', LOCALE_OPTS)}</span>
             <span style={{ fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <i className="fas fa-clock" style={{ color: '#3b82f6', fontSize: 13 }} /> {fmtDuration(exam.duration_minutes)}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#475569', fontSize: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#475569', fontSize:14.5 }}>
             <i className="fas fa-stop" style={{ color: '#ef4444', fontSize: 11 }} />{end.toLocaleString('fr-FR', LOCALE_OPTS)}
           </div>
         </div>
@@ -283,7 +283,7 @@ function ExamCard({
 }
 
 function btn(bg: string, color: string): React.CSSProperties {
-  return { display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, padding: '6px 11px', background: bg, color, border: 'none', borderRadius: 7, cursor: 'pointer', textDecoration: 'none', fontWeight: 600 }
+  return { display: 'inline-flex', alignItems: 'center', gap: 5, fontSize:13, padding: '6px 11px', background: bg, color, border: 'none', borderRadius: 7, cursor: 'pointer', textDecoration: 'none', fontWeight: 600 }
 }
 
 function MiniTile({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) {
@@ -293,8 +293,8 @@ function MiniTile({ icon, label, value, color }: { icon: string; label: string; 
         <i className={`fas ${icon}`} style={{ color, fontSize: 19 }} />
       </div>
       <div>
-        <div style={{ fontSize: 22, fontWeight: 700, color, lineHeight: 1.1 }}>{value}</div>
-        <div style={{ fontSize: 11, color: '#64748b', fontWeight: 500, marginTop: 2 }}>{label}</div>
+        <div style={{ fontSize:24, fontWeight: 700, color, lineHeight: 1.1 }}>{value}</div>
+        <div style={{ fontSize:13, color: '#64748b', fontWeight: 500, marginTop: 2 }}>{label}</div>
       </div>
     </div>
   )

@@ -32,7 +32,7 @@ export default function OfflineBanner() {
       display:        'flex',
       alignItems:     'center',
       gap:            '10px',
-      fontSize:       '14px',
+      fontSize: '17px',
       fontWeight:     500,
     }}>
       <i className="fas fa-wifi-slash" aria-hidden="true" />

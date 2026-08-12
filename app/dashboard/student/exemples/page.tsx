@@ -56,7 +56,7 @@ export default function StudentExemplesPage() {
       ) : (
         Object.entries(groups).map(([subjectTitle, list]) => (
           <div key={subjectTitle} style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>{subjectTitle}</h3>
+            <h3 style={{ fontSize:18, fontWeight: 700, marginBottom: 14, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>{subjectTitle}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {list.map(e => {
                 const meta = LABEL_META[e.label]
@@ -65,24 +65,24 @@ export default function StudentExemplesPage() {
                   <div key={e.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
                     <button onClick={() => toggle(e.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ padding: '5px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: meta.bg, color: meta.color, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ padding: '5px 12px', borderRadius: 99, fontSize:14.5, fontWeight: 700, background: meta.bg, color: meta.color, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <i className={`fas ${meta.icon}`} />{meta.text}
                         </span>
-                        {e.score != null && <span style={{ fontSize: 13, fontWeight: 700 }}>{fmtScore(e.score)}/{e.max_score ?? 20}</span>}
+                        {e.score != null && <span style={{ fontSize:15.5, fontWeight: 700 }}>{fmtScore(e.score)}/{e.max_score ?? 20}</span>}
                       </span>
                       <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'}`} style={{ color: 'var(--text-muted)', fontSize: 16 }} />
                     </button>
                     {isOpen && (
                       <div style={{ padding: '0 18px 18px' }}>
-                        <div style={{ padding: 14, background: 'var(--background)', borderRadius: 8, fontSize: 13.5, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                        <div style={{ padding: 14, background: 'var(--background)', borderRadius: 8, fontSize:16, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                           {e.anonymized_content}
                         </div>
                         {e.anonymized_feedback && (
                           <div style={{ marginTop: 10 }}>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>
+                            <div style={{ fontSize:13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>
                               <i className="fas fa-comment-dots" style={{ marginRight: 5 }} />Retour de l'enseignant
                             </div>
-                            <div style={{ padding: 14, background: 'var(--background)', borderRadius: 8, fontSize: 13.5, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                            <div style={{ padding: 14, background: 'var(--background)', borderRadius: 8, fontSize:16, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                               {e.anonymized_feedback}
                             </div>
                           </div>

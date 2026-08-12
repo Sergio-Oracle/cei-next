@@ -78,8 +78,8 @@ export default function AdminDashboard() {
                   <i className={`fa-solid ${a.icon}`} style={{ color: 'var(--primary)' }} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: 14 }}>{a.label}</div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{a.desc}</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text)', fontSize:17 }}>{a.label}</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize:14.5 }}>{a.desc}</div>
                 </div>
                 <i className="fa-solid fa-chevron-right" style={{ color: 'var(--border)', marginLeft: 'auto', fontSize: 14 }} />
               </Link>
@@ -99,7 +99,7 @@ export default function AdminDashboard() {
               { label: 'Version API',      value: 'v2.0',       badge: 'secondary' },
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
-                <span style={{ color: 'var(--text-light)', fontSize: 14 }}>{item.label}</span>
+                <span style={{ color: 'var(--text-light)', fontSize:17 }}>{item.label}</span>
                 <span className={`status-badge ${item.badge}`}>{item.value}</span>
               </div>
             ))}

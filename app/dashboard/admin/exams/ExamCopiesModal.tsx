@@ -21,7 +21,7 @@ function fmtDT(iso: string) {
 }
 
 const TH = ({ label }: { label: string }) => (
-  <th style={{ padding: '9px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', fontSize: 11, textTransform: 'uppercase', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
+  <th style={{ padding: '9px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', fontSize:13, textTransform: 'uppercase', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
     {label}
   </th>
 )
@@ -52,17 +52,17 @@ function ManualGradeModal({ attempt, onClose, onDone }: { attempt: RichAttempt; 
       <div style={{ background: 'var(--surface)', borderRadius: 14, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,.3)', overflow: 'hidden' }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="fas fa-pen" style={{ color: 'var(--primary)' }} />
-          <span style={{ fontWeight: 700, fontSize: 14 }}>Correction manuelle — {attempt.student_name}</span>
-          <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: 'var(--text-muted)' }}><i className="fas fa-times" /></button>
+          <span style={{ fontWeight: 700, fontSize:17 }}>Correction manuelle — {attempt.student_name}</span>
+          <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize:19, cursor: 'pointer', color: 'var(--text-muted)' }}><i className="fas fa-times" /></button>
         </div>
         <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <label style={{ fontSize: 13, fontWeight: 600 }}>Note /20
+          <label style={{ fontSize:15.5, fontWeight: 600 }}>Note /20
             <input type="number" min={0} max={20} step={0.5} value={score} onChange={e => setScore(e.target.value)}
-              className="form-control" style={{ marginTop: 6, fontSize: 18, fontWeight: 800, textAlign: 'center' }} />
+              className="form-control" style={{ marginTop: 6, fontSize:21.5, fontWeight: 800, textAlign: 'center' }} />
           </label>
-          <label style={{ fontSize: 13, fontWeight: 600 }}>Feedback (optionnel)
+          <label style={{ fontSize:15.5, fontWeight: 600 }}>Feedback (optionnel)
             <textarea value={fb} onChange={e => setFb(e.target.value)} rows={4}
-              className="form-control" style={{ marginTop: 6, fontSize: 13, resize: 'vertical' }} />
+              className="form-control" style={{ marginTop: 6, fontSize:15.5, resize: 'vertical' }} />
           </label>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={onClose} className="btn btn-secondary">Annuler</button>
@@ -113,26 +113,26 @@ function ProctorNotesModal({ attemptId, studentName, onClose }: { attemptId: num
       <div style={{ background: 'var(--surface)', borderRadius: 14, width: '100%', maxWidth: 480, maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,.3)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="fas fa-sticky-note" style={{ color: '#0284c7' }} />
-          <span style={{ fontWeight: 700, fontSize: 14 }}>Notes de surveillance — {studentName}</span>
-          <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: 'var(--text-muted)' }}><i className="fas fa-times" /></button>
+          <span style={{ fontWeight: 700, fontSize:17 }}>Notes de surveillance — {studentName}</span>
+          <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize:19, cursor: 'pointer', color: 'var(--text-muted)' }}><i className="fas fa-times" /></button>
         </div>
         <div style={{ padding: 20, flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {loading ? <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}><i className="fas fa-spinner fa-spin" /></div>
-            : notes.length === 0 ? <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Aucune note de surveillance</div>
+          {loading ? <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize:15.5 }}><i className="fas fa-spinner fa-spin" /></div>
+            : notes.length === 0 ? <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize:15.5 }}>Aucune note de surveillance</div>
             : notes.map((n: any, i) => (
               <div key={i} style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '10px 14px' }}>
-                <div style={{ fontSize: 11, color: '#0369a1', fontWeight: 600, marginBottom: 4 }}>
+                <div style={{ fontSize:13, color: '#0369a1', fontWeight: 600, marginBottom: 4 }}>
                   {(n.timestamp || n.created_at) ? new Date(n.timestamp || n.created_at).toLocaleString('fr-FR') : '—'}
                   {n.author ? ` — ${n.author}` : ''}
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--text)' }}>{n.note}</div>
+                <div style={{ fontSize:15.5, color: 'var(--text)' }}>{n.note}</div>
               </div>
             ))
           }
         </div>
         <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
           <input type="text" value={text} onChange={e => setText(e.target.value)} placeholder="Ajouter une note…"
-            className="form-control" style={{ fontSize: 13 }}
+            className="form-control" style={{ fontSize:15.5 }}
             onKeyDown={e => { if (e.key === 'Enter') addNote() }} />
           <button onClick={addNote} disabled={saving || !text.trim()} className="btn btn-primary" style={{ flexShrink: 0 }}>
             {saving ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-plus" />}
@@ -167,20 +167,20 @@ function ExtraTimeModal({ attemptId, studentName, onClose, onDone }: { attemptId
       <div style={{ background: 'var(--surface)', borderRadius: 14, width: '100%', maxWidth: 380, boxShadow: '0 20px 60px rgba(0,0,0,.3)', overflow: 'hidden' }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="fas fa-clock" style={{ color: '#16a34a' }} />
-          <span style={{ fontWeight: 700, fontSize: 14 }}>Temps supplémentaire — {studentName}</span>
-          <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: 'var(--text-muted)' }}><i className="fas fa-times" /></button>
+          <span style={{ fontWeight: 700, fontSize:17 }}>Temps supplémentaire — {studentName}</span>
+          <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize:19, cursor: 'pointer', color: 'var(--text-muted)' }}><i className="fas fa-times" /></button>
         </div>
         <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', gap: 8 }}>
             {[5, 10, 15, 30].map(v => (
               <button key={v} onClick={() => setMin(String(v))}
-                style={{ flex: 1, padding: '8px 0', border: `1.5px solid ${min === String(v) ? '#16a34a' : 'var(--border)'}`, borderRadius: 8, background: min === String(v) ? '#f0fdf4' : 'var(--surface)', color: min === String(v) ? '#16a34a' : 'var(--text)', fontWeight: min === String(v) ? 700 : 400, fontSize: 12, cursor: 'pointer' }}>
+                style={{ flex: 1, padding: '8px 0', border: `1.5px solid ${min === String(v) ? '#16a34a' : 'var(--border)'}`, borderRadius: 8, background: min === String(v) ? '#f0fdf4' : 'var(--surface)', color: min === String(v) ? '#16a34a' : 'var(--text)', fontWeight: min === String(v) ? 700 : 400, fontSize:14.5, cursor: 'pointer' }}>
                 {v} min
               </button>
             ))}
           </div>
           <input type="number" min={1} max={60} value={min} onChange={e => setMin(e.target.value)}
-            className="form-control" style={{ fontSize: 16, fontWeight: 700, textAlign: 'center' }} />
+            className="form-control" style={{ fontSize:19, fontWeight: 700, textAlign: 'center' }} />
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={onClose} className="btn btn-secondary">Annuler</button>
             <button onClick={save} disabled={saving} className="btn btn-primary" style={{ minWidth: 120 }}>
@@ -289,8 +289,8 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
           <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <i className="fas fa-file-alt" style={{ color: 'var(--primary)', fontSize: 22 }} />
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{examTitle}</h3>
-              <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }}>
+              <h3 style={{ margin: 0, fontSize:19, fontWeight: 700 }}>{examTitle}</h3>
+              <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize:21.5, cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <i className="fas fa-times" />
               </button>
             </div>
@@ -298,14 +298,14 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
             {/* Stats + actions rapides */}
             {!loading && (
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ background: 'rgba(16,185,129,.1)', color: '#059669', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
+                <span style={{ background: 'rgba(16,185,129,.1)', color: '#059669', padding: '4px 12px', borderRadius: 99, fontSize:14.5, fontWeight: 600 }}>
                   <i className="fas fa-circle" style={{ fontSize: 10, marginRight: 4 }} />{inProgress.length} en cours
                 </span>
-                <span style={{ background: 'rgba(37,99,235,.1)', color: '#2563eb', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
+                <span style={{ background: 'rgba(37,99,235,.1)', color: '#2563eb', padding: '4px 12px', borderRadius: 99, fontSize:14.5, fontWeight: 600 }}>
                   <i className="fas fa-check-circle" style={{ marginRight: 4 }} />{done.length} terminé(s)
                 </span>
                 {banned.length > 0 && (
-                  <span style={{ background: 'rgba(239,68,68,.1)', color: '#ef4444', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
+                  <span style={{ background: 'rgba(239,68,68,.1)', color: '#ef4444', padding: '4px 12px', borderRadius: 99, fontSize:14.5, fontWeight: 600 }}>
                     <i className="fas fa-ban" style={{ marginRight: 4 }} />{banned.length} banni(s)
                   </span>
                 )}
@@ -322,7 +322,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                     setCorrectingAll(false)
                     load()
                   }} disabled={correctingAll}
-                  style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: 12, fontWeight: 700, color: '#059669', cursor: correctingAll ? 'not-allowed' : 'pointer' }}>
+                  style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontSize:14.5, fontWeight: 700, color: '#059669', cursor: correctingAll ? 'not-allowed' : 'pointer' }}>
                     {correctingAll ? <><i className="fas fa-spinner fa-spin" />Correction…</> : <><i className="fas fa-wand-magic-sparkles" />Tout corriger (IA)</>}
                   </button>
                 )}
@@ -359,34 +359,34 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                       </thead>
                       <tbody>
                         {inProgress.length === 0
-                          ? <tr><td colSpan={5} style={{ padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>Aucun étudiant en cours</td></tr>
+                          ? <tr><td colSpan={5} style={{ padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize:15.5 }}>Aucun étudiant en cours</td></tr>
                           : inProgress.map(a => (
                             <tr key={a.id}>
-                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
+                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
                                 <strong>{a.student_name || 'N/A'}</strong>
                                 {a.student_email && <><br /><small style={{ color: '#64748b' }}>{a.student_email}</small></>}
                               </td>
-                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
+                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
                                 {a.started_at ? new Date(a.started_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—'}
                               </td>
-                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
+                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
                                 {(a.warnings_count ?? 0) > 0
                                   ? <span style={{ color: '#ef4444', fontWeight: 600 }}><i className="fas fa-exclamation-circle" style={{ marginRight: 4 }} />{a.warnings_count}</span>
                                   : <span style={{ color: '#10b981' }}><i className="fas fa-check" style={{ marginRight: 4 }} />0</span>}
                               </td>
-                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
-                                <span style={{ background: 'rgba(16,185,129,.1)', color: '#059669', padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700 }}>
+                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
+                                <span style={{ background: 'rgba(16,185,129,.1)', color: '#059669', padding: '3px 10px', borderRadius: 99, fontSize:13, fontWeight: 700 }}>
                                   En cours
                                 </span>
                               </td>
-                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
+                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
                                 <div style={{ display: 'flex', gap: 5 }}>
                                   <button onClick={() => { setExtraAttemptId(a.id); setExtraStudent(a.student_name || '') }}
-                                    style={{ background: '#dcfce7', color: '#16a34a', border: 'none', borderRadius: 6, padding: '4px 9px', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                                    style={{ background: '#dcfce7', color: '#16a34a', border: 'none', borderRadius: 6, padding: '4px 9px', fontSize:13, cursor: 'pointer', fontWeight: 600 }}>
                                     <i className="fas fa-clock" style={{ marginRight: 4 }} />+temps
                                   </button>
                                   <button onClick={() => { setNotesAttemptId(a.id); setNotesStudent(a.student_name || '') }}
-                                    style={{ background: '#e0f2fe', color: '#0284c7', border: 'none', borderRadius: 6, padding: '4px 9px', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                                    style={{ background: '#e0f2fe', color: '#0284c7', border: 'none', borderRadius: 6, padding: '4px 9px', fontSize:13, cursor: 'pointer', fontWeight: 600 }}>
                                     <i className="fas fa-sticky-note" style={{ marginRight: 4 }} />Note
                                   </button>
                                 </div>
@@ -410,54 +410,54 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                       </thead>
                       <tbody>
                         {done.length === 0
-                          ? <tr><td colSpan={5} style={{ padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>Aucune copie soumise</td></tr>
+                          ? <tr><td colSpan={5} style={{ padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize:15.5 }}>Aucune copie soumise</td></tr>
                           : done.map(a => {
                             const isAuto = a.status === 'auto_submitted'
                             const busy   = acting === a.id
                             return (
                               <tr key={a.id}>
-                                <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
+                                <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
                                   <strong>{a.student_name || 'N/A'}</strong>
                                   {a.student_email && <><br /><small style={{ color: '#64748b' }}>{a.student_email}</small></>}
                                 </td>
-                                <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
+                                <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
                                   {isAuto
-                                    ? <span style={{ background: 'rgba(245,158,11,.1)', color: '#d97706', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700 }}>
+                                    ? <span style={{ background: 'rgba(245,158,11,.1)', color: '#d97706', padding: '2px 8px', borderRadius: 99, fontSize:13, fontWeight: 700 }}>
                                         <i className="fas fa-clock" style={{ marginRight: 4 }} />Auto-soumis
                                       </span>
-                                    : <span style={{ background: 'rgba(16,185,129,.1)', color: '#059669', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700 }}>
+                                    : <span style={{ background: 'rgba(16,185,129,.1)', color: '#059669', padding: '2px 8px', borderRadius: 99, fontSize:13, fontWeight: 700 }}>
                                         <i className="fas fa-check" style={{ marginRight: 4 }} />Soumis
                                       </span>}
                                 </td>
-                                <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13, whiteSpace: 'nowrap' }}>
+                                <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5, whiteSpace: 'nowrap' }}>
                                   {a.submitted_at ? fmtDT(a.submitted_at) : '—'}
                                 </td>
-                                <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
+                                <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
                                   {a.score !== null && a.score !== undefined
-                                    ? <strong style={{ color: (a.score ?? 0) >= 10 ? '#10b981' : '#ef4444', fontSize: 15 }}>{fmtScore(a.score ?? 0)}/20</strong>
-                                    : <span style={{ color: '#94a3b8', fontSize: 12 }}>Non corrigé</span>}
+                                    ? <strong style={{ color: (a.score ?? 0) >= 10 ? '#10b981' : '#ef4444', fontSize:18 }}>{fmtScore(a.score ?? 0)}/20</strong>
+                                    : <span style={{ color: '#94a3b8', fontSize:14.5 }}>Non corrigé</span>}
                                 </td>
-                                <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
+                                <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
                                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                                     {a.needs_correction
                                       ? <button onClick={() => correctAttempt(a.id)} disabled={busy}
-                                          style={{ background: '#eff6ff', color: 'var(--primary)', border: '1px solid #bfdbfe', borderRadius: 6, padding: '4px 8px', fontSize: 10, cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 700 }}>
+                                          style={{ background: '#eff6ff', color: 'var(--primary)', border: '1px solid #bfdbfe', borderRadius: 6, padding: '4px 8px', fontSize:12, cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 700 }}>
                                           {busy ? <i className="fas fa-spinner fa-spin" /> : <><i className="fas fa-wand-magic-sparkles" style={{ marginRight: 2 }} />Corriger</>}
                                         </button>
                                       : <button onClick={() => setReviewAttemptId(a.id)}
-                                          style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', borderRadius: 6, padding: '4px 8px', fontSize: 10, cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                          style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', borderRadius: 6, padding: '4px 8px', fontSize:12, cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                                           <i className="fas fa-eye" />Voir
                                         </button>}
                                     <button onClick={() => setManualAttempt(a)}
-                                      style={{ background: '#eff6ff', color: '#2563eb', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize: 10, cursor: 'pointer' }} title="Correction manuelle">
+                                      style={{ background: '#eff6ff', color: '#2563eb', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize:12, cursor: 'pointer' }} title="Correction manuelle">
                                       <i className="fas fa-pen" />
                                     </button>
                                     <button onClick={() => openIntegrityReport(a.id, a.student_name || '')}
-                                      style={{ background: '#fef3c7', color: '#d97706', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize: 10, cursor: 'pointer' }} title="Rapport intégrité PDF">
+                                      style={{ background: '#fef3c7', color: '#d97706', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize:12, cursor: 'pointer' }} title="Rapport intégrité PDF">
                                       <i className="fas fa-file-pdf" />
                                     </button>
                                     <button onClick={() => { setNotesAttemptId(a.id); setNotesStudent(a.student_name || '') }}
-                                      style={{ background: '#e0f2fe', color: '#0284c7', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize: 10, cursor: 'pointer' }} title="Notes de surveillance">
+                                      style={{ background: '#e0f2fe', color: '#0284c7', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize:12, cursor: 'pointer' }} title="Notes de surveillance">
                                       <i className="fas fa-sticky-note" />
                                     </button>
                                   </div>
@@ -484,16 +484,16 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                         <tbody>
                           {banned.map(a => (
                             <tr key={a.id}>
-                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #fee2e2', fontSize: 13 }}>
+                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #fee2e2', fontSize:15.5 }}>
                                 <strong>{a.student_name || 'N/A'}</strong>
                                 {a.student_email && <><br /><small style={{ color: '#64748b' }}>{a.student_email}</small></>}
                               </td>
-                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #fee2e2', fontSize: 13, color: '#ef4444' }}>
+                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #fee2e2', fontSize:15.5, color: '#ef4444' }}>
                                 {(a as any).ban_reason || 'Fraude détectée'}
                               </td>
-                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #fee2e2', fontSize: 13 }}>
+                              <td style={{ padding: '10px 12px', borderBottom: '1px solid #fee2e2', fontSize:15.5 }}>
                                 <button onClick={() => unban(a.id, a.student_name || 'cet étudiant')} disabled={acting === a.id}
-                                  style={{ background: 'rgba(239,68,68,.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,.3)', borderRadius: 6, padding: '5px 10px', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                                  style={{ background: 'rgba(239,68,68,.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,.3)', borderRadius: 6, padding: '5px 10px', fontSize:13, cursor: 'pointer', fontWeight: 600 }}>
                                   <i className="fas fa-user-check" style={{ marginRight: 4 }} />Débannir
                                 </button>
                               </td>
@@ -510,7 +510,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
 
           {/* Footer */}
           <div style={{ padding: '14px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
-            <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }}>
+            <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize:15.5, fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }}>
               <i className="fas fa-times" />Fermer
             </button>
           </div>
@@ -579,10 +579,10 @@ const INCIDENT_FR: Record<string, string> = {
 }
 
 function renderAnswers(rawAnswers?: string): React.ReactNode {
-  if (!rawAnswers) return <em style={{ color: '#94a3b8', fontSize: 13 }}>Aucune réponse enregistrée</em>
+  if (!rawAnswers) return <em style={{ color: '#94a3b8', fontSize:15.5 }}>Aucune réponse enregistrée</em>
   let data: any = {}
   try { data = JSON.parse(rawAnswers) } catch {
-    return <pre style={{ margin: 0, fontSize: 13, whiteSpace: 'pre-wrap', lineHeight: 1.7, color: 'var(--text)', maxHeight: 280, overflowY: 'auto' }}>{rawAnswers}</pre>
+    return <pre style={{ margin: 0, fontSize:15.5, whiteSpace: 'pre-wrap', lineHeight: 1.7, color: 'var(--text)', maxHeight: 280, overflowY: 'auto' }}>{rawAnswers}</pre>
   }
   const qcm   = (data && typeof data === 'object') ? (data.qcm   || {}) : {}
   const texte = (data && typeof data === 'object') ? (data.texte || data.text || {}) : {}
@@ -590,20 +590,20 @@ function renderAnswers(rawAnswers?: string): React.ReactNode {
   const hasText = Object.keys(texte).length > 0
   if (!hasQCM && !hasText) {
     const plain = typeof data === 'object' ? (data.content || data.reponse || data.answer || data.text || '') : String(data)
-    if (!String(plain).trim()) return <em style={{ color: '#94a3b8', fontSize: 13 }}>Aucune réponse enregistrée</em>
-    return <pre style={{ margin: 0, fontSize: 13, whiteSpace: 'pre-wrap', lineHeight: 1.7, color: 'var(--text)', maxHeight: 280, overflowY: 'auto' }}>{String(plain)}</pre>
+    if (!String(plain).trim()) return <em style={{ color: '#94a3b8', fontSize:15.5 }}>Aucune réponse enregistrée</em>
+    return <pre style={{ margin: 0, fontSize:15.5, whiteSpace: 'pre-wrap', lineHeight: 1.7, color: 'var(--text)', maxHeight: 280, overflowY: 'auto' }}>{String(plain)}</pre>
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 320, overflowY: 'auto' }}>
       {hasQCM && (
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>QCM / Vrai-Faux</div>
+          <div style={{ fontSize:13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>QCM / Vrai-Faux</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {Object.keys(qcm).sort((a, b) => parseInt(a) - parseInt(b)).map(k => {
               const val = String(qcm[k]); const col = CHOICE_CLR[val] || '#2563eb'
               return (
-                <span key={k} style={{ background: col + '18', border: `1.5px solid ${col}44`, color: col, borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                  <span style={{ color: '#94a3b8', fontSize: 10 }}>Q{k}</span><span>{val}</span>
+                <span key={k} style={{ background: col + '18', border: `1.5px solid ${col}44`, color: col, borderRadius: 8, padding: '4px 10px', fontSize:14.5, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ color: '#94a3b8', fontSize:12 }}>Q{k}</span><span>{val}</span>
                 </span>
               )
             })}
@@ -612,8 +612,8 @@ function renderAnswers(rawAnswers?: string): React.ReactNode {
       )}
       {hasText && Object.keys(texte).sort((a, b) => parseInt(a) - parseInt(b)).map(k => (
         <div key={k}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', marginBottom: 3 }}>Question {k}</div>
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{String(texte[k])}</div>
+          <div style={{ fontSize:13, fontWeight: 700, color: '#64748b', marginBottom: 3 }}>Question {k}</div>
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px', fontSize:15.5, color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{String(texte[k])}</div>
         </div>
       ))}
     </div>
@@ -625,7 +625,7 @@ function ReviewCard({ title, icon, children }: { title: string; icon: string; ch
     <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, marginBottom: 2 }}>
       <div style={{ padding: '10px 16px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', borderRadius: '10px 10px 0 0' }}>
         <i className={`fas ${icon}`} style={{ color: '#64748b', fontSize: 16 }} />
-        <span style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{title}</span>
+        <span style={{ fontSize:17, fontWeight: 700, color: '#1e293b' }}>{title}</span>
       </div>
       <div style={{ padding: '4px 0 4px 0', background: '#ffffff', borderRadius: '0 0 10px 10px' }}>{children}</div>
     </div>
@@ -635,8 +635,8 @@ function ReviewCard({ title, icon, children }: { title: string; icon: string; ch
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', padding: '9px 16px', borderBottom: '1px solid #f1f5f9' }}>
-      <div style={{ width: 180, fontWeight: 700, fontSize: 13, color: '#475569', flexShrink: 0 }}>{label}</div>
-      <div style={{ fontSize: 13, color: '#0f172a', flex: 1 }}>{children}</div>
+      <div style={{ width: 180, fontWeight: 700, fontSize:15.5, color: '#475569', flexShrink: 0 }}>{label}</div>
+      <div style={{ fontSize:15.5, color: '#0f172a', flex: 1 }}>{children}</div>
     </div>
   )
 }
@@ -665,10 +665,10 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
             <i className="fas fa-file-alt" style={{ color: '#2563eb', fontSize: 18 }} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em' }}>Détails de la Tentative</div>
-            <div style={{ fontWeight: 700, fontSize: 16, color: '#0f172a', marginTop: 1 }}>{data?.student_name ?? '…'}</div>
+            <div style={{ fontSize:13, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em' }}>Détails de la Tentative</div>
+            <div style={{ fontWeight: 700, fontSize:19, color: '#0f172a', marginTop: 1 }}>{data?.student_name ?? '…'}</div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#94a3b8', padding: 4 }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize:21.5, cursor: 'pointer', color: '#94a3b8', padding: 4 }}>
             <i className="fas fa-times" />
           </button>
         </div>
@@ -690,7 +690,7 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
                 <InfoRow label="Démarré le">{fmt(data.started_at)}</InfoRow>
                 <InfoRow label="Soumis le">{fmt(data.submitted_at)}</InfoRow>
                 <InfoRow label="Statut">
-                  <span style={{ background: (STATUS_CLR[data.status] ?? '#64748b') + '22', color: STATUS_CLR[data.status] ?? '#64748b', fontWeight: 700, fontSize: 11, padding: '2px 10px', borderRadius: 20 }}>
+                  <span style={{ background: (STATUS_CLR[data.status] ?? '#64748b') + '22', color: STATUS_CLR[data.status] ?? '#64748b', fontWeight: 700, fontSize:13, padding: '2px 10px', borderRadius: 20 }}>
                     {STATUS_LBL[data.status] ?? data.status}
                   </span>
                 </InfoRow>
@@ -709,7 +709,7 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
               {data.score != null && (
                 <ReviewCard title="Résultat" icon="fa-star">
                   <InfoRow label="Note">
-                    <span style={{ fontSize: 22, fontWeight: 800, color: (data.score ?? 0) >= 10 ? '#10b981' : '#ef4444' }}>{fmtScore(data.score ?? 0)}/20</span>
+                    <span style={{ fontSize:24, fontWeight: 800, color: (data.score ?? 0) >= 10 ? '#10b981' : '#ef4444' }}>{fmtScore(data.score ?? 0)}/20</span>
                   </InfoRow>
                   <InfoRow label="Corrigé par">{data.corrector_name || 'Système'}</InfoRow>
                   <InfoRow label="Corrigé le">{fmt(data.corrected_at)}</InfoRow>
@@ -719,7 +719,7 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
               {/* Feedback */}
               {data.feedback && (
                 <ReviewCard title="Feedback" icon="fa-comment">
-                  <div style={{ margin: '0 0 4px', padding: '12px 16px', maxHeight: 300, overflowY: 'auto', whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.7, color: '#1e293b', background: '#f8fafc', borderRadius: '0 0 10px 10px' }}>
+                  <div style={{ margin: '0 0 4px', padding: '12px 16px', maxHeight: 300, overflowY: 'auto', whiteSpace: 'pre-wrap', fontSize:15.5, lineHeight: 1.7, color: '#1e293b', background: '#f8fafc', borderRadius: '0 0 10px 10px' }}>
                     {data.feedback}
                   </div>
                 </ReviewCard>
@@ -731,10 +731,10 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
                   <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {(data.proctor_notes ?? []).map((n, i) => (
                       <div key={i} style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '8px 12px' }}>
-                        <div style={{ fontSize: 11, color: '#0369a1', fontWeight: 600, marginBottom: 3 }}>
+                        <div style={{ fontSize:13, color: '#0369a1', fontWeight: 600, marginBottom: 3 }}>
                           {fmt(n.timestamp)}{n.author ? ` — ${n.author}` : ''}
                         </div>
-                        <div style={{ fontSize: 13, color: '#1e293b' }}>{n.note}</div>
+                        <div style={{ fontSize:15.5, color: '#1e293b' }}>{n.note}</div>
                       </div>
                     ))}
                   </div>
@@ -748,15 +748,15 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr style={{ background: '#f8fafc' }}>
-                          <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0' }}>Horodatage</th>
-                          <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0' }}>Type</th>
+                          <th style={{ padding: '8px 16px', textAlign: 'left', fontSize:13, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0' }}>Horodatage</th>
+                          <th style={{ padding: '8px 16px', textAlign: 'left', fontSize:13, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0' }}>Type</th>
                         </tr>
                       </thead>
                       <tbody>
                         {(data.incidents ?? []).map((inc, i) => (
                           <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ padding: '8px 16px', fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>{fmt(inc.timestamp)}</td>
-                            <td style={{ padding: '8px 16px', fontSize: 12, color: '#f59e0b', fontWeight: 600 }}>{INCIDENT_FR[inc.type] ?? inc.type}</td>
+                            <td style={{ padding: '8px 16px', fontSize:13, color: '#64748b', whiteSpace: 'nowrap' }}>{fmt(inc.timestamp)}</td>
+                            <td style={{ padding: '8px 16px', fontSize:14.5, color: '#f59e0b', fontWeight: 600 }}>{INCIDENT_FR[inc.type] ?? inc.type}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -770,7 +770,7 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
 
         {/* Footer */}
         <div style={{ padding: '12px 22px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
-          <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#475569', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 8, fontSize:15.5, fontWeight: 600, color: '#475569', cursor: 'pointer' }}>
             <i className="fas fa-times" />Fermer
           </button>
         </div>
@@ -783,7 +783,7 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
 function ToolBtn({ icon, label, bg, color, onClick }: { icon: string; label: string; bg: string; color: string; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: bg, border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color, cursor: 'pointer' }}>
+      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: bg, border: 'none', borderRadius: 8, fontSize:14.5, fontWeight: 600, color, cursor: 'pointer' }}>
       <i className={`fas ${icon}`} />{label}
     </button>
   )
@@ -793,11 +793,11 @@ function ToolBtn({ icon, label, bg, color, onClick }: { icon: string; label: str
 function Section({ title, color, dot, subtitle, children }: { title: string; color: string; dot?: boolean; subtitle?: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ fontSize: 12, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ fontSize:14.5, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
         {dot && <span style={{ display: 'inline-block', width: 8, height: 8, background: color, borderRadius: '50%' }} />}
         {!dot && <i className="fas fa-check-circle" />}
         {title}
-        {subtitle && <span style={{ fontWeight: 400, color: '#64748b', fontSize: 11, textTransform: 'none', marginLeft: 6 }}>{subtitle}</span>}
+        {subtitle && <span style={{ fontWeight: 400, color: '#64748b', fontSize:13, textTransform: 'none', marginLeft: 6 }}>{subtitle}</span>}
       </div>
       {children}
     </div>

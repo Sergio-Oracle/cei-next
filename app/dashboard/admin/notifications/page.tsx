@@ -71,9 +71,9 @@ export default function AdminNotificationsPage() {
               <i className="fas fa-bell" style={{ color: n.is_read ? 'var(--text-muted)' : 'var(--primary)', fontSize: 17 }} />
             </div>
             <div style={{ flex: 1 }}>
-              {n.title && <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{n.title}</div>}
-              <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>{n.message}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+              {n.title && <div style={{ fontWeight: 600, fontSize:17, marginBottom: 2 }}>{n.title}</div>}
+              <div style={{ fontSize:17, color: 'var(--text-muted)' }}>{n.message}</div>
+              <div style={{ fontSize:14.5, color: 'var(--text-muted)', marginTop: 4 }}>
                 {new Date(n.created_at).toLocaleString('fr-FR')}
               </div>
             </div>

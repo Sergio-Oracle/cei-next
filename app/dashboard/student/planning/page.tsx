@@ -44,16 +44,16 @@ export default function StudentPlanningPage() {
             return (
               <div key={exam.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', borderBottom: i < sorted.length - 1 ? '1px solid var(--border)' : 'none' }}>
                 <div style={{ width: 56, height: 56, borderRadius: 12, background: isActive ? '#10b981' + '20' : 'var(--background)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `2px solid ${isActive ? '#10b981' : 'var(--border)'}` }}>
-                  {start ? (<><div style={{ fontWeight: 700, fontSize: 20, lineHeight: 1, color: isActive ? '#10b981' : 'var(--text)' }}>{start.getDate()}</div><div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{start.toLocaleString('fr-FR', { month: 'short' })}</div></>) : <i className="fas fa-calendar" />}
+                  {start ? (<><div style={{ fontWeight: 700, fontSize:24, lineHeight: 1, color: isActive ? '#10b981' : 'var(--text)' }}>{start.getDate()}</div><div style={{ fontSize:12, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{start.toLocaleString('fr-FR', { month: 'short' })}</div></>) : <i className="fas fa-calendar" />}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 15 }}>{exam.title}</div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                  <div style={{ fontWeight: 600, fontSize:18 }}>{exam.title}</div>
+                  <div style={{ fontSize:15.5, color: 'var(--text-muted)' }}>
                     {start ? start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—'} · {exam.duration_minutes} min
                     {exam.end_time && <> · Fin : {new Date(exam.end_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</>}
                   </div>
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: isActive ? '#dcfce7' : '#eff6ff', color: isActive ? '#166534' : '#1d4ed8' }}>
+                <span style={{ fontSize:14.5, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: isActive ? '#dcfce7' : '#eff6ff', color: isActive ? '#166534' : '#1d4ed8' }}>
                   {isActive ? 'En cours' : 'Planifié'}
                 </span>
               </div>
