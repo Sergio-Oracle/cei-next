@@ -1553,7 +1553,7 @@ export default function AdminSuggestionsPage() {
                         <button onClick={() => setExpandedGrading(expandedGrading === i ? null : i)}
                           style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', color:'#15803d', fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0 }}>
                           <i className={`fas ${expandedGrading === i ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={{ fontSize:12 }} />
-                          {expandedGrading === i ? 'Masquer' : 'Voir'} le barème proposé
+                          {expandedGrading === i ? 'Masquer' : 'Voir'} la philosophie de notation (qualitatif)
                         </button>
                         {expandedGrading === i && (
                           <div style={{ marginTop:10 }}>
@@ -1564,7 +1564,7 @@ export default function AdminSuggestionsPage() {
                               style={{ width:'100%', padding:10, background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, fontSize:12.5, lineHeight:1.6, fontFamily:'monospace', resize:'vertical', boxSizing:'border-box', color:'var(--text)', outline:'none' }}
                             />
                             <p style={{ margin:'6px 0 0', fontSize:11, color:'var(--text-muted)' }}>
-                              <i className="fas fa-pencil-alt" style={{ marginRight:4 }} />Modifiable — le barème détaillé sera généré en respectant cette répartition
+                              <i className="fas fa-pencil-alt" style={{ marginRight:4 }} />Modifiable — critères qualitatifs uniquement (ce qui doit être valorisé/pénalisé). Le barème chiffré, lui, est celui défini ci-dessus dans « Barème »
                             </p>
                           </div>
                         )}
