@@ -1275,10 +1275,10 @@ export default function ProfessorSuggestionsPage() {
                     Nombre de questions
                   </label>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <input type="number" className="form-control" min={1} max={60}
+                    <input type="number" className="form-control" min={1} max={100}
                       value={Number.isNaN(questionCount) ? '' : questionCount}
                       onChange={e => setQuestionCount(parseInt(e.target.value, 10))}
-                      onBlur={() => setQuestionCount(q => Math.max(1, Math.min(60, Number.isNaN(q) ? 20 : q)))}
+                      onBlur={() => setQuestionCount(q => Math.max(1, Math.min(100, Number.isNaN(q) ? 20 : q)))}
                       style={{ maxWidth:140 }} />
                     <button type="button" onClick={suggestQuestionCount} disabled={suggestingCount}
                       title="Suggestion IA basée sur la difficulté et le niveau, pour un examen d'environ 1h"
@@ -1287,6 +1287,12 @@ export default function ProfessorSuggestionsPage() {
                       {suggestingCount ? 'Suggestion…' : 'Suggérer (IA)'}
                     </button>
                   </div>
+                  {questionCount > 50 && (
+                    <p style={{ margin:'8px 0 0', fontSize:12, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius:6, padding:'8px 10px', display:'flex', gap:6, alignItems:'flex-start' }}>
+                      <i className="fas fa-triangle-exclamation" style={{ marginTop:1 }} />
+                      <span>Au-delà de 50 questions, la génération prend plus de temps (plusieurs appels IA successifs) et le risque de résultat incomplet augmente avec la charge de travail demandée à l&apos;IA. Un nombre plus modéré (20-40) donne généralement un résultat plus rapide et plus fiable.</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>
