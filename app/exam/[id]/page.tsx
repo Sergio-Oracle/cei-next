@@ -1477,6 +1477,11 @@ export default function ExamPage() {
     const FACEAPI_MODEL_URL='/models/faceapi'
     const ALERT_COOLDOWN=30_000
     const CONSEC_ALERT=3
+    // Détection de personne(s) supplémentaire(s) : seuil plus court que le
+    // reste (10s au lieu de 15s) — signal plus fiable/moins ambigu qu'une
+    // absence de visage ou un léger mismatch, donc pas besoin d'attendre
+    // autant de confirmations consécutives avant de réagir.
+    const CONSEC_ALERT_MULTI=2
     const RECAPTURE_AFTER=5
     const RECOG_THRESHOLD=0.55
     let refCapturing=false
@@ -1568,7 +1573,7 @@ export default function ExamPage() {
           } else { setFaceStatus('warn'); setFaceIssue('no_face') }
         } else if(count>1){
           consMultiRef.current++; consNoFaceRef.current=0; consMismatchRef.current=0; consGood=0
-          if(consMultiRef.current>=CONSEC_ALERT){
+          if(consMultiRef.current>=CONSEC_ALERT_MULTI){
             setFaceStatus('bad'); setFaceIssue('multiple')
             if(now-lastFaceAlertRef.current.multiple>ALERT_COOLDOWN){
               lastFaceAlertRef.current.multiple=now
