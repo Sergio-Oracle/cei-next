@@ -277,6 +277,7 @@ export default function ExamPage() {
   const [micOn,        setMicOn]        = useState(false)
   const [screenOn,     setScreenOn]     = useState(false)
   const [faceStatus,   setFaceStatus]   = useState<'init'|'ok'|'warn'|'bad'>('init')
+  const [faceIssue,    setFaceIssue]    = useState<'none'|'no_face'|'multiple'|'mismatch'>('none')
   const [warnText,     setWarnText]     = useState('')
   const [showWarnModal,setShowWarnModal]= useState(false)
   const [msgModalText, setMsgModalText] = useState('')
@@ -1544,7 +1545,7 @@ export default function ExamPage() {
         if(count===0){
           consNoFaceRef.current++; consMismatchRef.current=0; consMultiRef.current=0; consGood=0
           if(consNoFaceRef.current>=CONSEC_ALERT){
-            setFaceStatus('bad')
+            setFaceStatus('bad'); setFaceIssue('no_face')
             if(now-lastFaceAlertRef.current.no_face>ALERT_COOLDOWN){
               lastFaceAlertRef.current.no_face=now
               // Retour DFIP — une luminosité insuffisante/excessive rend la
@@ -1564,25 +1565,25 @@ export default function ExamPage() {
               }
               captureSnapshot(poorLight?'no_face_low_light':'no_face_detected',curAId,false,0,null,5_000)
             }
-          } else setFaceStatus('warn')
+          } else { setFaceStatus('warn'); setFaceIssue('no_face') }
         } else if(count>1){
           consMultiRef.current++; consNoFaceRef.current=0; consMismatchRef.current=0; consGood=0
           if(consMultiRef.current>=CONSEC_ALERT){
-            setFaceStatus('bad')
+            setFaceStatus('bad'); setFaceIssue('multiple')
             if(now-lastFaceAlertRef.current.multiple>ALERT_COOLDOWN){
               lastFaceAlertRef.current.multiple=now
               warning(`${count} visages détectés — éloignez toute autre personne`)
               logProctoring(curAId,'multiple_faces',`${count} visages`).catch(()=>{})
               captureSnapshot('multiple_faces',curAId,true,count,null,5_000)
             }
-          } else setFaceStatus('warn')
+          } else { setFaceStatus('warn'); setFaceIssue('multiple') }
         } else {
           consNoFaceRef.current=0; consMultiRef.current=0
           if(refDescRef.current&&(dets[0] as any).descriptor){
             const dist=fa.euclideanDistance((dets[0] as any).descriptor,refDescRef.current)
             if(dist<=RECOG_THRESHOLD){
               consMismatchRef.current=0; consGood++
-              setFaceStatus('ok')
+              setFaceStatus('ok'); setFaceIssue('none')
               if(consGood%10===0&&dist<0.4){
                 const alpha=0.1; const upd=new Float32Array(refDescRef.current.length)
                 for(let i=0;i<upd.length;i++) upd[i]=(1-alpha)*refDescRef.current[i]+alpha*(dets[0] as any).descriptor[i]
@@ -1594,16 +1595,16 @@ export default function ExamPage() {
                 if(consMismatchRef.current===RECAPTURE_AFTER){
                   refCapturing=false; captureReference()
                 } else if(consMismatchRef.current>RECAPTURE_AFTER){
-                  setFaceStatus('warn')
+                  setFaceStatus('warn'); setFaceIssue('mismatch')
                   if(now-lastFaceAlertRef.current.mismatch>ALERT_COOLDOWN){
                     lastFaceAlertRef.current.mismatch=now
                     logProctoring(curAId,'face_mismatch',`distance=${dist.toFixed(3)}`).catch(()=>{})
                     captureSnapshot('face_mismatch',curAId,true,1,1-dist,5_000)
                   }
-                } else setFaceStatus('warn')
-              } else setFaceStatus('warn')
+                } else { setFaceStatus('warn'); setFaceIssue('mismatch') }
+              } else { setFaceStatus('warn'); setFaceIssue('mismatch') }
             }
-          } else { setFaceStatus('ok'); consGood++ }
+          } else { setFaceStatus('ok'); setFaceIssue('none'); consGood++ }
         }
       }catch{}
       visionEnrichedTick(curAId, now)
@@ -2238,16 +2239,18 @@ export default function ExamPage() {
               <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',pointerEvents:'none',padding:8,gap:6}}>
                 <div style={{width:'52%',aspectRatio:'3/4',borderRadius:'50%',border:`2px dashed ${faceStatus==='bad'?'#ef4444':'#f59e0b'}`,animation:faceStatus==='bad'?'faceRingBad 1.4s ease-in-out infinite':'faceRingWarn 1.6s ease-in-out infinite'}}/>
                 <div style={{background:'rgba(15,23,42,.78)',color:'#fff',fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:6,textAlign:'center',lineHeight:1.3}}>
-                  <i className={`fas ${faceStatus==='bad'?'fa-user-slash':'fa-eye-slash'}`} style={{marginRight:4}}/>
-                  {faceStatus==='bad' ? 'Recentrez votre visage ici' : 'Repositionnez-vous dans le cadre'}
+                  <i className={`fas ${faceIssue==='multiple'?'fa-user-group':faceStatus==='bad'?'fa-user-slash':'fa-eye-slash'}`} style={{marginRight:4}}/>
+                  {faceIssue==='multiple' ? 'Éloignez toute autre personne' : faceStatus==='bad' ? 'Recentrez votre visage ici' : 'Repositionnez-vous dans le cadre'}
                 </div>
               </div>
             )}
             <div style={{position:'absolute',top:6,right:6,padding:'3px 7px',background:faceStatus==='ok'?'rgba(16,185,129,.9)':faceStatus==='warn'?'rgba(245,158,11,.9)':faceStatus==='bad'?'rgba(239,68,68,.9)':'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',borderRadius:4,color:'white',fontSize:11,fontWeight:600,display:'flex',alignItems:'center',gap:4,animation:faceStatus==='bad'?'faceRingBad 1.4s ease-in-out infinite':faceStatus==='warn'?'faceRingWarn 1.6s ease-in-out infinite':'none'}}>
               {faceStatus==='init'&&<><i className="fas fa-sync fa-spin"/>Init…</>}
               {faceStatus==='ok'&&<><i className="fas fa-user-check"/>Visage OK</>}
-              {faceStatus==='warn'&&<><i className="fas fa-eye-slash"/>Repositionnez…</>}
-              {faceStatus==='bad'&&<><i className="fas fa-times"/>Visage absent</>}
+              {faceStatus==='warn'&&faceIssue==='multiple'&&<><i className="fas fa-user-group"/>Plusieurs visages…</>}
+              {faceStatus==='warn'&&faceIssue!=='multiple'&&<><i className="fas fa-eye-slash"/>Repositionnez…</>}
+              {faceStatus==='bad'&&faceIssue==='multiple'&&<><i className="fas fa-user-group"/>Plusieurs visages</>}
+              {faceStatus==='bad'&&faceIssue!=='multiple'&&<><i className="fas fa-times"/>Visage absent</>}
             </div>
           </div>
           {/* Vidéo enseignant — toujours dans le DOM pour que le ref soit disponible */}
