@@ -222,7 +222,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
           {/* Notifications */}
           {user && (
-            <Link href={notifHref} title="Notifications"
+            <Link href={notifHref} title="Notifications" prefetch={false}
               style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 36, height: 36, borderRadius: '50%', background: 'var(--background)',
                 border: '1px solid var(--border)', textDecoration: 'none', color: 'var(--text)' }}>

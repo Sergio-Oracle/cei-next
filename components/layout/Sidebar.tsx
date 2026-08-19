@@ -105,6 +105,7 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
       href={item.href}
       className={`nav-tab${active ? ' active' : ''}`}
       title={collapsed ? item.label : undefined}
+      prefetch={false}
     >
       <i className={`fas ${item.icon}`} />
       {!collapsed && <span>{item.label}</span>}
