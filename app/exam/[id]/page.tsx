@@ -25,7 +25,7 @@ interface Question {
   id: number; content: string; question_type: string; choices?: string[]; points?: number
 }
 interface Attempt {
-  id: number; status: string; started_at: string; extra_minutes?: number
+  id: number; status: string; started_at: string; extra_minutes?: number; pause_used?: boolean
   answers?: Record<string, string> | string
 }
 interface ParsedBlock {
@@ -355,6 +355,30 @@ export default function ExamPage() {
   const fsPollGuardRef    = useRef(false)
   const focusPollGuardRef = useRef(false)
   const extraMinRef     = useRef(0)
+  /* Pause self-service de 3 min — breakActiveRef gate toute la surveillance
+     pendant la pause (patron sessionEndedRef, mais réversible). resumeAt
+     pilote le compte à rebours de l'overlay ; pauseUsedRef empêche une
+     deuxième pause côté client (le serveur refuse aussi, filet de sécurité). */
+  const breakActiveRef  = useRef(false)
+  const [onBreak,       setOnBreak]       = useState(false)
+  const [breakResumeAt, setBreakResumeAt] = useState<number|null>(null)
+  const pauseUsedRef    = useRef(false)
+  const [breakSecondsLeft, setBreakSecondsLeft] = useState(0)
+
+  // Compte à rebours de la pause self-service — reprend automatiquement
+  // l'examen à l'échéance (calculée côté serveur, resume_at), ou plus tôt si
+  // l'étudiant clique "Reprendre maintenant" (endBreak, gère aussi ce cas).
+  useEffect(() => {
+    if (!onBreak || !breakResumeAt) return
+    const tick = () => {
+      const left = Math.max(0, Math.round((breakResumeAt - Date.now()) / 1000))
+      setBreakSecondsLeft(left)
+      if (left <= 0) endBreak()
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [onBreak, breakResumeAt]) // eslint-disable-line
   const lastSnapRef     = useRef(0)
   const lastLightWarnRef = useRef(0)
   /* Compteurs de vérifications consécutives — même logique que le reste de
@@ -538,6 +562,7 @@ export default function ExamPage() {
   useEffect(() => {
     if (phase !== 'exam') return
     const onVis = async () => {
+      if (breakActiveRef.current) return
       if (!document.hidden) return
       const next = tabCount + 1; setTabCount(next)
       setRiskScore(r => Math.min(r + 10, 100))
@@ -559,7 +584,7 @@ export default function ExamPage() {
       // pas toujours dans ces cas alors que le focus de la fenêtre, lui,
       // est perdu immédiatement. Le backend reconnaît déjà 'window_blur'
       // dans ses seuils (severity_tab_events) — seul l'envoi manquait ici.
-      if (sessionEndedRef.current) return
+      if (sessionEndedRef.current || breakActiveRef.current) return
       const next = tabCount + 1; setTabCount(next)
       setRiskScore(r => Math.min(r + 10, 100))
       setAlerts(a => [{type:'blur',msg:`Perte de focus détectée (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
@@ -574,6 +599,7 @@ export default function ExamPage() {
     const noCtx  = (e:MouseEvent)     => { if (!examRef.current?.enable_right_click) e.preventDefault() }
     const noCopy = (e:ClipboardEvent) => { if (!examRef.current?.enable_copy_paste) { e.preventDefault(); warning('Copier/coller désactivé') } }
     const noKey  = (e:KeyboardEvent)  => {
+      if (breakActiveRef.current) return
       if (e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C'].includes(e.key))||(e.ctrlKey&&e.key==='u')) {
         e.preventDefault()
         const aId = attemptRef.current
@@ -582,6 +608,7 @@ export default function ExamPage() {
       }
     }
     const onFs = () => {
+      if (breakActiveRef.current) return
       if (!document.fullscreenElement && !sessionEndedRef.current) {
         if (fsPollGuardRef.current) return // déjà signalé, en attente du clic "Revenir à l'examen"
         fsPollGuardRef.current = true
@@ -609,7 +636,7 @@ export default function ExamPage() {
     // du tout (échec silencieux de requestFullscreen), pas seulement une
     // sortie après coup.
     const pollState = () => {
-      if (sessionEndedRef.current) return
+      if (sessionEndedRef.current || breakActiveRef.current) return
       onFs()
       if (!document.hasFocus()) {
         if (focusPollGuardRef.current) return
@@ -1057,12 +1084,11 @@ export default function ExamPage() {
   }
 
   /* ── Entrer dans l'examen ─────────────────────────────────────────────── */
-  function enterExam() {
-    if (!exam||!attempt) return
-    document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
-    const totalSec   = exam.duration_minutes*60+extraMinRef.current*60
-    const elapsedSec = Math.floor((Date.now()-new Date(attempt.started_at).getTime())/1000)
-    setTimeLeft(Math.max(totalSec-elapsedSec,0))
+  // Extrait d'enterExam() pour être réutilisable à la fin d'une pause (le
+  // minuteur est complètement arrêté pendant la pause, pas juste masqué —
+  // évite tout risque d'auto-submit local pendant que l'étudiant est absent).
+  function startTimerInterval() {
+    if (!attempt) return
     timerRef.current = setInterval(()=>{
       setTimeLeft(()=>{
         const totalNow=(examRef.current?.duration_minutes??0)*60+extraMinRef.current*60
@@ -1072,6 +1098,16 @@ export default function ExamPage() {
         return nl
       })
     },1000)
+  }
+
+  function enterExam() {
+    if (!exam||!attempt) return
+    document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
+    pauseUsedRef.current = attempt.pause_used || false
+    const totalSec   = exam.duration_minutes*60+extraMinRef.current*60
+    const elapsedSec = Math.floor((Date.now()-new Date(attempt.started_at).getTime())/1000)
+    setTimeLeft(Math.max(totalSec-elapsedSec,0))
+    startTimerInterval()
     saveRef.current     = setInterval(()=>{const aId=attemptRef.current;if(aId)doAutoSave(aId)},30000)
     msgPollRef.current  = setInterval(()=>pollTeacherMessages(attempt.id),8000)
     snapshotRef.current = setInterval(()=>captureSnapshot('periodic',attempt.id),120_000)
@@ -1093,8 +1129,38 @@ export default function ExamPage() {
     checkMultiScreen(attempt.id)
     multiScreenIntervalRef.current = setInterval(()=>{
       if(sessionEndedRef.current){if(multiScreenIntervalRef.current)clearInterval(multiScreenIntervalRef.current);return}
+      if(breakActiveRef.current) return
       const aId=attemptRef.current; if(aId) checkMultiScreen(aId)
     },60_000)
+  }
+
+  /* ── Pause self-service (3 min) ───────────────────────────────────────── */
+  async function startBreak() {
+    const aId = attemptRef.current
+    if (!aId || pauseUsedRef.current || breakActiveRef.current) return
+    if (timerRef.current) clearInterval(timerRef.current)
+    breakActiveRef.current = true
+    pauseUsedRef.current = true
+    try {
+      const res = await api.post<{resume_at:string; total_extra:number}>(`/api/exam_attempts/${aId}/pause/start`, {})
+      extraMinRef.current = res.total_extra
+      const resumeAt = new Date(res.resume_at).getTime()
+      setBreakResumeAt(resumeAt)
+      setOnBreak(true)
+      logProctoring(aId,'pause_started','Pause self-service démarrée (3 min)').catch(()=>{})
+    } catch (e:any) {
+      breakActiveRef.current = false
+      pauseUsedRef.current = false
+      toastErr(e.message || 'Impossible de démarrer la pause')
+    }
+  }
+
+  function endBreak() {
+    breakActiveRef.current = false
+    setOnBreak(false)
+    setBreakResumeAt(null)
+    startTimerInterval()
+    success('Examen repris')
   }
 
   // ── Minuteur par page (Partie 1 uniquement) ─────────────────────────────
@@ -1653,6 +1719,7 @@ export default function ExamPage() {
       const fa=(window as any).faceapi; if(!fa||refCapturing) return
       const vid=videoRef.current; if(!vid||vid.readyState<2||vid.videoWidth===0) return
       if(sessionEndedRef.current){if(faceIntervalRef.current)clearInterval(faceIntervalRef.current);return}
+      if(breakActiveRef.current) return
       const curAId=attemptRef.current||aId; const now=Date.now()
       const opts=new fa.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.45})
       try{
@@ -2269,6 +2336,30 @@ export default function ExamPage() {
     )
   }
 
+  /* ── PAUSE (self-service, 3 min) ─────────────────────────────────────────
+     Rendu par-dessus l'examen SANS changer `phase` (qui contrôle le montage
+     des effets caméra/anti-fraude — un changement de phase démonterait la
+     vidéo). La surveillance est déjà suspendue via breakActiveRef, cet
+     overlay masque juste visuellement le contenu de l'examen pendant ce
+     temps. */
+  if(phase==='exam'&&exam&&onBreak) return(
+    <div style={{position:'fixed',inset:0,background:'#0f172a',zIndex:9000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+      <div style={{textAlign:'center',maxWidth:440}}>
+        <i className="fas fa-mug-hot" style={{fontSize:53,color:'#38bdf8',marginBottom:20,display:'block'}}/>
+        <h2 style={{color:'white',fontSize:24,fontWeight:700,marginBottom:10}}>En pause</h2>
+        <p style={{color:'rgba(255,255,255,.65)',fontSize:15.5,lineHeight:1.6,marginBottom:24}}>
+          La surveillance est suspendue et votre temps d'examen est reporté d'autant. Reprenez quand vous êtes prêt·e.
+        </p>
+        <div style={{fontSize:44,fontWeight:700,color:'#38bdf8',fontVariantNumeric:'tabular-nums',marginBottom:28}}>
+          {fmtTimer(breakSecondsLeft)}
+        </div>
+        <button onClick={endBreak} style={{padding:'12px 28px',background:'#2563eb',color:'white',border:'none',borderRadius:10,fontWeight:700,fontSize:17,cursor:'pointer'}}>
+          <i className="fas fa-play" style={{marginRight:8}}/>Reprendre maintenant
+        </button>
+      </div>
+    </div>
+  )
+
   /* ── EXAM ─────────────────────────────────────────────────────────────── */
   if(phase==='exam'&&exam) {
     const displayBlocks = shuffledBlocks.length > 0 ? shuffledBlocks : parsedBlocks
@@ -2519,6 +2610,10 @@ export default function ExamPage() {
               <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 16px',background:timerColor,color:'white',borderRadius:8,fontSize:24,fontWeight:700,fontVariantNumeric:'tabular-nums'}}>
                 <i className="fas fa-clock" style={{fontSize:19}}/> {fmtTimer(timeLeft)}
               </div>
+              <button onClick={startBreak} disabled={pauseUsedRef.current} title={pauseUsedRef.current?'Pause déjà utilisée pour cet examen':'Pause de 3 minutes (besoin physiologique) — la surveillance est suspendue et le temps est reporté'}
+                style={{padding:'9px 14px',background:'#f1f5f9',color:pauseUsedRef.current?'#94a3b8':'#334155',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:pauseUsedRef.current?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:7,opacity:pauseUsedRef.current?.6:1}}>
+                <i className="fas fa-pause"/> Pause (3 min)
+              </button>
               <button onClick={()=>setShowReview(true)} disabled={submitting}
                 style={{padding:'10px 20px',background:'#10b981',color:'white',border:'none',borderRadius:8,fontWeight:700,fontSize:17,cursor:submitting?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:7}}>
                 {submitting?<><i className="fas fa-spinner fa-spin"/>Soumission…</>:<><i className="fas fa-paper-plane"/>Soumettre</>}
