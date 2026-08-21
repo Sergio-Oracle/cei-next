@@ -7,6 +7,9 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObjects, countPeople } from '@/lib/proctoring-vision'
 import Calculator from '@/components/exam/Calculator'
+import BiometricCallModal from '@/components/exam/BiometricCallModal'
+import { loadFaceApi, captureAveragedDescriptor } from '@/lib/faceCapture'
+import { isPlatformAuthenticatorAvailable, getAssertion } from '@/lib/webauthnClient'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 interface ExamData {
@@ -297,7 +300,21 @@ export default function ExamPage() {
      self-service, plus besoin d'appeler le surveillant au préalable. */
   const [codeRequired,   setCodeRequired]   = useState(false)
   const [accessCode,     setAccessCode]     = useState('')
+  const [pastedCode,     setPastedCode]     = useState('')
   const [submittingCode, setSubmittingCode] = useState(false)
+  /* Vérification biométrique — exigée à chaque accès à l'examen (nouvelle
+     tentative ET reprise), obligatoire pour tous les examens. La preuve est
+     un flag Redis à usage unique posé par /api/biometric/verify/* et
+     consommé par start_exam_attempt (voir doStartExam). Après quelques
+     échecs de reconnaissance faciale, repli sur BiometricCallModal. */
+  const [biometricRequired, setBiometricRequired] = useState(false)
+  const [bioMethod,         setBioMethod]         = useState<'face'|'webauthn'|null>(null)
+  const [bioBusy,           setBioBusy]           = useState(false)
+  const [bioFailCount,      setBioFailCount]      = useState(0)
+  const [bioStatusMsg,      setBioStatusMsg]      = useState('')
+  const [showBiometricCall, setShowBiometricCall] = useState(false)
+  const bioVideoRef = useRef<HTMLVideoElement|null>(null)
+  const bioStreamRef = useRef<MediaStream|null>(null)
   const [permCam,      setPermCam]      = useState<PermStatus>('pending')
   const [permMic,      setPermMic]      = useState<PermStatus>('pending')
   const [permScreen,   setPermScreen]   = useState<PermStatus>('pending')
@@ -771,7 +788,11 @@ export default function ExamPage() {
       if (att.answers) restoreAnswersWithLocalDraft(att.id, att.answers)
       setPhase('permissions')
     } catch (e:any) {
-      if (e?.data?.code_required) {
+      if (e?.data?.biometric_required) {
+        if (e.data.enrolled === false) { router.push(`/biometric-enroll?redirect=/exam/${id}`); return }
+        setBiometricRequired(true)
+        initBiometricCheck()
+      } else if (e?.data?.code_required) {
         setCodeRequired(true)
         if (e.data.code) setAccessCode(e.data.code)
       } else toastErr(e.message||"Impossible de démarrer l'examen")
@@ -779,11 +800,102 @@ export default function ExamPage() {
     finally { setStarting(false) }
   }
 
+  /* ── Vérification biométrique ───────────────────────────────────────── */
+  async function initBiometricCheck() {
+    try {
+      const st = await api.get<{method:'face'|'webauthn'|null}>('/api/biometric/status')
+      setBioMethod(st.method)
+      if (st.method === 'face') {
+        setBioStatusMsg('Ouverture de la caméra…')
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
+        bioStreamRef.current = stream
+        if (bioVideoRef.current) { bioVideoRef.current.srcObject = stream; await bioVideoRef.current.play().catch(()=>{}) }
+        setBioStatusMsg('Chargement du modèle de reconnaissance…')
+        await loadFaceApi()
+        setBioStatusMsg('Regardez la caméra pour être identifié')
+      }
+    } catch (e:any) {
+      toastErr(e.message || 'Impossible de préparer la vérification')
+    }
+  }
+
+  function stopBiometricCamera() {
+    bioStreamRef.current?.getTracks().forEach(t=>t.stop())
+    bioStreamRef.current = null
+  }
+
+  async function onBiometricFailure() {
+    const next = bioFailCount + 1
+    setBioFailCount(next)
+    if (next >= 3) {
+      stopBiometricCamera()
+      setShowBiometricCall(true)
+    } else {
+      toastErr(`Non reconnu — nouvelle tentative (${next}/3)`)
+    }
+  }
+
+  async function verifyFaceAndResume() {
+    if (!bioVideoRef.current) return
+    setBioBusy(true)
+    try {
+      const result = await captureAveragedDescriptor(bioVideoRef.current)
+      if (!result) { toastErr('Aucun visage détecté — repositionnez-vous face à la caméra'); setBioBusy(false); return }
+      const res = await api.post<{match:boolean}>('/api/biometric/verify/face', { descriptor: result.descriptor })
+      if (res.match) {
+        stopBiometricCamera()
+        setBiometricRequired(false)
+        setBioFailCount(0)
+        await doStartExam()
+      } else {
+        await onBiometricFailure()
+      }
+    } catch (e:any) {
+      toastErr(e.message || 'Échec de la vérification')
+    } finally {
+      setBioBusy(false)
+    }
+  }
+
+  async function verifyWebauthnAndResume() {
+    setBioBusy(true)
+    try {
+      const options = await api.post<any>('/api/biometric/verify/webauthn/options')
+      const credential = await getAssertion(options)
+      const res = await api.post<{match:boolean}>('/api/biometric/verify/webauthn/verify', { credential })
+      if (res.match) {
+        setBiometricRequired(false)
+        setBioFailCount(0)
+        await doStartExam()
+      } else {
+        await onBiometricFailure()
+      }
+    } catch (e:any) {
+      toastErr(e.message || "Échec de la vérification — l'authentification a peut-être été annulée")
+      await onBiometricFailure()
+    } finally {
+      setBioBusy(false)
+    }
+  }
+
+  // Le surveillant/superviseur/professeur valide manuellement l'identité pendant
+  // l'appel (BiometricCallModal) → le flag Redis est posé côté serveur ; on
+  // retente périodiquement doStartExam() pour détecter cette validation.
+  useEffect(() => {
+    if (!showBiometricCall) return
+    const interval = setInterval(() => { doStartExam() }, 5000)
+    return () => clearInterval(interval)
+  }, [showBiometricCall]) // eslint-disable-line
+
+  useEffect(() => {
+    if (attempt) { setShowBiometricCall(false); setBiometricRequired(false) }
+  }, [attempt])
+
   async function submitAccessCode() {
-    if (!accessCode.trim()) { toastErr('Saisissez le code fourni par votre surveillant.'); return }
+    if (!pastedCode.trim()) { toastErr('Collez le code affiché ci-dessus.'); return }
     setSubmittingCode(true)
     try {
-      const res = await api.post<{attempt:Attempt}>(`/api/online_exams/${id}/start`, { access_code: accessCode.trim() })
+      const res = await api.post<{attempt:Attempt}>(`/api/online_exams/${id}/start`, { access_code: pastedCode.trim() })
       const att=res.attempt; setAttempt(att); attemptRef.current=att.id
       extraMinRef.current=att.extra_minutes??0
       if (att.answers) restoreAnswersWithLocalDraft(att.id, att.answers)
@@ -791,6 +903,7 @@ export default function ExamPage() {
       setPhase('permissions')
     } catch (e:any) {
       if (e?.data?.code) setAccessCode(e.data.code)
+      setPastedCode('')
       toastErr(e.message||'Code invalide')
     }
     finally { setSubmittingCode(false) }
@@ -1857,6 +1970,58 @@ export default function ExamPage() {
   )
 
   /* ── INSTRUCTIONS + ATTESTATION (thème clair, identique à l'originale) ── */
+  if(phase==='instructions'&&exam&&biometricRequired) return(
+    <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+      <div style={{background:'white',borderRadius:16,boxShadow:'0 8px 32px rgba(0,0,0,.12)',maxWidth:440,width:'100%',padding:'28px 32px'}}>
+        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:18}}>
+          <div style={{width:52,height:52,background:'rgba(37,99,235,.1)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,color:'#2563eb',flexShrink:0}}>
+            <i className="fas fa-fingerprint"/>
+          </div>
+          <div>
+            <h2 style={{margin:'0 0 3px',fontSize:21.5,fontWeight:700,color:'#1e293b'}}>Vérification d'identité</h2>
+            <p style={{margin:0,color:'#64748b',fontSize:15.5}}>Requise avant chaque accès à l'examen</p>
+          </div>
+        </div>
+
+        {bioMethod==='face' && (
+          <>
+            <div style={{position:'relative',width:'100%',aspectRatio:'4/3',background:'#0f172a',borderRadius:12,overflow:'hidden',marginBottom:16}}>
+              <video ref={bioVideoRef} autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)'}}/>
+            </div>
+            <p style={{color:'#64748b',marginBottom:18,fontSize:14.5,textAlign:'center'}}>{bioStatusMsg}</p>
+            <button onClick={verifyFaceAndResume} disabled={bioBusy}
+              style={{width:'100%',padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:bioBusy?'not-allowed':'pointer',opacity:bioBusy?.6:1,fontSize:17}}>
+              {bioBusy ? <><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Vérification…</> : <><i className="fas fa-camera" style={{marginRight:6}}/>Vérifier mon identité</>}
+            </button>
+          </>
+        )}
+
+        {bioMethod==='webauthn' && (
+          <>
+            <p style={{color:'#64748b',marginBottom:18,fontSize:15.5,textAlign:'center'}}>Utilisez votre empreinte digitale ou Face ID pour continuer.</p>
+            <button onClick={verifyWebauthnAndResume} disabled={bioBusy}
+              style={{width:'100%',padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:bioBusy?'not-allowed':'pointer',opacity:bioBusy?.6:1,fontSize:17}}>
+              {bioBusy ? <><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Vérification…</> : <><i className="fas fa-fingerprint" style={{marginRight:6}}/>Vérifier mon identité</>}
+            </button>
+          </>
+        )}
+
+        <div style={{display:'flex',gap:10,marginTop:14}}>
+          <button onClick={()=>{ stopBiometricCamera(); router.push('/dashboard/student') }} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:17}}>
+            <i className="fas fa-arrow-left" style={{marginRight:6}}/>Retour
+          </button>
+          <button onClick={()=>{ stopBiometricCamera(); setShowBiometricCall(true) }} style={{flex:1,padding:'11px',background:'#fff8ed',color:'#d97706',border:'1px solid #f59e0b',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:15}}>
+            <i className="fas fa-phone" style={{marginRight:6}}/>Besoin d'aide ?
+          </button>
+        </div>
+      </div>
+
+      {showBiometricCall && user && (
+        <BiometricCallModal examId={Number(id)} studentId={user.id} examTitle={exam.title} onClose={()=>setShowBiometricCall(false)} />
+      )}
+    </div>
+  )
+
   if(phase==='instructions'&&exam&&codeRequired) return(
     <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
       <div style={{background:'white',borderRadius:16,boxShadow:'0 8px 32px rgba(0,0,0,.12)',maxWidth:440,width:'100%',padding:'28px 32px'}}>
@@ -1869,26 +2034,30 @@ export default function ExamPage() {
             <p style={{margin:0,color:'#64748b',fontSize:15.5}}>Vous avez quitté l'examen — voici votre code personnel pour continuer</p>
           </div>
         </div>
-        <div style={{background:'#fff8ed',border:'1px solid #f59e0b',borderRadius:10,padding:'14px 16px',marginBottom:18,fontSize:15.5,color:'#78350f',lineHeight:1.6}}>
-          Ce code vous est propre — copiez-le et cliquez sur « Reprendre ». Votre surveillant sera automatiquement informé de votre retour.
+        <div style={{background:'#fff8ed',border:'1px solid #f59e0b',borderRadius:10,padding:'14px 16px',marginBottom:14,fontSize:15.5,color:'#78350f',lineHeight:1.6}}>
+          Ce code vous est propre — personne d'autre ne peut l'utiliser. Copiez-le, collez-le dans le champ ci-dessous, puis cliquez sur « Reprendre ». Votre surveillant sera automatiquement informé de votre retour.
         </div>
-        <label style={{fontSize:14.5,fontWeight:700,color:'#334155',display:'block',marginBottom:8}}>Votre code</label>
+        <label style={{fontSize:14.5,fontWeight:700,color:'#334155',display:'block',marginBottom:8}}>1. Votre code (à copier)</label>
         <div style={{display:'flex',gap:8,marginBottom:18}}>
-          <input value={accessCode} onChange={e=>setAccessCode(e.target.value.replace(/\D/g,'').slice(0,6))}
-            placeholder="000000" maxLength={6} inputMode="numeric" readOnly
-            style={{flex:1,padding:'12px 14px',fontSize:24,letterSpacing:6,textAlign:'center',border:'2px solid #e2e8f0',borderRadius:8,fontWeight:700,color:'#1e293b',background:'#f8fafc'}}
-            onKeyDown={e=>{ if(e.key==='Enter') submitAccessCode() }} />
-          <button type="button" onClick={()=>{ if(accessCode) navigator.clipboard?.writeText(accessCode) }} title="Copier"
+          <div style={{flex:1,padding:'12px 14px',fontSize:24,letterSpacing:6,textAlign:'center',border:'2px dashed #cbd5e1',borderRadius:8,fontWeight:700,color:'#1e293b',background:'#f8fafc'}}>
+            {accessCode || '——————'}
+          </div>
+          <button type="button" onClick={()=>{ if(accessCode){ navigator.clipboard?.writeText(accessCode); success('Code copié') } }} title="Copier"
             style={{width:44,border:'2px solid #e2e8f0',borderRadius:8,background:'white',color:'#475569',cursor:'pointer'}}>
             <i className="fas fa-copy"/>
           </button>
         </div>
+        <label style={{fontSize:14.5,fontWeight:700,color:'#334155',display:'block',marginBottom:8}}>2. Collez-le ici</label>
+        <input value={pastedCode} onChange={e=>setPastedCode(e.target.value.replace(/\D/g,'').slice(0,6))}
+          placeholder="Collez votre code" maxLength={6} inputMode="numeric" autoFocus
+          style={{width:'100%',boxSizing:'border-box',padding:'12px 14px',fontSize:24,letterSpacing:6,textAlign:'center',border:'2px solid #2563eb',borderRadius:8,fontWeight:700,color:'#1e293b',background:'white',marginBottom:18}}
+          onKeyDown={e=>{ if(e.key==='Enter') submitAccessCode() }} />
         <div style={{display:'flex',gap:10}}>
           <button onClick={()=>router.push('/dashboard/student')} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:17}}>
             <i className="fas fa-arrow-left" style={{marginRight:6}}/>Retour au tableau de bord
           </button>
-          <button onClick={submitAccessCode} disabled={submittingCode || accessCode.length!==6}
-            style={{flex:1,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:(submittingCode||accessCode.length!==6)?'not-allowed':'pointer',opacity:(submittingCode||accessCode.length!==6)?.6:1,fontSize:17}}>
+          <button onClick={submitAccessCode} disabled={submittingCode || pastedCode.length!==6}
+            style={{flex:1,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:(submittingCode||pastedCode.length!==6)?'not-allowed':'pointer',opacity:(submittingCode||pastedCode.length!==6)?.6:1,fontSize:17}}>
             {submittingCode ? <><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Vérification…</> : 'Reprendre'}
           </button>
         </div>
