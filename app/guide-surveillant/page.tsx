@@ -80,7 +80,8 @@ export default function GuideSurveillant() {
             <li><a href="#appel"><i className="fas fa-phone" /> 7. Appel privé avec un étudiant</a></li>
             <li><a href="#bannissement"><i className="fas fa-ban" /> 8. Bannissement et notification à l&apos;enseignant</a></li>
             <li><a href="#vigilance"><i className="fas fa-shield-halved" /> 9. Niveau de vigilance — comment votre engagement est mesuré</a></li>
-            <li><a href="#reprise"><i className="fas fa-key" /> 10. Reprise après déconnexion — répondre à un appel étudiant</a></li>
+            <li><a href="#reprise"><i className="fas fa-key" /> 10. Reprise après déconnexion — notification automatique</a></li>
+            <li><a href="#identite"><i className="fas fa-fingerprint" /> 11. Appel de vérification d&apos;identité (biométrie)</a></li>
           </ul>
         </div>
 
@@ -221,13 +222,26 @@ export default function GuideSurveillant() {
 
         {/* 10. Reprise après déconnexion */}
         <div className="section" id="reprise">
-          <div className="section-header"><div className="section-icon" style={{background:'#059669'}}><i className="fas fa-key" /></div><h2>10. Reprise après déconnexion — répondre à un appel étudiant</h2></div>
+          <div className="section-header"><div className="section-icon" style={{background:'#059669'}}><i className="fas fa-key" /></div><h2>10. Reprise après déconnexion — notification automatique</h2></div>
           <div className="section-body">
-            <p style={{color:'#475569',marginBottom:20}}>Si un étudiant qui vous est assigné se déconnecte de son examen, il doit obtenir un <strong>code de reprise à usage unique</strong> avant de pouvoir continuer — et ce code ne s&apos;obtient qu&apos;après un appel vocal/vidéo avec vous, pour vérifier son identité. C&apos;est différent de l&apos;appel privé de la section 7 : ici, c&apos;est l&apos;étudiant qui vous appelle depuis son propre tableau de bord (hors de la page d&apos;examen).</p>
+            <p style={{color:'#475569',marginBottom:20}}>Le processus a changé : un étudiant qui se déconnecte n&apos;a <strong>plus besoin de vous appeler</strong> pour reprendre son examen. Un code personnel lui est présenté automatiquement dès qu&apos;il rouvre l&apos;examen — il le copie-colle lui-même pour continuer.</p>
             <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Repérer la demande</h4><p>Un message distinct (fond orange, icône téléphone) apparaît dans votre panneau de messages avec un bouton <strong>&quot;Rejoindre l&apos;appel&quot;</strong>.</p></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Vérifier l&apos;identité</h4><p>Répondez à l&apos;appel et vérifiez qu&apos;il s&apos;agit bien du bon étudiant, comme vous le feriez pour tout contrôle d&apos;identité.</p></div></div>
-              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Générer le code</h4><p>Cliquez sur <strong>&quot;Générer un code de reprise&quot;</strong> dans la fenêtre d&apos;appel. Un code à 6 chiffres s&apos;affiche, valable <strong>10 minutes</strong> et à usage unique — communiquez-le oralement à l&apos;étudiant.</p><div className="tip"><i className="fas fa-lightbulb" /> Vous êtes le premier interlocuteur habilité pour vos propres étudiants — le superviseur ou l&apos;enseignant ne prennent le relais que si aucun surveillant ne leur est assigné.</div></div></div>
+              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Vous êtes notifié après coup</h4><p>Dès qu&apos;un étudiant qui vous est assigné reprend son examen, vous recevez une notification (avec un signal sonore) sur votre interface — pas de mise en attente, l&apos;étudiant a déjà repris au moment où vous la voyez.</p></div></div>
+              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>À vous de juger</h4><p>Rien n&apos;est requis de votre part. Si la fréquence des reprises ou le contexte vous semble suspect, vous pouvez toujours contacter l&apos;étudiant via la messagerie ou l&apos;appel privé (section 7) pour clarifier la situation.</p></div></div>
+            </div>
+            <div className="info"><i className="fas fa-info-circle" /> Ce n&apos;est pas un relâchement de la sécurité : l&apos;identité de l&apos;étudiant est désormais vérifiée par biométrie (visage ou empreinte) à chaque accès à l&apos;examen — voir la section suivante.</div>
+          </div>
+        </div>
+
+        {/* 11. Appel de vérification d'identité biométrique */}
+        <div className="section" id="identite">
+          <div className="section-header"><div className="section-icon" style={{background:'#7c3aed'}}><i className="fas fa-fingerprint" /></div><h2>11. Appel de vérification d&apos;identité (biométrie)</h2></div>
+          <div className="section-body">
+            <p style={{color:'#475569',marginBottom:20}}>Chaque étudiant doit désormais confirmer son identité (reconnaissance faciale ou empreinte digitale/Face ID) avant chaque accès à un examen. Si la reconnaissance échoue plusieurs fois de suite, un appel de vérification manuelle est déclenché automatiquement vers vous (ou le superviseur/enseignant à défaut).</p>
+            <div className="steps">
+              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Repérer la demande</h4><p>Un appel entrant &quot;Vérification d&apos;identité&quot; apparaît, distinct de l&apos;appel de reprise habituel — l&apos;étudiant n&apos;a pas encore commencé sa tentative à ce stade.</p></div></div>
+              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Vérifier l&apos;identité</h4><p>Répondez à l&apos;appel vidéo et confirmez qu&apos;il s&apos;agit bien de l&apos;étudiant attendu, comme pour tout contrôle d&apos;identité.</p></div></div>
+              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Valider</h4><p>Cliquez sur <strong>&quot;Valider l&apos;identité&quot;</strong> — l&apos;étudiant peut alors accéder à son examen normalement, sans repasser par la reconnaissance automatique.</p></div></div>
             </div>
           </div>
         </div>

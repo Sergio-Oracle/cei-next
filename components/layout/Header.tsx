@@ -10,6 +10,7 @@ import { playAlertBeep } from '@/lib/notifSound'
 import { usePwaInstall } from '@/hooks/usePwaInstall'
 import { useToast } from '@/contexts/ToastContext'
 import AnswerSupervisorCallModal from '@/components/exam/AnswerSupervisorCallModal'
+import AnswerBiometricCallModal from '@/components/exam/AnswerBiometricCallModal'
 
 const roleLabel: Record<string, string> = {
   admin: 'Administrateur',
@@ -112,15 +113,30 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   // surveillance, contrairement à l'appel étudiant qui y ramène toujours).
   const [incomingSupervisorCall, setIncomingSupervisorCall] = useState<{ supervisorId: number; supervisorName: string } | null>(null)
   const [answeringSupervisorCall, setAnsweringSupervisorCall] = useState(false)
+  // Appel de vérification d'identité biométrique — même patron que l'appel
+  // superviseur ci-dessus : non lié à une tentative d'examen (aucune n'existe
+  // encore à ce stade), donc géré globalement ici plutôt que sur la page de
+  // surveillance d'un examen précis.
+  const [incomingBiometricCall, setIncomingBiometricCall] = useState<{ examId: number; studentId: number; studentName: string; examTitle: string } | null>(null)
+  const [answeringBiometricCall, setAnsweringBiometricCall] = useState(false)
 
   const handleNotifEvent = useCallback((ev: NotifEvent) => {
     setUnreadCount(c => c + 1)
-    const anyEv = ev as NotifEvent & { exam_id?: number; supervisor_id?: number; supervisor_name?: string }
+    const anyEv = ev as NotifEvent & { exam_id?: number; supervisor_id?: number; supervisor_name?: string; student_id?: number; student_name?: string; exam_title?: string }
     if (ev.type === 'call_request' && anyEv.exam_id) {
       showToast(ev.message, 'warning', 10000, () => router.push(`/proctor/monitor/${anyEv.exam_id}`))
     }
     if (ev.type === 'supervisor_call_request' && anyEv.supervisor_id) {
       setIncomingSupervisorCall({ supervisorId: anyEv.supervisor_id, supervisorName: anyEv.supervisor_name || 'Votre superviseur' })
+    }
+    if (ev.type === 'biometric_call_request' && anyEv.exam_id && anyEv.student_id) {
+      playAlertBeep()
+      setIncomingBiometricCall({
+        examId: anyEv.exam_id,
+        studentId: anyEv.student_id,
+        studentName: anyEv.student_name || 'Un étudiant',
+        examTitle: anyEv.exam_title || 'un examen',
+      })
     }
     if (ev.type === 'student_resumed' && anyEv.exam_id) {
       playAlertBeep()
@@ -368,6 +384,37 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         proctorId={user!.id}
         supervisorName={incomingSupervisorCall.supervisorName}
         onClose={() => { setAnsweringSupervisorCall(false); setIncomingSupervisorCall(null) }}
+      />
+    )}
+
+    {/* Appel entrant de vérification d'identité biométrique — bannière
+        accepter/refuser, visible où que le surveillant/superviseur/professeur
+        se trouve dans l'application. */}
+    {incomingBiometricCall && !answeringBiometricCall && (
+      <div style={{ position: 'fixed', top: 70, right: 20, zIndex: 9400, background: '#0f172a', color: 'white', borderRadius: 12, padding: '14px 18px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(167,139,250,.4)' }}>
+        <i className="fas fa-fingerprint fa-shake" style={{ color: '#a78bfa', fontSize: 24 }} />
+        <div>
+          <div style={{ fontWeight: 700, fontSize:15.5 }}>Vérification d'identité</div>
+          <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.7)' }}>{incomingBiometricCall.studentName}</div>
+        </div>
+        <button onClick={() => setAnsweringBiometricCall(true)}
+          style={{ background: '#7c3aed', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize:14.5, cursor: 'pointer' }}>
+          <i className="fas fa-phone" /> Répondre
+        </button>
+        <button onClick={() => setIncomingBiometricCall(null)}
+          style={{ background: 'rgba(239,68,68,.2)', color: '#fca5a5', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize:14.5, cursor: 'pointer' }}>
+          <i className="fas fa-phone-slash" /> Refuser
+        </button>
+      </div>
+    )}
+
+    {incomingBiometricCall && answeringBiometricCall && (
+      <AnswerBiometricCallModal
+        examId={incomingBiometricCall.examId}
+        studentId={incomingBiometricCall.studentId}
+        studentName={incomingBiometricCall.studentName}
+        examTitle={incomingBiometricCall.examTitle}
+        onClose={() => { setAnsweringBiometricCall(false); setIncomingBiometricCall(null) }}
       />
     )}
     </>

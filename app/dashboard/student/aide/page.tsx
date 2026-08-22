@@ -19,8 +19,9 @@ const CATEGORIES = [
     bd: '#bfdbfe',
     faqs: [
       { icon: 'fas fa-play-circle', q: 'Comment démarrer un examen ?',                        r: 'Rendez-vous dans "Mes Examens en Ligne". Lorsqu\'un examen est actif, cliquez sur "Commencer l\'examen". Assurez-vous d\'avoir une connexion stable et votre caméra activée.' },
-      { icon: 'fas fa-wifi',        q: 'Que faire si je suis déconnecté pendant un examen ?', r: 'Reconnectez-vous rapidement sur la plateforme. Votre tentative sera restaurée automatiquement et vos réponses sont sauvegardées toutes les 30 secondes.' },
+      { icon: 'fas fa-wifi',        q: 'Que faire si je suis déconnecté pendant un examen ?', r: 'Reconnectez-vous et retournez sur l\'examen : un code personnel s\'affiche automatiquement, propre à vous et à personne d\'autre. Copiez-le, collez-le dans le champ prévu et cliquez sur "Reprendre" — vos réponses sont sauvegardées toutes les 30 secondes, rien n\'est perdu. Votre surveillant est automatiquement informé de votre retour.' },
       { icon: 'fas fa-lock',        q: 'Pourquoi mon examen est-il verrouillé ?',              r: 'Un examen peut être verrouillé si l\'heure de début n\'est pas encore atteinte, si vous avez été banni pour fraude, ou si l\'examen est terminé.' },
+      { icon: 'fas fa-mug-hot',     q: 'Puis-je faire une pause pendant l\'examen ?',           r: 'Oui, une pause de 3 minutes par examen (bouton "Pause" dans la barre de l\'examen), pour un besoin physiologique par exemple. Pendant la pause, la surveillance est suspendue et le temps de composition est automatiquement prolongé d\'autant. Elle ne peut être utilisée qu\'une seule fois par examen.' },
     ],
   },
   {
@@ -34,6 +35,21 @@ const CATEGORIES = [
       { icon: 'fas fa-video',       q: 'Comment activer ma caméra ?',                          r: 'Lorsque vous démarrez un examen, votre navigateur vous demandera l\'accès à la caméra. Autorisez l\'accès dans la fenêtre contextuelle. Assurez-vous qu\'une autre application n\'utilise pas votre caméra.' },
       { icon: 'fas fa-user-check',  q: 'Pourquoi ai-je des alertes de visage non détecté ?',  r: 'Assurez-vous d\'être centré dans le cadre, bien éclairé et sans lunettes de soleil. 3 alertes consécutives sont nécessaires avant d\'enregistrer un incident — un bon repositionnement interrompt le compteur.' },
       { icon: 'fas fa-users',       q: 'Que signifie "Visages multiples détectés" ?',          r: 'La plateforme détecte qu\'une autre personne est dans le champ de la caméra. Assurez-vous de passer votre examen dans un espace isolé. Cela constitue une infraction aux règles d\'examen.' },
+    ],
+  },
+  {
+    id: 'securite',
+    icon: 'fas fa-fingerprint',
+    label: 'Sécurité & identité',
+    color: '#7c3aed',
+    bg: '#f5f3ff',
+    bd: '#ddd6fe',
+    faqs: [
+      { icon: 'fas fa-id-badge',    q: 'Pourquoi dois-je m\'identifier avant chaque examen ?',       r: 'C\'est une vérification obligatoire qui garantit que c\'est bien vous qui composez. Vous l\'enregistrez une seule fois (reconnaissance faciale ou empreinte digitale/Face ID), puis elle est vérifiée automatiquement à chaque accès à un examen.' },
+      { icon: 'fas fa-camera-retro',q: 'Comment enregistrer ma reconnaissance faciale ?',            r: 'Sur l\'écran d\'inscription, choisissez "Reconnaissance faciale" puis "Prendre une photo" (caméra) ou "Téléverser une photo". Vérifiez l\'aperçu avant de valider — vous pouvez reprendre la photo si besoin.' },
+      { icon: 'fas fa-fingerprint', q: 'L\'option empreinte digitale/Face ID n\'apparaît pas, pourquoi ?', r: 'Elle ne s\'affiche que si votre appareil a un capteur biométrique réellement configuré (Windows Hello, Touch ID, empreinte Android...). Sans capteur détecté, seule la reconnaissance faciale est proposée.' },
+      { icon: 'fas fa-phone-volume',q: 'Ma vérification échoue à chaque fois, que faire ?',          r: 'Après quelques tentatives infructueuses, un appel vidéo avec votre surveillant ou superviseur s\'ouvre automatiquement pour vérifier votre identité manuellement et débloquer votre accès.' },
+      { icon: 'fas fa-rotate',      q: 'Puis-je changer ma méthode d\'identification plus tard ?',    r: 'Oui, à tout moment depuis Paramètres > Sécurité : vous pouvez refaire votre reconnaissance faciale, ajouter/supprimer un appareil pour l\'empreinte digitale, ou changer complètement de méthode.' },
     ],
   },
   {

@@ -429,8 +429,15 @@ export default function GuideEnseignant() {
               <div className="step">
                 <div className="step-num">8</div>
                 <div className="step-content">
-                  <h4>Reprise après déconnexion — votre rôle de dernier recours</h4>
-                  <p>Si un étudiant se déconnecte pendant l&apos;examen, il doit obtenir un code de reprise à usage unique par appel vocal/vidéo avant de pouvoir continuer. L&apos;ordre de priorité pour répondre à cet appel est : <strong>surveillant assigné</strong> → <strong>superviseur du groupe</strong> → <strong>vous (enseignant), en tout dernier recours</strong>, si ni l&apos;un ni l&apos;autre n&apos;est disponible.</p>
+                  <h4>Reprise après déconnexion — désormais automatique</h4>
+                  <p>Un étudiant qui se déconnecte n&apos;a plus besoin d&apos;appeler personne pour reprendre : un code personnel lui est présenté automatiquement, qu&apos;il copie-colle lui-même. Vous êtes simplement notifié après coup (comme le surveillant et le superviseur) — aucune action requise de votre part sauf si le contexte vous semble suspect.</p>
+                </div>
+              </div>
+              <div className="step">
+                <div className="step-num">9</div>
+                <div className="step-content">
+                  <h4>Vérification d&apos;identité biométrique — votre rôle de dernier recours</h4>
+                  <p>Chaque étudiant doit confirmer son identité (visage ou empreinte digitale/Face ID) avant chaque accès à un examen. En cas d&apos;échec répété, un appel de vérification manuelle est déclenché — l&apos;ordre de priorité pour y répondre est : <strong>surveillant assigné</strong> → <strong>superviseur du groupe</strong> → <strong>vous (enseignant), en dernier recours</strong>. Une bannière &quot;Vérification d&apos;identité&quot; apparaît alors où que vous soyez dans l&apos;application, avec un bouton pour répondre et valider.</p>
                 </div>
               </div>
             </div>
