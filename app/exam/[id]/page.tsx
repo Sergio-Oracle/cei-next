@@ -1049,13 +1049,22 @@ export default function ExamPage() {
     const start = Date.now()
     let maxPeople = 0
     const objectSeenCount: Record<string, number> = {}
+    const objectBestScore: Record<string, number> = {}
     while (Date.now() - start < SCAN_DURATION_MS) {
       const now = Date.now()
       const n = countPeople(vid, now)
       if (n !== null && n > maxPeople) { maxPeople = n; setEnvScanMaxPeople(n) }
-      const obj = analyzeObjects(vid, now)
+      // Seuil abaissé (0.35 au lieu des 0.5 utilisés en cours d'examen) —
+      // ce scan est un passage unique, purement informatif (jamais compté
+      // comme fraude), donc un signalement en trop y coûte bien moins qu'un
+      // vrai second écran manqué (retour utilisateur du 22/08).
+      const obj = analyzeObjects(vid, now, 0.35)
       const what = obj?.phoneDetected?'téléphone':obj?.bookDetected?'livre/document':obj?.otherScreenDetected?'écran supplémentaire':null
-      if (what) objectSeenCount[what] = (objectSeenCount[what]||0) + 1
+      if (what) {
+        objectSeenCount[what] = (objectSeenCount[what]||0) + 1
+        const bestHere = Math.max(...obj!.matches.map(m=>m.score))
+        objectBestScore[what] = Math.max(objectBestScore[what]||0, bestHere)
+      }
       setEnvScanProgress(Math.min(100, Math.round(((Date.now()-start)/SCAN_DURATION_MS)*100)))
       await new Promise(r => setTimeout(r, 700))
     }
@@ -1069,8 +1078,9 @@ export default function ExamPage() {
 
     const aId = attemptRef.current
     if (objectsDetected.length && aId) {
-      logActivity(aId,'env_scan_object_detected',`Objets détectés pendant le scan : ${objectsDetected.join(', ')}`).catch(()=>{})
-      logProctoring(aId,'env_scan_object_detected',`Objets détectés pendant le scan : ${objectsDetected.join(', ')}`).catch(()=>{})
+      const detail = objectsDetected.map(w=>`${w} (confiance ${(objectBestScore[w]*100).toFixed(0)}%)`).join(', ')
+      logActivity(aId,'env_scan_object_detected',`Objets détectés pendant le scan : ${detail}`).catch(()=>{})
+      logProctoring(aId,'env_scan_object_detected',`Objets détectés pendant le scan : ${detail}`).catch(()=>{})
     }
     if (maxPeople > 1) {
       setEnvScanStatus('blocked')
@@ -1918,8 +1928,9 @@ export default function ExamPage() {
         lastVisionAlertRef.current.object=now
         warning(`Objet suspect détecté : ${what}`)
         setAlerts(a => [{type:'object',msg:`Objet suspect détecté : ${what}`,at:new Date().toLocaleTimeString('fr-FR')},...a])
-        logActivity(curAId,'suspect_object_detected',`Objets détectés : ${obj!.labels.join(', ')}`).catch(()=>{})
-        logProctoring(curAId,'suspect_object_detected',`Objets détectés : ${obj!.labels.join(', ')}`).catch(()=>{})
+        const detail = obj!.matches.map(m=>`${m.label} (confiance ${(m.score*100).toFixed(0)}%)`).join(', ')
+        logActivity(curAId,'suspect_object_detected',`Objets détectés : ${detail}`).catch(()=>{})
+        logProctoring(curAId,'suspect_object_detected',`Objets détectés : ${detail}`).catch(()=>{})
         captureSnapshot('suspect_object_detected',curAId,true,1,null,5_000)
       }
     }

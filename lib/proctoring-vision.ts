@@ -69,14 +69,15 @@ async function loadVisionModels(wasmBase: string, faceModelUrl: string, objectMo
     ObjectDetector.createFromOptions(vision, {
       baseOptions: { modelAssetPath: objectModelUrl, delegate: 'CPU' },
       runningMode: 'VIDEO',
-      // Remonté à 0.65 puis reredescendu à 0.5 (22/08, retour utilisateur) :
-      // un téléphone tenu brièvement/à un angle imparfait n'atteignait pas
-      // 0.65 avec ce modèle léger (efficientdet_lite0) et passait inaperçu —
-      // un vrai risque de triche non détecté est jugé pire qu'une fausse
-      // alerte occasionnelle. L'exigence de 2 vérifications consécutives
-      // côté appelant (visionEnrichedTick) reste le principal garde-fou
-      // contre le bruit.
-      scoreThreshold: 0.5,
+      // Seuil du MODÈLE volontairement bas (0.3) — c'est un plancher, pas le
+      // seuil final : chaque appelant (analyzeObjects) applique son propre
+      // minScore par-dessus, plus strict en cours d'examen (0.5) que pendant
+      // le scan environnemental (0.35, voir analyzeObjects ci-dessous). Fixer
+      // 0.5 ou 0.65 directement ICI empêchait le scan environnemental de
+      // jamais voir les détections à confiance intermédiaire (retour
+      // utilisateur du 22/08 : un second écran pourtant visible n'était
+      // jamais remonté par le modèle, pas juste filtré trop tard).
+      scoreThreshold: 0.3,
       maxResults: 5,
       // 'person' inclus : nécessaire au scan environnement 360° (Phase 1)
       // qui compte les personnes présentes, pas seulement les objets suspects.
@@ -224,6 +225,10 @@ export interface ObjectSignal {
   bookDetected: boolean
   otherScreenDetected: boolean
   labels: string[]
+  /** Détail avec score de confiance par détection retenue — utile pour les
+   * journaux d'audit (le surveillant/professeur voit la confiance réelle,
+   * pas juste "détecté"). */
+  matches: { label: string; score: number }[]
 }
 
 const SUSPECT_LABELS: Record<string, 'phone' | 'book' | 'screen'> = {
@@ -235,18 +240,31 @@ const SUSPECT_LABELS: Record<string, 'phone' | 'book' | 'screen'> = {
   'tablet': 'screen',
 }
 
-export function analyzeObjects(video: HTMLVideoElement, timestampMs: number): ObjectSignal | null {
+/** minScore : seuil de confiance appliqué EN PLUS de celui, plus permissif,
+ * configuré sur le modèle lui-même (voir scoreThreshold ci-dessus). Deux
+ * usages avec des enjeux différents partagent le même modèle chargé :
+ *  - en cours d'examen (visionEnrichedTick), minScore par défaut (0.5) —
+ *    une fausse alerte accuse à tort un étudiant, donc on reste strict ;
+ *  - pendant le scan environnemental 360° (un seul passage, purement
+ *    informatif, jamais compté comme fraude), l'appelant passe un seuil
+ *    plus bas (ex. 0.35) — un signalement en trop y coûte beaucoup moins
+ *    qu'un vrai second écran manqué (retour utilisateur du 22/08 : un écran
+ *    pourtant visible n'était pas détecté avec le seuil unique à 0.5). */
+export function analyzeObjects(video: HTMLVideoElement, timestampMs: number, minScore = 0.5): ObjectSignal | null {
   if (!objectDetector) return null
   let result
   try { result = objectDetector.detectForVideo(video, timestampMs) } catch { return null }
-  const labels = (result.detections || [])
-    .map(d => d.categories[0]?.categoryName)
-    .filter((l): l is string => !!l)
+  const matches = (result.detections || [])
+    .map(d => d.categories[0])
+    .filter((c): c is NonNullable<typeof c> => !!c && !!c.categoryName && c.score >= minScore)
+    .map(c => ({ label: c.categoryName, score: c.score }))
+  const labels = matches.map(m => m.label)
   return {
     phoneDetected: labels.some(l => SUSPECT_LABELS[l] === 'phone'),
     bookDetected: labels.some(l => SUSPECT_LABELS[l] === 'book'),
     otherScreenDetected: labels.some(l => SUSPECT_LABELS[l] === 'screen'),
     labels,
+    matches,
   }
 }
 
