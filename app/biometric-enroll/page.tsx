@@ -105,7 +105,9 @@ function BiometricEnrollInner() {
           {step === 'choice' && (
             <>
               <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: 15.5, lineHeight: 1.6 }}>
-                Choisissez comment vous souhaitez être identifié avant chaque examen. Cette étape n'est à faire qu'une seule fois — vous pourrez la refaire depuis vos paramètres si besoin.
+                {webauthnAvailable
+                  ? "Choisissez comment vous souhaitez être identifié avant chaque examen. Cette étape n'est à faire qu'une seule fois — vous pourrez la refaire depuis vos paramètres si besoin."
+                  : "Votre identification se fera par reconnaissance faciale avant chaque examen (aucun capteur d'empreinte/Face ID détecté sur cet appareil). Cette étape n'est à faire qu'une seule fois — vous pourrez la refaire depuis vos paramètres si besoin."}
               </p>
               <button className="btn btn-primary btn-block" style={{ marginBottom: 12 }} onClick={startFaceFlow}>
                 <i className="fa-solid fa-camera" style={{ marginRight: 8 }} />Reconnaissance faciale
