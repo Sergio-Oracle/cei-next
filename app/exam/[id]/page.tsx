@@ -2151,6 +2151,7 @@ export default function ExamPage() {
         <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:10,padding:'14px 16px',marginBottom:18}}>
           <div style={{display:'flex',flexDirection:'column',gap:9}}>
             {[
+              {icon:'fa-fingerprint',color:'#2563eb',txt:"Vérification d'identité (visage ou empreinte digitale/Face ID) requise avant l'accès"},
               {icon:'fa-video',color:'#2563eb',txt:'Caméra et microphone activés pendant toute la durée'},
               {icon:'fa-user-check',color:'#10b981',txt:'Visage visible en permanence (détection faciale IA)'},
               {icon:'fa-expand',color:'#f59e0b',txt:"Plein écran obligatoire — tout changement d'onglet est enregistré"},
