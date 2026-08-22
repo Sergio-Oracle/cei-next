@@ -1805,18 +1805,46 @@ export default function ExamPage() {
               // détection faciale peu fiable ; dans ce cas on ne pénalise pas
               // l'étudiant comme une vraie absence (event à risque nul,
               // purement informatif), on l'invite plutôt à corriger l'éclairage.
-              const brightness = sampleBrightness(vid)
-              const poorLight = brightness!==null && (brightness<BRIGHTNESS_LOW||brightness>BRIGHTNESS_HIGH)
-              if(poorLight){
-                warning("Éclairage insuffisant — l'IA ne peut pas vérifier votre présence de façon fiable, améliorez la luminosité")
-                logActivity(curAId,'no_face_low_light',`Absent ${consNoFaceRef.current} vérifications consécutives (luminosité=${brightness})`).catch(()=>{})
-                logProctoring(curAId,'no_face_low_light',`Absent ${consNoFaceRef.current} vérifications consécutives (luminosité=${brightness})`).catch(()=>{})
+              // Un visage absent est souvent un visage MASQUÉ par un objet
+              // tenu devant la caméra (téléphone, feuille...) — retour
+              // utilisateur du 22/08 : le surveillant ne voyait que "Visage
+              // non détecté" sur des captures montrant pourtant clairement
+              // un téléphone, car la détection d'objet tourne indépendamment
+              // (son propre compteur/délai, voir visionEnrichedTick) et
+              // n'avait pas forcément atteint son propre seuil au même
+              // instant. On vérifie donc explicitement l'objet SUR CE MÊME
+              // CADRE dès qu'un visage manque, plutôt que d'attendre que les
+              // deux détections s'alignent par hasard.
+              // Seuil abaissé (0.4, pas 0.5) — vérifié avec de vraies photos
+              // de production montrant ce cas exact : le téléphone masquant
+              // le visage n'atteignait que 0.46 de confiance sur l'une
+              // d'elles. Acceptable ici car le contexte (visage déjà confirmé
+              // absent 3 fois de suite) est un signal fort en soi ; on ne
+              // fait qu'enrichir l'explication d'un événement déjà journalisé,
+              // pas créer une nouvelle accusation isolée.
+              const objHere = analyzeObjects(vid, now, 0.4)
+              const objLabel = objHere?.phoneDetected?'téléphone':objHere?.bookDetected?'livre/document':objHere?.otherScreenDetected?'écran supplémentaire':null
+              if (objLabel) {
+                const detail = objHere!.matches.map(m=>`${m.label} (confiance ${(m.score*100).toFixed(0)}%)`).join(', ')
+                warning(`Visage masqué — ${objLabel} détecté devant la caméra`)
+                setAlerts(a => [{type:'object',msg:`Visage masqué — ${objLabel} détecté devant la caméra`,at:new Date().toLocaleTimeString('fr-FR')},...a])
+                logActivity(curAId,'face_hidden_object_detected',`Visage non détecté, objet identifié dans le cadre : ${detail}`).catch(()=>{})
+                logProctoring(curAId,'face_hidden_object_detected',`Visage non détecté, objet identifié dans le cadre : ${detail}`).catch(()=>{})
+                captureSnapshot('face_hidden_object_detected',curAId,false,0,null,5_000)
               } else {
-                warning('Aucun visage détecté — repositionnez-vous face à la caméra')
-                logActivity(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
-                logProctoring(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
+                const brightness = sampleBrightness(vid)
+                const poorLight = brightness!==null && (brightness<BRIGHTNESS_LOW||brightness>BRIGHTNESS_HIGH)
+                if(poorLight){
+                  warning("Éclairage insuffisant — l'IA ne peut pas vérifier votre présence de façon fiable, améliorez la luminosité")
+                  logActivity(curAId,'no_face_low_light',`Absent ${consNoFaceRef.current} vérifications consécutives (luminosité=${brightness})`).catch(()=>{})
+                  logProctoring(curAId,'no_face_low_light',`Absent ${consNoFaceRef.current} vérifications consécutives (luminosité=${brightness})`).catch(()=>{})
+                } else {
+                  warning('Aucun visage détecté — repositionnez-vous face à la caméra')
+                  logActivity(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
+                  logProctoring(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
+                }
+                captureSnapshot(poorLight?'no_face_low_light':'no_face_detected',curAId,false,0,null,5_000)
               }
-              captureSnapshot(poorLight?'no_face_low_light':'no_face_detected',curAId,false,0,null,5_000)
             }
           } else { setFaceStatus('warn'); setFaceIssue('no_face') }
         } else if(count>1){

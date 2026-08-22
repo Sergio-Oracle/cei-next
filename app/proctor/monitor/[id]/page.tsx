@@ -107,6 +107,7 @@ const EVENT_LABEL_MAP: Record<string, string> = {
   periodic:                'Capture périodique',
   no_face_detected:        'Aucun visage détecté',
   no_face_low_light:       'Visage non détecté (éclairage insuffisant — non pénalisant)',
+  face_hidden_object_detected: 'Visage masqué par un objet',
   no_face:                 'Aucun visage détecté',
   multiple_faces:          'Plusieurs visages détectés',
   camera_blocked:          'Caméra bloquée',
@@ -142,6 +143,7 @@ const EVENT_LABEL_MAP: Record<string, string> = {
   liveness_check_failed:   'Contrôle de vivacité échoué (aucun clignement détecté)',
   sustained_audio_detected:'Bruit prolongé détecté',
   multi_screen_detected:   'Plusieurs écrans détectés',
+  env_scan_object_detected:'Objet repéré pendant le scan environnement',
 }
 
 /* ── Page ────────────────────────────────────────────────────────────────── */
@@ -2182,6 +2184,7 @@ export default function ProctorMonitorPage() {
                   tab_closed:             { icon: 'door-open',           color: '#ef4444' },
                   no_face_detected:       { icon: 'user-slash',          color: '#ef4444' },
                   no_face_low_light:      { icon: 'lightbulb',           color: '#f59e0b' },
+                  face_hidden_object_detected: { icon: 'mobile-screen',  color: '#ef4444' },
                   no_face:                { icon: 'user-slash',          color: '#ef4444' },
                   multiple_faces:         { icon: 'users',               color: '#ef4444' },
                   teacher_warning:        { icon: 'exclamation-triangle', color: '#f59e0b' },
@@ -2208,6 +2211,7 @@ export default function ProctorMonitorPage() {
                   head_turned:            { icon: 'rotate',              color: '#f59e0b' },
                   talking_detected:       { icon: 'comment-dots',        color: '#f59e0b' },
                   suspect_object_detected:{ icon: 'triangle-exclamation',color: '#ef4444' },
+                  env_scan_object_detected: { icon: 'triangle-exclamation', color: '#f59e0b' },
                   liveness_check_failed:  { icon: 'fingerprint',         color: '#f59e0b' },
                   sustained_audio_detected: { icon: 'microphone-lines',  color: '#f59e0b' },
                   multi_screen_detected:  { icon: 'display',             color: '#ef4444' },
