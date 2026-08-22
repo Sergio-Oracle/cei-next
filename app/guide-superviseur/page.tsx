@@ -110,7 +110,7 @@ export default function GuideSuperviseur() {
         </div>
 
         <div className="section" id="appels">
-          <div className="section-header"><div className="section-icon" style={{background:'#7c3aed'}}><i className="fas fa-fingerprint" /></div><h2>4. Répondre à une demande de vérification d&apos;identité</h2></div>
+          <div className="section-header"><div className="section-icon" style={{background:'#2563eb'}}><i className="fas fa-fingerprint" /></div><h2>4. Répondre à une demande de vérification d&apos;identité</h2></div>
           <div className="section-body">
             <p style={{color:'#475569',marginBottom:20}}>Chaque étudiant confirme son identité (visage ou empreinte digitale/Face ID) avant chaque accès à un examen — automatiquement, sans appel dans la grande majorité des cas. Un appel de vérification manuelle n&apos;est déclenché qu&apos;en cas d&apos;échec répété de la reconnaissance. Vous ne recevez ces demandes que si <strong>aucun surveillant n&apos;est assigné</strong> à cet étudiant pour cet examen.</p>
             <div className="steps">

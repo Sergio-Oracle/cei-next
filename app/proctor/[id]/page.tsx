@@ -234,7 +234,7 @@ export default function ProctorPage() {
         </div>
 
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={openMessages} className="pc-hdr-btn" style={{ background: 'rgba(139,92,246,.5)', position: 'relative' }}>
+          <button onClick={openMessages} className="pc-hdr-btn" style={{ background: 'rgba(37,99,235,.5)', position: 'relative' }}>
             <i className="fas fa-comments" /> Messages étudiants
           </button>
           <button onClick={() => { setRefreshing(true); load() }} className="pc-hdr-btn">
@@ -402,7 +402,7 @@ export default function ProctorPage() {
           {msgsLoading ? <SpinCenter /> : msgsPanel.msgs.length === 0 ? (
             <EmptySide icon="fa-comments" text="Aucun message reçu" />
           ) : msgsPanel.msgs.map((m, i) => (
-            <div key={i} style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,.05)', background: m.read ? 'transparent' : 'rgba(139,92,246,.08)' }}>
+            <div key={i} style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,.05)', background: m.read ? 'transparent' : 'rgba(37,99,235,.08)' }}>
               <div style={{ fontSize:13, fontWeight: 700, color: '#60a5fa', marginBottom: 4 }}>{m.student_name}</div>
               <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.8)', lineHeight: 1.5 }}>{m.content}</div>
               <div style={{ fontSize:12, color: 'rgba(255,255,255,.35)', marginTop: 4 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR')}</div>
@@ -506,7 +506,7 @@ function StudentCard({ s, onWarn, onMessage, onBan, onNote, onTime, onRec, onLog
             <button className="pc-action" onClick={onWarn} title="Avertir" style={{ background: 'rgba(245,158,11,.2)', color: '#f59e0b' }}><i className="fas fa-exclamation-triangle" /> Avertir</button>
             <button className="pc-action" onClick={onMessage} title="Message" style={{ background: 'rgba(59,130,246,.2)', color: '#60a5fa' }}><i className="fas fa-comment" /> Msg</button>
             <button className="pc-action" onClick={onTime} title="Temps supplémentaire" style={{ background: 'rgba(245,158,11,.15)', color: '#fbbf24' }}><i className="fas fa-hourglass-half" /> +Tps</button>
-            <button className="pc-action" onClick={onNote} title="Note surveillant" style={{ background: 'rgba(139,92,246,.2)', color: '#60a5fa' }}><i className="fas fa-sticky-note" /></button>
+            <button className="pc-action" onClick={onNote} title="Note surveillant" style={{ background: 'rgba(37,99,235,.2)', color: '#60a5fa' }}><i className="fas fa-sticky-note" /></button>
             <button className="pc-action" onClick={onBan} title="Exclure" style={{ background: 'rgba(239,68,68,.2)', color: '#ef4444' }}><i className="fas fa-ban" /> Exclure</button>
             <button className="pc-action" onClick={onRec} title="Enregistrement" style={{ background: 'rgba(239,68,68,.12)', color: '#fca5a5' }}><i className="fas fa-circle" style={{ color: '#ef4444' }} /> REC</button>
             <button className="pc-action" onClick={onLogs} title="Voir logs" style={{ background: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.6)' }}><i className="fas fa-list" /></button>

@@ -149,7 +149,7 @@ export default function AnswerBiometricCallModal({ examId, studentId, studentNam
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.75)', zIndex: 9500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: '#0f172a', borderRadius: 16, width: '100%', maxWidth: 440, overflow: 'hidden', border: '1px solid rgba(255,255,255,.1)', boxShadow: '0 20px 60px rgba(0,0,0,.5)' }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <i className="fas fa-fingerprint" style={{ color: '#a78bfa' }} />
+          <i className="fas fa-fingerprint" style={{ color: '#60a5fa' }} />
           <div>
             <div style={{ color: 'white', fontWeight: 700, fontSize:17 }}>Vérification d'identité — {studentName}</div>
             <div style={{ color: 'rgba(255,255,255,.5)', fontSize:13 }}>{examTitle}</div>
@@ -191,7 +191,7 @@ export default function AnswerBiometricCallModal({ examId, studentId, studentNam
             </div>
           ) : (
             <button onClick={() => { void confirmIdentity() }} disabled={verifying}
-              style={{ width: '100%', background: 'rgba(124,58,237,.25)', color: '#c4b5fd', border: '1px solid rgba(124,58,237,.4)', borderRadius: 8, padding: '9px', cursor: 'pointer', fontWeight: 700, fontSize:14.5 }}>
+              style={{ width: '100%', background: 'rgba(37,99,235,.25)', color: '#93c5fd', border: '1px solid rgba(37,99,235,.4)', borderRadius: 8, padding: '9px', cursor: 'pointer', fontWeight: 700, fontSize:14.5 }}>
               <i className={`fas ${verifying ? 'fa-spinner fa-spin' : 'fa-check'}`} /> Valider l'identité (après vérification pendant l'appel)
             </button>
           )}

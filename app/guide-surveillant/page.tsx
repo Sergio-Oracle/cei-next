@@ -235,7 +235,7 @@ export default function GuideSurveillant() {
 
         {/* 11. Appel de vérification d'identité biométrique */}
         <div className="section" id="identite">
-          <div className="section-header"><div className="section-icon" style={{background:'#7c3aed'}}><i className="fas fa-fingerprint" /></div><h2>11. Appel de vérification d&apos;identité (biométrie)</h2></div>
+          <div className="section-header"><div className="section-icon" style={{background:'#2563eb'}}><i className="fas fa-fingerprint" /></div><h2>11. Appel de vérification d&apos;identité (biométrie)</h2></div>
           <div className="section-body">
             <p style={{color:'#475569',marginBottom:20}}>Chaque étudiant doit désormais confirmer son identité (reconnaissance faciale ou empreinte digitale/Face ID) avant chaque accès à un examen. Si la reconnaissance échoue plusieurs fois de suite, un appel de vérification manuelle est déclenché automatiquement vers vous (ou le superviseur/enseignant à défaut).</p>
             <div className="steps">

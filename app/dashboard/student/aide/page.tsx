@@ -41,9 +41,9 @@ const CATEGORIES = [
     id: 'securite',
     icon: 'fas fa-fingerprint',
     label: 'Sécurité & identité',
-    color: '#7c3aed',
-    bg: '#f5f3ff',
-    bd: '#ddd6fe',
+    color: '#2563eb',
+    bg: '#eff6ff',
+    bd: '#bfdbfe',
     faqs: [
       { icon: 'fas fa-id-badge',    q: 'Pourquoi dois-je m\'identifier avant chaque examen ?',       r: 'C\'est une vérification obligatoire qui garantit que c\'est bien vous qui composez. Vous l\'enregistrez une seule fois (reconnaissance faciale ou empreinte digitale/Face ID), puis elle est vérifiée automatiquement à chaque accès à un examen.' },
       { icon: 'fas fa-camera-retro',q: 'Comment enregistrer ma reconnaissance faciale ?',            r: 'Sur l\'écran d\'inscription, choisissez "Reconnaissance faciale" puis "Prendre une photo" (caméra) ou "Téléverser une photo". Vérifiez l\'aperçu avant de valider — vous pouvez reprendre la photo si besoin.' },

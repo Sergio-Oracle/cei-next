@@ -391,14 +391,14 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         accepter/refuser, visible où que le surveillant/superviseur/professeur
         se trouve dans l'application. */}
     {incomingBiometricCall && !answeringBiometricCall && (
-      <div style={{ position: 'fixed', top: 70, right: 20, zIndex: 9400, background: '#0f172a', color: 'white', borderRadius: 12, padding: '14px 18px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(167,139,250,.4)' }}>
-        <i className="fas fa-fingerprint fa-shake" style={{ color: '#a78bfa', fontSize: 24 }} />
+      <div style={{ position: 'fixed', top: 70, right: 20, zIndex: 9400, background: '#0f172a', color: 'white', borderRadius: 12, padding: '14px 18px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(96,165,250,.4)' }}>
+        <i className="fas fa-fingerprint fa-shake" style={{ color: '#60a5fa', fontSize: 24 }} />
         <div>
           <div style={{ fontWeight: 700, fontSize:15.5 }}>Vérification d'identité</div>
           <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.7)' }}>{incomingBiometricCall.studentName}</div>
         </div>
         <button onClick={() => setAnsweringBiometricCall(true)}
-          style={{ background: '#7c3aed', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize:14.5, cursor: 'pointer' }}>
+          style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize:14.5, cursor: 'pointer' }}>
           <i className="fas fa-phone" /> Répondre
         </button>
         <button onClick={() => setIncomingBiometricCall(null)}

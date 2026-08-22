@@ -245,7 +245,7 @@ function ExamCard({
         {/* Actions active */}
         {exam.status === 'active' && (
           <>
-            <Link href={`/proctor/monitor/${exam.id}`} style={btn('rgba(124,58,237,.1)', '#1d4ed8')}>
+            <Link href={`/proctor/monitor/${exam.id}`} style={btn('rgba(37,99,235,.1)', '#1d4ed8')}>
               <i className="fas fa-shield-alt" /> Surveiller
             </Link>
             <button onClick={() => onExtend(exam.id)} disabled={busy} style={btn('rgba(16,185,129,.1)', '#059669')}>

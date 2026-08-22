@@ -213,7 +213,7 @@ export default function GuideEnseignant() {
               <div className="feature-item"><i className="fas fa-chart-line" /><h5>Score de risque</h5><p>0–100% calculé en temps réel selon les incidents détectés</p></div>
               <div className="feature-item"><i className="fas fa-exclamation-triangle" /><h5>Envoyer un avertissement</h5><p>Message affiché immédiatement sur l&apos;écran de l&apos;étudiant avec popup orange</p></div>
               <div className="feature-item"><i className="fas fa-comment" /><h5>Envoyer un message</h5><p>Communication directe avec l&apos;étudiant (popup bleue sur son écran)</p></div>
-              <div className="feature-item"><i className="fas fa-comment-dots" /><h5>Messages des étudiants</h5><p>Les étudiants peuvent vous écrire et demander un appel vocal via le bouton microphone violet</p></div>
+              <div className="feature-item"><i className="fas fa-comment-dots" /><h5>Messages des étudiants</h5><p>Les étudiants peuvent vous écrire et demander un appel vocal via le bouton messages étudiants</p></div>
               <div className="feature-item"><i className="fas fa-ban" /><h5>Exclure un étudiant</h5><p>Bannissement immédiat avec saisie de la raison — irréversible</p></div>
               <div className="feature-item"><i className="fas fa-list" /><h5>Logs d&apos;activité</h5><p>Historique complet des événements pour chaque étudiant</p></div>
             </div>
@@ -321,7 +321,7 @@ export default function GuideEnseignant() {
                 <div className="step-num">3</div>
                 <div className="step-content">
                   <h4>Répondre à une demande d&apos;appel étudiant</h4>
-                  <p>Quand un étudiant clique sur le <strong>bouton microphone violet</strong>, le message <em>&quot;[DEMANDE_APPEL]&quot;</em> apparaît dans sa liste de messages avec un bouton <strong>&quot;Rejoindre l&apos;appel&quot;</strong>. Cliquez dessus pour démarrer l&apos;appel privé.</p>
+                  <p>Quand un étudiant clique sur le <strong>bouton messages étudiants</strong>, le message <em>&quot;[DEMANDE_APPEL]&quot;</em> apparaît dans sa liste de messages avec un bouton <strong>&quot;Rejoindre l&apos;appel&quot;</strong>. Cliquez dessus pour démarrer l&apos;appel privé.</p>
                 </div>
               </div>
               <div className="step">
