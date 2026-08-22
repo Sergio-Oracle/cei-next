@@ -40,8 +40,14 @@ const WASM_BASE_LOCAL      = '/mediapipe/wasm'
 const WASM_BASE_CDN        = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.0/wasm'
 const FACE_MODEL_LOCAL     = '/models/mediapipe/face_landmarker.task'
 const FACE_MODEL_CDN       = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
-const OBJECT_MODEL_LOCAL   = '/models/mediapipe/efficientdet_lite0.tflite'
-const OBJECT_MODEL_CDN     = 'https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float32/1/efficientdet_lite0.tflite'
+// EfficientDet-Lite2 (int8) plutôt que Lite0 (22/08, retour utilisateur sur
+// des objets/écrans non détectés pendant le scan environnemental) — backbone
+// plus profond, précision COCO nettement supérieure (~33 mAP vs ~26 pour
+// Lite0), et la version quantifiée int8 est même plus légère (7,5 Mo contre
+// 13,8 Mo pour l'ancien Lite0 float32) donc pas de régression de temps de
+// chargement malgré le modèle plus capable.
+const OBJECT_MODEL_LOCAL   = '/models/mediapipe/efficientdet_lite2.tflite'
+const OBJECT_MODEL_CDN     = 'https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite2/int8/1/efficientdet_lite2.tflite'
 
 let faceLandmarker: FaceLandmarker | null = null
 let objectDetector: ObjectDetector | null = null
