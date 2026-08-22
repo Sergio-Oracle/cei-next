@@ -63,10 +63,14 @@ async function loadVisionModels(wasmBase: string, faceModelUrl: string, objectMo
     ObjectDetector.createFromOptions(vision, {
       baseOptions: { modelAssetPath: objectModelUrl, delegate: 'CPU' },
       runningMode: 'VIDEO',
-      // 0.5 acceptait des classifications trop incertaines avec ce modèle
-      // léger (efficientdet_lite0) — relevé à 0.65, combiné à l'exigence
-      // de détection sur 2 vérifications consécutives côté appelant.
-      scoreThreshold: 0.65,
+      // Remonté à 0.65 puis reredescendu à 0.5 (22/08, retour utilisateur) :
+      // un téléphone tenu brièvement/à un angle imparfait n'atteignait pas
+      // 0.65 avec ce modèle léger (efficientdet_lite0) et passait inaperçu —
+      // un vrai risque de triche non détecté est jugé pire qu'une fausse
+      // alerte occasionnelle. L'exigence de 2 vérifications consécutives
+      // côté appelant (visionEnrichedTick) reste le principal garde-fou
+      // contre le bruit.
+      scoreThreshold: 0.5,
       maxResults: 5,
       // 'person' inclus : nécessaire au scan environnement 360° (Phase 1)
       // qui compte les personnes présentes, pas seulement les objets suspects.

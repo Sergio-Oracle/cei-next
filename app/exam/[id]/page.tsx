@@ -412,9 +412,8 @@ export default function ExamPage() {
      perdre en sensibilité sur un vrai détournement du regard, qui reste une
      déviation large et soutenue même après cette marge personnalisée. */
   const gazeBaselineRef = useRef<{ x: number; y: number; spreadX: number; spreadY: number; yaw: number; spreadYaw: number } | null>(null)
-  const objectTickCountRef = useRef(0)
-  // Exige le MÊME type d'objet sur 2 vérifications consécutives (~20s, un
-  // tick sur deux) avant d'alerter — un objet réellement présent (téléphone,
+  // Exige le MÊME type d'objet sur 2 vérifications consécutives (~5-10s,
+  // à chaque tick) avant d'alerter — un objet réellement présent (téléphone,
   // livre, écran) reste visible sur la durée ; une image isolée mal
   // classifiée (reflet, objet du décor confondu un instant) ne se répète pas.
   const consObjectRef = useRef<{ what: string | null; count: number }>({ what: null, count: 0 })
@@ -1903,24 +1902,25 @@ export default function ExamPage() {
         consGazeAwayRef.current=0; consHeadTurnRef.current=0; consMouthRef.current=0
       }
 
-      // Détection d'objets : un tick sur deux (~10s) pour limiter le coût CPU.
-      objectTickCountRef.current++
-      if (objectTickCountRef.current%2===0) {
-        const obj = analyzeObjects(vid, now)
-        const what = obj?.phoneDetected?'téléphone':obj?.bookDetected?'livre/document':obj?.otherScreenDetected?'écran supplémentaire':null
-        if (what && what===consObjectRef.current.what) {
-          consObjectRef.current.count++
-        } else {
-          consObjectRef.current = { what, count: what ? 1 : 0 }
-        }
-        if (what && consObjectRef.current.count>=2 && now-(lastVisionAlertRef.current.object||0)>COOLDOWN) {
-          lastVisionAlertRef.current.object=now
-          warning(`Objet suspect détecté : ${what}`)
-          setAlerts(a => [{type:'object',msg:`Objet suspect détecté : ${what}`,at:new Date().toLocaleTimeString('fr-FR')},...a])
-          logActivity(curAId,'suspect_object_detected',`Objets détectés : ${obj!.labels.join(', ')}`).catch(()=>{})
-          logProctoring(curAId,'suspect_object_detected',`Objets détectés : ${obj!.labels.join(', ')}`).catch(()=>{})
-          captureSnapshot('suspect_object_detected',curAId,true,1,null,5_000)
-        }
+      // Détection d'objets : à chaque tick (~5s). Réduit de "un tick sur deux"
+      // (22/08, retour utilisateur) — un téléphone tenu brièvement pouvait
+      // n'être vu qu'une fois avant de disparaître du cadre, jamais assez
+      // pour atteindre 2 vérifications consécutives ; l'exigence de 2
+      // détections consécutives ci-dessous reste le garde-fou anti-bruit.
+      const obj = analyzeObjects(vid, now)
+      const what = obj?.phoneDetected?'téléphone':obj?.bookDetected?'livre/document':obj?.otherScreenDetected?'écran supplémentaire':null
+      if (what && what===consObjectRef.current.what) {
+        consObjectRef.current.count++
+      } else {
+        consObjectRef.current = { what, count: what ? 1 : 0 }
+      }
+      if (what && consObjectRef.current.count>=2 && now-(lastVisionAlertRef.current.object||0)>COOLDOWN) {
+        lastVisionAlertRef.current.object=now
+        warning(`Objet suspect détecté : ${what}`)
+        setAlerts(a => [{type:'object',msg:`Objet suspect détecté : ${what}`,at:new Date().toLocaleTimeString('fr-FR')},...a])
+        logActivity(curAId,'suspect_object_detected',`Objets détectés : ${obj!.labels.join(', ')}`).catch(()=>{})
+        logProctoring(curAId,'suspect_object_detected',`Objets détectés : ${obj!.labels.join(', ')}`).catch(()=>{})
+        captureSnapshot('suspect_object_detected',curAId,true,1,null,5_000)
       }
     }
 
