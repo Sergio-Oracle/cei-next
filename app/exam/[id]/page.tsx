@@ -941,6 +941,16 @@ export default function ExamPage() {
       setCodeRequired(false)
       setPhase('permissions')
     } catch (e:any) {
+      // Filet de sécurité : la preuve biométrique (valable 180s) a pu expirer
+      // entre l'affichage de cet écran et le clic sur "Reprendre" — redirige
+      // vers la vérification plutôt que d'afficher un message confus alors
+      // que l'écran de code reste affiché sans action possible.
+      if (e?.data?.biometric_required) {
+        setCodeRequired(false)
+        setBiometricRequired(true)
+        initBiometricCheck()
+        return
+      }
       if (e?.data?.code) setAccessCode(e.data.code)
       setPastedCode('')
       toastErr(e.message||'Code invalide')
