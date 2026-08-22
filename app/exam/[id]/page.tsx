@@ -346,6 +346,14 @@ export default function ExamPage() {
   const privateTeacherAudRef= useRef<HTMLAudioElement|null>(null)
   const lastMsgTsRef    = useRef<string|null>(null)
   const sessionEndedRef = useRef(false)
+  // Période de grâce anti-fraude au tout début de l'examen : requestFullscreen()
+  // est asynchrone (enterExam) mais le montage des écouteurs blur/visibilitychange
+  // /fullscreenchange est immédiat — la transition plein écran elle-même
+  // déclenche parfois un évènement de perte de focus transitoire côté
+  // navigateur, faussement compté comme une vraie sortie d'examen (retour
+  // utilisateur du 22/08 : "on ne fait rien mais on voit perte de focus").
+  const examEnterTimeRef = useRef(0)
+  const IGNORE_FOCUS_EVENTS_MS = 3000
   // Filet de sécurité PWA/standalone : les événements fullscreenchange/blur
   // ne sont pas garantis de se déclencher de façon fiable dans une fenêtre
   // d'app installée (pas d'onglet à quitter, comportement plein écran /
@@ -563,6 +571,7 @@ export default function ExamPage() {
     if (phase !== 'exam') return
     const onVis = async () => {
       if (breakActiveRef.current) return
+      if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
       if (!document.hidden) return
       const next = tabCount + 1; setTabCount(next)
       setRiskScore(r => Math.min(r + 10, 100))
@@ -585,6 +594,7 @@ export default function ExamPage() {
       // est perdu immédiatement. Le backend reconnaît déjà 'window_blur'
       // dans ses seuils (severity_tab_events) — seul l'envoi manquait ici.
       if (sessionEndedRef.current || breakActiveRef.current) return
+      if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
       const next = tabCount + 1; setTabCount(next)
       setRiskScore(r => Math.min(r + 10, 100))
       setAlerts(a => [{type:'blur',msg:`Perte de focus détectée (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
@@ -609,6 +619,7 @@ export default function ExamPage() {
     }
     const onFs = () => {
       if (breakActiveRef.current) return
+      if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
       if (!document.fullscreenElement && !sessionEndedRef.current) {
         if (fsPollGuardRef.current) return // déjà signalé, en attente du clic "Revenir à l'examen"
         fsPollGuardRef.current = true
@@ -637,6 +648,7 @@ export default function ExamPage() {
     // sortie après coup.
     const pollState = () => {
       if (sessionEndedRef.current || breakActiveRef.current) return
+      if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
       onFs()
       if (!document.hasFocus()) {
         if (focusPollGuardRef.current) return
@@ -1102,6 +1114,7 @@ export default function ExamPage() {
 
   function enterExam() {
     if (!exam||!attempt) return
+    examEnterTimeRef.current = Date.now()
     document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
     pauseUsedRef.current = attempt.pause_used || false
     const totalSec   = exam.duration_minutes*60+extraMinRef.current*60
@@ -1160,6 +1173,12 @@ export default function ExamPage() {
     setOnBreak(false)
     setBreakResumeAt(null)
     startTimerInterval()
+    // Même filet de sécurité qu'à l'entrée dans l'examen : si l'étudiant a
+    // quitté le plein écran pendant la pause (normal), la re-demande ci-dessous
+    // et la période de grâce évitent qu'un faux positif de perte de focus ne
+    // se déclenche immédiatement au retour.
+    examEnterTimeRef.current = Date.now()
+    document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => {})
     success('Examen repris')
   }
 
@@ -1824,6 +1843,7 @@ export default function ExamPage() {
         if (consGazeAwayRef.current>=CONSEC_ALERT_GAZE && now-(lastVisionAlertRef.current.gaze||0)>COOLDOWN) {
           lastVisionAlertRef.current.gaze=now
           warning('Regard détourné de l\'écran de façon prolongée')
+          setAlerts(a => [{type:'gaze',msg:'Regard détourné de l\'écran de façon prolongée',at:new Date().toLocaleTimeString('fr-FR')},...a])
           logActivity(curAId,'gaze_away',`Regard détourné (${consGazeAwayRef.current} vérifications consécutives)`).catch(()=>{})
           logProctoring(curAId,'gaze_away','Regard détourné de façon prolongée').catch(()=>{})
         }
@@ -1835,6 +1855,7 @@ export default function ExamPage() {
         if (consHeadTurnRef.current>=CONSEC_ALERT_GAZE && now-(lastVisionAlertRef.current.head||0)>COOLDOWN) {
           lastVisionAlertRef.current.head=now
           warning('Tête tournée hors de l\'écran de façon prolongée')
+          setAlerts(a => [{type:'head',msg:'Tête tournée hors de l\'écran de façon prolongée',at:new Date().toLocaleTimeString('fr-FR')},...a])
           logActivity(curAId,'head_turned',`Tête tournée (yaw=${sig.headYaw?.toFixed(2)})`).catch(()=>{})
           logProctoring(curAId,'head_turned','Tête tournée de façon prolongée').catch(()=>{})
         }
@@ -1843,6 +1864,8 @@ export default function ExamPage() {
         consMouthRef.current = talking ? consMouthRef.current+1 : 0
         if (consMouthRef.current>=CONSEC_ALERT && now-(lastVisionAlertRef.current.mouth||0)>COOLDOWN) {
           lastVisionAlertRef.current.mouth=now
+          warning('Parole probable détectée')
+          setAlerts(a => [{type:'talking',msg:'Parole probable détectée',at:new Date().toLocaleTimeString('fr-FR')},...a])
           logActivity(curAId,'talking_detected','Bouche ouverte de façon prolongée — parole probable').catch(()=>{})
           logProctoring(curAId,'talking_detected','Parole probable détectée').catch(()=>{})
         }
@@ -1863,6 +1886,7 @@ export default function ExamPage() {
         if (what && consObjectRef.current.count>=2 && now-(lastVisionAlertRef.current.object||0)>COOLDOWN) {
           lastVisionAlertRef.current.object=now
           warning(`Objet suspect détecté : ${what}`)
+          setAlerts(a => [{type:'object',msg:`Objet suspect détecté : ${what}`,at:new Date().toLocaleTimeString('fr-FR')},...a])
           logActivity(curAId,'suspect_object_detected',`Objets détectés : ${obj!.labels.join(', ')}`).catch(()=>{})
           logProctoring(curAId,'suspect_object_detected',`Objets détectés : ${obj!.labels.join(', ')}`).catch(()=>{})
           captureSnapshot('suspect_object_detected',curAId,true,1,null,5_000)
@@ -2438,7 +2462,7 @@ export default function ExamPage() {
             écran (requestFullscreen échoue silencieusement hors interaction
             directe). */}
         {focusLost && (
-          <div style={{position:'fixed',inset:0,zIndex:10000,background:'rgba(15,23,42,.94)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,color:'#fff',textAlign:'center',padding:24}}>
+          <div style={{position:'fixed',inset:0,zIndex:10000,background:'#0f172a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,color:'#fff',textAlign:'center',padding:24}}>
             <i className="fas fa-triangle-exclamation" style={{fontSize:48,color:'#f59e0b'}} />
             <h2 style={{fontSize:24,fontWeight:700,margin:0}}>Vous avez quitté l&apos;examen</h2>
             <p style={{maxWidth:420,color:'#cbd5e1',margin:0,fontSize:17,lineHeight:1.5}}>
