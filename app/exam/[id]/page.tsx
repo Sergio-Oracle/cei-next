@@ -1066,14 +1066,24 @@ export default function ExamPage() {
         objectBestScore[what] = Math.max(objectBestScore[what]||0, bestHere)
       }
       setEnvScanProgress(Math.min(100, Math.round(((Date.now()-start)/SCAN_DURATION_MS)*100)))
-      await new Promise(r => setTimeout(r, 700))
+      // Cadence resserrée (700ms→400ms, 22/08) : vérifié avec de vraies
+      // photos de production passées dans le vrai modèle — le flou de
+      // mouvement pendant le balayage de la caméra (demandé explicitement
+      // par la consigne "tournez lentement") suffit à faire chuter les
+      // scores de détection sous le seuil (un écran détecté à 0.5-0.6 sur
+      // une image nette ne ressort plus du tout une fois flouté). Plus
+      // d'échantillons pendant les 8s du scan augmente la chance de tomber
+      // sur un instant où la caméra est momentanément stable.
+      await new Promise(r => setTimeout(r, 400))
     }
     setEnvScanProgress(100)
-    // Exige au moins 2 détections (comme en cours d'examen) pour filtrer le
-    // bruit d'une seule frame — le scan dure 8s, largement de quoi confirmer
-    // une présence réelle sans exiger la persistance longue utilisée en
-    // examen (30-60s), inutile ici vu le balayage volontaire de la caméra.
-    const objectsDetected = Object.entries(objectSeenCount).filter(([,c])=>c>=2).map(([w])=>w)
+    // Exige seulement 1 détection ici (contre 2 en cours d'examen) — le flou
+    // de mouvement pendant le balayage réduit déjà fortement les occasions
+    // de détection nette (voir ci-dessus) ; exiger 2 coups au lieu d'1 ferait
+    // rater des objets pourtant réellement présents pour un gain de fiabilité
+    // marginal, alors que ce signal reste purement informatif (jamais compté
+    // comme fraude).
+    const objectsDetected = Object.entries(objectSeenCount).filter(([,c])=>c>=1).map(([w])=>w)
     setEnvScanObjects(objectsDetected)
 
     const aId = attemptRef.current
