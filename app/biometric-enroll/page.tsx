@@ -54,7 +54,7 @@ function BiometricEnrollInner() {
     setFaceReady(false)
     setStatusMsg('Ouverture de la caméra…')
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } } })
       streamRef.current = stream
       if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play().catch(() => {}) }
       setStatusMsg('Chargement du modèle de reconnaissance…')

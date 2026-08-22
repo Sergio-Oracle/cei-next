@@ -59,13 +59,17 @@ export async function captureAveragedDescriptor(video: HTMLVideoElement): Promis
   const avg = new Float32Array(size)
   for (const d of captured) for (let j = 0; j < size; j++) avg[j] += d[j] / 3
 
+  // Photo de référence à la résolution réelle du flux caméra (pas 320x240
+  // fixe comme les snapshots de surveillance périodiques pendant l'examen —
+  // ici c'est LA photo d'identité, la netteté prime sur la légèreté).
   const c = document.createElement('canvas')
-  c.width = 320; c.height = 240
-  c.getContext('2d')!.drawImage(video, 0, 0, 320, 240)
+  c.width = video.videoWidth || 640
+  c.height = video.videoHeight || 480
+  c.getContext('2d')!.drawImage(video, 0, 0, c.width, c.height)
 
   return {
     descriptor: Array.from(avg),
-    snapshotDataUrl: c.toDataURL('image/jpeg', 0.8),
+    snapshotDataUrl: c.toDataURL('image/jpeg', 0.92),
   }
 }
 
@@ -80,7 +84,10 @@ export async function captureDescriptorFromImage(img: HTMLImageElement): Promise
   const det = await fa.detectSingleFace(img, opts).withFaceLandmarks().withFaceDescriptor()
   if (!det) return null
 
-  const maxDim = 320
+  // Ne réduit que si la photo dépasse largement une taille HD raisonnable —
+  // ne jamais dégrader une photo déjà correcte (min(1, ...) empêche aussi
+  // tout agrandissement d'une petite photo).
+  const maxDim = 1280
   const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight))
   const c = document.createElement('canvas')
   c.width = Math.round(img.naturalWidth * scale)
@@ -89,7 +96,7 @@ export async function captureDescriptorFromImage(img: HTMLImageElement): Promise
 
   return {
     descriptor: Array.from(det.descriptor as Float32Array),
-    snapshotDataUrl: c.toDataURL('image/jpeg', 0.8),
+    snapshotDataUrl: c.toDataURL('image/jpeg', 0.92),
   }
 }
 
