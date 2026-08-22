@@ -264,6 +264,13 @@ export default function ExamPage() {
   const [envScanStatus, setEnvScanStatus] = useState<'idle'|'loading_ai'|'scanning'|'blocked'|'ok'|'degraded'>('idle')
   const [envScanProgress, setEnvScanProgress] = useState(0)
   const [envScanMaxPeople, setEnvScanMaxPeople] = useState(0)
+  // Objets suspects vus pendant le scan d'environnement — jusqu'ici le scan
+  // ne comptait QUE les personnes (countPeople), jamais les objets
+  // (analyzeObjects), alors que c'est le moment idéal (caméra balayée sur
+  // toute la pièce) pour les repérer. Informatif seulement (pas de blocage,
+  // comme pour la détection en cours d'examen) : un livre sur une étagère
+  // lointaine, par exemple, n'est pas en soi une preuve de fraude.
+  const [envScanObjects, setEnvScanObjects] = useState<string[]>([])
   const scanVideoRef = useRef<HTMLVideoElement|null>(null)
   /* Phase 7 : contrôle de vivacité à la capture de référence faciale. */
   const [livenessStatus, setLivenessStatus] = useState<'idle'|'waiting_blink'|'ok'>('idle')
@@ -1043,15 +1050,30 @@ export default function ExamPage() {
     setEnvScanStatus('scanning')
     const start = Date.now()
     let maxPeople = 0
+    const objectSeenCount: Record<string, number> = {}
     while (Date.now() - start < SCAN_DURATION_MS) {
-      const n = countPeople(vid, Date.now())
+      const now = Date.now()
+      const n = countPeople(vid, now)
       if (n !== null && n > maxPeople) { maxPeople = n; setEnvScanMaxPeople(n) }
+      const obj = analyzeObjects(vid, now)
+      const what = obj?.phoneDetected?'téléphone':obj?.bookDetected?'livre/document':obj?.otherScreenDetected?'écran supplémentaire':null
+      if (what) objectSeenCount[what] = (objectSeenCount[what]||0) + 1
       setEnvScanProgress(Math.min(100, Math.round(((Date.now()-start)/SCAN_DURATION_MS)*100)))
       await new Promise(r => setTimeout(r, 700))
     }
     setEnvScanProgress(100)
+    // Exige au moins 2 détections (comme en cours d'examen) pour filtrer le
+    // bruit d'une seule frame — le scan dure 8s, largement de quoi confirmer
+    // une présence réelle sans exiger la persistance longue utilisée en
+    // examen (30-60s), inutile ici vu le balayage volontaire de la caméra.
+    const objectsDetected = Object.entries(objectSeenCount).filter(([,c])=>c>=2).map(([w])=>w)
+    setEnvScanObjects(objectsDetected)
 
     const aId = attemptRef.current
+    if (objectsDetected.length && aId) {
+      logActivity(aId,'env_scan_object_detected',`Objets détectés pendant le scan : ${objectsDetected.join(', ')}`).catch(()=>{})
+      logProctoring(aId,'env_scan_object_detected',`Objets détectés pendant le scan : ${objectsDetected.join(', ')}`).catch(()=>{})
+    }
     if (maxPeople > 1) {
       setEnvScanStatus('blocked')
       if (aId) {
@@ -2354,9 +2376,17 @@ export default function ExamPage() {
           )}
 
           {envScanStatus==='ok' && (
-            <div style={{display:'flex',alignItems:'center',gap:10,color:'#10b981',fontSize:17,fontWeight:700,marginBottom:8}}>
-              <i className="fas fa-check-circle"/> Vérifié — cliquez pour démarrer l'examen en plein écran
-            </div>
+            <>
+              <div style={{display:'flex',alignItems:'center',gap:10,color:'#10b981',fontSize:17,fontWeight:700,marginBottom:8}}>
+                <i className="fas fa-check-circle"/> Vérifié — cliquez pour démarrer l'examen en plein écran
+              </div>
+              {envScanObjects.length>0 && (
+                <div style={{background:'rgba(245,158,11,.12)',border:'1px solid rgba(245,158,11,.3)',borderRadius:10,padding:'10px 14px',marginBottom:8,fontSize:14.5,color:'#fcd34d'}}>
+                  <i className="fas fa-triangle-exclamation" style={{marginRight:6}}/>
+                  Objet(s) repéré(s) dans la pièce : {envScanObjects.join(', ')} — signalé à votre surveillant, veillez à ne pas l'utiliser pendant l'examen.
+                </div>
+              )}
+            </>
           )}
 
           {(envScanStatus==='ok' || envScanStatus==='blocked' || envScanStatus==='degraded') && (
