@@ -332,7 +332,6 @@ export default function ExamPage() {
   const saveRef         = useRef<ReturnType<typeof setInterval>|null>(null)
   const saveFailedRef   = useRef(false)
   const msgPollRef      = useRef<ReturnType<typeof setInterval>|null>(null)
-  const snapshotRef     = useRef<ReturnType<typeof setInterval>|null>(null)
   const extraPollRef    = useRef<ReturnType<typeof setInterval>|null>(null)
   const multiScreenIntervalRef = useRef<ReturnType<typeof setInterval>|null>(null)
   const heartbeatRef    = useRef<ReturnType<typeof setInterval>|null>(null)
@@ -566,7 +565,7 @@ export default function ExamPage() {
 
   /* ── Nettoyage ────────────────────────────────────────────────────────── */
   useEffect(() => () => {
-    ;[timerRef,saveRef,msgPollRef,snapshotRef,extraPollRef,faceIntervalRef].forEach(r => { if (r.current) clearInterval(r.current) })
+    ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef].forEach(r => { if (r.current) clearInterval(r.current) })
     ;[saveRetryTimerRef,submitRetryTimerRef].forEach(r => { if (r.current) clearTimeout(r.current) })
     camStream.current?.getTracks().forEach(t => t.stop())
     screenStream.current?.getTracks().forEach(t => t.stop())
@@ -1155,7 +1154,6 @@ export default function ExamPage() {
     startTimerInterval()
     saveRef.current     = setInterval(()=>{const aId=attemptRef.current;if(aId)doAutoSave(aId)},30000)
     msgPollRef.current  = setInterval(()=>pollTeacherMessages(attempt.id),8000)
-    snapshotRef.current = setInterval(()=>captureSnapshot('periodic',attempt.id),120_000)
     extraPollRef.current= setInterval(()=>pollExtraTime(attempt.id),30000)
     // Heartbeat léger — alimente ExamAttempt.last_seen_at côté serveur pour
     // le badge "hors ligne" du surveillant. Volontairement silencieux en cas
@@ -1509,7 +1507,7 @@ export default function ExamPage() {
 
   function triggerBan() {
     sessionEndedRef.current=true; setShowBanModal(true)
-    ;[timerRef,saveRef,msgPollRef,snapshotRef,extraPollRef,faceIntervalRef].forEach(r=>{if(r.current)clearInterval(r.current)})
+    ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef].forEach(r=>{if(r.current)clearInterval(r.current)})
     if(lkRoomRef.current){try{lkRoomRef.current.disconnect()}catch{}}
   }
 
@@ -1997,7 +1995,7 @@ export default function ExamPage() {
   const handleSubmit = useCallback(async(auto=false)=>{
     const aId=attemptRef.current; if(!aId||submitting||sessionEndedRef.current) return
     sessionEndedRef.current=true; setSubmitting(true)
-    ;[timerRef,saveRef,msgPollRef,snapshotRef,extraPollRef].forEach(r=>{if(r.current)clearInterval(r.current)})
+    ;[timerRef,saveRef,msgPollRef,extraPollRef].forEach(r=>{if(r.current)clearInterval(r.current)})
     if(saveRetryTimerRef.current){clearTimeout(saveRetryTimerRef.current);saveRetryTimerRef.current=null}
     try { (navigator as any).keyboard?.unlock?.() } catch {}
     document.exitFullscreen?.().catch(()=>{})
