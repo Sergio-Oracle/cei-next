@@ -68,3 +68,39 @@ export async function captureAveragedDescriptor(video: HTMLVideoElement): Promis
     snapshotDataUrl: c.toDataURL('image/jpeg', 0.8),
   }
 }
+
+// Équivalent de captureAveragedDescriptor mais pour une photo statique
+// (upload) : un seul passage, pas de moyenne sur 3 frames (une image fixe ne
+// varie pas d'une frame à l'autre). Retourne null si aucun visage détecté.
+export async function captureDescriptorFromImage(img: HTMLImageElement): Promise<FaceCaptureResult | null> {
+  const fa = (window as any).faceapi
+  if (!fa) return null
+
+  const opts = new fa.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.55 })
+  const det = await fa.detectSingleFace(img, opts).withFaceLandmarks().withFaceDescriptor()
+  if (!det) return null
+
+  const maxDim = 320
+  const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight))
+  const c = document.createElement('canvas')
+  c.width = Math.round(img.naturalWidth * scale)
+  c.height = Math.round(img.naturalHeight * scale)
+  c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height)
+
+  return {
+    descriptor: Array.from(det.descriptor as Float32Array),
+    snapshotDataUrl: c.toDataURL('image/jpeg', 0.8),
+  }
+}
+
+// Charge un fichier image (upload) dans un <img> hors-DOM, prêt pour
+// face-api (nécessite que l'image soit décodée avant detectSingleFace).
+export function loadImageFile(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('Image illisible'))
+    img.src = url
+  })
+}
