@@ -67,6 +67,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               var reloaded = false;
               navigator.serviceWorker.addEventListener('controllerchange',function(){
                 if(reloaded) return;
+                // /phone-camera échange un code de couplage à USAGE UNIQUE dès
+                // le chargement puis établit une connexion LiveKit — un rechargement
+                // ici (typiquement déclenché par l'enregistrement du SW lors de la
+                // toute première visite d'un appareil, ex. un téléphone qui scanne
+                // le QR code pour la première fois) interrompt cette séquence
+                // irréversible en plein milieu et gâche le code (retour utilisateur
+                // du 24/08, constaté en conditions réelles via Playwright : le
+                // rechargement survient juste après l'échange du code, avant même
+                // la connexion LiveKit, laissant la page dans un état d'échec alors
+                // que le premier échange avait pourtant réussi).
+                if(window.location.pathname.indexOf('/phone-camera')===0) return;
                 reloaded = true;
                 window.location.reload();
               });

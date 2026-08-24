@@ -36,6 +36,13 @@ function PhoneCameraInner() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const roomRef = useRef<any>(null)
+  // Le code de couplage est à usage unique côté serveur — un double appel de
+  // connect() (constaté en réel : l'effet d'auto-connexion se déclenche deux
+  // fois) ferait échouer le second avec "code invalide", écrasant l'état
+  // "connecté" obtenu par le premier appel qui, lui, avait réussi. Verrou
+  // synchrone (pas juste un contrôle sur `phase`, mis à jour de façon
+  // asynchrone et donc pas fiable contre un second appel presque simultané).
+  const connectLockRef = useRef(false)
 
   useEffect(() => {
     return () => {
@@ -45,8 +52,10 @@ function PhoneCameraInner() {
   }, [])
 
   async function connect() {
+    if (connectLockRef.current) return
     const trimmed = code.trim()
     if (!trimmed) { setErrorMsg('Entrez le code affiché sur votre écran principal'); return }
+    connectLockRef.current = true
     setPhase('connecting')
     setErrorMsg('')
     try {
@@ -63,7 +72,7 @@ function PhoneCameraInner() {
       const LK = await loadLiveKit()
       const room = new LK.Room({ adaptiveStream: true, dynacast: true })
       roomRef.current = room
-      room.on(LK.RoomEvent.Disconnected, () => setPhase('error'))
+      room.on(LK.RoomEvent.Disconnected, () => { connectLockRef.current = false; setPhase('error') })
       await room.connect(res.ws_url, res.token)
 
       const camTrack = stream.getVideoTracks()[0]
@@ -72,6 +81,7 @@ function PhoneCameraInner() {
 
       setPhase('connected')
     } catch (e: any) {
+      connectLockRef.current = false
       setErrorMsg(e.message || e.data?.error || 'Échec de la connexion — vérifiez le code et réessayez')
       setPhase('error')
     }

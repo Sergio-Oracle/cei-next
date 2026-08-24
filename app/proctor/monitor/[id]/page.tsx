@@ -199,6 +199,10 @@ export default function ProctorMonitorPage() {
 
   /* boutons écran par étudiant (visible si screen share actif) */
   const [screenSet, setScreenSet] = useState<Set<string>>(new Set())
+  // Caméra secondaire (smartphone) — identités LiveKit "student-{id}-phone",
+  // suffixe strippé pour retrouver l'identité PRINCIPALE (livekit_identity)
+  // à laquelle rattacher la miniature dans VideoCard.
+  const [phoneLiveSet, setPhoneLiveSet] = useState<Set<string>>(new Set())
 
   /* identités LiveKit des étudiants actuellement connectés */
   const [liveSet, setLiveSet] = useState<Set<string>>(new Set())
@@ -514,6 +518,20 @@ export default function ProctorMonitorPage() {
           return
         }
         if (!identity.startsWith('student-')) return
+        // Caméra secondaire (smartphone) — identité student-{id}-phone,
+        // distincte de la caméra principale student-{id} mais NON gérée par
+        // le comptage livekit_identity===identity ci-dessous (aucune
+        // correspondance exacte possible, le suffixe -phone n'existe pas
+        // côté attempt). Rattachée à une miniature dédiée dans VideoCard.
+        if (identity.endsWith('-phone')) {
+          if (track.kind === 'video') {
+            const baseIdentity = identity.slice(0, -'-phone'.length)
+            videoTracksRef.current.set(identity, track)
+            setPhoneLiveSet(prev => new Set(prev).add(baseIdentity))
+            setTimeout(() => attachVideo(identity, track), 50)
+          }
+          return
+        }
         const isScreen = pub.source === LK.Track.Source.ScreenShare || pub.trackName === 'screen'
         if (track.kind === 'video') {
           if (isScreen) {
@@ -542,6 +560,14 @@ export default function ProctorMonitorPage() {
             next.set(identity, st)
             return next
           })
+          return
+        }
+        if (identity.endsWith('-phone') && identity.startsWith('student-')) {
+          if (track.kind === 'video') {
+            const baseIdentity = identity.slice(0, -'-phone'.length)
+            videoTracksRef.current.delete(identity)
+            setPhoneLiveSet(prev => { const n = new Set(prev); n.delete(baseIdentity); return n })
+          }
           return
         }
         const isScreen = pub.source === LK.Track.Source?.ScreenShare || pub.trackName === 'screen'
@@ -579,7 +605,7 @@ export default function ProctorMonitorPage() {
           })
           return
         }
-        if (ident.startsWith('student-')) {
+        if (ident.startsWith('student-') && !ident.endsWith('-phone')) {
           setLiveSet(prev => new Set(prev).add(ident))
         }
       })
@@ -600,6 +626,12 @@ export default function ProctorMonitorPage() {
             }
             return prev
           })
+          return
+        }
+        if (ident.startsWith('student-') && ident.endsWith('-phone')) {
+          const baseIdentity = ident.slice(0, -'-phone'.length)
+          videoTracksRef.current.delete(ident)
+          setPhoneLiveSet(prev => { const n = new Set(prev); n.delete(baseIdentity); return n })
           return
         }
         if (ident.startsWith('student-')) {
@@ -629,10 +661,20 @@ export default function ProctorMonitorPage() {
           initProctorStatus.set(ident, st)
           return
         }
-        if (ident.startsWith('student-')) alreadyLive.push(ident)
+        if (!ident.startsWith('student-')) return
+        if (ident.endsWith('-phone')) {
+          const baseIdentity = ident.slice(0, -'-phone'.length)
+          p.trackPublications.forEach((pub: any) => {
+            if (!pub.track || pub.kind !== 'video') return
+            videoTracksRef.current.set(ident, pub.track)
+            setPhoneLiveSet(prev => new Set(prev).add(baseIdentity))
+            setTimeout(() => attachVideo(ident, pub.track), 100)
+          })
+          return
+        }
+        alreadyLive.push(ident)
         p.trackPublications.forEach((pub: any) => {
           if (!pub.track || pub.kind !== 'video') return
-          if (!ident.startsWith('student-')) return
           const isScreen = pub.source === LK.Track.Source.ScreenShare || pub.trackName === 'screen'
           if (isScreen) {
             screenTracksRef.current.set(ident, pub.track)
@@ -1603,6 +1645,7 @@ export default function ProctorMonitorPage() {
               <VideoCard key={s.attempt_id} s={s}
                 recActive={recSet.has(s.attempt_id)}
                 screenAvail={screenSet.has(s.livekit_identity)}
+                phoneLive={phoneLiveSet.has(s.livekit_identity)}
                 onMsg={type => openMsg(s, type)}
                 onBan={() => openBan(s)}
                 onRec={() => toggleStudentRec(s.attempt_id)}
@@ -2333,10 +2376,11 @@ function AgentBanner({ agent, lastCheck, studentsCount }: { agent: AgentStatus |
   )
 }
 
-function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, onCall, onExtraTime, onNote, onLogs }: {
+function VideoCard({ s, recActive, screenAvail, phoneLive, onMsg, onBan, onRec, onScreen, onCall, onExtraTime, onNote, onLogs }: {
   s: Student
   recActive:    boolean
   screenAvail:  boolean
+  phoneLive:    boolean
   onMsg:        (t: 'message' | 'warning') => void
   onBan:        () => void
   onRec:        () => void
@@ -2367,6 +2411,16 @@ function VideoCard({ s, recActive, screenAvail, onMsg, onBan, onRec, onScreen, o
         </div>
         <video id={`video-${s.livekit_identity}`} autoPlay playsInline
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'none' }} />
+
+        {/* Caméra secondaire (smartphone) — miniature en incrustation, angle latéral */}
+        {phoneLive && (
+          <div title="Caméra secondaire (smartphone)"
+            style={{ position: 'absolute', bottom: 6, right: 6, width: 64, height: 48, borderRadius: 6, overflow: 'hidden', border: '1.5px solid rgba(255,255,255,.5)', boxShadow: '0 2px 8px rgba(0,0,0,.5)', zIndex: 3, background: '#000' }}>
+            <video id={`video-${s.livekit_identity}-phone`} autoPlay playsInline muted
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <i className="fas fa-mobile-screen" style={{ position: 'absolute', top: 2, left: 2, fontSize: 9, color: 'rgba(255,255,255,.7)' }} />
+          </div>
+        )}
 
         {/* Overlay exclu */}
         {isBanned && (
