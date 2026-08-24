@@ -1093,19 +1093,21 @@ export default function ExamPage() {
     if (phase === 'env_scan') runEnvironmentScan()
   }, [phase]) // eslint-disable-line
 
-  // Keyboard Lock API délibérément PAS utilisée ici (retiré le 24/08, retour
-  // utilisateur avec capture d'écran à l'appui) : verrouiller Echap fait
-  // certes passer d'un simple appui à un appui maintenu pour quitter le
-  // plein écran, mais en contrepartie Chrome affiche alors une bannière
-  // "Pour quitter le plein écran, appuyez longuement sur Échap" qui reste
-  // épinglée en haut de l'écran au lieu de la bannière standard, transitoire
-  // (quelques secondes puis disparaît), affichée pour n'importe quelle page
-  // en plein écran sans ce verrouillage. Cette bannière persistante indique
-  // clairement à l'étudiant comment sortir — l'inverse de l'effet recherché.
-  // Sans elle, un simple Echap suffit à quitter le plein écran (comme
-  // n'importe quelle page web), mais c'est déjà journalisé comme violation
-  // (fullscreen_exit) quel que soit le moyen utilisé — la friction en moins
-  // ne change pas la détection.
+  // Keyboard Lock API (Chrome/Edge uniquement, ignorée ailleurs) : tant
+  // qu'active, un simple appui sur Echap ne quitte plus le plein écran —
+  // le navigateur affiche à la place "Maintenez Echap pour quitter" et
+  // n'obéit qu'après ~1-2s d'appui maintenu. Cette bannière, contrairement à
+  // la bannière standard (transitoire, quelques secondes puis disparaît),
+  // reste épinglée en haut de l'écran tant que le verrouillage est actif —
+  // c'est une condition imposée par le navigateur lui-même pour autoriser ce
+  // verrouillage, indissociable de lui (vérifié le 24/08 : aucun moyen de
+  // garder l'appui maintenu sans elle). Retiré le 24/08 à cause de cette
+  // bannière, puis remis le même jour à la demande explicite de
+  // l'utilisateur, en toute connaissance de ce compromis : la friction
+  // supplémentaire à la sortie prime sur la visibilité de la bannière.
+  function lockEscapeKey() {
+    try { (navigator as any).keyboard?.lock?.(['Escape']).catch(()=>{}) } catch {}
+  }
 
   // Filet de sécurité — jusqu'ici un échec de requestFullscreen() était
   // avalé en silence (.catch(()=>{})) : l'examen continuait sans qu'aucune
@@ -1143,7 +1145,7 @@ export default function ExamPage() {
   function enterExam() {
     if (!exam||!attempt) return
     examEnterTimeRef.current = Date.now()
-    document.documentElement.requestFullscreen?.().catch(() => reportFullscreenUnavailable())
+    document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
     pauseUsedRef.current = attempt.pause_used || false
     const totalSec   = exam.duration_minutes*60+extraMinRef.current*60
     const elapsedSec = Math.floor((Date.now()-new Date(attempt.started_at).getTime())/1000)
@@ -1205,7 +1207,7 @@ export default function ExamPage() {
     // et la période de grâce évitent qu'un faux positif de perte de focus ne
     // se déclenche immédiatement au retour.
     examEnterTimeRef.current = Date.now()
-    document.documentElement.requestFullscreen?.().catch(() => {})
+    document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => {})
     success('Examen repris')
   }
 
@@ -2523,7 +2525,7 @@ export default function ExamPage() {
             <button onClick={() => {
               setFocusLost(false)
               fsPollGuardRef.current = false; focusPollGuardRef.current = false
-              document.documentElement.requestFullscreen?.().catch(() => reportFullscreenUnavailable())
+              document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
             }}
               style={{padding:'12px 30px',borderRadius:8,border:'none',background:'#3b82f6',color:'#fff',fontWeight:600,cursor:'pointer',fontSize:18}}>
               Revenir à l&apos;examen
