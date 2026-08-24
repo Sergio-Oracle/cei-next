@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
-import { loadFaceApi, captureAveragedDescriptor, captureDescriptorFromImage, loadImageFile, FaceCaptureResult } from '@/lib/faceCapture'
+import { loadFaceApi, captureFrame, captureDescriptorFromImage, loadImageFile, loadImageFromUrl, warmupFaceApi } from '@/lib/faceCapture'
 
 // Sous-étapes du flux visage : choisir la source de la photo, capturer en
 // direct, ou relire/valider la photo obtenue (caméra ou upload) avant de
@@ -26,7 +26,12 @@ function BiometricEnrollInner() {
   const [faceReady, setFaceReady] = useState(false)
   const [statusMsg, setStatusMsg] = useState('')
   const [facePhase, setFacePhase] = useState<FacePhase>('pick')
-  const [preview, setPreview] = useState<FaceCaptureResult | null>(null)
+  // descriptor est null tant que la photo (caméra) n'a pas encore été
+  // analysée — l'analyse n'a lieu qu'à la validation (confirmEnrollment),
+  // pas à la capture (retour utilisateur du 24/08 : la capture doit être
+  // instantanée). Une photo téléversée, elle, est déjà analysée dès le choix
+  // du fichier (onFileSelected) — pas de flux caméra à garder réactif là.
+  const [preview, setPreview] = useState<{ snapshotDataUrl: string; descriptor: number[] | null } | null>(null)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -51,6 +56,10 @@ function BiometricEnrollInner() {
       if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play().catch(() => {}) }
       setStatusMsg('Chargement du modèle de reconnaissance…')
       await loadFaceApi()
+      // Absorbe ici le coût de compilation shader du tout premier passage
+      // (voir warmupFaceApi) — pendant que l'étudiant patiente déjà pour le
+      // chargement, pas au moment où il valide son inscription.
+      if (videoRef.current) await warmupFaceApi(videoRef.current)
       setFaceReady(true)
       setStatusMsg('Regardez la caméra, restez immobile quelques secondes…')
     } catch (e: any) {
@@ -59,26 +68,16 @@ function BiometricEnrollInner() {
     }
   }
 
-  // Capture uniquement — l'envoi au serveur n'a lieu qu'après validation
-  // explicite de l'aperçu (confirmEnrollment), pas ici.
-  async function captureNow() {
+  // Capture INSTANTANÉE — juste une photo, aucune analyse ici (retour
+  // utilisateur du 24/08 : "je veux que tu me capture seulement l'image et
+  // la vérification se fera rapidement une fois que la personne décide
+  // d'enregistrer"). L'analyse (descriptor) n'a lieu qu'à confirmEnrollment.
+  function captureNow() {
     if (!videoRef.current) return
-    setBusy(true)
-    setStatusMsg('Capture en cours…')
-    try {
-      const result = await captureAveragedDescriptor(videoRef.current, (step, total) => setStatusMsg(`Capture ${step}/${total}…`))
-      if (!result) {
-        toastErr('Aucun visage détecté — repositionnez-vous face à la caméra et réessayez')
-        return
-      }
-      stopCamera()
-      setPreview(result)
-      setFacePhase('preview')
-    } catch (e: any) {
-      toastErr(e.message || 'Échec de la capture')
-    } finally {
-      setBusy(false)
-    }
+    const snapshotDataUrl = captureFrame(videoRef.current)
+    stopCamera()
+    setPreview({ snapshotDataUrl, descriptor: null })
+    setFacePhase('preview')
   }
 
   async function onFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
@@ -113,7 +112,22 @@ function BiometricEnrollInner() {
     if (!preview) return
     setBusy(true)
     try {
-      await api.post('/api/biometric/enroll/face', { descriptor: preview.descriptor, image_data: preview.snapshotDataUrl })
+      let { descriptor, snapshotDataUrl } = preview
+      // Photo caméra : jamais encore analysée (voir captureNow) — c'est ici,
+      // au moment réel de l'enregistrement, que l'analyse a lieu.
+      if (!descriptor) {
+        setStatusMsg('Vérification du visage…')
+        await loadFaceApi()
+        const img = await loadImageFromUrl(snapshotDataUrl)
+        const analyzed = await captureDescriptorFromImage(img)
+        if (!analyzed) {
+          toastErr('Aucun visage détecté — reprenez la photo')
+          return
+        }
+        descriptor = analyzed.descriptor
+        snapshotDataUrl = analyzed.snapshotDataUrl
+      }
+      await api.post('/api/biometric/enroll/face', { descriptor, image_data: snapshotDataUrl })
       setDone(true)
       success('Reconnaissance faciale enregistrée')
     } catch (e: any) {
@@ -156,8 +170,8 @@ function BiometricEnrollInner() {
                 <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
               </div>
               <p style={{ color: 'var(--text-muted)', marginBottom: 20, fontSize: 15 }}>{statusMsg}</p>
-              <button className="btn btn-primary btn-block" disabled={!faceReady || busy} onClick={captureNow}>
-                {busy ? <><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: 8 }} />Analyse…</> : <><i className="fa-solid fa-camera" style={{ marginRight: 8 }} />Capturer</>}
+              <button className="btn btn-primary btn-block" disabled={!faceReady} onClick={captureNow}>
+                <i className="fa-solid fa-camera" style={{ marginRight: 8 }} />Capturer
               </button>
               <button className="btn btn-secondary btn-block" style={{ marginTop: 10 }} disabled={busy} onClick={() => { stopCamera(); setFacePhase('pick') }}>
                 Annuler
@@ -170,7 +184,7 @@ function BiometricEnrollInner() {
               <p style={{ color: 'var(--text-muted)', marginBottom: 16, fontSize: 15.5 }}>Vérifiez que votre visage est bien visible avant de valider.</p>
               <img src={preview.snapshotDataUrl} alt="Photo capturée" style={{ width: '100%', maxWidth: 280, aspectRatio: '4/3', objectFit: 'cover', borderRadius: 12, marginBottom: 20, border: '2px solid var(--border)' }} />
               <button className="btn btn-primary btn-block" style={{ marginBottom: 10 }} disabled={busy} onClick={confirmEnrollment}>
-                {busy ? <><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: 8 }} />Enregistrement…</> : <><i className="fa-solid fa-check" style={{ marginRight: 8 }} />Valider et enregistrer</>}
+                {busy ? <><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: 8 }} />{statusMsg || 'Enregistrement…'}</> : <><i className="fa-solid fa-check" style={{ marginRight: 8 }} />Valider et enregistrer</>}
               </button>
               <button className="btn btn-secondary btn-block" disabled={busy} onClick={retakePhoto}>
                 Reprendre une photo

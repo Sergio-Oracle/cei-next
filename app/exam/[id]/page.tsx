@@ -8,7 +8,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObjects, countPeople } from '@/lib/proctoring-vision'
 import Calculator from '@/components/exam/Calculator'
 import BiometricCallModal from '@/components/exam/BiometricCallModal'
-import { loadFaceApi, captureAveragedDescriptor } from '@/lib/faceCapture'
+import { loadFaceApi, captureSingleDescriptor, warmupFaceApi } from '@/lib/faceCapture'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 interface ExamData {
@@ -851,6 +851,10 @@ export default function ExamPage() {
       if (bioVideoRef.current) { bioVideoRef.current.srcObject = stream; await bioVideoRef.current.play().catch(()=>{}) }
       setBioStatusMsg('Chargement du modèle de reconnaissance…')
       await loadFaceApi()
+      // Absorbe ici le coût de compilation shader du tout premier passage
+      // (voir warmupFaceApi) — pendant le chargement, pas au clic sur
+      // "Vérifier mon identité", qui doit rester rapide.
+      if (bioVideoRef.current) await warmupFaceApi(bioVideoRef.current)
       setBioStatusMsg('Regardez la caméra pour être identifié')
     } catch (e:any) {
       toastErr(e.message || 'Impossible de préparer la vérification')
@@ -877,7 +881,8 @@ export default function ExamPage() {
     if (!bioVideoRef.current) return
     setBioBusy(true)
     try {
-      const result = await captureAveragedDescriptor(bioVideoRef.current, (step, total) => setBioStatusMsg(`Vérification ${step}/${total}…`))
+      setBioStatusMsg('Vérification…')
+      const result = await captureSingleDescriptor(bioVideoRef.current)
       if (!result) { toastErr('Aucun visage détecté — repositionnez-vous face à la caméra'); setBioBusy(false); return }
       const res = await api.post<{match:boolean}>('/api/biometric/verify/face', { descriptor: result.descriptor })
       if (res.match) {
