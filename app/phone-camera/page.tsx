@@ -67,7 +67,12 @@ function PhoneCameraInner() {
         audio: false,
       })
       streamRef.current = stream
-      if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play().catch(() => {}) }
+      // Pas d'attache ici : le <video> de prévisualisation n'existe dans le
+      // DOM que dans le bloc de rendu phase==='connected', pas encore atteint
+      // à ce stade — videoRef.current serait toujours null (bug réel constaté
+      // le 24/08 : aperçu caméra tout noir côté téléphone malgré une
+      // publication LiveKit fonctionnelle). Voir le useEffect plus bas, qui
+      // attache le flux dès que ce <video> apparaît réellement.
 
       const LK = await loadLiveKit()
       const room = new LK.Room({ adaptiveStream: true, dynacast: true })
@@ -86,6 +91,16 @@ function PhoneCameraInner() {
       setPhase('error')
     }
   }
+
+  // Attache le flux au <video> de prévisualisation dès qu'il apparaît
+  // réellement dans le DOM (phase==='connected') — voir le commentaire dans
+  // connect() ci-dessus.
+  useEffect(() => {
+    if (phase === 'connected' && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current
+      videoRef.current.play().catch(() => {})
+    }
+  }, [phase])
 
   useEffect(() => {
     // Auto-connexion si le code arrive déjà dans l'URL (scan QR) — évite une
@@ -130,9 +145,16 @@ function PhoneCameraInner() {
         {phase === 'error' && (
           <div style={{ background: 'white', borderRadius: 12, padding: 24 }}>
             <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 26, color: '#ef4444', marginBottom: 10, display: 'block' }} />
-            <p style={{ color: '#ef4444', fontSize: 14.5, margin: '0 0 18px' }}>{errorMsg || 'Connexion interrompue'}</p>
-            <button onClick={() => { setPhase('enter-code'); setErrorMsg('') }} style={{ width: '100%', padding: 12, background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>
-              Réessayer
+            <p style={{ color: '#ef4444', fontSize: 14.5, margin: '0 0 14px' }}>{errorMsg || 'Connexion interrompue'}</p>
+            {/* Chaque code n'est valable qu'une fois — un simple "Réessayer"
+                avec le même code échouerait forcément à nouveau (retour
+                utilisateur du 24/08 : confusion sur où récupérer un nouveau
+                code après une déconnexion). */}
+            <p style={{ color: '#64748b', fontSize: 13.5, margin: '0 0 18px', lineHeight: 1.5 }}>
+              Ce code n&apos;est plus valable. Sur l&apos;écran principal (l&apos;ordinateur), cliquez à nouveau sur « Ajouter une caméra secondaire » pour obtenir un nouveau code, puis entrez-le ci-dessous.
+            </p>
+            <button onClick={() => { setCode(''); setPhase('enter-code'); setErrorMsg('') }} style={{ width: '100%', padding: 12, background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>
+              Entrer un nouveau code
             </button>
           </div>
         )}

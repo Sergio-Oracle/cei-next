@@ -2467,6 +2467,21 @@ export default function ExamPage() {
                   Objet(s) repéré(s) dans la pièce : {envScanObjects.join(', ')} — signalé à votre surveillant, veillez à ne pas l'utiliser pendant l'examen.
                 </div>
               )}
+              {/* Caméra secondaire — proposée ICI, avant l'accès à l'examen
+                  (retour utilisateur du 24/08 : pas pendant la composition,
+                  où le bouton était jusque-là placé dans la barre d'outils). */}
+              {exam?.allow_secondary_camera && (
+                phoneCamLinked ? (
+                  <div style={{display:'flex',alignItems:'center',gap:8,color:'#15803d',fontSize:14.5,fontWeight:600,marginBottom:8}}>
+                    <i className="fas fa-mobile-screen"/> Caméra secondaire connectée
+                  </div>
+                ) : (
+                  <button onClick={openPhoneCameraModal}
+                    style={{width:'100%',padding:11,background:'#f1f5f9',color:'#334155',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:8}}>
+                    <i className="fas fa-mobile-screen"/> Ajouter une caméra secondaire (optionnel)
+                  </button>
+                )
+              )}
             </>
           )}
 
@@ -2753,17 +2768,13 @@ export default function ExamPage() {
                   <i className="fas fa-calculator"/> Calculatrice
                 </button>
               )}
-              {exam.allow_secondary_camera&&(
-                phoneCamLinked ? (
-                  <span title="Caméra secondaire connectée" style={{padding:'9px 14px',background:'#dcfce7',color:'#15803d',borderRadius:8,fontWeight:600,fontSize:15.5,display:'flex',alignItems:'center',gap:7}}>
-                    <i className="fas fa-mobile-screen"/> Connectée
-                  </span>
-                ) : (
-                  <button onClick={openPhoneCameraModal} title="Ajouter une caméra secondaire (smartphone)"
-                    style={{padding:'9px 14px',background:'#f1f5f9',color:'#334155',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:'pointer',display:'flex',alignItems:'center',gap:7}}>
-                    <i className="fas fa-mobile-screen"/> Caméra secondaire
-                  </button>
-                )
+              {/* Statut seulement ici — l'ajout se fait avant l'accès à
+                  l'examen (écran de vérification d'environnement), pas
+                  pendant la composition (retour utilisateur du 24/08). */}
+              {exam.allow_secondary_camera&&phoneCamLinked&&(
+                <span title="Caméra secondaire connectée" style={{padding:'9px 14px',background:'#dcfce7',color:'#15803d',borderRadius:8,fontWeight:600,fontSize:15.5,display:'flex',alignItems:'center',gap:7}}>
+                  <i className="fas fa-mobile-screen"/> Connectée
+                </span>
               )}
               <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 16px',background:timerColor,color:'white',borderRadius:8,fontSize:24,fontWeight:700,fontVariantNumeric:'tabular-nums'}}>
                 <i className="fas fa-clock" style={{fontSize:19}}/> {fmtTimer(timeLeft)}
@@ -2944,14 +2955,18 @@ export default function ExamPage() {
                   <p style={{color:'#64748b',fontSize:15}}><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Génération du code…</p>
                 ) : (
                   <>
-                    <p style={{color:'#64748b',fontSize:14.5,margin:'0 0 16px',lineHeight:1.5}}>Scannez ce code avec l&apos;appareil photo de votre téléphone, ou ouvrez le lien manuellement. Positionnez ensuite le téléphone pour couvrir votre poste de travail.</p>
-                    {phoneCamQr&&<img src={phoneCamQr} alt="QR code de couplage" style={{width:180,height:180,margin:'0 auto 14px',display:'block'}}/>}
-                    {phoneCamCode&&(
-                      <div style={{fontSize:26,fontWeight:700,letterSpacing:4,color:'#0f172a',marginBottom:8,fontVariantNumeric:'tabular-nums'}}>{phoneCamCode}</div>
-                    )}
+                    <p style={{color:'#64748b',fontSize:14.5,margin:'0 0 6px',lineHeight:1.5}}>Sur votre <strong>téléphone</strong> : scannez ce code avec l&apos;appareil photo, ou ouvrez le lien ci-dessous.</p>
+                    {phoneCamQr&&<img src={phoneCamQr} alt="QR code de couplage" style={{width:180,height:180,margin:'0 auto 10px',display:'block'}}/>}
                     {phoneCamUrl&&(
-                      <p style={{fontSize:12.5,color:'#94a3b8',wordBreak:'break-all',marginBottom:18}}>{phoneCamUrl}</p>
+                      <p style={{fontSize:12.5,color:'#94a3b8',wordBreak:'break-all',marginBottom:14}}>{phoneCamUrl}</p>
                     )}
+                    {phoneCamCode&&(
+                      <>
+                        <p style={{color:'#64748b',fontSize:13,margin:'0 0 4px'}}>Puis, sur le téléphone, entrez ce code :</p>
+                        <div style={{fontSize:26,fontWeight:700,letterSpacing:4,color:'#0f172a',marginBottom:10,fontVariantNumeric:'tabular-nums'}}>{phoneCamCode}</div>
+                      </>
+                    )}
+                    <p style={{fontSize:13,color:'#94a3b8',marginBottom:6}}>Positionnez ensuite le téléphone pour couvrir votre poste de travail.</p>
                     <p style={{fontSize:13,color:'#94a3b8',marginBottom:16}}><i className="fas fa-hourglass-half" style={{marginRight:5}}/>Code valable 5 minutes — en attente de connexion…</p>
                     <button onClick={closePhoneCameraModal} style={{width:'100%',padding:12,background:'#f1f5f9',color:'#334155',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:'pointer'}}>Annuler</button>
                   </>
