@@ -294,6 +294,15 @@ export default function ExamPage() {
   const [phoneCamUrl, setPhoneCamUrl] = useState<string|null>(null)
   const [phoneCamQr, setPhoneCamQr] = useState<string|null>(null)
   const [phoneCamLinked, setPhoneCamLinked] = useState(false)
+  // Distinct de phoneCamLinked (persiste tant qu'un téléphone a été confirmé
+  // connecté à un moment — pilote le badge de statut, jamais réinitialisé à
+  // l'ouverture/annulation de la modale) — celui-ci ne vaut true QUE si LE
+  // CODE ACTUELLEMENT AFFICHÉ dans la modale vient d'être confirmé, pour
+  // savoir s'il faut montrer le QR ou la confirmation à l'intérieur de la
+  // modale à chaque réouverture (retour utilisateur du 24/08 : rouvrir devait
+  // remontrer un QR, pas rester bloqué sur "connectée" sans jamais pouvoir
+  // reconnecter un appareil).
+  const [phoneCamModalConnected, setPhoneCamModalConnected] = useState(false)
   const [phoneCamBusy, setPhoneCamBusy] = useState(false)
   const phoneCamPollRef = useRef<ReturnType<typeof setInterval>|null>(null)
   const [msgText,      setMsgText]      = useState('')
@@ -929,6 +938,17 @@ export default function ExamPage() {
     if (attempt) { setShowBiometricCall(false); setBiometricRequired(false) }
   }, [attempt])
 
+  // Synchronise le badge "caméra secondaire" avec l'état réel côté serveur
+  // au chargement — sans ça, un téléphone resté connecté d'une session
+  // précédente (page rechargée, examen repris) apparaîtrait à tort comme
+  // non connecté tant que l'étudiant ne rouvre pas la modale.
+  useEffect(() => {
+    if (!attempt?.id || !exam?.allow_secondary_camera) return
+    api.get<{linked:boolean}>(`/api/exam_attempts/${attempt.id}/phone_camera/status`)
+      .then(st => { if (st.linked) setPhoneCamLinked(true) })
+      .catch(() => {})
+  }, [attempt?.id, exam?.allow_secondary_camera])
+
   async function submitAccessCode() {
     if (!pastedCode.trim()) { toastErr('Collez le code affiché ci-dessus.'); return }
     setSubmittingCode(true)
@@ -1244,7 +1264,10 @@ export default function ExamPage() {
     const aId = attempt?.id
     if (!aId) return
     setShowPhoneCamModal(true)
-    setPhoneCamLinked(false)
+    // Ne touche PAS phoneCamLinked ici — un téléphone déjà connecté avant
+    // cette réouverture doit rester considéré comme connecté (badge
+    // extérieur) tant qu'un nouveau couplage n'a pas réellement abouti.
+    setPhoneCamModalConnected(false)
     setPhoneCamBusy(true)
     try {
       const res = await api.post<{code:string; url:string}>(`/api/exam_attempts/${aId}/phone_camera/pair`)
@@ -1257,6 +1280,7 @@ export default function ExamPage() {
         try {
           const st = await api.get<{linked:boolean}>(`/api/exam_attempts/${aId}/phone_camera/status`)
           if (st.linked) {
+            setPhoneCamModalConnected(true)
             setPhoneCamLinked(true)
             success('Caméra secondaire connectée')
             if (phoneCamPollRef.current) clearInterval(phoneCamPollRef.current)
@@ -1274,6 +1298,7 @@ export default function ExamPage() {
   function closePhoneCameraModal() {
     if (phoneCamPollRef.current) { clearInterval(phoneCamPollRef.current); phoneCamPollRef.current = null }
     setShowPhoneCamModal(false)
+    setPhoneCamModalConnected(false)
     setPhoneCamCode(null); setPhoneCamUrl(null); setPhoneCamQr(null)
   }
 
@@ -2470,17 +2495,17 @@ export default function ExamPage() {
               {/* Caméra secondaire — proposée ICI, avant l'accès à l'examen
                   (retour utilisateur du 24/08 : pas pendant la composition,
                   où le bouton était jusque-là placé dans la barre d'outils). */}
+              {/* Toujours cliquable, même déjà connectée — sinon aucun moyen
+                  de reconnecter/vérifier un téléphone une fois le statut
+                  "connectée" atteint (retour utilisateur du 24/08 : le bouton
+                  n'affichait plus jamais le QR une fois lié, sans possibilité
+                  de le rouvrir). */}
               {exam?.allow_secondary_camera && (
-                phoneCamLinked ? (
-                  <div style={{display:'flex',alignItems:'center',gap:8,color:'#15803d',fontSize:14.5,fontWeight:600,marginBottom:8}}>
-                    <i className="fas fa-mobile-screen"/> Caméra secondaire connectée
-                  </div>
-                ) : (
-                  <button onClick={openPhoneCameraModal}
-                    style={{width:'100%',padding:11,background:'#f1f5f9',color:'#334155',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:8}}>
-                    <i className="fas fa-mobile-screen"/> Ajouter une caméra secondaire (optionnel)
-                  </button>
-                )
+                <button onClick={openPhoneCameraModal}
+                  style={{width:'100%',padding:11,background:phoneCamLinked?'#dcfce7':'#f1f5f9',color:phoneCamLinked?'#15803d':'#334155',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:8}}>
+                  <i className={`fas ${phoneCamLinked?'fa-circle-check':'fa-mobile-screen'}`}/>
+                  {phoneCamLinked ? 'Caméra secondaire connectée — revoir / reconnecter' : 'Ajouter une caméra secondaire (optionnel)'}
+                </button>
               )}
             </>
           )}
@@ -2946,7 +2971,7 @@ export default function ExamPage() {
                   <i className="fas fa-mobile-screen"/>
                 </div>
                 <h3 style={{margin:'0 0 8px',fontSize:19,fontWeight:700,color:'#0f172a'}}>Caméra secondaire</h3>
-                {phoneCamLinked ? (
+                {phoneCamModalConnected ? (
                   <>
                     <p style={{color:'#15803d',fontSize:15.5,margin:'0 0 20px'}}><i className="fas fa-circle-check" style={{marginRight:6}}/>Téléphone connecté — vous pouvez le reposer, orienté sur votre poste de travail.</p>
                     <button onClick={closePhoneCameraModal} style={{width:'100%',padding:12,background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:'pointer'}}>Fermer</button>
