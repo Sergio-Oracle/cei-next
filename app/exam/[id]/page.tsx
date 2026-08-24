@@ -240,6 +240,11 @@ export default function ExamPage() {
   const pageTimerRef     = useRef<ReturnType<typeof setInterval>|null>(null)
   const [phase,        setPhase]        = useState<Phase>('loading')
   const [timeLeft,     setTimeLeft]     = useState(0)
+  // Rappels de fin d'examen (5 min puis 1 min) — un seul déclenchement
+  // chacun, indépendamment des changements d'extra_minutes (pause, temps
+  // supplémentaire accordé) qui font varier le seuil en cours de route.
+  const reminder5MinShownRef = useRef(false)
+  const reminder1MinShownRef = useRef(false)
   const [tabCount,     setTabCount]     = useState(0)
   const [riskScore,    setRiskScore]    = useState(0)
   const [focusLost,    setFocusLost]    = useState(false)
@@ -1136,6 +1141,14 @@ export default function ExamPage() {
         const totalNow=(examRef.current?.duration_minutes??0)*60+extraMinRef.current*60
         const startMs=attempt?new Date(attempt.started_at).getTime():Date.now()
         const nl=Math.max(0,Math.floor((startMs+totalNow*1000-Date.now())/1000))
+        if(nl<=300 && !reminder5MinShownRef.current){
+          reminder5MinShownRef.current=true
+          warning('Il vous reste 5 minutes — pensez à finaliser vos réponses')
+        }
+        if(nl<=60 && !reminder1MinShownRef.current){
+          reminder1MinShownRef.current=true
+          warning('Il vous reste 1 minute — l\'examen sera soumis automatiquement à la fin du temps')
+        }
         if(nl<=0){clearInterval(timerRef.current!);handleSubmit(true)}
         return nl
       })
