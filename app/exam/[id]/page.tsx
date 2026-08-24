@@ -9,6 +9,7 @@ import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObje
 import Calculator from '@/components/exam/Calculator'
 import BiometricCallModal from '@/components/exam/BiometricCallModal'
 import { loadFaceApi, captureSingleDescriptor, warmupFaceApi } from '@/lib/faceCapture'
+import QRCode from 'qrcode'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 interface ExamData {
@@ -16,6 +17,7 @@ interface ExamData {
   start_time: string; end_time: string; subject_title?: string
   max_tab_switches?: number; enable_copy_paste?: boolean; enable_right_click?: boolean; enable_file_download?: boolean
   camera_required?: boolean; ban_on_devtools?: boolean; auto_correct?: boolean; enable_calculator?: boolean
+  allow_secondary_camera?: boolean
   questions_per_page?: number; randomize_questions?: boolean; time_per_question_seconds?: number | null
   status: string; questions?: Question[]
   subject_content?: { id: number; title: string; content: string } | string | null
@@ -285,6 +287,15 @@ export default function ExamPage() {
      bouton "Soumettre" ouvre d'abord cet écran de relecture. */
   const [showReview, setShowReview] = useState(false)
   const [showCalculator, setShowCalculator] = useState(false)
+  // Deuxième caméra via smartphone (angle latéral, opt-in par examen) —
+  // couplage par QR code, voir openPhoneCameraModal ci-dessous.
+  const [showPhoneCamModal, setShowPhoneCamModal] = useState(false)
+  const [phoneCamCode, setPhoneCamCode] = useState<string|null>(null)
+  const [phoneCamUrl, setPhoneCamUrl] = useState<string|null>(null)
+  const [phoneCamQr, setPhoneCamQr] = useState<string|null>(null)
+  const [phoneCamLinked, setPhoneCamLinked] = useState(false)
+  const [phoneCamBusy, setPhoneCamBusy] = useState(false)
+  const phoneCamPollRef = useRef<ReturnType<typeof setInterval>|null>(null)
   const [msgText,      setMsgText]      = useState('')
   const [msgSent,      setMsgSent]      = useState<{text:string;time:string}[]>([])
   const [camOn,        setCamOn]        = useState(false)
@@ -1223,6 +1234,50 @@ export default function ExamPage() {
     document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => {})
     success('Examen repris')
   }
+
+  // ── Deuxième caméra via smartphone (angle latéral, opt-in par examen) ──
+  // Le couplage se fait entièrement hors CEI côté téléphone (pas de session
+  // PASETO là-bas) : code à usage unique affiché en QR + texte, échangé par
+  // /phone-camera contre un token LiveKit publish-only rejoignant la même
+  // salle que la caméra principale (exam-{exam_id}).
+  async function openPhoneCameraModal() {
+    const aId = attempt?.id
+    if (!aId) return
+    setShowPhoneCamModal(true)
+    setPhoneCamLinked(false)
+    setPhoneCamBusy(true)
+    try {
+      const res = await api.post<{code:string; url:string}>(`/api/exam_attempts/${aId}/phone_camera/pair`)
+      setPhoneCamCode(res.code)
+      setPhoneCamUrl(res.url)
+      const qr = await QRCode.toDataURL(res.url, { width: 220, margin: 1 })
+      setPhoneCamQr(qr)
+      if (phoneCamPollRef.current) clearInterval(phoneCamPollRef.current)
+      phoneCamPollRef.current = setInterval(async () => {
+        try {
+          const st = await api.get<{linked:boolean}>(`/api/exam_attempts/${aId}/phone_camera/status`)
+          if (st.linked) {
+            setPhoneCamLinked(true)
+            success('Caméra secondaire connectée')
+            if (phoneCamPollRef.current) clearInterval(phoneCamPollRef.current)
+          }
+        } catch {}
+      }, 3000)
+    } catch (e: any) {
+      toastErr(e.message || 'Échec de la génération du code')
+      setShowPhoneCamModal(false)
+    } finally {
+      setPhoneCamBusy(false)
+    }
+  }
+
+  function closePhoneCameraModal() {
+    if (phoneCamPollRef.current) { clearInterval(phoneCamPollRef.current); phoneCamPollRef.current = null }
+    setShowPhoneCamModal(false)
+    setPhoneCamCode(null); setPhoneCamUrl(null); setPhoneCamQr(null)
+  }
+
+  useEffect(() => () => { if (phoneCamPollRef.current) clearInterval(phoneCamPollRef.current) }, [])
 
   // ── Minuteur par page (Partie 1 uniquement) ─────────────────────────────
   // Recalcul léger du nombre de pages QCM/VF et de la présence de questions
@@ -2698,6 +2753,18 @@ export default function ExamPage() {
                   <i className="fas fa-calculator"/> Calculatrice
                 </button>
               )}
+              {exam.allow_secondary_camera&&(
+                phoneCamLinked ? (
+                  <span title="Caméra secondaire connectée" style={{padding:'9px 14px',background:'#dcfce7',color:'#15803d',borderRadius:8,fontWeight:600,fontSize:15.5,display:'flex',alignItems:'center',gap:7}}>
+                    <i className="fas fa-mobile-screen"/> Connectée
+                  </span>
+                ) : (
+                  <button onClick={openPhoneCameraModal} title="Ajouter une caméra secondaire (smartphone)"
+                    style={{padding:'9px 14px',background:'#f1f5f9',color:'#334155',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:'pointer',display:'flex',alignItems:'center',gap:7}}>
+                    <i className="fas fa-mobile-screen"/> Caméra secondaire
+                  </button>
+                )
+              )}
               <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 16px',background:timerColor,color:'white',borderRadius:8,fontSize:24,fontWeight:700,fontVariantNumeric:'tabular-nums'}}>
                 <i className="fas fa-clock" style={{fontSize:19}}/> {fmtTimer(timeLeft)}
               </div>
@@ -2858,6 +2925,41 @@ export default function ExamPage() {
 
         {/* Calculatrice intégrée (Retour DFIP — évite la calculatrice physique/téléphone) */}
         {exam.enable_calculator&&showCalculator&&<Calculator onClose={()=>setShowCalculator(false)}/>}
+
+        {/* Couplage caméra secondaire (smartphone, angle latéral) */}
+        {showPhoneCamModal&&(
+          <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999}}>
+            <div style={{background:'white',borderRadius:12,overflow:'hidden',maxWidth:400,width:'92%',boxShadow:'0 20px 40px rgba(0,0,0,.3)'}}>
+              <div style={{padding:'24px 28px',textAlign:'center'}}>
+                <div style={{width:56,height:56,margin:'0 auto 14px',background:'rgba(37,99,235,.12)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26.5,color:'#2563eb'}}>
+                  <i className="fas fa-mobile-screen"/>
+                </div>
+                <h3 style={{margin:'0 0 8px',fontSize:19,fontWeight:700,color:'#0f172a'}}>Caméra secondaire</h3>
+                {phoneCamLinked ? (
+                  <>
+                    <p style={{color:'#15803d',fontSize:15.5,margin:'0 0 20px'}}><i className="fas fa-circle-check" style={{marginRight:6}}/>Téléphone connecté — vous pouvez le reposer, orienté sur votre poste de travail.</p>
+                    <button onClick={closePhoneCameraModal} style={{width:'100%',padding:12,background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:'pointer'}}>Fermer</button>
+                  </>
+                ) : phoneCamBusy ? (
+                  <p style={{color:'#64748b',fontSize:15}}><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Génération du code…</p>
+                ) : (
+                  <>
+                    <p style={{color:'#64748b',fontSize:14.5,margin:'0 0 16px',lineHeight:1.5}}>Scannez ce code avec l&apos;appareil photo de votre téléphone, ou ouvrez le lien manuellement. Positionnez ensuite le téléphone pour couvrir votre poste de travail.</p>
+                    {phoneCamQr&&<img src={phoneCamQr} alt="QR code de couplage" style={{width:180,height:180,margin:'0 auto 14px',display:'block'}}/>}
+                    {phoneCamCode&&(
+                      <div style={{fontSize:26,fontWeight:700,letterSpacing:4,color:'#0f172a',marginBottom:8,fontVariantNumeric:'tabular-nums'}}>{phoneCamCode}</div>
+                    )}
+                    {phoneCamUrl&&(
+                      <p style={{fontSize:12.5,color:'#94a3b8',wordBreak:'break-all',marginBottom:18}}>{phoneCamUrl}</p>
+                    )}
+                    <p style={{fontSize:13,color:'#94a3b8',marginBottom:16}}><i className="fas fa-hourglass-half" style={{marginRight:5}}/>Code valable 5 minutes — en attente de connexion…</p>
+                    <button onClick={closePhoneCameraModal} style={{width:'100%',padding:12,background:'#f1f5f9',color:'#334155',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:'pointer'}}>Annuler</button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal appel privé entrant */}
         {showPrivateCallModal&&(

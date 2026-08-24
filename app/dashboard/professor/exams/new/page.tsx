@@ -31,6 +31,7 @@ export default function NewExamPage() {
     auto_correct:       false,
     scheduled_correction_at: '',
     enable_calculator:  false,
+    allow_secondary_camera: false,
   })
 
   // Retour : la sélection manuelle de surveillants a été retirée du
@@ -91,6 +92,7 @@ export default function NewExamPage() {
         auto_correct:      form.auto_correct,
         scheduled_correction_at: form.scheduled_correction_at ? form.scheduled_correction_at + ':00Z' : null,
         enable_calculator: form.enable_calculator,
+        allow_secondary_camera: form.allow_secondary_camera,
       })
       success(`Examen créé — Durée : ${res.exam?.duration_minutes ?? '?'} min`)
       router.push(`/dashboard/professor/exams`)
@@ -261,10 +263,19 @@ export default function NewExamPage() {
                 <input type="checkbox" checked={form.enable_calculator} onChange={e => set('enable_calculator', e.target.checked)} style={{ width: 'auto' }} />
                 <span><i className="fas fa-calculator" style={{ marginRight: 4 }} />Activer la calculatrice intégrée</span>
               </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize:15.5, color: '#475569' }}>
+                <input type="checkbox" checked={form.allow_secondary_camera} onChange={e => set('allow_secondary_camera', e.target.checked)} style={{ width: 'auto' }} />
+                <span><i className="fas fa-mobile-screen" style={{ marginRight: 4 }} />Autoriser une caméra secondaire (smartphone)</span>
+              </label>
             </div>
             {form.enable_calculator && (
               <p style={{ margin: '-8px 0 16px', fontSize:14, color: '#64748b' }}>
                 <i className="fas fa-info-circle" style={{ marginRight: 4 }} />Les étudiants pourront utiliser une calculatrice scientifique directement sur la page d'examen — utile pour éviter le recours à une calculatrice physique ou un téléphone pendant la composition.
+              </p>
+            )}
+            {form.allow_secondary_camera && (
+              <p style={{ margin: '-8px 0 16px', fontSize:14, color: '#64748b' }}>
+                <i className="fas fa-info-circle" style={{ marginRight: 4 }} />Les étudiants pourront ajouter leur téléphone comme caméra secondaire (angle latéral, via QR code) pour couvrir l&apos;angle mort hors écran.
               </p>
             )}
 

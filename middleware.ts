@@ -7,6 +7,9 @@ const PUBLIC_PATHS = new Set([
   '/conditions',
   '/',
   '/robots.txt',
+  // Ouverte depuis le téléphone en scannant un QR code — cet appareil n'a
+  // jamais de session CEI (pas de cookie token), voir POST /api/phone_camera/token.
+  '/phone-camera',
 ])
 
 // Préfixes publics (assets, guide public, etc.)
