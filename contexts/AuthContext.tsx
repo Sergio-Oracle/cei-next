@@ -9,7 +9,7 @@ interface AuthContextValue {
   user: User | null
   token: string | null
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string, force?: boolean) => Promise<void>
   logout: () => void
   updateUser: (u: Partial<User>) => void
 }
@@ -62,8 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => { if (mounted.current) setLoading(false) })
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await api.post<{ access_token: string; user: User; expires_in?: number }>('/api/auth/login', { email, password })
+  const login = useCallback(async (email: string, password: string, force?: boolean) => {
+    const res = await api.post<{ access_token: string; user: User; expires_in?: number }>('/api/auth/login', { email, password, force })
     const t = res.access_token
     localStorage.setItem('token', t)
     if (res.expires_in) localStorage.setItem('token_expires_at', String(Date.now() + res.expires_in * 1000))

@@ -60,6 +60,10 @@ export default function LoginPage() {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading]   = useState(false)
+  // Session unique (étudiants) — retour utilisateur du 24/08 : bloquer une
+  // nouvelle connexion tant qu'une session est active sur un autre appareil,
+  // avec confirmation explicite pour la déconnecter plutôt qu'échec silencieux.
+  const [sessionConflict, setSessionConflict] = useState<{ deviceLabel: string } | null>(null)
   const [lang, setLang]         = useState<'fr' | 'en' | 'wo'>('fr')
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -115,9 +119,26 @@ export default function LoginPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!email || !password) { showError('Email et mot de passe requis'); return }
+    setSessionConflict(null)
     setLoading(true)
     try {
       await login(email, password)
+    } catch (err: any) {
+      if (err?.data?.session_conflict) {
+        setSessionConflict({ deviceLabel: err.data.device_label || 'un autre appareil' })
+      } else {
+        showError(err.message || 'Identifiants invalides')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function forceLoginAnyway() {
+    setLoading(true)
+    try {
+      await login(email, password, true)
+      setSessionConflict(null)
     } catch (err: any) {
       showError(err.message || 'Identifiants invalides')
     } finally {
@@ -346,7 +367,22 @@ export default function LoginPage() {
           <h1>{t.connexion}</h1>
           <p>{t.connexionSub}</p>
 
-          <form id="login-form" onSubmit={handleSubmit}>
+          {sessionConflict && (
+            <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 10, padding: '14px 16px', marginBottom: 18 }}>
+              <p style={{ margin: '0 0 10px', fontSize: 14.5, color: '#92400e', lineHeight: 1.5 }}>
+                <i className="fas fa-triangle-exclamation" style={{ marginRight: 8 }} />
+                Ce compte est déjà connecté sur <strong>{sessionConflict.deviceLabel}</strong>. Une seule connexion active est autorisée à la fois.
+              </p>
+              <button type="button" className="btn btn-primary btn-block" style={{ marginBottom: 8 }} disabled={loading} onClick={forceLoginAnyway}>
+                {loading ? 'Déconnexion en cours…' : "Se déconnecter de l'autre appareil et continuer ici"}
+              </button>
+              <button type="button" className="btn btn-secondary btn-block" disabled={loading} onClick={() => setSessionConflict(null)}>
+                Annuler
+              </button>
+            </div>
+          )}
+
+          <form id="login-form" onSubmit={handleSubmit} style={sessionConflict ? { display: 'none' } : undefined}>
             <div className="form-group">
               <label><i className="fas fa-envelope" /> {t.email}</label>
               <input
