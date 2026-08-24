@@ -42,15 +42,38 @@ export interface FaceCaptureResult {
 // Capture 3 frames espacées de 1,5s et moyenne les descripteurs — même
 // principe que captureReference() dans exam/[id]/page.tsx. Retourne null si
 // aucun visage n'est détecté sur l'une des 3 frames (appelant : réessayer).
-export async function captureAveragedDescriptor(video: HTMLVideoElement): Promise<FaceCaptureResult | null> {
+// onProgress : appelé avant chaque frame (1/3, 2/3, 3/3) — l'appelant peut
+// l'utiliser pour afficher une progression visible plutôt qu'un spinner figé
+// (retour utilisateur du 24/08 : "la capture est long, ce n'était pas comme
+// ça" — mesuré en réel avec Playwright + les vrais modèles face-api : la
+// résolution du flux caméra (640x480 vs 1280x720) ne change quasiment rien
+// au temps de détection, ~5% d'écart, dans le bruit. Le vrai coût vient du
+// design 3-passes + 2 pauses de 1,5s (~3s minimum incompressibles) — invisible
+// pendant la capture SILENCIEUSE en arrière-plan au début d'un examen, mais
+// très perceptible ici où l'étudiant regarde un spinner bloquant tout du
+// long. Pause réduite à 0,8s et progression affichée pour ne plus donner
+// l'impression d'un blocage.
+export async function captureAveragedDescriptor(video: HTMLVideoElement, onProgress?: (step: number, total: number) => void): Promise<FaceCaptureResult | null> {
   const fa = (window as any).faceapi
   if (!fa || video.readyState < 2) return null
+
+  // Détection sur une copie réduite du flux (~640px) plutôt que sur le flux
+  // 1280x720 natif directement — coût marginal mesuré comme faible mais non
+  // nul selon le device/backend, et la photo finale (plus bas) garde, elle,
+  // la pleine résolution native pour la netteté.
+  const detectScale = Math.min(1, 640 / Math.max(video.videoWidth || 640, video.videoHeight || 480))
+  const detectCanvas = document.createElement('canvas')
+  detectCanvas.width = Math.round((video.videoWidth || 640) * detectScale)
+  detectCanvas.height = Math.round((video.videoHeight || 480) * detectScale)
+  const detectCtx = detectCanvas.getContext('2d')!
 
   const opts = new fa.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.55 })
   const captured: Float32Array[] = []
   for (let i = 0; i < 3; i++) {
-    if (i > 0) await new Promise(r => setTimeout(r, 1500))
-    const det = await fa.detectSingleFace(video, opts).withFaceLandmarks().withFaceDescriptor()
+    onProgress?.(i + 1, 3)
+    if (i > 0) await new Promise(r => setTimeout(r, 800))
+    detectCtx.drawImage(video, 0, 0, detectCanvas.width, detectCanvas.height)
+    const det = await fa.detectSingleFace(detectCanvas, opts).withFaceLandmarks().withFaceDescriptor()
     if (!det) return null
     captured.push(det.descriptor)
   }

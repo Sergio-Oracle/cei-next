@@ -66,7 +66,7 @@ function BiometricEnrollInner() {
     setBusy(true)
     setStatusMsg('Capture en cours…')
     try {
-      const result = await captureAveragedDescriptor(videoRef.current)
+      const result = await captureAveragedDescriptor(videoRef.current, (step, total) => setStatusMsg(`Capture ${step}/${total}…`))
       if (!result) {
         toastErr('Aucun visage détecté — repositionnez-vous face à la caméra et réessayez')
         return

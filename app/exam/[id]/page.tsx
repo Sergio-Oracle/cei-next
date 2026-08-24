@@ -877,7 +877,7 @@ export default function ExamPage() {
     if (!bioVideoRef.current) return
     setBioBusy(true)
     try {
-      const result = await captureAveragedDescriptor(bioVideoRef.current)
+      const result = await captureAveragedDescriptor(bioVideoRef.current, (step, total) => setBioStatusMsg(`Vérification ${step}/${total}…`))
       if (!result) { toastErr('Aucun visage détecté — repositionnez-vous face à la caméra'); setBioBusy(false); return }
       const res = await api.post<{match:boolean}>('/api/biometric/verify/face', { descriptor: result.descriptor })
       if (res.match) {
