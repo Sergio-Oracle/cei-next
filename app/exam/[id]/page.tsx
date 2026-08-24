@@ -9,7 +9,7 @@ import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObje
 import Calculator from '@/components/exam/Calculator'
 import BiometricCallModal from '@/components/exam/BiometricCallModal'
 import { loadFaceApi, captureAveragedDescriptor } from '@/lib/faceCapture'
-import { isPlatformAuthenticatorAvailable, getAssertion } from '@/lib/webauthnClient'
+import { isPlatformAuthenticatorAvailable, getAssertion, friendlyWebauthnError } from '@/lib/webauthnClient'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 interface ExamData {
@@ -915,7 +915,7 @@ export default function ExamPage() {
         await onBiometricFailure()
       }
     } catch (e:any) {
-      toastErr(e.message || "Échec de la vérification — l'authentification a peut-être été annulée")
+      toastErr(friendlyWebauthnError(e))
       await onBiometricFailure()
     } finally {
       setBioBusy(false)

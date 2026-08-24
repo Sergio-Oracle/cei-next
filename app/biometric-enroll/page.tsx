@@ -6,7 +6,7 @@ import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { loadFaceApi, captureAveragedDescriptor, captureDescriptorFromImage, loadImageFile, FaceCaptureResult } from '@/lib/faceCapture'
-import { isPlatformAuthenticatorAvailable, registerCredential } from '@/lib/webauthnClient'
+import { isPlatformAuthenticatorAvailable, registerCredential, friendlyWebauthnError } from '@/lib/webauthnClient'
 
 type Method = 'choice' | 'face' | 'webauthn' | 'done'
 // Sous-étapes du flux visage : choisir la source de la photo, capturer en
@@ -145,7 +145,7 @@ function BiometricEnrollInner() {
       setStep('done')
       success('Empreinte biométrique enregistrée')
     } catch (e: any) {
-      toastErr(e.message || "Échec de l'enregistrement — réessayez ou utilisez la reconnaissance faciale")
+      toastErr(friendlyWebauthnError(e))
       setStep('choice')
     } finally {
       setBusy(false)

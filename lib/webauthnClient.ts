@@ -17,6 +17,31 @@ function bufferToBase64url(buf: ArrayBuffer): string {
   return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
+// Traduit les DOMException natives du navigateur (noms normalisés par le
+// spec WebAuthn, indépendants de la langue du message brut) en messages
+// clairs pour l'étudiant — le message brut du navigateur (ex. "The operation
+// either timed out or was not allowed. See: https://www.w3.org/TR/webauthn-2/…")
+// est en anglais, technique, et pointe vers une spec W3C : inexploitable pour
+// un étudiant (retour utilisateur du 24/08). On se base sur e.name plutôt que
+// sur le texte du message, qui n'est pas garanti stable.
+export function friendlyWebauthnError(e: any): string {
+  const name = e?.name || ''
+  switch (name) {
+    case 'NotAllowedError':
+      return "Vérification annulée ou capteur non détecté à temps — assurez-vous que Windows Hello/Touch ID est bien configuré sur cet appareil, puis réessayez."
+    case 'AbortError':
+      return 'Vérification interrompue avant la fin. Réessayez.'
+    case 'SecurityError':
+      return "Vérification impossible depuis cette page (erreur de sécurité du navigateur). Rechargez la page et réessayez."
+    case 'InvalidStateError':
+      return "Cet appareil n'est pas reconnu pour votre compte. Utilisez « Besoin d'aide ? » si le problème persiste."
+    case 'NotSupportedError':
+      return "Votre navigateur ne prend pas en charge cette méthode de vérification. Essayez avec Chrome ou Edge à jour."
+    default:
+      return "Échec de la vérification — réessayez, ou utilisez « Besoin d'aide ? » si le problème persiste."
+  }
+}
+
 export async function isPlatformAuthenticatorAvailable(): Promise<boolean> {
   if (typeof window === 'undefined') return false
   const pkc = (window as any).PublicKeyCredential
