@@ -68,7 +68,7 @@ export default function GuideSuperviseur() {
             <li><a href="#role"><i className="fas fa-info-circle" /> 1. Le rôle Superviseur — vue d&apos;ensemble</a></li>
             <li><a href="#dashboard"><i className="fas fa-tachometer-alt" /> 2. Votre tableau de bord</a></li>
             <li><a href="#vigilance"><i className="fas fa-shield-halved" /> 3. Comprendre les niveaux de vigilance (A/B/C)</a></li>
-            <li><a href="#appels"><i className="fas fa-fingerprint" /> 4. Répondre à une demande de vérification d&apos;identité</a></li>
+            <li><a href="#appels"><i className="fas fa-camera" /> 4. Répondre à une demande de vérification d&apos;identité</a></li>
             <li><a href="#limites"><i className="fas fa-circle-info" /> 5. Ce que vous ne gérez pas</a></li>
           </ul>
         </div>
@@ -110,9 +110,9 @@ export default function GuideSuperviseur() {
         </div>
 
         <div className="section" id="appels">
-          <div className="section-header"><div className="section-icon" style={{background:'#2563eb'}}><i className="fas fa-fingerprint" /></div><h2>4. Répondre à une demande de vérification d&apos;identité</h2></div>
+          <div className="section-header"><div className="section-icon" style={{background:'#2563eb'}}><i className="fas fa-camera" /></div><h2>4. Répondre à une demande de vérification d&apos;identité</h2></div>
           <div className="section-body">
-            <p style={{color:'#475569',marginBottom:20}}>Chaque étudiant confirme son identité (visage ou empreinte digitale/Face ID) avant chaque accès à un examen — automatiquement, sans appel dans la grande majorité des cas. Un appel de vérification manuelle n&apos;est déclenché qu&apos;en cas d&apos;échec répété de la reconnaissance. Vous ne recevez ces demandes que si <strong>aucun surveillant n&apos;est assigné</strong> à cet étudiant pour cet examen.</p>
+            <p style={{color:'#475569',marginBottom:20}}>Chaque étudiant confirme son identité par reconnaissance faciale avant chaque accès à un examen — automatiquement, sans appel dans la grande majorité des cas. Un appel de vérification manuelle n&apos;est déclenché qu&apos;en cas d&apos;échec répété de la reconnaissance. Vous ne recevez ces demandes que si <strong>aucun surveillant n&apos;est assigné</strong> à cet étudiant pour cet examen.</p>
             <div className="steps">
               <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Repérer la demande</h4><p>Une bannière <strong>&quot;Vérification d&apos;identité&quot;</strong> apparaît où que vous soyez dans l&apos;application, avec les boutons <strong>&quot;Répondre&quot;</strong> / <strong>&quot;Refuser&quot;</strong>.</p></div></div>
               <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Répondre à l&apos;appel</h4><p>Cliquez sur <strong>&quot;Répondre&quot;</strong>. Une fenêtre d&apos;appel audio/vidéo s&apos;ouvre avec l&apos;étudiant — vérifiez son identité comme vous le feriez pour toute vérification en personne.</p></div></div>

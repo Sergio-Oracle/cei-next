@@ -2212,7 +2212,7 @@ export default function ProctorMonitorPage() {
                   talking_detected:       { icon: 'comment-dots',        color: '#f59e0b' },
                   suspect_object_detected:{ icon: 'triangle-exclamation',color: '#ef4444' },
                   env_scan_object_detected: { icon: 'triangle-exclamation', color: '#f59e0b' },
-                  liveness_check_failed:  { icon: 'fingerprint',         color: '#f59e0b' },
+                  liveness_check_failed:  { icon: 'eye',                 color: '#f59e0b' },
                   sustained_audio_detected: { icon: 'microphone-lines',  color: '#f59e0b' },
                   multi_screen_detected:  { icon: 'display',             color: '#ef4444' },
                 }

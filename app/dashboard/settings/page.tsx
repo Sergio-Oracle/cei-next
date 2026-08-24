@@ -47,7 +47,7 @@ export default function SettingsPage() {
   /* Apparence */
   /* Vérification biométrique — étudiants uniquement (seul rôle soumis au
      gate à l'accès examen, voir routes/exams.py start_exam_attempt) */
-  interface BioStatus { enrolled: boolean; method: 'face'|'webauthn'|null; photo_url: string|null; webauthn_devices: {id:number; credential_id:string; device_label:string|null; created_at:string; last_used_at:string|null}[] }
+  interface BioStatus { enrolled: boolean; method: 'face'|null; photo_url: string|null }
   const [bioStatus, setBioStatus]   = useState<BioStatus | null>(null)
   const [bioLoading, setBioLoading] = useState(false)
 
@@ -56,14 +56,6 @@ export default function SettingsPage() {
     try { setBioStatus(await api.get<BioStatus>('/api/biometric/status')) }
     catch { /* non bloquant */ }
     finally { setBioLoading(false) }
-  }
-
-  async function deleteWebauthnDevice(credentialId: string) {
-    try {
-      await api.delete(`/api/biometric/webauthn/${credentialId}`)
-      success('Appareil supprimé')
-      fetchBioStatus()
-    } catch (e:any) { error(e.message || 'Suppression impossible') }
   }
 
   const [dark, setDark]         = useState(false)
@@ -355,7 +347,7 @@ export default function SettingsPage() {
               {user?.role === 'student' && (
                 <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
                   <h4 style={{ marginBottom: 12, fontSize:17, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <i className="fas fa-fingerprint" style={{ color: 'var(--primary)' }} /> Vérification biométrique
+                    <i className="fas fa-camera" style={{ color: 'var(--primary)' }} /> Vérification biométrique
                   </h4>
                   <p style={{ color: 'var(--text-muted)', fontSize:15, marginBottom: 16 }}>
                     Requise à chaque accès à un examen.
@@ -370,7 +362,7 @@ export default function SettingsPage() {
                         )}
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 600, fontSize:15.5 }}>
-                            {bioStatus.method === 'face' ? 'Reconnaissance faciale' : 'Empreinte digitale / Face ID'}
+                            Reconnaissance faciale
                           </div>
                           <div style={{ color: 'var(--text-muted)', fontSize:13.5 }}>Méthode active</div>
                         </div>
@@ -378,25 +370,10 @@ export default function SettingsPage() {
                           Modifier
                         </Link>
                       </div>
-                      {bioStatus.webauthn_devices.length > 0 && (
-                        <div>
-                          <div style={{ fontSize:14, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>Appareils enregistrés</div>
-                          {bioStatus.webauthn_devices.map(d => (
-                            <div key={d.credential_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', fontSize:14.5 }}>
-                              <i className="fas fa-mobile-screen" style={{ color: 'var(--text-muted)' }} />
-                              <span style={{ flex: 1 }}>{d.device_label || 'Appareil'}</span>
-                              <button onClick={() => deleteWebauthnDevice(d.credential_id)}
-                                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize:14 }}>
-                                <i className="fas fa-trash" /> Supprimer
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </>
                   ) : (
                     <Link href="/biometric-enroll?redirect=/dashboard/settings" className="btn btn-primary">
-                      <i className="fas fa-fingerprint" style={{ marginRight: 8 }} />Configurer maintenant
+                      <i className="fas fa-camera" style={{ marginRight: 8 }} />Configurer maintenant
                     </Link>
                   )}
                 </div>

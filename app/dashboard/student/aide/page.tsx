@@ -39,17 +39,16 @@ const CATEGORIES = [
   },
   {
     id: 'securite',
-    icon: 'fas fa-fingerprint',
+    icon: 'fas fa-camera',
     label: 'Sécurité & identité',
     color: '#2563eb',
     bg: '#eff6ff',
     bd: '#bfdbfe',
     faqs: [
-      { icon: 'fas fa-id-badge',    q: 'Pourquoi dois-je m\'identifier avant chaque examen ?',       r: 'C\'est une vérification obligatoire qui garantit que c\'est bien vous qui composez. Vous l\'enregistrez une seule fois (reconnaissance faciale ou empreinte digitale/Face ID), puis elle est vérifiée automatiquement à chaque accès à un examen.' },
-      { icon: 'fas fa-camera-retro',q: 'Comment enregistrer ma reconnaissance faciale ?',            r: 'Sur l\'écran d\'inscription, choisissez "Reconnaissance faciale" puis "Prendre une photo" (caméra) ou "Téléverser une photo". Vérifiez l\'aperçu avant de valider — vous pouvez reprendre la photo si besoin.' },
-      { icon: 'fas fa-fingerprint', q: 'L\'option empreinte digitale/Face ID n\'apparaît pas, pourquoi ?', r: 'Elle ne s\'affiche que si votre appareil a un capteur biométrique réellement configuré (Windows Hello, Touch ID, empreinte Android...). Sans capteur détecté, seule la reconnaissance faciale est proposée.' },
+      { icon: 'fas fa-id-badge',    q: 'Pourquoi dois-je m\'identifier avant chaque examen ?',       r: 'C\'est une vérification obligatoire qui garantit que c\'est bien vous qui composez. Vous l\'enregistrez une seule fois (reconnaissance faciale), puis elle est vérifiée automatiquement à chaque accès à un examen.' },
+      { icon: 'fas fa-camera-retro',q: 'Comment enregistrer ma reconnaissance faciale ?',            r: 'Sur l\'écran d\'inscription, choisissez "Prendre une photo" (caméra) ou "Téléverser une photo". Vérifiez l\'aperçu avant de valider — vous pouvez reprendre la photo si besoin.' },
       { icon: 'fas fa-phone-volume',q: 'Ma vérification échoue à chaque fois, que faire ?',          r: 'Après quelques tentatives infructueuses, un appel vidéo avec votre surveillant ou superviseur s\'ouvre automatiquement pour vérifier votre identité manuellement et débloquer votre accès.' },
-      { icon: 'fas fa-rotate',      q: 'Puis-je changer ma méthode d\'identification plus tard ?',    r: 'Oui, à tout moment depuis Paramètres > Sécurité : vous pouvez refaire votre reconnaissance faciale, ajouter/supprimer un appareil pour l\'empreinte digitale, ou changer complètement de méthode.' },
+      { icon: 'fas fa-rotate',      q: 'Puis-je refaire ma reconnaissance faciale plus tard ?',    r: 'Oui, à tout moment depuis Paramètres > Sécurité, si votre apparence a changé ou si la vérification échoue trop souvent.' },
     ],
   },
   {

@@ -9,7 +9,6 @@ import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObje
 import Calculator from '@/components/exam/Calculator'
 import BiometricCallModal from '@/components/exam/BiometricCallModal'
 import { loadFaceApi, captureAveragedDescriptor } from '@/lib/faceCapture'
-import { isPlatformAuthenticatorAvailable, getAssertion, friendlyWebauthnError } from '@/lib/webauthnClient'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 interface ExamData {
@@ -315,7 +314,6 @@ export default function ExamPage() {
      consommé par start_exam_attempt (voir doStartExam). Après quelques
      échecs de reconnaissance faciale, repli sur BiometricCallModal. */
   const [biometricRequired, setBiometricRequired] = useState(false)
-  const [bioMethod,         setBioMethod]         = useState<'face'|'webauthn'|null>(null)
   const [bioBusy,           setBioBusy]           = useState(false)
   const [bioFailCount,      setBioFailCount]      = useState(0)
   const [bioStatusMsg,      setBioStatusMsg]      = useState('')
@@ -847,17 +845,13 @@ export default function ExamPage() {
   /* ── Vérification biométrique ───────────────────────────────────────── */
   async function initBiometricCheck() {
     try {
-      const st = await api.get<{method:'face'|'webauthn'|null}>('/api/biometric/status')
-      setBioMethod(st.method)
-      if (st.method === 'face') {
-        setBioStatusMsg('Ouverture de la caméra…')
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
-        bioStreamRef.current = stream
-        if (bioVideoRef.current) { bioVideoRef.current.srcObject = stream; await bioVideoRef.current.play().catch(()=>{}) }
-        setBioStatusMsg('Chargement du modèle de reconnaissance…')
-        await loadFaceApi()
-        setBioStatusMsg('Regardez la caméra pour être identifié')
-      }
+      setBioStatusMsg('Ouverture de la caméra…')
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
+      bioStreamRef.current = stream
+      if (bioVideoRef.current) { bioVideoRef.current.srcObject = stream; await bioVideoRef.current.play().catch(()=>{}) }
+      setBioStatusMsg('Chargement du modèle de reconnaissance…')
+      await loadFaceApi()
+      setBioStatusMsg('Regardez la caméra pour être identifié')
     } catch (e:any) {
       toastErr(e.message || 'Impossible de préparer la vérification')
     }
@@ -896,27 +890,6 @@ export default function ExamPage() {
       }
     } catch (e:any) {
       toastErr(e.message || 'Échec de la vérification')
-    } finally {
-      setBioBusy(false)
-    }
-  }
-
-  async function verifyWebauthnAndResume() {
-    setBioBusy(true)
-    try {
-      const options = await api.post<any>('/api/biometric/verify/webauthn/options')
-      const credential = await getAssertion(options)
-      const res = await api.post<{match:boolean}>('/api/biometric/verify/webauthn/verify', { credential })
-      if (res.match) {
-        setBiometricRequired(false)
-        setBioFailCount(0)
-        await doStartExam()
-      } else {
-        await onBiometricFailure()
-      }
-    } catch (e:any) {
-      toastErr(friendlyWebauthnError(e))
-      await onBiometricFailure()
     } finally {
       setBioBusy(false)
     }
@@ -2145,7 +2118,7 @@ export default function ExamPage() {
       <div style={{background:'white',borderRadius:16,boxShadow:'0 8px 32px rgba(0,0,0,.12)',maxWidth:440,width:'100%',padding:'28px 32px'}}>
         <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:18}}>
           <div style={{width:52,height:52,background:'rgba(37,99,235,.1)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,color:'#2563eb',flexShrink:0}}>
-            <i className="fas fa-fingerprint"/>
+            <i className="fas fa-camera"/>
           </div>
           <div>
             <h2 style={{margin:'0 0 3px',fontSize:21.5,fontWeight:700,color:'#1e293b'}}>Vérification d'identité</h2>
@@ -2153,28 +2126,14 @@ export default function ExamPage() {
           </div>
         </div>
 
-        {bioMethod==='face' && (
-          <>
-            <div style={{position:'relative',width:'100%',aspectRatio:'4/3',background:'#0f172a',borderRadius:12,overflow:'hidden',marginBottom:16}}>
-              <video ref={bioVideoRef} autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)'}}/>
-            </div>
-            <p style={{color:'#64748b',marginBottom:18,fontSize:14.5,textAlign:'center'}}>{bioStatusMsg}</p>
-            <button onClick={verifyFaceAndResume} disabled={bioBusy}
-              style={{width:'100%',padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:bioBusy?'not-allowed':'pointer',opacity:bioBusy?.6:1,fontSize:17}}>
-              {bioBusy ? <><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Vérification…</> : <><i className="fas fa-camera" style={{marginRight:6}}/>Vérifier mon identité</>}
-            </button>
-          </>
-        )}
-
-        {bioMethod==='webauthn' && (
-          <>
-            <p style={{color:'#64748b',marginBottom:18,fontSize:15.5,textAlign:'center'}}>Utilisez votre empreinte digitale ou Face ID pour continuer.</p>
-            <button onClick={verifyWebauthnAndResume} disabled={bioBusy}
-              style={{width:'100%',padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:bioBusy?'not-allowed':'pointer',opacity:bioBusy?.6:1,fontSize:17}}>
-              {bioBusy ? <><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Vérification…</> : <><i className="fas fa-fingerprint" style={{marginRight:6}}/>Vérifier mon identité</>}
-            </button>
-          </>
-        )}
+        <div style={{position:'relative',width:'100%',aspectRatio:'4/3',background:'#0f172a',borderRadius:12,overflow:'hidden',marginBottom:16}}>
+          <video ref={bioVideoRef} autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)'}}/>
+        </div>
+        <p style={{color:'#64748b',marginBottom:18,fontSize:14.5,textAlign:'center'}}>{bioStatusMsg}</p>
+        <button onClick={verifyFaceAndResume} disabled={bioBusy}
+          style={{width:'100%',padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:bioBusy?'not-allowed':'pointer',opacity:bioBusy?.6:1,fontSize:17}}>
+          {bioBusy ? <><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Vérification…</> : <><i className="fas fa-camera" style={{marginRight:6}}/>Vérifier mon identité</>}
+        </button>
 
         <div style={{display:'flex',gap:10,marginTop:14}}>
           <button onClick={()=>{ stopBiometricCamera(); router.push('/dashboard/student') }} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:17}}>
@@ -2254,7 +2213,7 @@ export default function ExamPage() {
         <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:10,padding:'14px 16px',marginBottom:18}}>
           <div style={{display:'flex',flexDirection:'column',gap:9}}>
             {[
-              {icon:'fa-fingerprint',color:'#2563eb',txt:"Vérification d'identité (visage ou empreinte digitale/Face ID) requise avant l'accès"},
+              {icon:'fa-camera',color:'#2563eb',txt:"Vérification d'identité par reconnaissance faciale requise avant l'accès"},
               {icon:'fa-video',color:'#2563eb',txt:'Caméra et microphone activés pendant toute la durée'},
               {icon:'fa-user-check',color:'#10b981',txt:'Visage visible en permanence (détection faciale IA)'},
               {icon:'fa-expand',color:'#f59e0b',txt:"Plein écran obligatoire — tout changement d'onglet est enregistré"},

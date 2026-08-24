@@ -90,7 +90,7 @@ const EVT_ICONS: Record<string, string> = {
   head_turned:            'fa-rotate',
   talking_detected:       'fa-comment-dots',
   suspect_object_detected:'fa-triangle-exclamation',
-  liveness_check_failed:  'fa-fingerprint',
+  liveness_check_failed:  'fa-eye',
   sustained_audio_detected:'fa-microphone-lines',
   multi_screen_detected:  'fa-display',
 }

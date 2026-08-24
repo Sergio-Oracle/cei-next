@@ -437,7 +437,7 @@ export default function GuideEnseignant() {
                 <div className="step-num">9</div>
                 <div className="step-content">
                   <h4>Vérification d&apos;identité biométrique — votre rôle de dernier recours</h4>
-                  <p>Chaque étudiant doit confirmer son identité (visage ou empreinte digitale/Face ID) avant chaque accès à un examen. En cas d&apos;échec répété, un appel de vérification manuelle est déclenché — l&apos;ordre de priorité pour y répondre est : <strong>surveillant assigné</strong> → <strong>superviseur du groupe</strong> → <strong>vous (enseignant), en dernier recours</strong>. Une bannière &quot;Vérification d&apos;identité&quot; apparaît alors où que vous soyez dans l&apos;application, avec un bouton pour répondre et valider.</p>
+                  <p>Chaque étudiant doit confirmer son identité par reconnaissance faciale avant chaque accès à un examen. En cas d&apos;échec répété, un appel de vérification manuelle est déclenché — l&apos;ordre de priorité pour y répondre est : <strong>surveillant assigné</strong> → <strong>superviseur du groupe</strong> → <strong>vous (enseignant), en dernier recours</strong>. Une bannière &quot;Vérification d&apos;identité&quot; apparaît alors où que vous soyez dans l&apos;application, avec un bouton pour répondre et valider.</p>
                 </div>
               </div>
             </div>
