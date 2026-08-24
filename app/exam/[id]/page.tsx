@@ -2409,6 +2409,14 @@ export default function ExamPage() {
     ] as const
     const scanStageIdx = envScanProgress < 20 ? 0 : envScanProgress < 45 ? 1 : envScanProgress < 70 ? 2 : 3
     const scanStage = ENV_SCAN_STAGES[scanStageIdx]
+    // Quand l'examen exige une caméra secondaire, elle devient une étape
+    // obligatoire de l'accès (retour utilisateur du 24/08 : "le comportement
+    // que je veux est que le bouton [Continuer] s'affiche après que l'ajout
+    // d'une autre caméra soit fait [...] si ce n'est pas le cas procède
+    // comme ce qui existait") — "Continuer vers l'examen" reste bloqué tant
+    // qu'elle n'est pas connectée, uniquement si l'option est activée pour
+    // cet examen ; sinon comportement inchangé.
+    const needsPhoneCam = envScanStatus==='ok' && !!exam?.allow_secondary_camera && !phoneCamLinked
     const scanStageAnim = scanStage.dir==='left' ? 'scanArrowLeft 1.1s ease-in-out infinite'
       : scanStage.dir==='right' ? 'scanArrowRight 1.1s ease-in-out infinite'
       : scanStage.dir==='down' ? 'scanArrowDown 1.1s ease-in-out infinite'
@@ -2504,20 +2512,29 @@ export default function ExamPage() {
                 <button onClick={openPhoneCameraModal}
                   style={{width:'100%',padding:11,background:phoneCamLinked?'#dcfce7':'#f1f5f9',color:phoneCamLinked?'#15803d':'#334155',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:8}}>
                   <i className={`fas ${phoneCamLinked?'fa-circle-check':'fa-mobile-screen'}`}/>
-                  {phoneCamLinked ? 'Caméra secondaire connectée — revoir / reconnecter' : 'Ajouter une caméra secondaire (optionnel)'}
+                  {phoneCamLinked ? 'Caméra secondaire connectée — revoir / reconnecter' : 'Ajouter la caméra secondaire (requise pour cet examen)'}
                 </button>
               )}
             </>
           )}
 
           {(envScanStatus==='ok' || envScanStatus==='blocked' || envScanStatus==='degraded') && (
-            <button onClick={envScanStatus==='blocked' ? runEnvironmentScan : enterExam}
-              style={{width:'100%',padding:14,background:'#2563eb',color:'white',border:'none',borderRadius:12,fontSize:17,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
-              <i className={`fas ${envScanStatus==='blocked'?'fa-rotate':'fa-arrow-right'}`}/>
-              {envScanStatus==='blocked' ? 'Relancer la vérification' : "Continuer vers l'examen"}
-            </button>
+            <>
+              <button onClick={envScanStatus==='blocked' ? runEnvironmentScan : enterExam} disabled={needsPhoneCam}
+                style={{width:'100%',padding:14,background:'#2563eb',color:'white',border:'none',borderRadius:12,fontSize:17,fontWeight:700,cursor:needsPhoneCam?'not-allowed':'pointer',opacity:needsPhoneCam?.5:1,display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+                <i className={`fas ${envScanStatus==='blocked'?'fa-rotate':'fa-arrow-right'}`}/>
+                {envScanStatus==='blocked' ? 'Relancer la vérification' : "Continuer vers l'examen"}
+              </button>
+              {needsPhoneCam && (
+                <p style={{fontSize:13,color:'#94a3b8',textAlign:'center',margin:'8px 0 0'}}>
+                  Connectez la caméra secondaire ci-dessus pour continuer.
+                </p>
+              )}
+            </>
           )}
         </div>
+        <PhoneCameraModal show={showPhoneCamModal} busy={phoneCamBusy} connected={phoneCamModalConnected}
+          code={phoneCamCode} url={phoneCamUrl} qr={phoneCamQr} onClose={closePhoneCameraModal}/>
       </div>
     )
   }
@@ -2963,43 +2980,8 @@ export default function ExamPage() {
         {exam.enable_calculator&&showCalculator&&<Calculator onClose={()=>setShowCalculator(false)}/>}
 
         {/* Couplage caméra secondaire (smartphone, angle latéral) */}
-        {showPhoneCamModal&&(
-          <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999}}>
-            <div style={{background:'white',borderRadius:12,overflow:'hidden',maxWidth:400,width:'92%',boxShadow:'0 20px 40px rgba(0,0,0,.3)'}}>
-              <div style={{padding:'24px 28px',textAlign:'center'}}>
-                <div style={{width:56,height:56,margin:'0 auto 14px',background:'rgba(37,99,235,.12)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26.5,color:'#2563eb'}}>
-                  <i className="fas fa-mobile-screen"/>
-                </div>
-                <h3 style={{margin:'0 0 8px',fontSize:19,fontWeight:700,color:'#0f172a'}}>Caméra secondaire</h3>
-                {phoneCamModalConnected ? (
-                  <>
-                    <p style={{color:'#15803d',fontSize:15.5,margin:'0 0 20px'}}><i className="fas fa-circle-check" style={{marginRight:6}}/>Téléphone connecté — vous pouvez le reposer, orienté sur votre poste de travail.</p>
-                    <button onClick={closePhoneCameraModal} style={{width:'100%',padding:12,background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:'pointer'}}>Fermer</button>
-                  </>
-                ) : phoneCamBusy ? (
-                  <p style={{color:'#64748b',fontSize:15}}><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Génération du code…</p>
-                ) : (
-                  <>
-                    <p style={{color:'#64748b',fontSize:14.5,margin:'0 0 6px',lineHeight:1.5}}>Sur votre <strong>téléphone</strong> : scannez ce code avec l&apos;appareil photo, ou ouvrez le lien ci-dessous.</p>
-                    {phoneCamQr&&<img src={phoneCamQr} alt="QR code de couplage" style={{width:180,height:180,margin:'0 auto 10px',display:'block'}}/>}
-                    {phoneCamUrl&&(
-                      <p style={{fontSize:12.5,color:'#94a3b8',wordBreak:'break-all',marginBottom:14}}>{phoneCamUrl}</p>
-                    )}
-                    {phoneCamCode&&(
-                      <>
-                        <p style={{color:'#64748b',fontSize:13,margin:'0 0 4px'}}>Puis, sur le téléphone, entrez ce code :</p>
-                        <div style={{fontSize:26,fontWeight:700,letterSpacing:4,color:'#0f172a',marginBottom:10,fontVariantNumeric:'tabular-nums'}}>{phoneCamCode}</div>
-                      </>
-                    )}
-                    <p style={{fontSize:13,color:'#94a3b8',marginBottom:6}}>Positionnez ensuite le téléphone pour couvrir votre poste de travail.</p>
-                    <p style={{fontSize:13,color:'#94a3b8',marginBottom:16}}><i className="fas fa-hourglass-half" style={{marginRight:5}}/>Code valable 5 minutes — en attente de connexion…</p>
-                    <button onClick={closePhoneCameraModal} style={{width:'100%',padding:12,background:'#f1f5f9',color:'#334155',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:'pointer'}}>Annuler</button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        <PhoneCameraModal show={showPhoneCamModal} busy={phoneCamBusy} connected={phoneCamModalConnected}
+          code={phoneCamCode} url={phoneCamUrl} qr={phoneCamQr} onClose={closePhoneCameraModal}/>
 
         {/* Modal appel privé entrant */}
         {showPrivateCallModal&&(
@@ -3129,6 +3111,58 @@ function SecHead({icon,color,bg,tc,title,sub}:{icon:string;color:string;bg:strin
     <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14,padding:'12px 16px',background:bg,borderRadius:10,borderLeft:`4px solid ${color}`}}>
       <i className={`fas ${icon}`} style={{color,fontSize:22}}/>
       <div><div style={{fontWeight:700,fontSize:17,color:tc}}>{title}</div><div style={{fontSize:14.5,color}}>{sub}</div></div>
+    </div>
+  )
+}
+
+// Extrait en composant réutilisable (pas dupliqué) — le bouton qui l'ouvre
+// existe dans DEUX écrans à des phases différentes (vérification
+// d'environnement, puis en cours d'examen pour reconnecter) qui sont chacun
+// des `return` distincts du composant principal. Avant cette extraction, la
+// modale vivait UNIQUEMENT dans le JSX de la phase 'exam' — cliquer sur le
+// bouton depuis la phase 'env_scan' déclenchait bien l'appel API (état
+// showPhoneCamModal mis à jour, code généré) mais aucune modale n'apparaissait
+// jamais, ce `return` n'étant simplement jamais atteint depuis cette phase-là
+// (retour utilisateur du 24/08 : "je clique mais cela ne fonctionne pas" —
+// reproduit et confirmé en réel avant ce correctif, aucune erreur JS,
+// juste un rendu qui n'était jamais exécuté).
+function PhoneCameraModal({show,busy,connected,code,url,qr,onClose}:{show:boolean;busy:boolean;connected:boolean;code:string|null;url:string|null;qr:string|null;onClose:()=>void}) {
+  if (!show) return null
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999}}>
+      <div style={{background:'white',borderRadius:12,overflow:'hidden',maxWidth:400,width:'92%',boxShadow:'0 20px 40px rgba(0,0,0,.3)'}}>
+        <div style={{padding:'24px 28px',textAlign:'center'}}>
+          <div style={{width:56,height:56,margin:'0 auto 14px',background:'rgba(37,99,235,.12)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26.5,color:'#2563eb'}}>
+            <i className="fas fa-mobile-screen"/>
+          </div>
+          <h3 style={{margin:'0 0 8px',fontSize:19,fontWeight:700,color:'#0f172a'}}>Caméra secondaire</h3>
+          {connected ? (
+            <>
+              <p style={{color:'#15803d',fontSize:15.5,margin:'0 0 20px'}}><i className="fas fa-circle-check" style={{marginRight:6}}/>Téléphone connecté — vous pouvez le reposer, orienté sur votre poste de travail.</p>
+              <button onClick={onClose} style={{width:'100%',padding:12,background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:'pointer'}}>Fermer</button>
+            </>
+          ) : busy ? (
+            <p style={{color:'#64748b',fontSize:15}}><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Génération du code…</p>
+          ) : (
+            <>
+              <p style={{color:'#64748b',fontSize:14.5,margin:'0 0 6px',lineHeight:1.5}}>Sur votre <strong>téléphone</strong> : scannez ce code avec l&apos;appareil photo, ou ouvrez le lien ci-dessous.</p>
+              {qr&&<img src={qr} alt="QR code de couplage" style={{width:180,height:180,margin:'0 auto 10px',display:'block'}}/>}
+              {url&&(
+                <p style={{fontSize:12.5,color:'#94a3b8',wordBreak:'break-all',marginBottom:14}}>{url}</p>
+              )}
+              {code&&(
+                <>
+                  <p style={{color:'#64748b',fontSize:13,margin:'0 0 4px'}}>Puis, sur le téléphone, entrez ce code :</p>
+                  <div style={{fontSize:26,fontWeight:700,letterSpacing:4,color:'#0f172a',marginBottom:10,fontVariantNumeric:'tabular-nums'}}>{code}</div>
+                </>
+              )}
+              <p style={{fontSize:13,color:'#94a3b8',marginBottom:6}}>Positionnez ensuite le téléphone pour couvrir votre poste de travail.</p>
+              <p style={{fontSize:13,color:'#94a3b8',marginBottom:16}}><i className="fas fa-hourglass-half" style={{marginRight:5}}/>Code valable 5 minutes — en attente de connexion…</p>
+              <button onClick={onClose} style={{width:'100%',padding:12,background:'#f1f5f9',color:'#334155',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:'pointer'}}>Annuler</button>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
