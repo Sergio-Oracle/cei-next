@@ -168,6 +168,12 @@ function BiometricEnrollInner() {
             <div style={{ textAlign: 'center' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', background: '#0f172a', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
                 <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
+                {/* Guide de cadrage — purement visuel (aucun effet sur la
+                    capture/analyse), aide juste l'étudiant à bien centrer
+                    son visage avant de cliquer sur "Capturer". */}
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                  <div style={{ width: '52%', height: '78%', borderRadius: '50%', borderWidth: 4, borderStyle: 'solid', borderColor: faceReady ? '#3b82f6' : 'rgba(255,255,255,.8)', boxShadow: `0 0 0 2000px rgba(15,23,42,.55), 0 0 16px 2px ${faceReady ? 'rgba(59,130,246,.6)' : 'rgba(255,255,255,.3)'}`, transition: 'border-color .2s, box-shadow .2s' }} />
+                </div>
               </div>
               <p style={{ color: 'var(--text-muted)', marginBottom: 20, fontSize: 15 }}>{statusMsg}</p>
               <button className="btn btn-primary btn-block" disabled={!faceReady} onClick={captureNow}>

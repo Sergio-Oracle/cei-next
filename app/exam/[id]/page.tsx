@@ -1600,8 +1600,26 @@ export default function ExamPage() {
   }
 
   /* ── Helpers API ──────────────────────────────────────────────────────── */
+  // Sous-ensemble des event_type diffusés en direct au surveillant (canal de
+  // données LiveKit, déjà utilisé dans l'autre sens pour les messages
+  // enseignant→étudiant) — volontairement restreint aux incidents qui
+  // méritent une notification immédiate pendant l'examen (bruit/parole,
+  // changement de focus/onglet, plusieurs écrans), pas chaque micro-signal
+  // de vision (regard détourné, tête tournée...) qui inonderait l'écran de
+  // surveillance. Le journal complet (preuve) reste, lui, exhaustif — voir
+  // logActivity/logProctoring ci-dessous, non filtrés.
+  const LIVE_ALERT_EVENTS = new Set(['sustained_audio_detected','tab_switch','window_blur','fullscreen_exit','multi_screen_detected'])
+  function broadcastLiveAlert(eventType:string, message:string) {
+    try {
+      const room = lkRoomRef.current
+      if (!room || !room.localParticipant) return
+      const payload = JSON.stringify({ kind:'proctor_live_alert', event_type:eventType, message, ts:Date.now() })
+      room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable:true })
+    } catch {}
+  }
   async function logProctoring(aId:number,eventType:string,eventData:string) {
     if(sessionEndedRef.current) return
+    if (LIVE_ALERT_EVENTS.has(eventType)) broadcastLiveAlert(eventType, eventData)
     try {
       const res=await api.post<{risk_score?:number;banned?:boolean}>(`/api/exam_attempts/${aId}/proctoring_event`,{event_type:eventType,event_data:eventData})
       if(res.risk_score!=null) setRiskScore(res.risk_score)

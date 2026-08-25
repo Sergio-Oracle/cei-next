@@ -146,6 +146,46 @@ const EVENT_LABEL_MAP: Record<string, string> = {
   env_scan_object_detected:'Objet repéré pendant le scan environnement',
 }
 
+// Icône + couleur par event_type — source unique partagée entre le panneau
+// de logs (historique) et les badges d'alerte en direct sur les tuiles vidéo.
+const EVENT_ICON_MAP: Record<string, { icon: string; color: string }> = {
+  tab_switch:             { icon: 'exchange-alt',        color: '#f59e0b' },
+  tab_closed:             { icon: 'door-open',           color: '#ef4444' },
+  no_face_detected:       { icon: 'user-slash',          color: '#ef4444' },
+  no_face_low_light:      { icon: 'lightbulb',           color: '#f59e0b' },
+  face_hidden_object_detected: { icon: 'mobile-screen',  color: '#ef4444' },
+  no_face:                { icon: 'user-slash',          color: '#ef4444' },
+  multiple_faces:         { icon: 'users',               color: '#ef4444' },
+  teacher_warning:        { icon: 'exclamation-triangle', color: '#f59e0b' },
+  teacher_message:        { icon: 'comment',             color: '#3b82f6' },
+  student_message:        { icon: 'comment-dots',        color: '#0d9488' },
+  proctor_note:           { icon: 'sticky-note',         color: '#db2777' },
+  'proctor note':         { icon: 'sticky-note',         color: '#db2777' },
+  teacher_ban:            { icon: 'ban',                 color: '#ef4444' },
+  proctor_ban:            { icon: 'ban',                 color: '#ef4444' },
+  extra_time:             { icon: 'clock',               color: '#f59e0b' },
+  private_call:           { icon: 'phone',               color: '#10b981' },
+  teacher_private_call:   { icon: 'phone',               color: '#10b981' },
+  'teacher private call': { icon: 'phone',               color: '#10b981' },
+  end_call:               { icon: 'phone-slash',         color: '#94a3b8' },
+  teacher_end_call:       { icon: 'phone-slash',         color: '#94a3b8' },
+  'teacher end call':     { icon: 'phone-slash',         color: '#94a3b8' },
+  unban:                  { icon: 'unlock',              color: '#10b981' },
+  warning_issued:         { icon: 'exclamation-circle',  color: '#f59e0b' },
+  audio_suspicious:       { icon: 'volume-high',         color: '#f59e0b' },
+  env_scan_completed:     { icon: 'street-view',         color: '#10b981' },
+  env_scan_person_detected: { icon: 'user-group',        color: '#ef4444' },
+  env_scan_unavailable:   { icon: 'street-view',         color: '#94a3b8' },
+  gaze_away:              { icon: 'eye',                 color: '#f59e0b' },
+  head_turned:            { icon: 'rotate',              color: '#f59e0b' },
+  talking_detected:       { icon: 'comment-dots',        color: '#f59e0b' },
+  suspect_object_detected:{ icon: 'triangle-exclamation',color: '#ef4444' },
+  env_scan_object_detected: { icon: 'triangle-exclamation', color: '#f59e0b' },
+  liveness_check_failed:  { icon: 'eye',                 color: '#f59e0b' },
+  sustained_audio_detected: { icon: 'microphone-lines',  color: '#f59e0b' },
+  multi_screen_detected:  { icon: 'display',             color: '#ef4444' },
+}
+
 /* ── Page ────────────────────────────────────────────────────────────────── */
 
 type Filter = 'all' | 'in_progress' | 'high_risk' | 'banned'
@@ -207,6 +247,14 @@ export default function ProctorMonitorPage() {
   // suffixe strippé pour retrouver l'identité PRINCIPALE (livekit_identity)
   // à laquelle rattacher la miniature dans VideoCard.
   const [phoneLiveSet, setPhoneLiveSet] = useState<Set<string>>(new Set())
+  // Alertes en direct (bruit/parole, changement de focus, plusieurs écrans…)
+  // reçues via le canal de données LiveKit — badge flottant transitoire sur
+  // la tuile vidéo concernée, en plus (pas à la place) de la trace complète
+  // déjà enregistrée dans l'historique de surveillance (preuve, consultable
+  // après coup via "Logs"). Clé = identité de base (student-{id}).
+  const [liveAlerts, setLiveAlerts] = useState<Map<string, { eventType: string; message: string }>>(new Map())
+  const liveAlertTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  useEffect(() => () => { liveAlertTimersRef.current.forEach(t => clearTimeout(t)); liveAlertTimersRef.current.clear() }, [])
 
   /* identités LiveKit des étudiants actuellement connectés */
   const [liveSet, setLiveSet] = useState<Set<string>>(new Set())
@@ -506,6 +554,29 @@ export default function ProctorMonitorPage() {
       const LK   = window.LivekitClient
       const room = new LK.Room({ adaptiveStream: true, dynacast: true })
       roomRef.current = room
+
+      // Alertes en direct (bruit prolongé, changement d'onglet/focus,
+      // plusieurs écrans) diffusées par la page d'examen de l'étudiant sur
+      // ce même canal — voir broadcastLiveAlert côté exam/[id]/page.tsx.
+      room.on(LK.RoomEvent.DataReceived, (payload: Uint8Array, participant: any) => {
+        try {
+          const msg = JSON.parse(new TextDecoder().decode(payload))
+          if (msg?.kind !== 'proctor_live_alert') return
+          const identity = participant?.identity
+          if (!identity || !identity.startsWith('student-')) return
+          setLiveAlerts(prev => {
+            const next = new Map(prev)
+            next.set(identity, { eventType: msg.event_type, message: msg.message })
+            return next
+          })
+          const timers = liveAlertTimersRef.current
+          if (timers.has(identity)) clearTimeout(timers.get(identity))
+          timers.set(identity, setTimeout(() => {
+            setLiveAlerts(prev => { const n = new Map(prev); n.delete(identity); return n })
+            timers.delete(identity)
+          }, 7000))
+        } catch {}
+      })
 
       room.on(LK.RoomEvent.TrackSubscribed, (track: any, pub: any, participant: any) => {
         const identity = participant.identity
@@ -1171,6 +1242,7 @@ export default function ProctorMonitorPage() {
         @keyframes spin    { to { transform:rotate(360deg) } }
         @keyframes pulse   { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(.9)} }
         @keyframes ripple  { 0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)} 50%{box-shadow:0 0 0 6px rgba(16,185,129,0)} 100%{box-shadow:0 0 0 0 rgba(16,185,129,0)} }
+        @keyframes liveAlertIn { 0%{opacity:0;transform:translateY(6px)} 100%{opacity:1;transform:translateY(0)} }
         .mon-filter { padding:6px 14px;border:2px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.7);border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s; }
         .mon-filter:hover,.mon-filter.active { border-color:#3b82f6;background:#3b82f6;color:white; }
         .mon-tbl { width:100%;border-collapse:collapse; }
@@ -1684,6 +1756,7 @@ export default function ProctorMonitorPage() {
                 recActive={recSet.has(s.attempt_id)}
                 screenAvail={screenSet.has(s.livekit_identity)}
                 phoneLive={phoneLiveSet.has(s.livekit_identity)}
+                liveAlert={liveAlerts.get(s.livekit_identity) || null}
                 onMsg={type => openMsg(s, type)}
                 onBan={() => openBan(s)}
                 onRec={() => toggleStudentRec(s.attempt_id)}
@@ -2301,47 +2374,9 @@ export default function ProctorMonitorPage() {
               ) : logsPanel.logs.length === 0 ? (
                 <p style={{ color: 'rgba(255,255,255,.35)', fontSize:15.5, textAlign: 'center', padding: 24 }}>Aucun log disponible</p>
               ) : logsPanel.logs.map((log: any, i: number) => {
-                const labelMap = EVENT_LABEL_MAP
-                const iconMap: Record<string, { icon: string; color: string }> = {
-                  tab_switch:             { icon: 'exchange-alt',        color: '#f59e0b' },
-                  tab_closed:             { icon: 'door-open',           color: '#ef4444' },
-                  no_face_detected:       { icon: 'user-slash',          color: '#ef4444' },
-                  no_face_low_light:      { icon: 'lightbulb',           color: '#f59e0b' },
-                  face_hidden_object_detected: { icon: 'mobile-screen',  color: '#ef4444' },
-                  no_face:                { icon: 'user-slash',          color: '#ef4444' },
-                  multiple_faces:         { icon: 'users',               color: '#ef4444' },
-                  teacher_warning:        { icon: 'exclamation-triangle', color: '#f59e0b' },
-                  teacher_message:        { icon: 'comment',             color: '#3b82f6' },
-                  student_message:        { icon: 'comment-dots',        color: '#0d9488' },
-                  proctor_note:           { icon: 'sticky-note',         color: '#db2777' },
-                  'proctor note':         { icon: 'sticky-note',         color: '#db2777' },
-                  teacher_ban:            { icon: 'ban',                 color: '#ef4444' },
-                  proctor_ban:            { icon: 'ban',                 color: '#ef4444' },
-                  extra_time:             { icon: 'clock',               color: '#f59e0b' },
-                  private_call:           { icon: 'phone',               color: '#10b981' },
-                  teacher_private_call:   { icon: 'phone',               color: '#10b981' },
-                  'teacher private call': { icon: 'phone',               color: '#10b981' },
-                  end_call:               { icon: 'phone-slash',         color: '#94a3b8' },
-                  teacher_end_call:       { icon: 'phone-slash',         color: '#94a3b8' },
-                  'teacher end call':     { icon: 'phone-slash',         color: '#94a3b8' },
-                  unban:                  { icon: 'unlock',              color: '#10b981' },
-                  warning_issued:         { icon: 'exclamation-circle',  color: '#f59e0b' },
-                  audio_suspicious:       { icon: 'volume-high',         color: '#f59e0b' },
-                  env_scan_completed:     { icon: 'street-view',         color: '#10b981' },
-                  env_scan_person_detected: { icon: 'user-group',        color: '#ef4444' },
-                  env_scan_unavailable:   { icon: 'street-view',         color: '#94a3b8' },
-                  gaze_away:              { icon: 'eye',                 color: '#f59e0b' },
-                  head_turned:            { icon: 'rotate',              color: '#f59e0b' },
-                  talking_detected:       { icon: 'comment-dots',        color: '#f59e0b' },
-                  suspect_object_detected:{ icon: 'triangle-exclamation',color: '#ef4444' },
-                  env_scan_object_detected: { icon: 'triangle-exclamation', color: '#f59e0b' },
-                  liveness_check_failed:  { icon: 'eye',                 color: '#f59e0b' },
-                  sustained_audio_detected: { icon: 'microphone-lines',  color: '#f59e0b' },
-                  multi_screen_detected:  { icon: 'display',             color: '#ef4444' },
-                }
                 const et = log.event_type || log.type || 'event'
-                const label = labelMap[et] || et.replace(/_/g, ' ')
-                const meta  = iconMap[et]  || { icon: 'circle', color: 'rgba(255,255,255,.4)' }
+                const label = EVENT_LABEL_MAP[et] || et.replace(/_/g, ' ')
+                const meta  = EVENT_ICON_MAP[et]  || { icon: 'circle', color: 'rgba(255,255,255,.4)' }
                 return (
                   <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize:14.5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                     <i className={`fas fa-${meta.icon}`} style={{ color: meta.color, marginTop: 2, flexShrink: 0 }} />
@@ -2456,11 +2491,12 @@ function AgentBanner({ agent, lastCheck, studentsCount }: { agent: AgentStatus |
   )
 }
 
-function VideoCard({ s, recActive, screenAvail, phoneLive, onMsg, onBan, onRec, onScreen, onCall, onExtraTime, onNote, onLogs, onZoomPhone }: {
+function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onBan, onRec, onScreen, onCall, onExtraTime, onNote, onLogs, onZoomPhone }: {
   s: Student
   recActive:    boolean
   screenAvail:  boolean
   phoneLive:    boolean
+  liveAlert:    { eventType: string; message: string } | null
   onMsg:        (t: 'message' | 'warning') => void
   onBan:        () => void
   onRec:        () => void
@@ -2492,6 +2528,24 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, onMsg, onBan, onRec, 
         </div>
         <video id={`video-${s.livekit_identity}`} autoPlay playsInline
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'none' }} />
+
+        {/* Alerte en direct (bruit/parole, changement de focus, plusieurs
+            écrans…) — badge transitoire (~7s) reçu en temps réel via le
+            canal de données LiveKit, distinct du badge de risque permanent
+            en haut de la tuile. Reste aussi consultable après coup, en
+            détail, dans "Logs" (preuve enregistrée côté serveur). */}
+        {liveAlert && (() => {
+          const meta = EVENT_ICON_MAP[liveAlert.eventType] || { icon: 'circle-exclamation', color: '#f59e0b' }
+          return (
+            <div title={liveAlert.message}
+              style={{ position: 'absolute', bottom: 6, left: 6, right: phoneLive ? 130 : 6, zIndex: 4, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, background: 'rgba(15,23,42,.9)', border: `1px solid ${meta.color}`, boxShadow: '0 2px 10px rgba(0,0,0,.5)', animation: 'liveAlertIn .2s ease-out' }}>
+              <i className={`fas fa-${meta.icon}`} style={{ color: meta.color, fontSize: 12, flexShrink: 0 }} />
+              <span style={{ fontSize: 11.5, fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {EVENT_LABEL_MAP[liveAlert.eventType] || liveAlert.message}
+              </span>
+            </div>
+          )
+        })()}
 
         {/* Caméra secondaire (smartphone) — miniature en incrustation, angle latéral.
             Cliquable pour l'agrandir et voir clairement les angles morts.
