@@ -33,9 +33,17 @@ function PhoneCameraInner() {
   const [phase, setPhase] = useState<Phase>('enter-code')
   const [errorMsg, setErrorMsg] = useState('')
   const [examTitle, setExamTitle] = useState('')
+  const [reconnecting, setReconnecting] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const roomRef = useRef<any>(null)
+  // Conserve le token déjà émis (valable jusqu'à la fin de l'examen, TTL
+  // généreux côté serveur) pour permettre une reconnexion silencieuse sur
+  // coupure réseau transitoire — sans lui, chaque coupure obligerait à
+  // regénérer un nouveau code à usage unique depuis l'écran principal,
+  // ce qui interromprait l'étudiant en pleine composition (retour
+  // utilisateur du 25/08 : "comment l'étudiant va faire" en cas de coupure).
+  const tokenRef = useRef<{ token: string; ws_url: string } | null>(null)
   // Le code de couplage est à usage unique côté serveur — un double appel de
   // connect() (constaté en réel : l'effet d'auto-connexion se déclenche deux
   // fois) ferait échouer le second avec "code invalide", écrasant l'état
@@ -58,9 +66,11 @@ function PhoneCameraInner() {
     connectLockRef.current = true
     setPhase('connecting')
     setErrorMsg('')
+    setReconnecting(false)
     try {
       const res = await api.post<{ token: string; ws_url: string; room: string; exam_title: string }>('/api/phone_camera/token', { code: trimmed })
       setExamTitle(res.exam_title)
+      tokenRef.current = { token: res.token, ws_url: res.ws_url }
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -77,7 +87,28 @@ function PhoneCameraInner() {
       const LK = await loadLiveKit()
       const room = new LK.Room({ adaptiveStream: true, dynacast: true })
       roomRef.current = room
-      room.on(LK.RoomEvent.Disconnected, () => { connectLockRef.current = false; setPhase('error') })
+      let reconnects = 0
+      room.on(LK.RoomEvent.Disconnected, () => {
+        // Coupure réseau transitoire (WiFi instable, veille de l'appareil…) —
+        // même stratégie de reconnexion silencieuse (délai croissant, jusqu'à
+        // 5 essais) que la caméra principale sur la page d'examen : on
+        // réutilise le token déjà émis, jamais besoin d'un nouveau code tant
+        // que ces essais n'ont pas tous échoué.
+        if (reconnects >= 5) { connectLockRef.current = false; setReconnecting(false); setPhase('error'); return }
+        setReconnecting(true)
+        const delay = Math.min(2000 * Math.pow(1.5, reconnects), 30000); reconnects++
+        setTimeout(async () => {
+          try {
+            if (!tokenRef.current || !streamRef.current) throw new Error('no session')
+            await room.connect(tokenRef.current.ws_url, tokenRef.current.token)
+            const camTrack = streamRef.current.getVideoTracks()[0]
+            const vt = new LK.LocalVideoTrack(camTrack, undefined, false)
+            await room.localParticipant.publishTrack(vt, { simulcast: false, videoEncoding: { maxBitrate: 300_000, maxFramerate: 15 } })
+            reconnects = 0
+            setReconnecting(false)
+          } catch { /* le prochain événement Disconnected relance un essai */ }
+        }, delay)
+      })
       await room.connect(res.ws_url, res.token)
 
       const camTrack = stream.getVideoTracks()[0]
@@ -115,8 +146,10 @@ function PhoneCameraInner() {
       <div style={{ position: 'fixed', inset: 0, background: '#000', overflow: 'hidden' }}>
         <video ref={videoRef} muted playsInline
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '14px 16px', background: 'linear-gradient(to bottom,rgba(0,0,0,.6) 0%,transparent 100%)', display: 'flex', alignItems: 'center', gap: 8, color: '#4ade80', fontSize: 14.5, fontWeight: 700 }}>
-          <i className="fa-solid fa-circle-check" /> Connecté{examTitle ? ` — ${examTitle}` : ''}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '14px 16px', background: 'linear-gradient(to bottom,rgba(0,0,0,.6) 0%,transparent 100%)', display: 'flex', alignItems: 'center', gap: 8, color: reconnecting ? '#fbbf24' : '#4ade80', fontSize: 14.5, fontWeight: 700 }}>
+          {reconnecting
+            ? <><i className="fa-solid fa-rotate fa-spin" /> Reconnexion en cours…</>
+            : <><i className="fa-solid fa-circle-check" /> Connecté{examTitle ? ` — ${examTitle}` : ''}</>}
         </div>
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px', background: 'linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 100%)', color: 'rgba(255,255,255,.85)', fontSize: 12.5, lineHeight: 1.5, textAlign: 'center' }}>
           Positionnez le téléphone pour couvrir votre poste de travail, puis laissez-le en place. Ne fermez pas cette page pendant l&apos;examen.

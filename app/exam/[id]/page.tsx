@@ -938,16 +938,36 @@ export default function ExamPage() {
     if (attempt) { setShowBiometricCall(false); setBiometricRequired(false) }
   }, [attempt])
 
-  // Synchronise le badge "caméra secondaire" avec l'état réel côté serveur
-  // au chargement — sans ça, un téléphone resté connecté d'une session
-  // précédente (page rechargée, examen repris) apparaîtrait à tort comme
-  // non connecté tant que l'étudiant ne rouvre pas la modale.
+  // Synchronise le badge "caméra secondaire" avec l'état réel côté serveur —
+  // au chargement (téléphone resté connecté d'une session précédente,
+  // examen repris) ET en continu pendant la composition (toutes les 20s),
+  // pour détecter une déconnexion du téléphone en cours d'examen (WiFi
+  // coupé, appareil éteint…) sans attendre que l'étudiant rouvre la modale.
+  // Une déconnexion ne compte jamais comme une fraude (même politique que
+  // pour la caméra principale) — seulement une notification non bloquante,
+  // et le badge devient cliquable pour permettre une reconnexion sans
+  // quitter l'examen (retour utilisateur du 25/08).
   useEffect(() => {
     if (!attempt?.id || !exam?.allow_secondary_camera) return
-    api.get<{linked:boolean}>(`/api/exam_attempts/${attempt.id}/phone_camera/status`)
-      .then(st => { if (st.linked) setPhoneCamLinked(true) })
-      .catch(() => {})
-  }, [attempt?.id, exam?.allow_secondary_camera])
+    let cancelled = false
+    const check = () => {
+      api.get<{linked:boolean}>(`/api/exam_attempts/${attempt.id}/phone_camera/status`)
+        .then(st => {
+          if (cancelled) return
+          setPhoneCamLinked(prev => {
+            if (prev && !st.linked && phase === 'exam') {
+              warning('Caméra secondaire déconnectée — cliquez sur le badge pour la reconnecter')
+            }
+            return st.linked
+          })
+        })
+        .catch(() => {})
+    }
+    check()
+    if (phase !== 'exam') return
+    const iv = setInterval(check, 20000)
+    return () => { cancelled = true; clearInterval(iv) }
+  }, [attempt?.id, exam?.allow_secondary_camera, phase])
 
   async function submitAccessCode() {
     if (!pastedCode.trim()) { toastErr('Collez le code affiché ci-dessus.'); return }
@@ -2810,13 +2830,17 @@ export default function ExamPage() {
                   <i className="fas fa-calculator"/> Calculatrice
                 </button>
               )}
-              {/* Statut seulement ici — l'ajout se fait avant l'accès à
-                  l'examen (écran de vérification d'environnement), pas
-                  pendant la composition (retour utilisateur du 24/08). */}
-              {exam.allow_secondary_camera&&phoneCamLinked&&(
-                <span title="Caméra secondaire connectée" style={{padding:'9px 14px',background:'#dcfce7',color:'#15803d',borderRadius:8,fontWeight:600,fontSize:15.5,display:'flex',alignItems:'center',gap:7}}>
-                  <i className="fas fa-mobile-screen"/> Connectée
-                </span>
+              {/* Badge cliquable — l'ajout initial se fait avant l'accès à
+                  l'examen (écran de vérification d'environnement), mais si
+                  le téléphone se déconnecte PENDANT la composition (WiFi
+                  coupé, appareil éteint…), l'étudiant doit pouvoir le
+                  reconnecter sans quitter l'examen (retour utilisateur du
+                  25/08, remplace le badge purement passif du 24/08). */}
+              {exam.allow_secondary_camera&&(
+                <button onClick={openPhoneCameraModal} title={phoneCamLinked?'Caméra secondaire connectée — cliquer pour revoir/reconnecter':'Caméra secondaire déconnectée — cliquer pour reconnecter'}
+                  style={{padding:'9px 14px',background:phoneCamLinked?'#dcfce7':'#fef2f2',color:phoneCamLinked?'#15803d':'#dc2626',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,display:'flex',alignItems:'center',gap:7,cursor:'pointer'}}>
+                  <i className={`fas ${phoneCamLinked?'fa-mobile-screen':'fa-triangle-exclamation'}`}/> {phoneCamLinked?'Connectée':'Déconnectée'}
+                </button>
               )}
               <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 16px',background:timerColor,color:'white',borderRadius:8,fontSize:24,fontWeight:700,fontVariantNumeric:'tabular-nums'}}>
                 <i className="fas fa-clock" style={{fontSize:19}}/> {fmtTimer(timeLeft)}
