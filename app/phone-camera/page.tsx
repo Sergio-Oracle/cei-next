@@ -99,8 +99,31 @@ function PhoneCameraInner() {
     if (phase === 'connected' && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current
       videoRef.current.play().catch(() => {})
+      // Bonus : masque la barre d'adresse/chrome du navigateur si le
+      // support existe (absent sur iOS Safari — échec silencieux sans
+      // conséquence, le plein écran CSS ci-dessous reste garanti).
+      document.documentElement.requestFullscreen?.().catch(() => {})
     }
   }, [phase])
+
+  // Phase connectée : vue plein écran bord-à-bord, sans le cadre/carte
+  // centré utilisé pour les autres étapes — `inset:0` sur `position:fixed`
+  // se cale directement sur le viewport, donc s'adapte automatiquement à
+  // une rotation de l'appareil (portrait/paysage) sans code supplémentaire.
+  if (phase === 'connected') {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#000', overflow: 'hidden' }}>
+        <video ref={videoRef} muted playsInline
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '14px 16px', background: 'linear-gradient(to bottom,rgba(0,0,0,.6) 0%,transparent 100%)', display: 'flex', alignItems: 'center', gap: 8, color: '#4ade80', fontSize: 14.5, fontWeight: 700 }}>
+          <i className="fa-solid fa-circle-check" /> Connecté{examTitle ? ` — ${examTitle}` : ''}
+        </div>
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px', background: 'linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 100%)', color: 'rgba(255,255,255,.85)', fontSize: 12.5, lineHeight: 1.5, textAlign: 'center' }}>
+          Positionnez le téléphone pour couvrir votre poste de travail, puis laissez-le en place. Ne fermez pas cette page pendant l&apos;examen.
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a', padding: 20 }}>
@@ -151,17 +174,6 @@ function PhoneCameraInner() {
           </div>
         )}
 
-        {phase === 'connected' && (
-          <div style={{ background: 'white', borderRadius: 12, padding: 20, textAlign: 'left' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#15803d', fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
-              <i className="fa-solid fa-circle-check" /> Connecté{examTitle ? ` — ${examTitle}` : ''}
-            </div>
-            <p style={{ color: '#64748b', fontSize: 13.5, margin: '0 0 14px', lineHeight: 1.5 }}>
-              Positionnez le téléphone pour couvrir votre poste de travail (vue latérale), puis laissez-le en place. Ne fermez pas cette page pendant l&apos;examen.
-            </p>
-            <video ref={videoRef} muted playsInline style={{ width: '100%', borderRadius: 8, background: '#0f172a', aspectRatio: '16/9', objectFit: 'cover' }} />
-          </div>
-        )}
       </div>
     </div>
   )

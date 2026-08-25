@@ -189,6 +189,10 @@ export default function ProctorMonitorPage() {
   const [screenModal, setScreenModal] = useState<{ attemptId: number; name: string; identity: string } | null>(null)
   const screenVideoRef = useRef<HTMLVideoElement | null>(null)
 
+  /* modal: zoom caméra secondaire (smartphone) — pour voir clairement les angles morts */
+  const [phoneZoomModal, setPhoneZoomModal] = useState<{ attemptId: number; name: string; identity: string } | null>(null)
+  const phoneZoomVideoRef = useRef<HTMLVideoElement | null>(null)
+
   /* panel: logs */
   const [logsPanel, setLogsPanel] = useState<{ name: string; logs: any[] } | null>(null)
   const [loadingLogs, setLoadingLogs] = useState(false)
@@ -416,10 +420,10 @@ export default function ProctorMonitorPage() {
      souris sur la page : on considère qu'ouvrir n'importe laquelle de ces
      vues ciblées sur un étudiant compte comme un signal de suivi réel. */
   useEffect(() => {
-    if (msgModal || banModal || extraModal || noteModal || screenModal || logsPanel || zoomedSnapshot) {
+    if (msgModal || banModal || extraModal || noteModal || screenModal || phoneZoomModal || logsPanel || zoomedSnapshot) {
       lastStudentViewRef.current = Date.now()
     }
-  }, [msgModal, banModal, extraModal, noteModal, screenModal, logsPanel, zoomedSnapshot])
+  }, [msgModal, banModal, extraModal, noteModal, screenModal, phoneZoomModal, logsPanel, zoomedSnapshot])
 
   /* Tier C — vérification périodique de présence par la caméra du
      surveillant : uniquement un booléen "visage détecté", jamais d'image
@@ -886,6 +890,26 @@ export default function ProctorMonitorPage() {
       try { track.attach(screenVideoRef.current) } catch {}
     }
   }, [screenModal])
+
+  function openPhoneZoom(s: Student) {
+    setPhoneZoomModal({ attemptId: s.attempt_id, name: s.student_name, identity: s.livekit_identity })
+  }
+
+  /* attache le même track LiveKit (déjà utilisé pour la miniature) à la
+     grande vidéo du modal — un track peut être attaché à plusieurs <video>
+     simultanément, pas besoin de renégocier la connexion. */
+  useEffect(() => {
+    if (!phoneZoomModal || !phoneZoomVideoRef.current) return
+    const track = videoTracksRef.current.get(`${phoneZoomModal.identity}-phone`)
+    if (track) {
+      try { track.attach(phoneZoomVideoRef.current) } catch {}
+    }
+    return () => {
+      if (track && phoneZoomVideoRef.current) {
+        try { track.detach(phoneZoomVideoRef.current) } catch {}
+      }
+    }
+  }, [phoneZoomModal])
 
   /* ── Données dérivées ───────────────────────────────────────────────────── */
 
@@ -1654,6 +1678,7 @@ export default function ProctorMonitorPage() {
                 onExtraTime={() => openExtra(s)}
                 onNote={() => openNote(s)}
                 onLogs={() => openLogs(s)}
+                onZoomPhone={() => openPhoneZoom(s)}
               />
             ))}
           </div>
@@ -1782,6 +1807,35 @@ export default function ProctorMonitorPage() {
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.4)', gap: 10 }}>
                   <i className="fas fa-desktop" style={{ fontSize: 53 }} />
                   <span style={{ fontSize:15.5 }}>Partage d'écran non disponible</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Zoom caméra secondaire (smartphone) — vue agrandie pour voir clairement les angles morts */}
+      {phoneZoomModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.85)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 24 }}
+          onClick={() => setPhoneZoomModal(null)}>
+          <div style={{ background: '#0f172a', borderRadius: 14, overflow: 'hidden', maxWidth: 900, width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,.6)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize:18, fontWeight: 700 }}>
+                <i className="fas fa-mobile-screen" style={{ color: '#2563eb' }} />
+                Caméra secondaire de {phoneZoomModal.name}
+              </div>
+              <button onClick={() => setPhoneZoomModal(null)} style={{ background: 'rgba(255,255,255,.1)', border: 'none', color: 'white', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize:14.5, fontWeight: 600 }}>
+                <i className="fas fa-times" /> Fermer
+              </button>
+            </div>
+            <div style={{ background: '#000', aspectRatio: '16/9', position: 'relative' }}>
+              <video ref={phoneZoomVideoRef} autoPlay playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              {!videoTracksRef.current.has(`${phoneZoomModal.identity}-phone`) && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.4)', gap: 10 }}>
+                  <i className="fas fa-mobile-screen" style={{ fontSize: 53 }} />
+                  <span style={{ fontSize:15.5 }}>Caméra secondaire non disponible</span>
                 </div>
               )}
             </div>
@@ -2376,7 +2430,7 @@ function AgentBanner({ agent, lastCheck, studentsCount }: { agent: AgentStatus |
   )
 }
 
-function VideoCard({ s, recActive, screenAvail, phoneLive, onMsg, onBan, onRec, onScreen, onCall, onExtraTime, onNote, onLogs }: {
+function VideoCard({ s, recActive, screenAvail, phoneLive, onMsg, onBan, onRec, onScreen, onCall, onExtraTime, onNote, onLogs, onZoomPhone }: {
   s: Student
   recActive:    boolean
   screenAvail:  boolean
@@ -2389,6 +2443,7 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, onMsg, onBan, onRec, 
   onExtraTime:  () => void
   onNote:       () => void
   onLogs:       () => void
+  onZoomPhone:  () => void
 }) {
   const rc          = riskCls(s.risk_score)
   const isActive    = s.status === 'in_progress'
@@ -2412,13 +2467,15 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, onMsg, onBan, onRec, 
         <video id={`video-${s.livekit_identity}`} autoPlay playsInline
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'none' }} />
 
-        {/* Caméra secondaire (smartphone) — miniature en incrustation, angle latéral */}
+        {/* Caméra secondaire (smartphone) — miniature en incrustation, angle latéral.
+            Cliquable pour l'agrandir et voir clairement les angles morts. */}
         {phoneLive && (
-          <div title="Caméra secondaire (smartphone)"
-            style={{ position: 'absolute', bottom: 6, right: 6, width: 64, height: 48, borderRadius: 6, overflow: 'hidden', border: '1.5px solid rgba(255,255,255,.5)', boxShadow: '0 2px 8px rgba(0,0,0,.5)', zIndex: 3, background: '#000' }}>
+          <div title="Cliquer pour agrandir la caméra secondaire" onClick={e => { e.stopPropagation(); onZoomPhone() }}
+            style={{ position: 'absolute', bottom: 6, right: 6, width: 64, height: 48, borderRadius: 6, overflow: 'hidden', border: '1.5px solid rgba(255,255,255,.5)', boxShadow: '0 2px 8px rgba(0,0,0,.5)', zIndex: 3, background: '#000', cursor: 'pointer' }}>
             <video id={`video-${s.livekit_identity}-phone`} autoPlay playsInline muted
               style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <i className="fas fa-mobile-screen" style={{ position: 'absolute', top: 2, left: 2, fontSize: 9, color: 'rgba(255,255,255,.7)' }} />
+            <i className="fas fa-magnifying-glass-plus" style={{ position: 'absolute', bottom: 2, right: 2, fontSize: 9, color: 'rgba(255,255,255,.85)' }} />
           </div>
         )}
 
