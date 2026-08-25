@@ -165,6 +165,11 @@ export default function StudentAidePage() {
             </span>
           </div>
 
+          {cat.id === 'camera-secondaire' && (
+            <img src="/screenshots/camera-secondaire-etapes.jpg" alt="Les 3 étapes pour ajouter la caméra secondaire : scanner le QR code, trouver un support stable, positionner le téléphone et démarrer l'examen"
+              style={{ width: '100%', borderRadius: 10, border: '1px solid #e2e8f0', marginBottom: 16, display: 'block' }} />
+          )}
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {cat.faqs.map((faq, i) => {
               const isOpen = open[cat.id] === i
