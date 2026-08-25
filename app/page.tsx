@@ -397,16 +397,17 @@ export default function LandingPage() {
               items: [
                 { img: '/screenshots/capture-8.jpg', badge: '8', title: 'L\'étudiant retrouve son examen', desc: "Dès l'activation, le bouton Composer apparaît sur le tableau de bord étudiant avec les créneaux et paramètres de sécurité affichés." },
                 { img: '/screenshots/capture-12.jpg', badge: '9', title: 'Autorisation caméra, micro et écran', desc: "Les trois accès sont vérifiés un par un avant de pouvoir commencer — rien n'est laissé au hasard." },
-                { img: '/screenshots/capture-13.jpg', badge: '10', title: 'Partage d\'écran complet obligatoire', desc: "Le navigateur impose le choix explicite \"Tout l'écran\" — le partage de fenêtre ou d'onglet seul est refusé par la plateforme." },
-                { img: '/screenshots/capture-14.jpg', badge: '11', title: 'Composition sous surveillance IA en temps réel', desc: "Caméra, micro et écran actifs, score de risque visible, messagerie directe avec l'enseignant — tout est réuni dans une seule interface." },
+                { img: '/screenshots/camera-secondaire-etapes.jpg', badge: '10', title: 'Caméra secondaire par smartphone (en option)', desc: "Si l'examen l'exige, l'étudiant scanne un QR code avec son téléphone pour ajouter un second angle de vue sur son poste de travail — couplage en quelques secondes, sans application à installer." },
+                { img: '/screenshots/capture-13.jpg', badge: '11', title: 'Partage d\'écran complet obligatoire', desc: "Le navigateur impose le choix explicite \"Tout l'écran\" — le partage de fenêtre ou d'onglet seul est refusé par la plateforme." },
+                { img: '/screenshots/capture-14.jpg', badge: '12', title: 'Composition sous surveillance IA en temps réel', desc: "Caméra, micro et écran actifs, score de risque visible, messagerie directe avec l'enseignant — tout est réuni dans une seule interface." },
               ],
             },
             {
               heading: 'Le tableau de bord dédié au surveillant',
               items: [
-                { img: '/screenshots/capture-9.jpg', badge: '12', title: 'Un tableau de bord qui lui est propre', desc: "Le surveillant a sa propre interface, distincte de celle du professeur : nombre d'étudiants qui lui sont assignés, examens en cours, accès direct à sa surveillance." },
-                { img: '/screenshots/capture-10.jpg', badge: '13', title: 'Détail des étudiants de son groupe', desc: "Liste des étudiants qui lui sont attribués (pas l'ensemble de la promotion), avec statut de composition et score de risque en direct." },
-                { img: '/screenshots/capture-15.jpg', badge: '14', title: 'Supervision vidéo de son groupe', desc: "Flux caméra, alertes, appel et bannissement — limités aux étudiants qui lui ont été attribués par le professeur. Le professeur, lui, voit tous les surveillants et tous les groupes depuis sa propre vue d'ensemble." },
+                { img: '/screenshots/capture-9.jpg', badge: '13', title: 'Un tableau de bord qui lui est propre', desc: "Le surveillant a sa propre interface, distincte de celle du professeur : nombre d'étudiants qui lui sont assignés, examens en cours, accès direct à sa surveillance." },
+                { img: '/screenshots/capture-10.jpg', badge: '14', title: 'Détail des étudiants de son groupe', desc: "Liste des étudiants qui lui sont attribués (pas l'ensemble de la promotion), avec statut de composition et score de risque en direct." },
+                { img: '/screenshots/capture-15.jpg', badge: '15', title: 'Supervision vidéo de son groupe', desc: "Flux caméra, alertes, appel et bannissement — limités aux étudiants qui lui ont été attribués par le professeur. Le professeur, lui, voit tous les surveillants et tous les groupes depuis sa propre vue d'ensemble." },
               ],
             },
           ].map((group, g) => (
