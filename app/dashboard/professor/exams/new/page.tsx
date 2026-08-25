@@ -194,11 +194,11 @@ export default function NewExamPage() {
               <span style={{ fontWeight: 700, color: '#0f172a', fontSize:17 }}>Paramètres de Sécurité</span>
             </div>
 
-            <div style={{ background: form.auto_ban_enabled ? '#fef2f2' : '#f0f9ff', border: `1px solid ${form.auto_ban_enabled ? '#fecaca' : '#bae6fd'}`, borderRadius: 8, padding: '12px 14px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px 14px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <input type="checkbox" id="p_auto_ban" checked={form.auto_ban_enabled} onChange={e => set('auto_ban_enabled', e.target.checked)} style={{ width: 'auto', marginTop: 2, flexShrink: 0, accentColor: '#dc2626' }} />
               <div>
-                <label htmlFor="p_auto_ban" style={{ fontSize:15.5, fontWeight: 700, color: form.auto_ban_enabled ? '#dc2626' : '#0369a1', cursor: 'pointer', margin: 0, display: 'block' }}>
-                  <i className="fas fa-ban" /> Bannissement automatique
+                <label htmlFor="p_auto_ban" style={{ fontSize:15.5, fontWeight: 700, color: '#0f172a', cursor: 'pointer', margin: 0, display: 'block' }}>
+                  <i className="fas fa-ban" style={{ color: form.auto_ban_enabled ? '#dc2626' : '#64748b' }} /> Bannissement automatique
                 </label>
                 <small style={{ color: '#64748b' }}>
                   {form.auto_ban_enabled
@@ -236,11 +236,11 @@ export default function NewExamPage() {
               </div>
             </div>
 
-            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 14px', marginBottom: 14, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px 14px', marginBottom: 14, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <input type="checkbox" id="p_ban_devtools" checked={form.ban_on_devtools} onChange={e => set('ban_on_devtools', e.target.checked)} style={{ width: 'auto', marginTop: 2, flexShrink: 0, accentColor: '#dc2626' }} />
               <div>
-                <label htmlFor="p_ban_devtools" style={{ fontSize:15.5, fontWeight: 600, color: '#dc2626', cursor: 'pointer', margin: 0, display: 'block' }}>
-                  <i className="fas fa-terminal" /> {form.auto_ban_enabled ? 'Bannir immédiatement' : 'Alerter'} si outils développeur ouverts
+                <label htmlFor="p_ban_devtools" style={{ fontSize:15.5, fontWeight: 600, color: '#0f172a', cursor: 'pointer', margin: 0, display: 'block' }}>
+                  <i className="fas fa-terminal" style={{ color: '#64748b' }} /> {form.auto_ban_enabled ? 'Bannir immédiatement' : 'Alerter'} si outils développeur ouverts
                 </label>
                 <small style={{ color: '#64748b' }}>Tentative d'accès aux outils développeur détectée (F12, Ctrl+Shift+I…)</small>
               </div>
@@ -282,11 +282,11 @@ export default function NewExamPage() {
           </div>
 
           {/* Correction IA */}
-          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '16px 18px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '16px 18px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <input type="checkbox" id="p_auto_correct" checked={form.auto_correct} onChange={e => set('auto_correct', e.target.checked)} style={{ width: 'auto', marginTop: 3, flexShrink: 0, accentColor: '#15803d' }} />
             <div>
-              <label htmlFor="p_auto_correct" style={{ fontSize:15.5, fontWeight: 600, color: '#15803d', cursor: 'pointer', margin: 0, display: 'block' }}>
-                <i className="fas fa-robot" /> Activer la correction automatique par IA
+              <label htmlFor="p_auto_correct" style={{ fontSize:15.5, fontWeight: 600, color: '#0f172a', cursor: 'pointer', margin: 0, display: 'block' }}>
+                <i className="fas fa-robot" style={{ color: '#64748b' }} /> Activer la correction automatique par IA
               </label>
               <small style={{ color: '#64748b', lineHeight: 1.5, display: 'block', marginTop: 3 }}>
                 Dès qu'un étudiant soumet sa copie, l'IA la corrige automatiquement.<br />
@@ -296,13 +296,13 @@ export default function NewExamPage() {
           </div>
 
           {/* Correction planifiée à heure précise */}
-          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '16px 18px' }}>
-            <label style={{ fontSize:15.5, fontWeight: 600, color: '#1e40af', display: 'block', marginBottom: 6 }}>
-              <i className="fas fa-calendar-day" style={{ marginRight: 6 }} />Programmer une correction à heure précise (optionnel)
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '16px 18px' }}>
+            <label style={{ fontSize:15.5, fontWeight: 600, color: '#0f172a', display: 'block', marginBottom: 6 }}>
+              <i className="fas fa-calendar-day" style={{ marginRight: 6, color: '#64748b' }} />Programmer une correction à heure précise (optionnel)
             </label>
             <input type="datetime-local" value={form.scheduled_correction_at}
               onChange={e => set('scheduled_correction_at', e.target.value)}
-              style={{ width: '100%', padding: '9px 12px', border: '1px solid #bfdbfe', borderRadius: 8, fontSize:16, boxSizing: 'border-box' }} />
+              style={{ width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize:16, boxSizing: 'border-box' }} />
             <small style={{ color: '#64748b', lineHeight: 1.5, display: 'block', marginTop: 6 }}>
               À l'heure indiquée, toutes les copies soumises et pas encore corrigées de cet examen seront corrigées automatiquement en une fois — utile pour attendre la fin de TOUTES les sessions avant de lancer la correction en bloc, plutôt que copie par copie. Indépendant de la correction automatique immédiate ci-dessus.
             </small>
