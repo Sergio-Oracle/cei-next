@@ -38,6 +38,21 @@ const CATEGORIES = [
     ],
   },
   {
+    id: 'camera-secondaire',
+    icon: 'fas fa-mobile-screen',
+    label: 'Caméra secondaire (smartphone)',
+    color: '#0d9488',
+    bg: '#f0fdfa',
+    bd: '#99f6e4',
+    faqs: [
+      { icon: 'fas fa-circle-question', q: "Qu'est-ce que la caméra secondaire ?",                    r: "Certains examens demandent d'utiliser votre téléphone comme caméra supplémentaire, positionnée pour filmer votre poste de travail sous un angle que la caméra de l'ordinateur ne couvre pas. Ce n'est pas systématique : le bouton n'apparaît que si l'enseignant l'a activé pour cet examen." },
+      { icon: 'fas fa-qrcode',          q: 'Comment ajouter mon téléphone comme caméra secondaire ?',   r: "Après le scan de l'environnement (360°), cliquez sur \"Ajouter la caméra secondaire\". Un QR code et un code à 6 chiffres s'affichent : scannez le QR avec l'appareil photo de votre téléphone (il ouvre directement la page de couplage), ou ouvrez le lien affiché en dessous depuis le navigateur du téléphone — le code y est déjà pré-rempli. Cliquez ensuite sur \"Se connecter\"." },
+      { icon: 'fas fa-arrows-up-down-left-right', q: 'Comment positionner mon téléphone ?',              r: "Une fois connecté, la caméra frontale de votre téléphone s'affiche en plein écran. Posez le téléphone sur un support stable de façon à couvrir votre bureau et vos mains, puis ne le touchez plus jusqu'à la fin de l'examen." },
+      { icon: 'fas fa-battery-full',    q: 'À quoi dois-je faire attention pendant l\'examen ?',        r: "Laissez le téléphone branché à une source d'alimentation, connecté au réseau, et ne fermez pas la page du navigateur mobile — une session peut durer longtemps et la batterie ou le WiFi peuvent lâcher entre-temps." },
+      { icon: 'fas fa-wifi',            q: 'Que se passe-t-il si mon téléphone se déconnecte ?',        r: "La reconnexion est automatique dans la plupart des cas. Si le badge dans la barre de l'examen passe au rouge (\"Déconnectée\"), cliquez dessus : une nouvelle fenêtre de couplage s'ouvre avec un nouveau code, sans que vous ayez besoin de quitter l'examen." },
+    ],
+  },
+  {
     id: 'securite',
     icon: 'fas fa-camera',
     label: 'Sécurité & identité',

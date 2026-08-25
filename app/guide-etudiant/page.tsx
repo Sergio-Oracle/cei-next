@@ -69,6 +69,7 @@ export default function GuideEtudiant() {
             <li><a href="#connexion"><i className="fas fa-sign-in-alt" /> 1. Se connecter à la plateforme</a></li>
             <li><a href="#tableau-bord"><i className="fas fa-home" /> 2. Votre tableau de bord</a></li>
             <li><a href="#demarrer"><i className="fas fa-play" /> 3. Démarrer un examen</a></li>
+            <li><a href="#camera-secondaire"><i className="fas fa-mobile-screen" /> 3b. Caméra secondaire (smartphone)</a></li>
             <li><a href="#pendant"><i className="fas fa-pen" /> 4. Pendant l&apos;examen</a></li>
             <li><a href="#pause"><i className="fas fa-mug-hot" /> 4b. Faire une pause</a></li>
             <li><a href="#regles"><i className="fas fa-shield-alt" /> 5. Règles à respecter</a></li>
@@ -113,6 +114,20 @@ export default function GuideEtudiant() {
               <div className="step"><div className="step-num">4</div><div className="step-content"><h4>Scan de l&apos;environnement (360°)</h4><p>Avant de démarrer, il vous sera demandé de tourner lentement votre caméra pour montrer votre environnement — cela vérifie qu&apos;aucune autre personne n&apos;est présente à vos côtés. Cette étape dure quelques secondes.</p></div></div>
               <div className="step"><div className="step-num">5</div><div className="step-content"><h4>Mode plein écran</h4><p>L&apos;examen s&apos;ouvre en plein écran automatiquement. Votre caméra s&apos;active, la surveillance commence. Ne quittez pas le plein écran pendant l&apos;examen.</p></div></div>
             </div>
+          </div>
+        </div>
+
+        <div className="section" id="camera-secondaire">
+          <div className="section-header"><div className="section-icon" style={{background:'#0d9488'}}><i className="fas fa-mobile-screen" /></div><h2>3b. Caméra secondaire (smartphone)</h2></div>
+          <div className="section-body">
+            <p style={{color:'#475569',marginBottom:16}}>Certains examens exigent une <strong>caméra secondaire</strong> — votre téléphone, filmant votre poste de travail sous un angle latéral que la caméra de l&apos;ordinateur ne couvre pas. Ce n&apos;est pas systématique : le bouton n&apos;apparaît que si l&apos;enseignant l&apos;a activé pour cet examen précis.</p>
+            <div className="steps">
+              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Après le scan de l&apos;environnement</h4><p>Une fois la vérification de l&apos;environnement (360°) terminée, un bouton <strong>&quot;Ajouter la caméra secondaire&quot;</strong> apparaît sur l&apos;écran. S&apos;il est marqué <strong>&quot;requise pour cet examen&quot;</strong>, le bouton <strong>&quot;Continuer vers l&apos;examen&quot;</strong> reste grisé tant que le téléphone n&apos;est pas connecté.</p></div></div>
+              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Scanner le code QR</h4><p>Cliquez sur le bouton : un code QR et un code à 6 chiffres s&apos;affichent, valables 5 minutes. Avec l&apos;appareil photo de votre <strong>téléphone</strong>, scannez le code QR — il ouvre automatiquement la page de couplage dans votre navigateur mobile.</p><div className="tip"><i className="fas fa-keyboard" /> Sans appareil pour scanner, ouvrez le lien affiché sous le code QR directement depuis le navigateur de votre téléphone : le code y est déjà pré-rempli, il ne reste qu&apos;à vérifier et cliquer sur &quot;Se connecter&quot;.</div></div></div>
+              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Positionner le téléphone</h4><p>Une fois connecté, la caméra frontale de votre téléphone occupe tout l&apos;écran. Posez le téléphone (support, étui, objet stable) de façon à couvrir votre poste de travail — bureau, mains, feuilles éventuelles — puis ne le touchez plus pendant l&apos;examen.</p></div></div>
+              <div className="step"><div className="step-num">4</div><div className="step-content"><h4>Pendant la composition</h4><p>Un badge <strong>&quot;Connectée&quot;</strong> (vert) apparaît dans la barre en haut de l&apos;examen. Laissez le téléphone <strong>branché à une source d&apos;alimentation</strong>, connecté au réseau, et ne fermez pas la page — la batterie ou le WiFi peuvent se décharger/couper pendant une session longue.</p></div></div>
+            </div>
+            <div className="warn"><i className="fas fa-exclamation-triangle" /> <span>En cas de coupure réseau côté téléphone, la reconnexion est automatique dans la plupart des cas. Si le badge passe au rouge (<strong>&quot;Déconnectée&quot;</strong>), cliquez dessus pour rouvrir la fenêtre de couplage et reconnecter le téléphone avec un nouveau code — sans quitter l&apos;examen.</span></div>
           </div>
         </div>
 
