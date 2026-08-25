@@ -1852,9 +1852,21 @@ export default function ProctorMonitorPage() {
         </div>
       )}
 
-      {/* Overlay pour fermer le panel agent au clic extérieur */}
+      {/* Overlay pour fermer le panel agent au clic extérieur — zIndex
+          délibérément SOUS celui de la barre d'en-tête (200), pas au-dessus
+          comme les modales plein écran (9999). Le panel est un enfant de
+          cette barre : son propre zIndex:9999 n'est comparé qu'aux AUTRES
+          enfants de la barre (nouveau contexte d'empilement créé par la
+          barre elle-même), jamais directement à cet overlay. Avec
+          zIndex:9998 ici, l'overlay passait donc au-dessus de TOUTE la
+          barre (200 < 9998) — invisible (aucun fond) mais interceptant
+          quand même tous les clics, y compris sur les boutons Avertir/Appel
+          privé/Exclure et sur l'ascenseur du panel (retour utilisateur du
+          25/08 : "les boutons ne marchent pas"). Toujours suffisant pour
+          fermer le panel au clic sur le reste de la page, qui n'a pas de
+          zIndex explicite. */}
       {agentPanel && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setAgentPanel(false)} />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => setAgentPanel(false)} />
       )}
 
       {/* ══════════════ Modal Messages Étudiants */}
