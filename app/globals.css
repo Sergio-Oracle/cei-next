@@ -1861,5 +1861,4 @@ a { color: inherit; text-decoration: none; }
 }
 .lang-option:hover { background: #f1f5f9; }
 .lang-option.active { background: #eff6ff; color: #2563eb; font-weight: 700; }
-.lang-flag { font-size: 21.5px; }
 .toast.info    { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }

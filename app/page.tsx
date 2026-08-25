@@ -218,14 +218,14 @@ export default function LandingPage() {
       <div className="landing-lang-switcher" id="lang-sw">
         <button className="landing-lang-btn" onClick={e => { e.stopPropagation(); setMenuOpen(v => !v) }}>
           <i className="fas fa-globe" />
-          <span>{lang === 'fr' ? '🇫🇷 FR' : lang === 'en' ? '🇬🇧 EN' : '🇸🇳 WO'}</span>
+          <span>{lang === 'fr' ? 'FR' : lang === 'en' ? 'EN' : 'WO'}</span>
           <i className="fas fa-chevron-down" style={{ fontSize: 12 }} />
         </button>
         {menuOpen && (
           <div className="landing-lang-menu">
-            <button className={`landing-lang-option${lang === 'fr' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('fr') }}><span style={{ fontSize:21.5 }}>🇫🇷</span> Français</button>
-            <button className={`landing-lang-option${lang === 'en' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('en') }}><span style={{ fontSize:21.5 }}>🇬🇧</span> English</button>
-            <button className={`landing-lang-option${lang === 'wo' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('wo') }}><span style={{ fontSize:21.5 }}>🇸🇳</span> Wolof</button>
+            <button className={`landing-lang-option${lang === 'fr' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('fr') }}>Français</button>
+            <button className={`landing-lang-option${lang === 'en' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('en') }}>English</button>
+            <button className={`landing-lang-option${lang === 'wo' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('wo') }}>Wolof</button>
           </div>
         )}
       </div>

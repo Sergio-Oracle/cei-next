@@ -254,7 +254,7 @@ export default function AdminReclamationsPage() {
           {selected.ia_proposed_status && (
             <div className="alert alert-warning">
               <strong><i className="fa-solid fa-robot" /> Proposition IA :</strong>{' '}
-              {selected.ia_proposed_status === 'resolved' ? '✅ Accepter' : '❌ Rejeter'}
+              {selected.ia_proposed_status === 'resolved' ? 'Accepter' : 'Rejeter'}
               {selected.ia_proposed_score != null && ` — Note proposée : ${fmtScore(selected.ia_proposed_score)}/20`}<br />
               {selected.ia_proposed_reason && <span style={{ fontSize:15.5 }}>{selected.ia_proposed_reason}</span>}
               <div style={{ marginTop: 6, fontSize:14.5, opacity: .8 }}>Pré-remplie ci-dessous — modifiez-la si vous n'êtes pas d'accord.</div>
@@ -265,8 +265,8 @@ export default function AdminReclamationsPage() {
             <label>Décision *</label>
             <select className="form-control" value={respondStatus} onChange={e => setRespondStatus(e.target.value)}>
               <option value="">-- Choisir --</option>
-              <option value="resolved">✅ Accepter la réclamation</option>
-              <option value="rejected">❌ Rejeter la réclamation</option>
+              <option value="resolved">Accepter la réclamation</option>
+              <option value="rejected">Rejeter la réclamation</option>
             </select>
           </div>
           {respondStatus === 'resolved' && (

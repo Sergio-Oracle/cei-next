@@ -3014,7 +3014,7 @@ export default function ExamPage() {
           <div style={{padding:'6px 10px',display:'flex',alignItems:'center',gap:6,background:'rgba(37,99,235,.25)'}}>
             <span style={{display:'inline-block',width:7,height:7,background:'#ef4444',borderRadius:'50%',animation:'pulse 1s infinite'}}/>
             <span style={{color:'#bfdbfe',fontSize:14.5,fontWeight:600}}><i className="fas fa-user-shield" style={{marginRight:4}}/>Votre surveillant</span>
-            <button onClick={()=>setProctorActive(false)} style={{marginLeft:'auto',background:'none',border:'none',color:'rgba(255,255,255,.5)',fontSize:17,cursor:'pointer'}}>✕</button>
+            <button onClick={()=>setProctorActive(false)} style={{marginLeft:'auto',background:'none',border:'none',color:'rgba(255,255,255,.5)',fontSize:17,cursor:'pointer'}}><i className="fas fa-times"/></button>
           </div>
         </div>
 

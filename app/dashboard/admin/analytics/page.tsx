@@ -264,7 +264,7 @@ export default function AdminAnalyticsPage() {
                       {(exams.top_exams ?? []).map((exam, i) => (
                         <tr key={i} style={{ borderBottom: i < (exams.top_exams!.length - 1) ? '1px solid #f1f5f9' : 'none' }}>
                           <td style={{ padding: '8px 10px', fontSize:15.5 }}>
-                            <span style={{ marginRight: 6 }}>{['🥇','🥈','🥉'][i] ?? '•'}</span>
+                            <span style={{ marginRight: 6 }}>{i < 3 ? `${i + 1}.` : '•'}</span>
                             {exam.title}
                           </td>
                           <td style={{ padding: '8px 10px', fontWeight: 700, fontSize:15.5, color: scoreColor(exam.avg_score), whiteSpace: 'nowrap' }}>{fmtScore(exam.avg_score)}/20</td>

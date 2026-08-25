@@ -230,7 +230,7 @@ export default function ProfessorReclamationsPage() {
           {selected.ia_proposed_status && (
             <div className="alert alert-warning">
               <i className="fa-solid fa-robot" /> <strong>Proposition IA :</strong>{' '}
-              {selected.ia_proposed_status === 'resolved' ? '✅ Accepter' : '❌ Rejeter'}
+              {selected.ia_proposed_status === 'resolved' ? 'Accepter' : 'Rejeter'}
               {selected.ia_proposed_score != null && ` — Note proposée : ${fmtScore(selected.ia_proposed_score)}/20`}
               {selected.ia_proposed_reason && <div style={{ marginTop: 4, fontSize:15.5 }}>{selected.ia_proposed_reason}</div>}
               <div style={{ marginTop: 6, fontSize:14.5, opacity: .8 }}>Pré-remplie ci-dessous — modifiez-la si vous n'êtes pas d'accord.</div>
@@ -240,8 +240,8 @@ export default function ProfessorReclamationsPage() {
             <label>Décision *</label>
             <select className="form-control" value={respondStatus} onChange={e => setRespondStatus(e.target.value)}>
               <option value="">-- Choisir --</option>
-              <option value="resolved">✅ Accepter la réclamation</option>
-              <option value="rejected">❌ Rejeter la réclamation</option>
+              <option value="resolved">Accepter la réclamation</option>
+              <option value="rejected">Rejeter la réclamation</option>
             </select>
           </div>
           {respondStatus === 'resolved' && (

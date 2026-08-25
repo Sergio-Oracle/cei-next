@@ -96,7 +96,7 @@ export default function AdminCreateSubjectPage() {
   } = useSubjectUpload(
     () => { setBankSaveEc(ecId) },
     (msg) => toastErr(msg),
-    (dups) => toastErr(`⚠ ${dups.length} question(s) du document ressemble(nt) fortement à des questions déjà présentes dans la banque (${dups[0].similarity}% similaire)`),
+    (dups) => toastErr(`${dups.length} question(s) du document ressemble(nt) fortement à des questions déjà présentes dans la banque (${dups[0].similarity}% similaire)`),
   )
 
   const { questions: bankQ, loading: bankLoading, saveQuestion, deleteQuestion, refresh: refreshBank } = useQuestionBank()
@@ -187,7 +187,7 @@ export default function AdminCreateSubjectPage() {
         ec_id: bankSaveEc ? parseInt(bankSaveEc) : null,
       })
       if (res.duplicates && res.duplicates.length > 0) {
-        toastOk(`Sauvegardé ⚠ Doublon probable détecté (${res.duplicates[0].similarity}% similaire à "${res.duplicates[0].title}")`)
+        toastOk(`Sauvegardé — Doublon probable détecté (${res.duplicates[0].similarity}% similaire à "${res.duplicates[0].title}")`)
       } else {
         toastOk('Sauvegardé dans la banque de questions')
       }
@@ -213,7 +213,7 @@ export default function AdminCreateSubjectPage() {
         ec_id: asmEc ? parseInt(asmEc) : null,
       })
       if (res.duplicates && res.duplicates.length > 0) {
-        toastErr(`Sujet créé, mais ⚠ ${res.duplicates.length} question(s) sélectionnée(s) se ressemblent fortement (${res.duplicates[0].similarity}% — "${res.duplicates[0].titles[0]}")`)
+        toastErr(`Sujet créé, mais ${res.duplicates.length} question(s) sélectionnée(s) se ressemblent fortement (${res.duplicates[0].similarity}% — "${res.duplicates[0].titles[0]}")`)
       } else {
         toastOk(`Sujet "${asmTitle}" créé — ${ids.length} question(s).`)
       }

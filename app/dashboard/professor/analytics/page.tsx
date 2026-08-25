@@ -207,7 +207,7 @@ export default function ProfessorAnalyticsPage() {
                   : <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
                     {(data.top_exams ?? []).map((exam, i) => (
                       <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '8px 10px', fontSize:15.5 }}><span style={{ marginRight: 6 }}>{['🥇','🥈','🥉'][i] ?? '•'}</span>{exam.title}</td>
+                        <td style={{ padding: '8px 10px', fontSize:15.5 }}><span style={{ marginRight: 6 }}>{i < 3 ? `${i + 1}.` : '•'}</span>{exam.title}</td>
                         <td style={{ padding: '8px 10px', fontWeight: 700, fontSize:15.5, color: sc(exam.avg_score), whiteSpace: 'nowrap' }}>{fmtScore(exam.avg_score)}/20</td>
                         <td style={{ padding: '8px 10px', fontSize:14.5, color: '#64748b', whiteSpace: 'nowrap' }}>{exam.pass_rate}%</td>
                       </tr>

@@ -388,7 +388,7 @@ export default function ProfessorSuggestionsPage() {
       setElimSet(new Set())
       setStep('preview')
       if (data.duplicates && data.duplicates.length > 0) {
-        toastErr(`⚠ ${data.duplicates.length} question(s) générée(s) se ressemblent fortement entre elles (jusqu'à ${Math.max(...data.duplicates.map(d=>d.similarity))}% similaire) — vérifiez avant de valider.`)
+        toastErr(`${data.duplicates.length} question(s) générée(s) se ressemblent fortement entre elles (jusqu'à ${Math.max(...data.duplicates.map(d=>d.similarity))}% similaire) — vérifiez avant de valider.`)
       }
     } catch (e: any) { toastErr(e.message || 'Erreur génération du sujet') }
     finally {
@@ -470,7 +470,7 @@ export default function ProfessorSuggestionsPage() {
       if (data.full_rubric) setPreviewRubric(data.full_rubric)
       setShowMoreModal(false)
       if (data.duplicates && data.duplicates.length > 0) {
-        toastErr(`${data.count_generated} question(s) ajoutée(s) — ⚠ ${data.duplicates.length} ressemble(nt) à des questions existantes (${data.duplicates[0].similarity}% similaire)`)
+        toastErr(`${data.count_generated} question(s) ajoutée(s) — ${data.duplicates.length} ressemble(nt) à des questions existantes (${data.duplicates[0].similarity}% similaire)`)
       } else {
         success(`${data.count_generated} question(s) ajoutée(s) au sujet — points redistribués sur ${totalPoints}`)
       }
@@ -558,7 +558,7 @@ export default function ProfessorSuggestionsPage() {
           })
           if (res.duplicates && res.duplicates.length > 0) dupCount++
         }
-        success(`${blocks.length} question(s) sauvegardée(s) individuellement dans la banque${dupCount ? ` — ⚠ ${dupCount} doublon(s) probable(s)` : ''}`)
+        success(`${blocks.length} question(s) sauvegardée(s) individuellement dans la banque${dupCount ? ` — ${dupCount} doublon(s) probable(s)` : ''}`)
       } else {
         const titleLine = previewContent.split('\n')
           .map(l => l.replace(/^#+\s*/, '').replace(/^[\s═─━=\-_*]+$/, '').trim())
@@ -572,7 +572,7 @@ export default function ProfessorSuggestionsPage() {
           ec_id: bankSaveEc ? parseInt(bankSaveEc) : null,
         })
         if (res.duplicates && res.duplicates.length > 0) {
-          success(`Sauvegardé ⚠ Doublon probable détecté (${res.duplicates[0].similarity}% similaire à "${res.duplicates[0].title}")`)
+          success(`Sauvegardé — Doublon probable détecté (${res.duplicates[0].similarity}% similaire à "${res.duplicates[0].title}")`)
         } else {
           success('Sauvegardé dans la banque de questions (sujet entier)')
         }

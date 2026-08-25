@@ -344,19 +344,19 @@ export default function LoginPage() {
           <div className="lang-switcher" id="login-lang-sw" style={{ position: 'relative' }}>
             <button className="lang-btn" onClick={e => { e.stopPropagation(); setMenuOpen(v => !v) }}>
               <i className="fas fa-globe" />
-              <span className="lang-current-label">{lang === 'fr' ? '🇫🇷 FR' : lang === 'en' ? '🇬🇧 EN' : '🇸🇳 WO'}</span>
+              <span className="lang-current-label">{lang === 'fr' ? 'FR' : lang === 'en' ? 'EN' : 'WO'}</span>
               <i className="fas fa-chevron-down" style={{ fontSize: 12 }} />
             </button>
             {menuOpen && (
               <div className="lang-menu">
                 <button className={`lang-option${lang === 'fr' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('fr') }}>
-                  <span className="lang-flag">🇫🇷</span> Français
+                  Français
                 </button>
                 <button className={`lang-option${lang === 'en' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('en') }}>
-                  <span className="lang-flag">🇬🇧</span> English
+                  English
                 </button>
                 <button className={`lang-option${lang === 'wo' ? ' active' : ''}`} onClick={e => { e.stopPropagation(); changeLang('wo') }}>
-                  <span className="lang-flag">🇸🇳</span> Wolof
+                  Wolof
                 </button>
               </div>
             )}
