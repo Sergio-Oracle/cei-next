@@ -63,7 +63,7 @@ function PhoneCameraInner() {
       setExamTitle(res.exam_title)
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       })
       streamRef.current = stream
@@ -101,14 +101,6 @@ function PhoneCameraInner() {
       videoRef.current.play().catch(() => {})
     }
   }, [phase])
-
-  useEffect(() => {
-    // Auto-connexion si le code arrive déjà dans l'URL (scan QR) — évite une
-    // étape de confirmation inutile pour l'usage principal (scan), tout en
-    // laissant la saisie manuelle disponible si le lien est tapé à la main.
-    if (params.get('code')) connect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a', padding: 20 }}>
