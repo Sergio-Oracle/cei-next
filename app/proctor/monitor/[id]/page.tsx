@@ -716,6 +716,15 @@ export default function ProctorMonitorPage() {
       track.attach(el)
       el.style.display = 'block'
       if (ph) ph.style.display = 'none'
+      // track.attach() pose bien srcObject mais ne garantit pas que
+      // l'élément démarre réellement le décodage — constaté en réel : la
+      // miniature caméra secondaire restait bloquée à l'état HAVE_NOTHING
+      // (readyState 0, videoWidth/Height 0) malgré un track "live", tant
+      // qu'aucun <video> n'avait explicitement réussi son play() ; l'ouvrir
+      // en grand (nouvel élément, nouveau play() réussi) "débloquait" alors
+      // aussi la miniature d'origine — même track, même récepteur RTP.
+      // Appel explicite ici pour ne plus dépendre de cette course.
+      el.play?.().catch(() => {})
     } catch {}
   }
 
@@ -2468,15 +2477,20 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, onMsg, onBan, onRec, 
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'none' }} />
 
         {/* Caméra secondaire (smartphone) — miniature en incrustation, angle latéral.
-            Cliquable pour l'agrandir et voir clairement les angles morts. */}
+            Cliquable pour l'agrandir et voir clairement les angles morts.
+            <button> plutôt que <div onClick> : sémantique clic/tactile native,
+            plus fiable que la gestion manuelle d'événements sur certains
+            navigateurs mobiles (le surveillant peut consulter depuis une
+            tablette). zIndex volontairement au-dessus de tous les autres
+            calques de la carte (overlays exclu/soumis à 2, barre haute/REC à 3). */}
         {phoneLive && (
-          <div title="Cliquer pour agrandir la caméra secondaire" onClick={e => { e.stopPropagation(); onZoomPhone() }}
-            style={{ position: 'absolute', bottom: 6, right: 6, width: 64, height: 48, borderRadius: 6, overflow: 'hidden', border: '1.5px solid rgba(255,255,255,.5)', boxShadow: '0 2px 8px rgba(0,0,0,.5)', zIndex: 3, background: '#000', cursor: 'pointer' }}>
+          <button type="button" title="Cliquer pour agrandir la caméra secondaire" onClick={e => { e.stopPropagation(); onZoomPhone() }}
+            style={{ position: 'absolute', bottom: 6, right: 6, width: 122, height: 92, borderRadius: 6, overflow: 'hidden', border: '1.5px solid rgba(255,255,255,.5)', boxShadow: '0 2px 8px rgba(0,0,0,.5)', zIndex: 5, background: '#000', cursor: 'pointer', padding: 0, margin: 0, display: 'block' }}>
             <video id={`video-${s.livekit_identity}-phone`} autoPlay playsInline muted
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            <i className="fas fa-mobile-screen" style={{ position: 'absolute', top: 2, left: 2, fontSize: 9, color: 'rgba(255,255,255,.7)' }} />
-            <i className="fas fa-magnifying-glass-plus" style={{ position: 'absolute', bottom: 2, right: 2, fontSize: 9, color: 'rgba(255,255,255,.85)' }} />
-          </div>
+              style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+            <i className="fas fa-mobile-screen" style={{ position: 'absolute', top: 3, left: 3, fontSize: 11, color: 'rgba(255,255,255,.7)', pointerEvents: 'none' }} />
+            <i className="fas fa-magnifying-glass-plus" style={{ position: 'absolute', bottom: 3, right: 3, fontSize: 12, color: 'rgba(255,255,255,.9)', pointerEvents: 'none' }} />
+          </button>
         )}
 
         {/* Overlay exclu */}
