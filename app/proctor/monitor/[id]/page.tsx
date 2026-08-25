@@ -911,7 +911,12 @@ export default function ProctorMonitorPage() {
     if (!phoneZoomModal || !phoneZoomVideoRef.current) return
     const track = videoTracksRef.current.get(`${phoneZoomModal.identity}-phone`)
     if (track) {
-      try { track.attach(phoneZoomVideoRef.current) } catch {}
+      try {
+        track.attach(phoneZoomVideoRef.current)
+        // Même précaution que attachVideo() ci-dessus : attach() seul ne
+        // garantit pas le démarrage réel de la lecture.
+        phoneZoomVideoRef.current.play?.().catch(() => {})
+      } catch {}
     }
     return () => {
       if (track && phoneZoomVideoRef.current) {
