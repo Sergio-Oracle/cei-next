@@ -112,13 +112,24 @@ export default function VerificationPostePage() {
         window.addEventListener('touchstart', resumeOnGesture)
         const data = new Uint8Array(analyser.fftSize)
         micStartRef.current = Date.now()
+        // Échelle en décibels plutôt que linéaire : confirmé sur un vrai
+        // poste (27/08) que le contexte audio tournait bien ("running") et
+        // qu'un signal réel était capté, mais qu'un multiplicateur linéaire
+        // (x6) rendait une voix à gain de micro modeste quasi invisible
+        // dans la barre (niveau ≈ 0.038 en parlant normalement). Les
+        // indicateurs de niveau audio standards utilisent une échelle dB —
+        // beaucoup plus sensible aux sons discrets sans écraser les sons
+        // forts. Plage -60dB (silence) à -12dB (voix forte/proche).
+        const MIN_DB = -60, MAX_DB = -12
         const tick = () => {
           analyser.getByteTimeDomainData(data)
           let sum = 0
           for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v }
-          const level = Math.sqrt(sum / data.length) * 6
-          setMicLevel(Math.min(1, level))
-          if (level > 0.02) micEverHeardRef.current = true
+          const rms = Math.sqrt(sum / data.length)
+          const db = 20 * Math.log10(rms + 1e-6)
+          const level = Math.max(0, Math.min(1, (db - MIN_DB) / (MAX_DB - MIN_DB)))
+          setMicLevel(level)
+          if (level > 0.06) micEverHeardRef.current = true
           // Après 6s, si le contexte tourne bien mais qu'aucun son n'a
           // jamais été détecté (même le bruit ambiant produit un léger
           // signal), le problème n'est plus l'AudioContext mais le
@@ -127,6 +138,8 @@ export default function VerificationPostePage() {
           // la jauge muette sans explication.
           if (!micEverHeardRef.current && Date.now() - micStartRef.current > 6000 && ctx.state === 'running') {
             setMicDiag(`contexte audio : running — mais aucun son capté depuis 6s. Vérifiez que le bon micro est sélectionné dans les paramètres de votre système (pas seulement du navigateur), et qu'aucune autre appli ne le monopolise.`)
+          } else if (Date.now() - micStartRef.current <= 6000 || micEverHeardRef.current) {
+            setMicDiag(`contexte audio : running (${db.toFixed(0)} dB)`)
           }
           rafRef.current = requestAnimationFrame(tick)
         }
