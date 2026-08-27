@@ -120,6 +120,10 @@ const EVENT_LABEL_MAP: Record<string, string> = {
   camera_blocked:          'Caméra bloquée',
   face_covered:            'Visage couvert',
   face_mismatch:           'Visage non reconnu',
+  // Correctif sécurité 27/08 — remplace l'ancienne recapture auto silencieuse
+  identity_mismatch_sustained: 'Identité non confirmée — validation requise',
+  identity_manual_review:  "Vérification d'identité tranchée",
+  teacher_identity_cleared: 'Identité confirmée par le surveillant',
   face_reference_captured: 'Référence faciale capturée',
   window_blur:             'Fenêtre mise en arrière-plan',
   teacher_warning:         "Avertissement de l'enseignant",
@@ -170,6 +174,9 @@ const EVENT_ICON_MAP: Record<string, { icon: string; color: string }> = {
   'proctor note':         { icon: 'sticky-note',         color: '#db2777' },
   teacher_ban:            { icon: 'ban',                 color: '#ef4444' },
   proctor_ban:            { icon: 'ban',                 color: '#ef4444' },
+  identity_mismatch_sustained: { icon: 'user-shield',    color: '#ef4444' },
+  identity_manual_review: { icon: 'user-check',          color: '#0d9488' },
+  teacher_identity_cleared: { icon: 'user-check',        color: '#10b981' },
   extra_time:             { icon: 'clock',               color: '#f59e0b' },
   private_call:           { icon: 'phone',               color: '#10b981' },
   teacher_private_call:   { icon: 'phone',               color: '#10b981' },
@@ -226,6 +233,8 @@ export default function ProctorMonitorPage() {
 
   /* modal: exclusion */
   const [banModal,  setBanModal]  = useState<{ attemptId: number; name: string } | null>(null)
+  const [identityModal, setIdentityModal] = useState<{ attemptId: number; name: string } | null>(null)
+  const [identityVerifying, setIdentityVerifying] = useState(false)
   const [banReason, setBanReason] = useState('')
   const [banning,   setBanning]   = useState(false)
 
@@ -482,10 +491,10 @@ export default function ProctorMonitorPage() {
      souris sur la page : on considère qu'ouvrir n'importe laquelle de ces
      vues ciblées sur un étudiant compte comme un signal de suivi réel. */
   useEffect(() => {
-    if (msgModal || banModal || extraModal || noteModal || screenModal || phoneZoomModal || logsPanel || zoomedSnapshot) {
+    if (msgModal || banModal || extraModal || noteModal || screenModal || phoneZoomModal || logsPanel || zoomedSnapshot || identityModal) {
       lastStudentViewRef.current = Date.now()
     }
-  }, [msgModal, banModal, extraModal, noteModal, screenModal, phoneZoomModal, logsPanel, zoomedSnapshot])
+  }, [msgModal, banModal, extraModal, noteModal, screenModal, phoneZoomModal, logsPanel, zoomedSnapshot, identityModal])
 
   /* Tier C — vérification périodique de présence par la caméra du
      surveillant : uniquement un booléen "visage détecté", jamais d'image
@@ -922,6 +931,21 @@ export default function ProctorMonitorPage() {
       loadData(true)
     } catch (e: any) { toastErr(e.message || 'Erreur') }
     finally { setBanning(false) }
+  }
+
+  // Correctif sécurité 27/08 — verdict humain suite à identity_mismatch_sustained.
+  // 'confirmed' débloque la reconnaissance faciale côté étudiant (recapture
+  // explicite) ; 'rejected' exclut directement la tentative.
+  async function verifyIdentity(verdict: 'confirmed' | 'rejected') {
+    if (!identityModal) return
+    setIdentityVerifying(true)
+    try {
+      await api.post(`/api/exam_attempts/${identityModal.attemptId}/identity_manual_verify`, { verdict })
+      success(verdict === 'confirmed' ? `Identité confirmée — ${identityModal.name} peut continuer` : `${identityModal.name} exclu`)
+      setIdentityModal(null)
+      loadData(true)
+    } catch (e: any) { toastErr(e.message || 'Erreur') }
+    finally { setIdentityVerifying(false) }
   }
 
   async function grantExtraTime() {
@@ -1802,6 +1826,7 @@ export default function ProctorMonitorPage() {
                 onNote={() => openNote(s)}
                 onLogs={() => openLogs(s)}
                 onZoomPhone={() => openPhoneZoom(s)}
+                onIdentityVerify={() => setIdentityModal({ attemptId: s.attempt_id, name: s.student_name })}
               />
             ))}
           </div>
@@ -1858,6 +1883,32 @@ export default function ProctorMonitorPage() {
             <button onClick={banStudent} disabled={banning}
               style={{ ...btnPrimary, background: '#ef4444', opacity: banning ? .5 : 1 }}>
               {banning ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-ban" />} Confirmer l'exclusion
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Vérification manuelle d'identité — correctif sécurité 27/08, suite à
+          identity_mismatch_sustained (5 échecs de reconnaissance faciale
+          consécutifs, ~25s). Remplace l'ancienne recapture automatique
+          silencieuse : une décision humaine est désormais obligatoire. */}
+      {identityModal && (
+        <Modal onClose={() => setIdentityModal(null)}>
+          <h2 style={{ fontSize:21.5, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: '#fca5a5' }}>
+            <i className="fas fa-user-shield" /> Identité non confirmée — {identityModal.name}
+          </h2>
+          <p style={{ fontSize:15.5, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>
+            La caméra n'a plus reconnu cet étudiant pendant environ 25 secondes (5 vérifications consécutives). Vérifiez la vidéo en direct — s'il s'agit bien de la même personne (éclairage, angle, lunettes...), confirmez. Sinon, excluez la tentative.
+          </p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button onClick={() => setIdentityModal(null)} style={btnSecondary}>Annuler</button>
+            <button onClick={() => verifyIdentity('rejected')} disabled={identityVerifying}
+              style={{ ...btnPrimary, background: '#ef4444', opacity: identityVerifying ? .5 : 1 }}>
+              {identityVerifying ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-ban" />} Exclure
+            </button>
+            <button onClick={() => verifyIdentity('confirmed')} disabled={identityVerifying}
+              style={{ ...btnPrimary, background: '#10b981', opacity: identityVerifying ? .5 : 1 }}>
+              {identityVerifying ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-user-check" />} Confirmer l'identité
             </button>
           </div>
         </Modal>
@@ -2527,7 +2578,7 @@ function AgentBanner({ agent, lastCheck, studentsCount }: { agent: AgentStatus |
   )
 }
 
-function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onBan, onRec, onScreen, onCall, onExtraTime, onNote, onLogs, onZoomPhone }: {
+function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onBan, onRec, onScreen, onCall, onExtraTime, onNote, onLogs, onZoomPhone, onIdentityVerify }: {
   s: Student
   recActive:    boolean
   screenAvail:  boolean
@@ -2542,6 +2593,7 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
   onNote:       () => void
   onLogs:       () => void
   onZoomPhone:  () => void
+  onIdentityVerify: () => void
 }) {
   const rc          = riskCls(s.risk_score)
   const isActive    = s.status === 'in_progress'
@@ -2576,9 +2628,15 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
             <div title={liveAlert.message}
               style={{ position: 'absolute', bottom: 6, left: 6, right: phoneLive ? 130 : 6, zIndex: 4, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, background: 'rgba(15,23,42,.9)', border: `1px solid ${meta.color}`, boxShadow: '0 2px 10px rgba(0,0,0,.5)', animation: 'liveAlertIn .2s ease-out' }}>
               <i className={`fas fa-${meta.icon}`} style={{ color: meta.color, fontSize: 12, flexShrink: 0 }} />
-              <span style={{ fontSize: 11.5, fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <span style={{ fontSize: 11.5, fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
                 {EVENT_LABEL_MAP[liveAlert.eventType] || liveAlert.message}
               </span>
+              {liveAlert.eventType === 'identity_mismatch_sustained' && (
+                <button onClick={onIdentityVerify} title="Vérifier l'identité"
+                  style={{ flexShrink: 0, background: '#ef4444', color: 'white', border: 'none', borderRadius: 5, padding: '3px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                  <i className="fas fa-user-shield" /> Vérifier
+                </button>
+              )}
             </div>
           )
         })()}

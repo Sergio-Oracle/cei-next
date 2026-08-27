@@ -463,6 +463,17 @@ export default function ExamPage() {
   const consMultiRef    = useRef(0)
   const consMismatchRef = useRef(0)
   const refDescRef      = useRef<Float32Array|null>(null)
+  // Correctif sécurité (27/08) — gèle la reconnaissance faciale (plus de
+  // recapture auto NI de mise à jour EMA du descripteur) dès qu'un mismatch
+  // soutenu est signalé, jusqu'à validation humaine explicite du
+  // surveillant. Voir identity_mismatch_sustained / identity_manual_verify.
+  const identityFrozenRef = useRef(false)
+  const [identityUnderReview, setIdentityUnderReview] = useState(false)
+  // captureReference() est une closure locale à initFaceDetection() — ce ref
+  // l'expose pour que handleTeacherMessage (portée du composant, pas de
+  // l'effet) puisse déclencher une ré-capture EXPLICITE après validation
+  // humaine (voir 'identity_cleared'), sans jamais le faire seul.
+  const captureReferenceFnRef = useRef<(() => void) | null>(null)
 
   /* ── Chargement ───────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -1669,7 +1680,7 @@ export default function ExamPage() {
   // de vision (regard détourné, tête tournée...) qui inonderait l'écran de
   // surveillance. Le journal complet (preuve) reste, lui, exhaustif — voir
   // logActivity/logProctoring ci-dessous, non filtrés.
-  const LIVE_ALERT_EVENTS = new Set(['sustained_audio_detected','tab_switch','window_blur','fullscreen_exit','multi_screen_detected'])
+  const LIVE_ALERT_EVENTS = new Set(['sustained_audio_detected','tab_switch','window_blur','fullscreen_exit','multi_screen_detected','identity_mismatch_sustained'])
   function broadcastLiveAlert(eventType:string, message:string) {
     try {
       const room = lkRoomRef.current
@@ -1766,6 +1777,15 @@ export default function ExamPage() {
     } else if(msg.type==='end_call') {
       if(privateRoomRef.current) leavePrivateCall()
       setShowPrivateCallModal(false)
+    } else if(msg.type==='identity_cleared') {
+      // Correctif sécurité (27/08) — déblocage EXPLICITE décidé par le
+      // serveur suite à validation humaine (identity_manual_verify côté
+      // surveillant), jamais silencieux côté client. Relance une capture de
+      // référence fraîche.
+      identityFrozenRef.current = false
+      setIdentityUnderReview(false)
+      setAlerts(a=>[{type:'teacher_msg',msg:msg.message||'Identité confirmée par le surveillant',at:new Date().toLocaleTimeString('fr-FR')},...a])
+      captureReferenceFnRef.current?.()
     }
   }
 
@@ -1946,6 +1966,7 @@ export default function ExamPage() {
     let consGood=0
 
     async function captureReference() {
+      captureReferenceFnRef.current = captureReference
       const fa=(window as any).faceapi; if(!fa||refCapturing) return
       const vid=videoRef.current; if(!vid||vid.readyState<2) return
       refCapturing=true; refDescRef.current=null; const captured:Float32Array[]=[]
@@ -1983,6 +2004,7 @@ export default function ExamPage() {
         for(const d of captured) for(let j=0;j<size;j++) avg[j]+=d[j]/3
         refDescRef.current=avg
         consNoFaceRef.current=0; consMismatchRef.current=0; consGood=0
+        identityFrozenRef.current=false; setIdentityUnderReview(false)
         const c=document.createElement('canvas'); c.width=320; c.height=240
         const v=videoRef.current; if(v){c.getContext('2d')!.drawImage(v,0,0,320,240)}
         const imgB64=c.toDataURL('image/jpeg',0.7).split(',')[1]
@@ -2072,7 +2094,14 @@ export default function ExamPage() {
           } else { setFaceStatus('warn'); setFaceIssue('multiple') }
         } else {
           consNoFaceRef.current=0; consMultiRef.current=0
-          if(refDescRef.current&&(dets[0] as any).descriptor){
+          if(identityFrozenRef.current){
+            // Correctif sécurité (27/08) — signalement déjà émis, en attente
+            // de validation humaine (voir handleTeacherMessage
+            // 'identity_cleared'). On ne ré-analyse plus rien tant que le
+            // surveillant n'a pas tranché : plus de recapture silencieuse,
+            // plus de spam de logs, plus de dérive EMA de la référence.
+            setFaceStatus('bad'); setFaceIssue('mismatch')
+          } else if(refDescRef.current&&(dets[0] as any).descriptor){
             const dist=fa.euclideanDistance((dets[0] as any).descriptor,refDescRef.current)
             if(dist<=RECOG_THRESHOLD){
               consMismatchRef.current=0; consGood++
@@ -2086,14 +2115,19 @@ export default function ExamPage() {
               consMismatchRef.current++; consGood=0
               if(consMismatchRef.current>=CONSEC_ALERT){
                 if(consMismatchRef.current===RECAPTURE_AFTER){
-                  refCapturing=false; captureReference()
-                } else if(consMismatchRef.current>RECAPTURE_AFTER){
-                  setFaceStatus('warn'); setFaceIssue('mismatch')
-                  if(now-lastFaceAlertRef.current.mismatch>ALERT_COOLDOWN){
-                    lastFaceAlertRef.current.mismatch=now
-                    logProctoring(curAId,'face_mismatch',`distance=${dist.toFixed(3)}`).catch(()=>{})
-                    captureSnapshot('face_mismatch',curAId,true,1,1-dist,5_000)
-                  }
+                  // Correctif sécurité (27/08) — remplace l'ancienne
+                  // recapture automatique silencieuse (risque de
+                  // substitution de personne acceptée sans validation
+                  // humaine). On gèle désormais la référence et on exige un
+                  // verdict explicite du surveillant (identity_manual_verify)
+                  // avant toute reprise de la reconnaissance faciale.
+                  identityFrozenRef.current = true
+                  setFaceStatus('bad'); setFaceIssue('mismatch')
+                  setIdentityUnderReview(true)
+                  const detail = `distance=${dist.toFixed(3)}, ${consMismatchRef.current} vérifications consécutives`
+                  logActivity(curAId,'identity_mismatch_sustained',detail).catch(()=>{})
+                  logProctoring(curAId,'identity_mismatch_sustained',detail).catch(()=>{})
+                  captureSnapshot('identity_mismatch_sustained',curAId,true,1,1-dist,5_000)
                 } else { setFaceStatus('warn'); setFaceIssue('mismatch') }
               } else { setFaceStatus('warn'); setFaceIssue('mismatch') }
             }
@@ -2873,20 +2907,27 @@ export default function ExamPage() {
               <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',pointerEvents:'none',padding:8,gap:6}}>
                 <div style={{width:'52%',aspectRatio:'3/4',borderRadius:'50%',border:`2px dashed ${faceStatus==='bad'?'#ef4444':'#f59e0b'}`,animation:faceStatus==='bad'?'faceRingBad 1.4s ease-in-out infinite':'faceRingWarn 1.6s ease-in-out infinite'}}/>
                 <div style={{background:'rgba(15,23,42,.78)',color:'#fff',fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:6,textAlign:'center',lineHeight:1.3}}>
-                  <i className={`fas ${faceIssue==='multiple'?'fa-user-group':faceStatus==='bad'?'fa-user-slash':'fa-eye-slash'}`} style={{marginRight:4}}/>
-                  {faceIssue==='multiple' ? 'Éloignez toute autre personne' : faceStatus==='bad' ? 'Recentrez votre visage ici' : 'Repositionnez-vous dans le cadre'}
+                  <i className={`fas ${identityUnderReview?'fa-user-shield':faceIssue==='multiple'?'fa-user-group':faceStatus==='bad'?'fa-user-slash':'fa-eye-slash'}`} style={{marginRight:4}}/>
+                  {identityUnderReview ? 'Vérification en cours — continuez de composer' : faceIssue==='multiple' ? 'Éloignez toute autre personne' : faceStatus==='bad' ? 'Recentrez votre visage ici' : 'Repositionnez-vous dans le cadre'}
                 </div>
               </div>
             )}
-            <div style={{position:'absolute',top:6,right:6,padding:'3px 7px',background:faceStatus==='ok'?'rgba(16,185,129,.9)':faceStatus==='warn'?'rgba(245,158,11,.9)':faceStatus==='bad'?'rgba(239,68,68,.9)':'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',borderRadius:4,color:'white',fontSize:11,fontWeight:600,display:'flex',alignItems:'center',gap:4,animation:faceStatus==='bad'?'faceRingBad 1.4s ease-in-out infinite':faceStatus==='warn'?'faceRingWarn 1.6s ease-in-out infinite':'none'}}>
-              {faceStatus==='init'&&<><i className="fas fa-sync fa-spin"/>Init…</>}
-              {faceStatus==='ok'&&<><i className="fas fa-user-check"/>Visage OK</>}
-              {faceStatus==='warn'&&faceIssue==='multiple'&&<><i className="fas fa-user-group"/>Plusieurs visages…</>}
-              {faceStatus==='warn'&&faceIssue!=='multiple'&&<><i className="fas fa-eye-slash"/>Repositionnez…</>}
-              {faceStatus==='bad'&&faceIssue==='multiple'&&<><i className="fas fa-user-group"/>Plusieurs visages</>}
-              {faceStatus==='bad'&&faceIssue!=='multiple'&&<><i className="fas fa-times"/>Visage absent</>}
+            <div style={{position:'absolute',top:6,right:6,padding:'3px 7px',background:identityUnderReview?'rgba(217,119,6,.92)':faceStatus==='ok'?'rgba(16,185,129,.9)':faceStatus==='warn'?'rgba(245,158,11,.9)':faceStatus==='bad'?'rgba(239,68,68,.9)':'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',borderRadius:4,color:'white',fontSize:11,fontWeight:600,display:'flex',alignItems:'center',gap:4,animation:faceStatus==='bad'?'faceRingBad 1.4s ease-in-out infinite':faceStatus==='warn'?'faceRingWarn 1.6s ease-in-out infinite':'none'}}>
+              {identityUnderReview&&<><i className="fas fa-user-shield"/>Identité en vérification</>}
+              {!identityUnderReview&&faceStatus==='init'&&<><i className="fas fa-sync fa-spin"/>Init…</>}
+              {!identityUnderReview&&faceStatus==='ok'&&<><i className="fas fa-user-check"/>Visage OK</>}
+              {!identityUnderReview&&faceStatus==='warn'&&faceIssue==='multiple'&&<><i className="fas fa-user-group"/>Plusieurs visages…</>}
+              {!identityUnderReview&&faceStatus==='warn'&&faceIssue!=='multiple'&&<><i className="fas fa-eye-slash"/>Repositionnez…</>}
+              {!identityUnderReview&&faceStatus==='bad'&&faceIssue==='multiple'&&<><i className="fas fa-user-group"/>Plusieurs visages</>}
+              {!identityUnderReview&&faceStatus==='bad'&&faceIssue!=='multiple'&&<><i className="fas fa-times"/>Visage absent</>}
             </div>
           </div>
+          {identityUnderReview && (
+            <div style={{margin:'0 12px 8px',padding:'8px 10px',borderRadius:8,background:'#fef3c7',border:'1px solid #fde68a',color:'#92400e',fontSize:12.5,lineHeight:1.4,display:'flex',gap:8,alignItems:'flex-start'}}>
+              <i className="fas fa-user-shield" style={{marginTop:1}}/>
+              <span>Votre identité est en cours de vérification par un surveillant. Continuez de composer normalement — cela n'interrompt pas votre examen.</span>
+            </div>
+          )}
           {/* Vidéo enseignant — toujours dans le DOM pour que le ref soit disponible */}
           <div style={{display:teacherActive?'block':'none',margin:'0 12px 8px',borderRadius:8,overflow:'hidden',background:'#000',border:'2px solid #f59e0b',position:'relative'}}>
             <div style={{position:'absolute',top:4,left:6,zIndex:10,fontSize:11,fontWeight:700,color:'#f59e0b',background:'rgba(0,0,0,.7)',padding:'2px 6px',borderRadius:4}}><i className="fas fa-chalkboard-teacher"/> Enseignant</div>
