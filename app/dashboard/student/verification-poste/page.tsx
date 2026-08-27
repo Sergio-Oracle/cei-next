@@ -22,6 +22,52 @@ function StatusBadge({ status }: { status: Status }) {
   )
 }
 
+/* Visualiseur façon égaliseur — barres animées pilotées par le niveau
+   sonore lissé. Rendu volontairement différent de la barre de progression
+   unique essayée avant (width puis transform:scaleX, toutes deux restées
+   invisibles chez l'utilisateur malgré des valeurs JS correctes) : ici
+   chaque barre est un simple élément flex avec une hauteur en %, la
+   disposition la plus standard pour ce type d'indicateur. */
+function EqBars({ bars, active }: { bars: number[]; active: boolean }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 52 }}>
+      {bars.map((v, i) => (
+        <div key={i} style={{
+          width: 10,
+          borderRadius: '3px 3px 0 0',
+          height: `${Math.max(8, Math.round(v * 100))}%`,
+          background: v > 0.35 ? '#10b981' : 'var(--primary)',
+          transition: 'height 90ms ease-out, background 150ms',
+          opacity: active ? 1 : 0.3,
+        }} />
+      ))}
+    </div>
+  )
+}
+
+/* Barres de signal réseau façon "barres de réception" — animation de
+   pulsation sur les barres actives pour signaler une surveillance en
+   direct de la connexion, pas juste une mesure figée au chargement. */
+function SignalBars({ level, live }: { level: 0 | 1 | 2 | 3 | 4; live: boolean }) {
+  const heights = [35, 55, 75, 100]
+  const color = level === 0 ? 'var(--text-muted)' : level === 1 ? '#ef4444' : level === 2 ? '#d97706' : '#10b981'
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 26 }}>
+      {heights.map((h, i) => (
+        <div key={i} style={{
+          width: 7,
+          height: `${h}%`,
+          borderRadius: 2,
+          background: i < level ? color : 'var(--border)',
+          transition: 'background 250ms',
+          animation: live && i < level ? 'cei-signal-pulse 1.7s ease-in-out infinite' : undefined,
+          animationDelay: `${i * 0.15}s`,
+        }} />
+      ))}
+    </div>
+  )
+}
+
 /* Même détection de capacité que la page d'examen réelle (isDeviceSupported)
    — le partage d'écran complet n'est pas disponible sur mobile (Android
    Chrome n'implémente pas getDisplayMedia, iOS Safari ne peut pas fournir
@@ -50,12 +96,15 @@ export default function VerificationPostePage() {
   const micEverHeardRef = useRef(false)
   const micStartRef = useRef(0)
   const micSmoothRef = useRef(0)
+  const [micBars, setMicBars] = useState<number[]>(Array(8).fill(0))
+  const micBarPhaseRef = useRef<number[]>(Array.from({ length: 8 }, () => Math.random() * 10))
 
   const [screenStatus, setScreenStatus] = useState<Status>(screenShareSupported() ? 'idle' : 'error')
   const [screenMsg, setScreenMsg] = useState(screenShareSupported() ? '' : "Le partage d'écran complet n'est pas disponible sur cet appareil (souvent le cas sur mobile) — un ordinateur est nécessaire pour composer.")
 
   const [netStatus, setNetStatus] = useState<Status>('checking')
   const [netMsg, setNetMsg] = useState('')
+  const [netBars, setNetBars] = useState<0 | 1 | 2 | 3 | 4>(0)
 
   /* Caméra + micro : même flux combiné que la page d'examen (une seule
      autorisation navigateur pour les deux). */
@@ -143,6 +192,16 @@ export default function VerificationPostePage() {
           micSmoothRef.current = smoothed
           setMicLevel(smoothed)
           if (raw > 0.06) micEverHeardRef.current = true
+          // Égaliseur animé : 8 barres dérivées du même niveau lissé (déjà
+          // confirmé correct), chacune avec une légère ondulation propre
+          // (phase aléatoire fixée une fois au montage) pour un rendu
+          // vivant façon égaliseur plutôt que 8 barres qui bougent à
+          // l'identique.
+          const now = Date.now()
+          setMicBars(micBarPhaseRef.current.map(phase => {
+            const wobble = 0.55 + 0.45 * Math.sin(now / 180 + phase * 10)
+            return Math.max(0.04, Math.min(1, smoothed * (0.5 + wobble * 0.9)))
+          }))
           // Après 6s, si le contexte tourne bien mais qu'aucun son n'a
           // jamais été détecté (même le bruit ambiant produit un léger
           // signal), le problème n'est plus l'AudioContext mais le
@@ -201,6 +260,7 @@ export default function VerificationPostePage() {
     const conn = (navigator as any).connection
     if (!conn) {
       setNetStatus('warning')
+      setNetBars(0)
       setNetMsg("Votre navigateur ne permet pas de mesurer automatiquement votre connexion — assurez-vous simplement d'avoir une connexion stable et évitez le partage de connexion mobile faible le jour de l'examen.")
       return
     }
@@ -208,19 +268,24 @@ export default function VerificationPostePage() {
       const poor = conn.downlink < 0.5 || ['slow-2g', '2g'].includes(conn.effectiveType)
       const shaky = !poor && (conn.downlink < 1.5 || conn.effectiveType === '3g')
       if (poor) {
-        setNetStatus('error')
+        setNetStatus('error'); setNetBars(1)
         setNetMsg(`Connexion faible détectée (${conn.effectiveType}, ${conn.downlink} Mbps). L'examen réduira automatiquement sa consommation, mais rapprochez-vous de votre routeur ou changez de réseau si possible.`)
       } else if (shaky) {
-        setNetStatus('warning')
+        setNetStatus('warning'); setNetBars(2)
         setNetMsg(`Connexion correcte mais limite (${conn.effectiveType}, ${conn.downlink} Mbps). Ça devrait fonctionner ; évitez de partager la connexion avec d'autres usages pendant l'examen.`)
       } else {
-        setNetStatus('ok')
+        setNetStatus('ok'); setNetBars(4)
         setNetMsg(`Connexion satisfaisante (${conn.effectiveType}, ${conn.downlink} Mbps).`)
       }
     }
     evaluate()
     conn.addEventListener?.('change', evaluate)
-    return () => conn.removeEventListener?.('change', evaluate)
+    // Certains navigateurs ne déclenchent pas systématiquement 'change'
+    // pour de petites variations de débit — un ré-échantillonnage
+    // périodique garde l'indicateur réellement "en direct" pour
+    // l'étudiant plutôt qu'une mesure figée au chargement.
+    const poll = setInterval(evaluate, 5000)
+    return () => { conn.removeEventListener?.('change', evaluate); clearInterval(poll) }
   }, [])
 
   async function testScreenShare() {
@@ -245,6 +310,9 @@ export default function VerificationPostePage() {
 
   return (
     <div>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes cei-signal-pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.4 } }
+      `}} />
       <div className="page-header">
         <div>
           <h2><i className="fas fa-shield-halved" style={{ marginRight: 10, color: 'var(--primary)' }} />Vérifier mon poste</h2>
@@ -279,8 +347,8 @@ export default function VerificationPostePage() {
             <StatusBadge status={micStatus} />
           </div>
           <p style={{ fontSize: 14.5, color: 'var(--text-muted)', marginBottom: 10 }}>Parlez normalement pour vérifier que le niveau réagit :</p>
-          <div style={{ height: 14, borderRadius: 7, background: 'var(--background)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: '100%', transformOrigin: 'left', transform: `scaleX(${Math.max(0.001, micLevel)})`, background: micLevel > 0.15 ? '#10b981' : 'var(--primary)', willChange: 'transform' }} />
+          <div style={{ padding: '10px 4px 0', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 10 }}>
+            <EqBars bars={micBars} active={micStatus === 'ok'} />
           </div>
           {micMsg && <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 10 }}>{micMsg}</p>}
           {micStatus === 'ok' && (
@@ -308,6 +376,15 @@ export default function VerificationPostePage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ margin: 0, fontSize: 17 }}><i className="fas fa-wifi" style={{ marginRight: 8, color: 'var(--primary)' }} />Connexion réseau</h3>
             <StatusBadge status={netStatus} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 4px 8px' }}>
+            <SignalBars level={netBars} live={netStatus !== 'checking'} />
+            {netStatus !== 'checking' && (
+              <span style={{ fontSize: 12.5, color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', animation: 'cei-signal-pulse 1.7s ease-in-out infinite' }} />
+                surveillance en direct
+              </span>
+            )}
           </div>
           <p style={{ fontSize: 14.5, color: 'var(--text-muted)' }}>{netMsg || 'Mesure en cours…'}</p>
         </div>
