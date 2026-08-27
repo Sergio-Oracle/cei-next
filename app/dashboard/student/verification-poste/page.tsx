@@ -49,6 +49,7 @@ export default function VerificationPostePage() {
   const [micDiag, setMicDiag] = useState('')
   const micEverHeardRef = useRef(false)
   const micStartRef = useRef(0)
+  const micSmoothRef = useRef(0)
 
   const [screenStatus, setScreenStatus] = useState<Status>(screenShareSupported() ? 'idle' : 'error')
   const [screenMsg, setScreenMsg] = useState(screenShareSupported() ? '' : "Le partage d'écran complet n'est pas disponible sur cet appareil (souvent le cas sur mobile) — un ordinateur est nécessaire pour composer.")
@@ -127,9 +128,21 @@ export default function VerificationPostePage() {
           for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v }
           const rms = Math.sqrt(sum / data.length)
           const db = 20 * Math.log10(rms + 1e-6)
-          const level = Math.max(0, Math.min(1, (db - MIN_DB) / (MAX_DB - MIN_DB)))
-          setMicLevel(level)
-          if (level > 0.06) micEverHeardRef.current = true
+          const raw = Math.max(0, Math.min(1, (db - MIN_DB) / (MAX_DB - MIN_DB)))
+          // Lissage attaque rapide / relâche lente (comportement standard
+          // d'un vumètre) : la parole a des pics et creux très rapides
+          // (syllabes), et une jauge purement instantanée à 60 FPS "clignote"
+          // trop vite pour l'œil — confirmé sur poste réel (27/08) : la
+          // valeur JS était correcte (0.417) mais la barre CSS pilotée par
+          // `width` + transition se faisait constamment réinterrompre par
+          // les mises à jour rapides et restait visuellement figée à vide.
+          // Le lissage ici + le passage à `transform: scaleX()` (rendu)
+          // réglent les deux causes à la fois.
+          const prev = micSmoothRef.current
+          const smoothed = raw > prev ? prev + (raw - prev) * 0.6 : prev + (raw - prev) * 0.12
+          micSmoothRef.current = smoothed
+          setMicLevel(smoothed)
+          if (raw > 0.06) micEverHeardRef.current = true
           // Après 6s, si le contexte tourne bien mais qu'aucun son n'a
           // jamais été détecté (même le bruit ambiant produit un léger
           // signal), le problème n'est plus l'AudioContext mais le
@@ -267,7 +280,7 @@ export default function VerificationPostePage() {
           </div>
           <p style={{ fontSize: 14.5, color: 'var(--text-muted)', marginBottom: 10 }}>Parlez normalement pour vérifier que le niveau réagit :</p>
           <div style={{ height: 14, borderRadius: 7, background: 'var(--background)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.round(micLevel * 100)}%`, background: micLevel > 0.15 ? '#10b981' : 'var(--primary)', transition: 'width 0.08s linear' }} />
+            <div style={{ height: '100%', width: '100%', transformOrigin: 'left', transform: `scaleX(${Math.max(0.001, micLevel)})`, background: micLevel > 0.15 ? '#10b981' : 'var(--primary)', willChange: 'transform' }} />
           </div>
           {micMsg && <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 10 }}>{micMsg}</p>}
           {micStatus === 'ok' && (
