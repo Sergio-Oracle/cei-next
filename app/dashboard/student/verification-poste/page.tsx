@@ -46,6 +46,9 @@ export default function VerificationPostePage() {
   const [micStatus, setMicStatus] = useState<Status>('idle')
   const [micMsg, setMicMsg] = useState('')
   const [micLevel, setMicLevel] = useState(0)
+  const [micDiag, setMicDiag] = useState('')
+  const micEverHeardRef = useRef(false)
+  const micStartRef = useRef(0)
 
   const [screenStatus, setScreenStatus] = useState<Status>(screenShareSupported() ? 'idle' : 'error')
   const [screenMsg, setScreenMsg] = useState(screenShareSupported() ? '' : "Le partage d'écran complet n'est pas disponible sur cet appareil (souvent le cas sur mobile) — un ordinateur est nécessaire pour composer.")
@@ -63,7 +66,23 @@ export default function VerificationPostePage() {
       camStreamRef.current = stream
       if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play().catch(() => {}) }
       setCamStatus('ok'); setCamMsg('Caméra accessible.')
-      setMicStatus('ok'); setMicMsg('Microphone accessible — parlez pour voir le niveau réagir ci-dessous.')
+
+      // Vérification explicite qu'une piste audio réelle et active a bien
+      // été accordée — un mauvais périphérique sélectionné par défaut par
+      // le système (ex. carte son virtuelle, micro désactivé au niveau OS)
+      // peut faire réussir getUserMedia() sans qu'aucune piste audio
+      // exploitable n'existe, ce qui rend le niveau muet sans aucune
+      // erreur JS pour l'expliquer.
+      const audioTracks = stream.getAudioTracks()
+      if (audioTracks.length === 0) {
+        setMicStatus('error')
+        setMicMsg("Aucune piste microphone détectée dans le flux — vérifiez qu'un microphone est bien sélectionné par défaut dans les paramètres son de votre système/navigateur.")
+      } else if (audioTracks[0].muted || !audioTracks[0].enabled) {
+        setMicStatus('error')
+        setMicMsg("Le microphone est détecté mais coupé (muet) — vérifiez qu'aucune autre application ne le désactive, puis rechargez cette page.")
+      } else {
+        setMicStatus('ok'); setMicMsg('Microphone accessible — parlez pour voir le niveau réagir ci-dessous.')
+      }
 
       // Niveau micro en direct (même approche RMS que la page d'examen).
       // IMPORTANT : contrairement à la page d'examen (où l'AudioContext est
@@ -73,30 +92,48 @@ export default function VerificationPostePage() {
       // "suspended" tant qu'aucun geste utilisateur n'a eu lieu DANS cette
       // page, et l'analyseur ne traite alors aucun son réel (niveau bloqué
       // à 0 en silence). resume() explicite + relance au premier clic/touche
-      // en filet de sécurité pour les navigateurs les plus stricts.
-      try {
+      // en filet de sécurité pour les navigateurs les plus stricts, ET un
+      // diagnostic visible (état réel du contexte + éventuel silence
+      // prolongé malgré un contexte "running") pour ne plus avoir à deviner
+      // à distance quand ça ne marche pas chez l'utilisateur.
+      if (audioTracks.length > 0) try {
         const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
         const source = ctx.createMediaStreamSource(stream)
         const analyser = ctx.createAnalyser()
         analyser.fftSize = 2048
         source.connect(analyser)
         audioCtxRef.current = ctx
-        ctx.resume().catch(() => {})
-        const resumeOnGesture = () => { ctx.resume().catch(() => {}) }
+        setMicDiag(`contexte audio : ${ctx.state}`)
+        ctx.resume().then(() => setMicDiag(`contexte audio : ${ctx.state}`)).catch(() => setMicDiag(`contexte audio : ${ctx.state} (resume() a échoué)`))
+        const resumeOnGesture = () => { ctx.resume().then(() => setMicDiag(`contexte audio : ${ctx.state}`)).catch(() => {}) }
         resumeGestureRef.current = resumeOnGesture
         window.addEventListener('click', resumeOnGesture)
         window.addEventListener('keydown', resumeOnGesture)
         window.addEventListener('touchstart', resumeOnGesture)
         const data = new Uint8Array(analyser.fftSize)
+        micStartRef.current = Date.now()
         const tick = () => {
           analyser.getByteTimeDomainData(data)
           let sum = 0
           for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v }
-          setMicLevel(Math.min(1, Math.sqrt(sum / data.length) * 6))
+          const level = Math.sqrt(sum / data.length) * 6
+          setMicLevel(Math.min(1, level))
+          if (level > 0.02) micEverHeardRef.current = true
+          // Après 6s, si le contexte tourne bien mais qu'aucun son n'a
+          // jamais été détecté (même le bruit ambiant produit un léger
+          // signal), le problème n'est plus l'AudioContext mais le
+          // périphérique lui-même (mauvais micro sélectionné, coupé au
+          // niveau OS, etc.) — le dire clairement plutôt que de laisser
+          // la jauge muette sans explication.
+          if (!micEverHeardRef.current && Date.now() - micStartRef.current > 6000 && ctx.state === 'running') {
+            setMicDiag(`contexte audio : running — mais aucun son capté depuis 6s. Vérifiez que le bon micro est sélectionné dans les paramètres de votre système (pas seulement du navigateur), et qu'aucune autre appli ne le monopolise.`)
+          }
           rafRef.current = requestAnimationFrame(tick)
         }
         tick()
-      } catch {}
+      } catch (e: any) {
+        setMicDiag(`erreur AudioContext : ${e?.message || e}`)
+      }
 
       // Détection de visage en direct (même moteur que pendant l'examen)
       initProctoringVision().then(() => {
@@ -220,6 +257,11 @@ export default function VerificationPostePage() {
             <div style={{ height: '100%', width: `${Math.round(micLevel * 100)}%`, background: micLevel > 0.15 ? '#10b981' : 'var(--primary)', transition: 'width 0.08s linear' }} />
           </div>
           {micMsg && <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 10 }}>{micMsg}</p>}
+          {micStatus === 'ok' && (
+            <p style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 6, fontFamily: 'monospace' }}>
+              niveau : {micLevel.toFixed(3)} — {micDiag || 'initialisation…'}
+            </p>
+          )}
         </div>
 
         {/* Partage d'écran */}
