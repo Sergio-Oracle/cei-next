@@ -38,7 +38,13 @@ export default function ProfessorExamDetailPage() {
   const { success, error } = useToast()
   const [exam, setExam] = useState<OnlineExam | null>(null)
   const [attempts, setAttempts] = useState<AttemptWithMeta[]>([])
+  const [attemptsPage, setAttemptsPage] = useState(1)
+  const [attemptsTotalPages, setAttemptsTotalPages] = useState(1)
+  const [attemptsTotal, setAttemptsTotal] = useState(0)
+  const [needsCorrectionCount, setNeedsCorrectionCount] = useState(0)
+  const [attemptsSearch, setAttemptsSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [loadingAttempts, setLoadingAttempts] = useState(false)
   const [actioning, setActioning] = useState(false)
 
   const [gradeModal, setGradeModal] = useState<AttemptWithMeta | null>(null)
@@ -64,20 +70,44 @@ export default function ProfessorExamDetailPage() {
   const [banning, setBanning]         = useState(false)
 
   useEffect(() => { load() }, [id])
+  useEffect(() => { loadAttempts(1, attemptsSearch) }, [attemptsSearch]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     setLoading(true)
     try {
-      const [examData, attemptsData] = await Promise.all([
+      const [examData] = await Promise.all([
         api.get<OnlineExam>(`/api/online_exams/${id}/details`),
-        api.get<AttemptWithMeta[]>(`/api/online_exams/${id}/attempts`).catch(() => []),
+        loadAttempts(1, ''),
       ])
       setExam(examData)
-      setAttempts(Array.isArray(attemptsData) ? attemptsData : (attemptsData as any).attempts ?? [])
     } catch {
       error('Examen introuvable ou accès refusé')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadAttempts(page: number, search: string) {
+    setLoadingAttempts(true)
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: '50' })
+      if (search) params.set('search', search)
+      const data = await api.get<any>(`/api/online_exams/${id}/attempts?${params.toString()}`).catch(() => null)
+      if (Array.isArray(data)) {
+        // Compat ancienne forme (tableau brut) si jamais un vieux cache d'API repond ainsi
+        setAttempts(data)
+        setAttemptsTotal(data.length)
+        setAttemptsTotalPages(1)
+        setNeedsCorrectionCount(data.filter((a: AttemptWithMeta) => a.needs_correction).length)
+      } else if (data) {
+        setAttempts(data.attempts ?? [])
+        setAttemptsTotal(data.total ?? 0)
+        setAttemptsTotalPages(data.total_pages ?? 1)
+        setNeedsCorrectionCount(data.needs_correction_count ?? 0)
+      }
+      setAttemptsPage(page)
+    } finally {
+      setLoadingAttempts(false)
     }
   }
 
@@ -299,7 +329,7 @@ export default function ProfessorExamDetailPage() {
   )
 
   const fmt = (d?: string | null) => d ? new Date(d).toLocaleString('fr-FR') : '—'
-  const toCorrect = attempts.filter(a => a.needs_correction).length
+  const toCorrect = needsCorrectionCount
   const corrected = attempts.filter(a => a.score != null).length
   const avgScore = corrected > 0
     ? (attempts.filter(a => a.score != null).reduce((s, a) => s + (a.score ?? 0), 0) / corrected).toFixed(1)
@@ -461,15 +491,27 @@ export default function ProfessorExamDetailPage() {
 
       {/* Tentatives */}
       <div className="card">
-        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <h3 style={{ margin: 0 }}>
-            <i className="fa-solid fa-users" style={{ color: 'var(--primary)', marginRight: 8 }} />Tentatives ({attempts.length})
+            <i className="fa-solid fa-users" style={{ color: 'var(--primary)', marginRight: 8 }} />Tentatives ({attemptsTotal})
             {toCorrect > 0 && (
               <span style={{ marginLeft: 10, background: '#fef3c7', color: '#92400e', padding: '3px 10px', borderRadius: 99, fontSize:14.5, fontWeight: 600 }}>
                 {toCorrect} à corriger
               </span>
             )}
           </h3>
+          <input
+            type="text"
+            placeholder="Rechercher un étudiant (nom ou email)..."
+            defaultValue={attemptsSearch}
+            onChange={e => {
+              const v = e.target.value
+              if ((e.target as any)._t) clearTimeout((e.target as any)._t)
+              ;(e.target as any)._t = setTimeout(() => setAttemptsSearch(v), 400)
+            }}
+            className="form-control"
+            style={{ maxWidth: 280 }}
+          />
         </div>
 
         <div className="table-responsive">
@@ -554,6 +596,21 @@ export default function ProfessorExamDetailPage() {
             </tbody>
           </table>
         </div>
+        {attemptsTotalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, padding: '14px 0' }}>
+            <button className="btn btn-secondary" disabled={attemptsPage <= 1 || loadingAttempts}
+              onClick={() => loadAttempts(attemptsPage - 1, attemptsSearch)}>
+              <i className="fa-solid fa-chevron-left" />
+            </button>
+            <span style={{ fontSize:14.5, color: 'var(--text-muted)' }}>
+              Page {attemptsPage} / {attemptsTotalPages}
+            </span>
+            <button className="btn btn-secondary" disabled={attemptsPage >= attemptsTotalPages || loadingAttempts}
+              onClick={() => loadAttempts(attemptsPage + 1, attemptsSearch)}>
+              <i className="fa-solid fa-chevron-right" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Modal Reprogrammer */}

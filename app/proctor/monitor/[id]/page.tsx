@@ -78,6 +78,12 @@ function fmtTime(iso: string | null) {
   return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
+// Seuils d'affichage volontairement distincts des seuils d'alerte email de
+// l'agent IA (AGENT_RISK_ALERT=60, AGENT_RISK_URGENT=80,
+// agent_proctor/config.py) : l'email part un peu avant que ce badge ne
+// passe au rouge (70), pour donner une longueur d'avance au staff — pas une
+// incohérence à corriger, juste une relation à garder en tête si l'un des
+// deux est retouché un jour.
 function riskCls(s: number) { return s >= 70 ? 'high' : s >= 40 ? 'medium' : 'low' }
 const RC = { low: '#10b981', medium: '#f59e0b', high: '#ef4444' } as const
 const RB = { low: 'rgba(16,185,129,.2)', medium: 'rgba(245,158,11,.2)', high: 'rgba(239,68,68,.2)' } as const
@@ -85,6 +91,7 @@ const RB = { low: 'rgba(16,185,129,.2)', medium: 'rgba(245,158,11,.2)', high: 'r
 // Seuil au-delà duquel l'absence de heartbeat affiche un badge "hors ligne".
 // Purement informatif pour le surveillant — n'affecte jamais le risk_score ni les violations.
 const OFFLINE_THRESHOLD_SEC = 60
+const VIDEO_PAGE_SIZE = 12
 
 function offlineSince(iso: string | null): number | null {
   if (!iso) return null
@@ -201,6 +208,13 @@ export default function ProctorMonitorPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [filter,     setFilter]     = useState<Filter>('in_progress')
   const [search,     setSearch]     = useState('')
+  // Pagination de la grille vidéo — un professeur/admin ouvrant un examen à
+  // 1000+ étudiants recevait auparavant TOUTES les tentatives d'un coup
+  // (contrairement au surveillant, déjà borné à son groupe côté backend) et
+  // la grille tentait d'ouvrir autant de connexions LiveKit simultanées,
+  // au risque de geler l'onglet. Grille limitée à VIDEO_PAGE_SIZE tuiles.
+  const [videoPage,  setVideoPage]   = useState(0)
+  useEffect(() => { setVideoPage(0) }, [search, filter])
   const [camOn,      setCamOn]      = useState(false)
   const [micOn,      setMicOn]      = useState(false)
   const [recording,  setRecording]  = useState(false)
@@ -1043,6 +1057,13 @@ export default function ProctorMonitorPage() {
     return true
   }).sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0))
 
+  const videoTotalPages = Math.max(1, Math.ceil(liveStudents.length / VIDEO_PAGE_SIZE))
+  const videoPageClamped = Math.min(videoPage, videoTotalPages - 1)
+  const pagedLiveStudents = liveStudents.slice(
+    videoPageClamped * VIDEO_PAGE_SIZE,
+    (videoPageClamped + 1) * VIDEO_PAGE_SIZE,
+  )
+
   /* Étudiants en cours d'examen dont le heartbeat n'a pas été reçu depuis le
      seuil défini — souvent absents de la grille "Vues en direct" (déconnectés
      de LiveKit) et donc auparavant invisibles sans cette liste explicite. */
@@ -1745,13 +1766,28 @@ export default function ProctorMonitorPage() {
         {/* ═══════════ GRILLE VIDÉO — uniquement les étudiants connectés (LiveKit) ═══ */}
         <div style={{ marginTop: !isSurveillant ? 24 : 0 }}>
           {liveStudents.length > 0 && (
-            <div style={{ fontSize:12, fontWeight: 700, color: 'rgba(255,255,255,.35)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontSize:12, fontWeight: 700, color: 'rgba(255,255,255,.35)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-              Vues en direct ({liveStudents.length})
+              <span>Vues en direct ({liveStudents.length})</span>
+              {videoTotalPages > 1 && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', textTransform: 'none', letterSpacing: 'normal' }}>
+                  <button onClick={() => setVideoPage(p => Math.max(0, p - 1))} disabled={videoPageClamped === 0}
+                    style={{ ...btnSecondary, padding: '4px 10px', opacity: videoPageClamped === 0 ? 0.4 : 1 }}>
+                    <i className="fas fa-chevron-left" />
+                  </button>
+                  <span style={{ color: 'rgba(255,255,255,.5)' }}>
+                    Page {videoPageClamped + 1} / {videoTotalPages}
+                  </span>
+                  <button onClick={() => setVideoPage(p => Math.min(videoTotalPages - 1, p + 1))} disabled={videoPageClamped >= videoTotalPages - 1}
+                    style={{ ...btnSecondary, padding: '4px 10px', opacity: videoPageClamped >= videoTotalPages - 1 ? 0.4 : 1 }}>
+                    <i className="fas fa-chevron-right" />
+                  </button>
+                </span>
+              )}
             </div>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 12 }}>
-            {liveStudents.map(s => (
+            {pagedLiveStudents.map(s => (
               <VideoCard key={s.attempt_id} s={s}
                 recActive={recSet.has(s.attempt_id)}
                 screenAvail={screenSet.has(s.livekit_identity)}

@@ -425,6 +425,16 @@ export default function ExamPage() {
   const consHeadTurnRef  = useRef(0)
   const consMouthRef     = useRef(0)
   const lastVisionAlertRef = useRef<Record<string, number>>({})
+  /* Corrélation de motifs comportementaux — inspiré de @timadey/proctor :
+     chaque signal brut (regard, tête, bouche visuelle, audio, objet, visages
+     multiples) horodate sa dernière détection ici ; un motif se déclenche
+     quand plusieurs signaux se recoupent dans la même fenêtre glissante
+     (PATTERN_WINDOW_MS), signal bien plus fiable qu'un seul signal isolé. */
+  const recentSignalsRef  = useRef<Record<string, number>>({})
+  const lastPatternAlertRef = useRef<Record<string, number>>({})
+  /* Compteur dédié "bouche couverte" — même logique CONSEC_ALERT que le
+     reste (pas d'alerte sur un seul instant, cf. commentaire plus bas). */
+  const consMouthCoveredRef = useRef(0)
   /* Étalonnage individuel du regard/de l'orientation de la tête, mesuré
      pendant la capture de la photo de référence (l'étudiant regarde déjà la
      caméra à ce moment). MediaPipe ne peut pas détecter "porte des lunettes"
@@ -446,6 +456,7 @@ export default function ExamPage() {
   const audioAnalyserRef = useRef<AnalyserNode|null>(null)
   const audioCtxRef = useRef<AudioContext|null>(null)
   const consAudioRef = useRef(0)
+  const consWhisperRef = useRef(0)
   const faceIntervalRef = useRef<ReturnType<typeof setInterval>|null>(null)
   const lastFaceAlertRef= useRef<{no_face:number;multiple:number;mismatch:number}>({no_face:0,multiple:0,mismatch:0})
   const consNoFaceRef   = useRef(0)
@@ -635,7 +646,33 @@ export default function ExamPage() {
       }
     }
     const noCtx  = (e:MouseEvent)     => { if (!examRef.current?.enable_right_click) e.preventDefault() }
-    const noCopy = (e:ClipboardEvent) => { if (!examRef.current?.enable_copy_paste) { e.preventDefault(); warning('Copier/coller désactivé') } }
+    // Copier/coller/couper étaient bloqués (si desactivé côté examen) sans
+    // jamais être journalisés comme preuve — même une tentative BLOQUÉE
+    // (ou autorisée si enable_copy_paste) mérite de rester dans le journal
+    // de surveillance, au même titre que les autres actions navigateur.
+    const clipEvent = (kind:'copy'|'paste'|'cut') => (e:ClipboardEvent) => {
+      if (breakActiveRef.current) return
+      const blocked = !examRef.current?.enable_copy_paste
+      if (blocked) { e.preventDefault(); warning('Copier/coller désactivé') }
+      const aId = attemptRef.current
+      if (aId) {
+        const evt = `${kind}_attempt`
+        logActivity(aId,evt,`${kind} ${blocked?'bloqué':'autorisé'}`).catch(()=>{})
+        logProctoring(aId,evt,`${kind} ${blocked?'bloqué':'autorisé'}`).catch(()=>{})
+      }
+    }
+    const noCopy = clipEvent('copy')
+    const noPaste = clipEvent('paste')
+    const noCut  = clipEvent('cut')
+    // Signal faible (souris quittant la fenêtre) — pas d'alerte visible ni
+    // de blocage, juste une trace pour le journal, cohérent avec la
+    // sévérité "faible" de ce signal dans les systèmes de surveillance de
+    // référence.
+    const onMouseLeave = () => {
+      if (sessionEndedRef.current || breakActiveRef.current) return
+      const aId = attemptRef.current
+      if (aId) { logActivity(aId,'mouse_left_window','Curseur sorti de la fenêtre').catch(()=>{}); logProctoring(aId,'mouse_left_window','Curseur sorti de la fenêtre').catch(()=>{}) }
+    }
     const noKey  = (e:KeyboardEvent)  => {
       if (breakActiveRef.current) return
       if (e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C'].includes(e.key))||(e.ctrlKey&&e.key==='u')) {
@@ -728,16 +765,18 @@ export default function ExamPage() {
       api.postBeacon(`/api/exam_attempts/${aId}/proctoring_event`,{event_type:'tab_closed',event_data:'Page fermée/quittée pendant la composition'})
     }
     document.addEventListener('visibilitychange',onVis); document.addEventListener('contextmenu',noCtx)
-    document.addEventListener('copy',noCopy); document.addEventListener('paste',noCopy)
+    document.addEventListener('copy',noCopy); document.addEventListener('paste',noPaste); document.addEventListener('cut',noCut)
     document.addEventListener('keydown',noKey); document.addEventListener('fullscreenchange',onFs)
     window.addEventListener('blur',onBlur); window.addEventListener('beforeunload',onBeforeUnload)
     window.addEventListener('pagehide',onPageHide)
+    document.documentElement.addEventListener('mouseleave',onMouseLeave)
     return () => {
       document.removeEventListener('visibilitychange',onVis); document.removeEventListener('contextmenu',noCtx)
-      document.removeEventListener('copy',noCopy); document.removeEventListener('paste',noCopy)
+      document.removeEventListener('copy',noCopy); document.removeEventListener('paste',noPaste); document.removeEventListener('cut',noCut)
       document.removeEventListener('keydown',noKey); document.removeEventListener('fullscreenchange',onFs)
       window.removeEventListener('blur',onBlur); window.removeEventListener('beforeunload',onBeforeUnload)
       window.removeEventListener('pagehide',onPageHide)
+      document.documentElement.removeEventListener('mouseleave',onMouseLeave)
       clearInterval(pollTimer)
     }
   }, [phase,tabCount]) // eslint-disable-line
@@ -1439,10 +1478,20 @@ export default function ExamPage() {
             return
           }
           const threshold = Math.max(0.05, ambientBaseline*2.5)
+          // Seuil bas dédié au chuchotement : un son au-dessus du bruit
+          // ambiant mais sous le seuil "parole" — un vrai chuchotement reste
+          // audible (RMS notable) sans atteindre le volume d'une parole
+          // normale ; les deux seuils ne se recouvrent jamais (whisperThreshold
+          // < threshold), donc chaque échantillon tombe dans une seule case.
+          const whisperThreshold = Math.max(0.025, ambientBaseline*1.5)
           const talking = rms > threshold
+          const whispering = !talking && rms > whisperThreshold
           consAudioRef.current = talking ? consAudioRef.current+1 : 0
+          consWhisperRef.current = whispering ? consWhisperRef.current+1 : 0
+          const now = Date.now()
+          if (talking) markSignal('audioTalking')
+          if (whispering) markSignal('audioWhisper')
           if (consAudioRef.current >= CONSEC_ALERT_AUDIO) {
-            const now = Date.now()
             if (now-(lastVisionAlertRef.current.audio||0) > 30_000) {
               lastVisionAlertRef.current.audio = now
               const aId = attemptRef.current
@@ -1452,6 +1501,18 @@ export default function ExamPage() {
               }
             }
           }
+          if (consWhisperRef.current >= CONSEC_ALERT_AUDIO) {
+            if (now-(lastVisionAlertRef.current.whisper||0) > 30_000) {
+              lastVisionAlertRef.current.whisper = now
+              const aId = attemptRef.current
+              if (aId) {
+                logActivity(aId,'whisper_detected',`Chuchotement soutenu (niveau=${rms.toFixed(3)})`).catch(()=>{})
+                logProctoring(aId,'whisper_detected','Chuchotement soutenu détecté').catch(()=>{})
+              }
+            }
+          }
+          const aIdForPattern = attemptRef.current
+          if (aIdForPattern) checkBehaviorPatterns(aIdForPattern, now)
         }
         setTimeout(tick, 2000)
       }
@@ -1633,6 +1694,45 @@ export default function ExamPage() {
       if(res.banned) triggerBan()
       else if(res.alert_sent) warning("Comportement à risque détecté — l'enseignant a été alerté.")
     } catch {}
+  }
+
+  /* ── Corrélation de motifs comportementaux (inspiré de @timadey/proctor) ──
+     Chaque signal brut (regard/tête/bouche/audio/objet/visages) est
+     horodaté dans recentSignalsRef par les ticks qui le détectent déjà
+     (visionEnrichedTick, initAudioMonitoring, faceDetectionTick). Un motif
+     composite ne se déclenche QUE si plusieurs signaux indépendants tombent
+     dans la même fenêtre glissante — bien plus fiable qu'un seul signal
+     isolé (ex. un simple "regard détourné" peut être un coup d'œil normal ;
+     "regard détourné" + "parole" + "bouche qui bouge" en même temps est un
+     signal fort de communication avec un tiers hors champ). Les événements
+     bruts individuels continuent d'être journalisés normalement (voir les
+     ticks eux-mêmes) — un motif s'AJOUTE, il ne remplace rien. */
+  const PATTERN_WINDOW_MS = 10_000
+  const PATTERN_COOLDOWN_MS = 45_000
+  function markSignal(name: string) { recentSignalsRef.current[name] = Date.now() }
+  function within(name: string, now: number) {
+    const t = recentSignalsRef.current[name]
+    return t != null && now - t <= PATTERN_WINDOW_MS
+  }
+  const BEHAVIOR_PATTERNS: { name: string; needs: string[]; message: string }[] = [
+    { name: 'pattern_gaze_talk_mouth',   needs: ['gazeAway','audioTalking','mouthTalking'], message: 'Regard détourné + parole + bouche en mouvement simultanément — communication probable avec une tierce personne' },
+    { name: 'pattern_object_gaze_away',  needs: ['objectDetected','gazeAway'],               message: "Objet suspect détecté au moment même d'un regard détourné" },
+    { name: 'pattern_multi_face_audio',  needs: ['multipleFaces','audioTalking'],            message: 'Plusieurs visages et de la parole détectés en même temps — plusieurs personnes présentes' },
+    { name: 'pattern_head_turned_talking', needs: ['headTurned','audioTalking'],             message: 'Tête tournée hors de l\'écran pendant une prise de parole' },
+    { name: 'pattern_whisper_gaze',      needs: ['audioWhisper','gazeAway'],                 message: 'Chuchotement détecté avec regard détourné de l\'écran' },
+    { name: 'pattern_mouth_covered_audio', needs: ['mouthCovered','audioTalking'],           message: 'Bouche probablement couverte pendant une détection audio — tentative de dissimulation de la parole' },
+  ]
+  function checkBehaviorPatterns(curAId: number, now: number) {
+    for (const p of BEHAVIOR_PATTERNS) {
+      if (!p.needs.every(sig => within(sig, now))) continue
+      if (now - (lastPatternAlertRef.current[p.name] || 0) < PATTERN_COOLDOWN_MS) continue
+      lastPatternAlertRef.current[p.name] = now
+      warning(p.message)
+      setAlerts(a => [{ type: 'pattern', msg: p.message, at: new Date().toLocaleTimeString('fr-FR') }, ...a])
+      logActivity(curAId, p.name, p.message).catch(() => {})
+      logProctoring(curAId, p.name, p.message).catch(() => {})
+      captureSnapshot(p.name, curAId, true, 1, null, 5_000)
+    }
   }
 
   function triggerBan() {
@@ -1959,6 +2059,7 @@ export default function ExamPage() {
             }
           } else { setFaceStatus('warn'); setFaceIssue('no_face') }
         } else if(count>1){
+          markSignal('multipleFaces')
           consMultiRef.current++; consNoFaceRef.current=0; consMismatchRef.current=0; consGood=0
           if(consMultiRef.current>=CONSEC_ALERT_MULTI){
             setFaceStatus('bad'); setFaceIssue('multiple')
@@ -2027,6 +2128,7 @@ export default function ExamPage() {
           ? (sig.gazeX!==null && Math.abs(sig.gazeX-baseline.x)>Math.max(0.28, baseline.spreadX*3))
             || (sig.gazeY!==null && Math.abs(sig.gazeY-baseline.y)>Math.max(0.24, baseline.spreadY*3))
           : (sig.gazeX!==null && (sig.gazeX<0.20||sig.gazeX>0.80)) || (sig.gazeY!==null && (sig.gazeY<0.15||sig.gazeY>0.85))
+        if (gazeAway) markSignal('gazeAway')
         consGazeAwayRef.current = gazeAway ? consGazeAwayRef.current+1 : 0
         if (consGazeAwayRef.current>=CONSEC_ALERT_GAZE && now-(lastVisionAlertRef.current.gaze||0)>COOLDOWN) {
           lastVisionAlertRef.current.gaze=now
@@ -2039,6 +2141,7 @@ export default function ExamPage() {
         const headTurned = baseline
           ? sig.headYaw!==null && Math.abs(sig.headYaw-baseline.yaw)>Math.max(0.35, baseline.spreadYaw*3)
           : sig.headYaw!==null && Math.abs(sig.headYaw)>0.6
+        if (headTurned) markSignal('headTurned')
         consHeadTurnRef.current = headTurned ? consHeadTurnRef.current+1 : 0
         if (consHeadTurnRef.current>=CONSEC_ALERT_GAZE && now-(lastVisionAlertRef.current.head||0)>COOLDOWN) {
           lastVisionAlertRef.current.head=now
@@ -2049,6 +2152,7 @@ export default function ExamPage() {
         }
 
         const talking = sig.mouthOpen!==null && sig.mouthOpen>0.4
+        if (talking) markSignal('mouthTalking')
         consMouthRef.current = talking ? consMouthRef.current+1 : 0
         if (consMouthRef.current>=CONSEC_ALERT && now-(lastVisionAlertRef.current.mouth||0)>COOLDOWN) {
           lastVisionAlertRef.current.mouth=now
@@ -2057,9 +2161,32 @@ export default function ExamPage() {
           logActivity(curAId,'talking_detected','Bouche ouverte de façon prolongée — parole probable').catch(()=>{})
           logProctoring(curAId,'talking_detected','Parole probable détectée').catch(()=>{})
         }
+
+        // Proxy "bouche couverte" — heuristique, pas une vraie détection de
+        // main : quand un visage est détecté (faceCount===1, donc le cadrage
+        // général est bon) mais que jawOpen ne se calcule pas du tout
+        // (mouthOpen reste null), c'est le signe que la région basse du
+        // visage n'est pas exploitable pour MediaPipe — main, feuille ou
+        // objet devant la bouche en est une cause plausible parmi d'autres
+        // (angle extrême, flou). Exige plusieurs vérifications consécutives
+        // comme le reste de l'anti-fraude pour ne pas réagir à un seul
+        // instant de flou.
+        const mouthCovered = sig.mouthOpen === null
+        if (mouthCovered) markSignal('mouthCovered')
+        consMouthCoveredRef.current = mouthCovered ? consMouthCoveredRef.current+1 : 0
+        if (consMouthCoveredRef.current>=CONSEC_ALERT_GAZE && now-(lastVisionAlertRef.current.mouthCovered||0)>COOLDOWN) {
+          lastVisionAlertRef.current.mouthCovered=now
+          logActivity(curAId,'face_covered','Bas du visage non exploitable par la détection (possible occultation)').catch(()=>{})
+          logProctoring(curAId,'face_covered','Bas du visage non exploitable par la détection').catch(()=>{})
+        }
+
       } else {
-        consGazeAwayRef.current=0; consHeadTurnRef.current=0; consMouthRef.current=0
+        consGazeAwayRef.current=0; consHeadTurnRef.current=0; consMouthRef.current=0; consMouthCoveredRef.current=0
       }
+      // Hors du bloc "un seul visage" ci-dessus : le motif multi-visages+audio
+      // a justement besoin du cas où sig.faceCount!==1 (faceDetectionTick,
+      // qui tourne séparément, est la source du signal multipleFaces).
+      checkBehaviorPatterns(curAId, now)
 
       // Détection d'objets : à chaque tick (~5s). Réduit de "un tick sur deux"
       // (22/08, retour utilisateur) — un téléphone tenu brièvement pouvait
@@ -2068,6 +2195,7 @@ export default function ExamPage() {
       // détections consécutives ci-dessous reste le garde-fou anti-bruit.
       const obj = analyzeObjects(vid, now)
       const what = obj?.phoneDetected?'téléphone':obj?.bookDetected?'livre/document':obj?.otherScreenDetected?'écran supplémentaire':null
+      if (what) markSignal('objectDetected')
       if (what && what===consObjectRef.current.what) {
         consObjectRef.current.count++
       } else {
