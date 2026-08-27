@@ -86,6 +86,7 @@ const studentNav: NavEntry[] = [
   { divider: 'Examens' },
   { label: 'Mes Examens en Ligne', href: '/dashboard/student/exams',          icon: 'fa-laptop-code' },
   { label: 'Planning',             href: '/dashboard/student/planning',       icon: 'fa-calendar-alt' },
+  { label: 'Vérifier mon poste',   href: '/dashboard/student/verification-poste', icon: 'fa-shield-halved' },
   { divider: 'Résultats' },
   { label: 'Mes Relevés',          href: '/dashboard/student/transcripts',    icon: 'fa-file-alt' },
   { label: 'Copies-exemples',      href: '/dashboard/student/exemples',       icon: 'fa-people-group' },
