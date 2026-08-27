@@ -37,6 +37,7 @@ export default function VerificationPostePage() {
   const audioCtxRef = useRef<AudioContext | null>(null)
   const rafRef = useRef<number>(0)
   const faceIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const resumeGestureRef = useRef<(() => void) | null>(null)
 
   const [camStatus, setCamStatus] = useState<Status>('idle')
   const [camMsg, setCamMsg] = useState('')
@@ -64,7 +65,15 @@ export default function VerificationPostePage() {
       setCamStatus('ok'); setCamMsg('Caméra accessible.')
       setMicStatus('ok'); setMicMsg('Microphone accessible — parlez pour voir le niveau réagir ci-dessous.')
 
-      // Niveau micro en direct (même approche RMS que la page d'examen)
+      // Niveau micro en direct (même approche RMS que la page d'examen).
+      // IMPORTANT : contrairement à la page d'examen (où l'AudioContext est
+      // créé juste après un clic explicite sur "Autoriser et commencer"),
+      // cette page le crée automatiquement au chargement — les navigateurs
+      // (politique d'autoplay) démarrent alors l'AudioContext à l'état
+      // "suspended" tant qu'aucun geste utilisateur n'a eu lieu DANS cette
+      // page, et l'analyseur ne traite alors aucun son réel (niveau bloqué
+      // à 0 en silence). resume() explicite + relance au premier clic/touche
+      // en filet de sécurité pour les navigateurs les plus stricts.
       try {
         const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
         const source = ctx.createMediaStreamSource(stream)
@@ -72,6 +81,12 @@ export default function VerificationPostePage() {
         analyser.fftSize = 2048
         source.connect(analyser)
         audioCtxRef.current = ctx
+        ctx.resume().catch(() => {})
+        const resumeOnGesture = () => { ctx.resume().catch(() => {}) }
+        resumeGestureRef.current = resumeOnGesture
+        window.addEventListener('click', resumeOnGesture)
+        window.addEventListener('keydown', resumeOnGesture)
+        window.addEventListener('touchstart', resumeOnGesture)
         const data = new Uint8Array(analyser.fftSize)
         const tick = () => {
           analyser.getByteTimeDomainData(data)
@@ -108,6 +123,11 @@ export default function VerificationPostePage() {
       audioCtxRef.current?.close().catch(() => {})
       if (faceIntervalRef.current) clearInterval(faceIntervalRef.current)
       cancelAnimationFrame(rafRef.current)
+      if (resumeGestureRef.current) {
+        window.removeEventListener('click', resumeGestureRef.current)
+        window.removeEventListener('keydown', resumeGestureRef.current)
+        window.removeEventListener('touchstart', resumeGestureRef.current)
+      }
     }
   }, [])
 
