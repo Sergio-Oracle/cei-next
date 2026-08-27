@@ -227,13 +227,17 @@ export default function ProctorMonitorPage() {
   const [recording,  setRecording]  = useState(false)
 
   /* modal: message/avertissement */
-  const [msgModal, setMsgModal] = useState<{ attemptId: number; name: string; type: 'message' | 'warning' } | null>(null)
+  // identity optionnelle — absente quand l'action part du panneau d'alertes
+  // de l'agent (données non typées venant de /api/agent/alerts, pas de la
+  // liste live des étudiants) : broadcastToStudent se contente alors de ne
+  // pas pousser via LiveKit, l'appel HTTP existant reste inchangé.
+  const [msgModal, setMsgModal] = useState<{ attemptId: number; name: string; type: 'message' | 'warning'; identity?: string } | null>(null)
   const [msgText,  setMsgText]  = useState('')
   const [sending,  setSending]  = useState(false)
 
   /* modal: exclusion */
-  const [banModal,  setBanModal]  = useState<{ attemptId: number; name: string } | null>(null)
-  const [identityModal, setIdentityModal] = useState<{ attemptId: number; name: string } | null>(null)
+  const [banModal,  setBanModal]  = useState<{ attemptId: number; name: string; identity?: string } | null>(null)
+  const [identityModal, setIdentityModal] = useState<{ attemptId: number; name: string; identity: string } | null>(null)
   const [identityVerifying, setIdentityVerifying] = useState(false)
   const [banReason, setBanReason] = useState('')
   const [banning,   setBanning]   = useState(false)
@@ -907,6 +911,27 @@ export default function ProctorMonitorPage() {
 
   /* ── Actions message / avertissement / exclusion ─────────────────────────── */
 
+  // Correctif latence (Phase X, point E) — le canal LiveKit est déjà
+  // connecté dans les deux sens pendant l'examen (voir RoomEvent.DataReceived
+  // ci-dessus, déjà utilisé étudiant→surveillant pour proctor_live_alert).
+  // On l'utilise ici symétriquement pour pousser avertissement/ban de façon
+  // QUASI INSTANTANÉE, EN PLUS de l'appel HTTP existant (jamais à sa place) :
+  // le HTTP + polling 8s (pollTeacherMessages côté exam/[id]/page.tsx) reste
+  // le filet de sécurité si LiveKit est déconnecté à ce moment précis. Le
+  // format du payload correspond exactement à ce qu'attend déjà
+  // handleTeacherMessage côté étudiant (aucune modification requise là-bas).
+  function broadcastToStudent(identity: string | undefined, payload: { type: string; message?: string }) {
+    try {
+      if (!identity) return // pas d'identity connue (panneau agent) — HTTP+poll reste la seule voie, inchangée
+      const room = roomRef.current
+      if (!room?.localParticipant) return
+      room.localParticipant.publishData(
+        new TextEncoder().encode(JSON.stringify(payload)),
+        { reliable: true, destinationIdentities: [identity] }
+      )
+    } catch {}
+  }
+
   async function sendMsg() {
     if (!msgModal || !msgText.trim()) return
     setSending(true)
@@ -915,6 +940,7 @@ export default function ProctorMonitorPage() {
         `/api/exam_attempts/${msgModal.attemptId}/send_warning`,
         { message: msgText, type: msgModal.type === 'warning' ? 'warning' : 'message' }
       )
+      broadcastToStudent(msgModal.identity, { type: msgModal.type, message: msgText })
       success(msgModal.type === 'warning' ? 'Avertissement envoyé' : 'Message envoyé')
       setMsgModal(null); setMsgText('')
     } catch (e: any) { toastErr(e.message || 'Erreur') }
@@ -926,6 +952,7 @@ export default function ProctorMonitorPage() {
     setBanning(true)
     try {
       await api.post(`/api/exam_attempts/${banModal.attemptId}/proctor_ban`, { reason: banReason || 'Comportement suspect' })
+      broadcastToStudent(banModal.identity, { type: 'ban' })
       success(`${banModal.name} exclu`)
       setBanModal(null); setBanReason('')
       loadData(true)
@@ -941,6 +968,7 @@ export default function ProctorMonitorPage() {
     setIdentityVerifying(true)
     try {
       await api.post(`/api/exam_attempts/${identityModal.attemptId}/identity_manual_verify`, { verdict })
+      broadcastToStudent(identityModal.identity, verdict === 'confirmed' ? { type: 'identity_cleared', message: 'Identité confirmée par le surveillant' } : { type: 'ban' })
       success(verdict === 'confirmed' ? `Identité confirmée — ${identityModal.name} peut continuer` : `${identityModal.name} exclu`)
       setIdentityModal(null)
       loadData(true)
@@ -1097,10 +1125,10 @@ export default function ProctorMonitorPage() {
 
   /* ── Actions communes sur les cartes ──────────────────────────────────────── */
   function openMsg(s: Student, type: 'message' | 'warning') {
-    setMsgModal({ attemptId: s.attempt_id, name: s.student_name, type }); setMsgText('')
+    setMsgModal({ attemptId: s.attempt_id, name: s.student_name, type, identity: s.livekit_identity }); setMsgText('')
   }
   function openBan(s: Student) {
-    setBanModal({ attemptId: s.attempt_id, name: s.student_name }); setBanReason('')
+    setBanModal({ attemptId: s.attempt_id, name: s.student_name, identity: s.livekit_identity }); setBanReason('')
   }
   function openExtra(s: Student) {
     setExtraModal({ attemptId: s.attempt_id, name: s.student_name }); setExtraMins('15')
@@ -1826,7 +1854,7 @@ export default function ProctorMonitorPage() {
                 onNote={() => openNote(s)}
                 onLogs={() => openLogs(s)}
                 onZoomPhone={() => openPhoneZoom(s)}
-                onIdentityVerify={() => setIdentityModal({ attemptId: s.attempt_id, name: s.student_name })}
+                onIdentityVerify={() => setIdentityModal({ attemptId: s.attempt_id, name: s.student_name, identity: s.livekit_identity })}
               />
             ))}
           </div>

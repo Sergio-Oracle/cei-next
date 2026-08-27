@@ -374,6 +374,12 @@ export default function ExamPage() {
   const privateTeacherVidRef= useRef<HTMLVideoElement|null>(null)
   const privateTeacherAudRef= useRef<HTMLAudioElement|null>(null)
   const lastMsgTsRef    = useRef<string|null>(null)
+  // Correctif latence (Phase X, point E) — un même message enseignant peut
+  // désormais arriver par DEUX canaux (push LiveKit quasi instantané +
+  // polling HTTP 8s en filet de sécurité) : dédup légère pour ne pas
+  // rouvrir deux fois la même modale d'avertissement ou relancer deux fois
+  // captureReference() sur 'identity_cleared'.
+  const recentTeacherMsgRef = useRef<Map<string, number>>(new Map())
   const sessionEndedRef = useRef(false)
   // Période de grâce anti-fraude au tout début de l'examen : requestFullscreen()
   // est asynchrone (enterExam) mais le montage des écouteurs blur/visibilitychange
@@ -1764,6 +1770,11 @@ export default function ExamPage() {
   }
 
   function handleTeacherMessage(msg:{type:string;message?:string}) {
+    const dedupKey = `${msg.type}|${msg.message||''}`
+    const seenAt = recentTeacherMsgRef.current.get(dedupKey)
+    const now = Date.now()
+    if(seenAt && now-seenAt<10_000 && msg.type!=='ban') return // 'ban' reste géré par triggerBan(), déjà idempotent
+    recentTeacherMsgRef.current.set(dedupKey, now)
     if(msg.type==='warning'){
       setWarnText(msg.message||"Avertissement de l'enseignant"); setShowWarnModal(true)
       setAlerts(a=>[{type:'teacher_warn',msg:msg.message||'Avertissement',at:new Date().toLocaleTimeString('fr-FR')},...a])
@@ -2158,8 +2169,20 @@ export default function ExamPage() {
       const sig = analyzeFace(vid, now)
       if (sig && sig.faceCount === 1) {
         const baseline = gazeBaselineRef.current
+        // Compensation par la pose de tête (Phase X, point C — dépend du
+        // point B) : gazeX seul (position de l'iris dans l'œil) est faussé
+        // par un simple mouvement de tête, dans les deux sens — un léger
+        // tour de tête déplace l'iris dans son orbite même si le regard
+        // reste sur l'écran (faux positif), et inversement un vrai
+        // détournement du regard combiné à une rotation compensatoire de la
+        // tête peut passer inaperçu (faux négatif). On soustrait l'écart de
+        // lacet courant (vs baseline individuelle) avant seuillage — facteur
+        // 0.4 empirique, à ajuster après retour d'usage réel (même limite
+        // que la pose 3D elle-même : pas de vraie webcam pour calibrer ici).
+        const yawDelta = (baseline && sig.headYaw!==null) ? sig.headYaw-baseline.yaw : 0
+        const gazeXAdj = sig.gazeX!==null ? sig.gazeX - 0.4*yawDelta : null
         const gazeAway = baseline
-          ? (sig.gazeX!==null && Math.abs(sig.gazeX-baseline.x)>Math.max(0.28, baseline.spreadX*3))
+          ? (gazeXAdj!==null && Math.abs(gazeXAdj-baseline.x)>Math.max(0.28, baseline.spreadX*3))
             || (sig.gazeY!==null && Math.abs(sig.gazeY-baseline.y)>Math.max(0.24, baseline.spreadY*3))
           : (sig.gazeX!==null && (sig.gazeX<0.20||sig.gazeX>0.80)) || (sig.gazeY!==null && (sig.gazeY<0.15||sig.gazeY>0.85))
         if (gazeAway) markSignal('gazeAway')
