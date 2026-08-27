@@ -4,7 +4,6 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import OfflineBanner from '@/components/shared/OfflineBanner'
 import InstallPwaBanner from '@/components/shared/InstallPwaBanner'
-import CustomCursor from '@/components/shared/CustomCursor'
 
 export const metadata: Metadata = {
   title: 'CEI — Centre d\'Examen Intelligent',
@@ -94,7 +93,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </AuthProvider>
         <OfflineBanner />
         <InstallPwaBanner />
-        <CustomCursor />
       </body>
     </html>
   )
