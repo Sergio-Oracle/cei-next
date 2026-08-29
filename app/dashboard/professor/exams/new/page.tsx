@@ -32,6 +32,7 @@ export default function NewExamPage() {
     scheduled_correction_at: '',
     enable_calculator:  false,
     allow_secondary_camera: false,
+    require_biometric: true,
   })
 
   // Retour : la sélection manuelle de surveillants a été retirée du
@@ -93,6 +94,7 @@ export default function NewExamPage() {
         scheduled_correction_at: form.scheduled_correction_at ? form.scheduled_correction_at + ':00Z' : null,
         enable_calculator: form.enable_calculator,
         allow_secondary_camera: form.allow_secondary_camera,
+        require_biometric: form.require_biometric,
       })
       success(`Examen créé — Durée : ${res.exam?.duration_minutes ?? '?'} min`)
       router.push(`/dashboard/professor/exams`)
@@ -267,6 +269,10 @@ export default function NewExamPage() {
                 <input type="checkbox" checked={form.allow_secondary_camera} onChange={e => set('allow_secondary_camera', e.target.checked)} style={{ width: 'auto' }} />
                 <span><i className="fas fa-mobile-screen" style={{ marginRight: 4 }} />Autoriser une caméra secondaire (smartphone)</span>
               </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize:15.5, color: '#475569' }}>
+                <input type="checkbox" checked={form.require_biometric} onChange={e => set('require_biometric', e.target.checked)} style={{ width: 'auto' }} />
+                <span><i className="fas fa-id-card" style={{ marginRight: 4 }} />Exiger une vérification d&apos;identité par reconnaissance faciale</span>
+              </label>
             </div>
             {form.enable_calculator && (
               <p style={{ margin: '-8px 0 16px', fontSize:14, color: '#64748b' }}>
@@ -276,6 +282,11 @@ export default function NewExamPage() {
             {form.allow_secondary_camera && (
               <p style={{ margin: '-8px 0 16px', fontSize:14, color: '#64748b' }}>
                 <i className="fas fa-info-circle" style={{ marginRight: 4 }} />Les étudiants pourront ajouter leur téléphone comme caméra secondaire (angle latéral, via QR code) pour couvrir l&apos;angle mort hors écran.
+              </p>
+            )}
+            {!form.require_biometric && (
+              <p style={{ margin: '-8px 0 16px', fontSize:14, color: '#64748b' }}>
+                <i className="fas fa-info-circle" style={{ marginRight: 4 }} />Les étudiants pourront accéder à cet examen sans enregistrer ni vérifier leur visage — à réserver aux examens à faible enjeu.
               </p>
             )}
 

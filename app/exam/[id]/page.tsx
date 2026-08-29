@@ -954,7 +954,7 @@ export default function ExamPage() {
       stopBiometricCamera()
       setShowBiometricCall(true)
     } else {
-      toastErr(`Non reconnu — nouvelle tentative (${next}/3)`)
+      toastErr(`Non reconnu — vérifiez votre éclairage (évitez le contre-jour) et réessayez (${next}/3)`)
     }
   }
 
@@ -964,7 +964,7 @@ export default function ExamPage() {
     try {
       setBioStatusMsg('Vérification…')
       const result = await captureSingleDescriptor(bioVideoRef.current)
-      if (!result) { toastErr('Aucun visage détecté — repositionnez-vous face à la caméra'); setBioBusy(false); return }
+      if (!result) { toastErr('Aucun visage détecté — repositionnez-vous face à la caméra et évitez le contre-jour'); setBioBusy(false); return }
       const res = await api.post<{match:boolean}>('/api/biometric/verify/face', { descriptor: result.descriptor })
       if (res.match) {
         stopBiometricCamera()

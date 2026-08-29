@@ -7,6 +7,44 @@
 
 const FACEAPI_MODEL_URL = '/models/faceapi'
 
+// Retour utilisateur (28/08) : la vérification échouait par forte luminosité
+// (soleil direct dans la salle) — contre-jour ou surexposition qui écrase le
+// contraste du visage sans forcément faire disparaître tout détail
+// exploitable. Ni l'inscription ni la vérification n'appliquaient jusqu'ici
+// le moindre traitement d'image avant le calcul du descripteur (confirmé en
+// lisant le code — voir captureSingleDescriptor/captureDescriptorFromImage
+// ci-dessous, qui dessinaient la frame brute puis appelaient directement
+// detectSingleFace). Étire l'histogramme de luminance vers la pleine plage
+// 0-255 avant la détection — atténue l'écart entre inscription et
+// vérification dans les deux sens (trop clair comme trop sombre), sans
+// dépendre d'un éclairage contrôlé. N'altère jamais la photo réellement
+// stockée (image_data envoyée au serveur) — seule la copie utilisée pour la
+// détection est corrigée.
+function normalizeLighting(canvas: HTMLCanvasElement): void {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const data = imgData.data
+  let min = 255, max = 0
+  for (let i = 0; i < data.length; i += 4) {
+    const luma = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+    if (luma < min) min = luma
+    if (luma > max) max = luma
+  }
+  const range = max - min
+  // Image quasi unie (caméra bouchée, obscurité totale...) — étirer un
+  // histogramme aussi plat amplifierait surtout du bruit, sans rien
+  // récupérer d'exploitable. On laisse tel quel dans ce cas.
+  if (range < 12) return
+  const scale = 255 / range
+  for (let i = 0; i < data.length; i += 4) {
+    data[i]     = Math.max(0, Math.min(255, (data[i] - min) * scale))
+    data[i + 1] = Math.max(0, Math.min(255, (data[i + 1] - min) * scale))
+    data[i + 2] = Math.max(0, Math.min(255, (data[i + 2] - min) * scale))
+  }
+  ctx.putImageData(imgData, 0, 0)
+}
+
 export function loadFaceApi(): Promise<any> {
   return new Promise((resolve, reject) => {
     const fa = (window as any).faceapi
@@ -91,6 +129,7 @@ export async function captureSingleDescriptor(video: HTMLVideoElement): Promise<
   detectCanvas.width = Math.round((video.videoWidth || 640) * detectScale)
   detectCanvas.height = Math.round((video.videoHeight || 480) * detectScale)
   detectCanvas.getContext('2d')!.drawImage(video, 0, 0, detectCanvas.width, detectCanvas.height)
+  normalizeLighting(detectCanvas)
 
   const opts = new fa.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.55 })
   const det = await fa.detectSingleFace(detectCanvas, opts).withFaceLandmarks().withFaceDescriptor()
@@ -109,10 +148,6 @@ export async function captureDescriptorFromImage(img: HTMLImageElement): Promise
   const fa = (window as any).faceapi
   if (!fa) return null
 
-  const opts = new fa.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.55 })
-  const det = await fa.detectSingleFace(img, opts).withFaceLandmarks().withFaceDescriptor()
-  if (!det) return null
-
   // Ne réduit que si la photo dépasse largement une taille HD raisonnable —
   // ne jamais dégrader une photo déjà correcte (min(1, ...) empêche aussi
   // tout agrandissement d'une petite photo).
@@ -122,6 +157,19 @@ export async function captureDescriptorFromImage(img: HTMLImageElement): Promise
   c.width = Math.round(img.naturalWidth * scale)
   c.height = Math.round(img.naturalHeight * scale)
   c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height)
+
+  // Détection sur une copie normalisée (voir normalizeLighting ci-dessus) —
+  // la photo réellement stockée (snapshotDataUrl, tirée de `c` non modifié)
+  // reste la photo naturelle, seule l'entrée de detectSingleFace est corrigée.
+  const detectCanvas = document.createElement('canvas')
+  detectCanvas.width = c.width
+  detectCanvas.height = c.height
+  detectCanvas.getContext('2d')!.drawImage(c, 0, 0)
+  normalizeLighting(detectCanvas)
+
+  const opts = new fa.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.55 })
+  const det = await fa.detectSingleFace(detectCanvas, opts).withFaceLandmarks().withFaceDescriptor()
+  if (!det) return null
 
   return {
     descriptor: Array.from(det.descriptor as Float32Array),

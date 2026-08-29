@@ -91,7 +91,7 @@ function BiometricEnrollInner() {
       const img = await loadImageFile(file)
       const result = await captureDescriptorFromImage(img)
       if (!result) {
-        toastErr('Aucun visage détecté sur cette photo — choisissez-en une autre')
+        toastErr('Aucun visage détecté sur cette photo — évitez le contre-jour ou la lumière directe, et choisissez-en une autre')
         return
       }
       setPreview(result)
@@ -121,7 +121,7 @@ function BiometricEnrollInner() {
         const img = await loadImageFromUrl(snapshotDataUrl)
         const analyzed = await captureDescriptorFromImage(img)
         if (!analyzed) {
-          toastErr('Aucun visage détecté — reprenez la photo')
+          toastErr('Aucun visage détecté — vérifiez votre éclairage (évitez le contre-jour et la lumière directe) et reprenez la photo')
           return
         }
         descriptor = analyzed.descriptor
