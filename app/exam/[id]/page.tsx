@@ -615,7 +615,7 @@ export default function ExamPage() {
 
   /* ── Nettoyage ────────────────────────────────────────────────────────── */
   useEffect(() => () => {
-    ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef].forEach(r => { if (r.current) clearInterval(r.current) })
+    ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef,heartbeatRef,multiScreenIntervalRef].forEach(r => { if (r.current) clearInterval(r.current) })
     ;[saveRetryTimerRef,submitRetryTimerRef].forEach(r => { if (r.current) clearTimeout(r.current) })
     camStream.current?.getTracks().forEach(t => t.stop())
     screenStream.current?.getTracks().forEach(t => t.stop())
@@ -1279,6 +1279,15 @@ export default function ExamPage() {
     // d'échec (navigator.onLine false ou requête qui échoue) : ne doit jamais
     // impacter le déroulement de l'examen ni compter comme une violation.
     const sendHeartbeat = () => {
+      // Correctif fuite (29/08, audit de montée en charge) : contrairement à
+      // multiScreenIntervalRef (qui s'auto-nettoie déjà via ce même check),
+      // ce heartbeat ne vérifiait jamais sessionEndedRef ni ne figurait dans
+      // aucun des tableaux de nettoyage (démontage/ban/soumission) — il
+      // continuait à tourner toutes les 20s indéfiniment après la fin de
+      // l'examen tant que l'onglet restait ouvert. Sur des milliers
+      // d'étudiants qui terminent à des heures étalées, ce trafic ne
+      // redescendait jamais vraiment.
+      if(sessionEndedRef.current){if(heartbeatRef.current)clearInterval(heartbeatRef.current);return}
       const aId = attemptRef.current
       if (aId && navigator.onLine) api.post(`/api/exam_attempts/${aId}/heartbeat`, {}).catch(()=>{})
     }
@@ -1754,7 +1763,7 @@ export default function ExamPage() {
 
   function triggerBan() {
     sessionEndedRef.current=true; setShowBanModal(true)
-    ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef].forEach(r=>{if(r.current)clearInterval(r.current)})
+    ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef,heartbeatRef,multiScreenIntervalRef].forEach(r=>{if(r.current)clearInterval(r.current)})
     if(lkRoomRef.current){try{lkRoomRef.current.disconnect()}catch{}}
   }
 
@@ -2340,7 +2349,7 @@ export default function ExamPage() {
   const handleSubmit = useCallback(async(auto=false)=>{
     const aId=attemptRef.current; if(!aId||submitting||sessionEndedRef.current) return
     sessionEndedRef.current=true; setSubmitting(true)
-    ;[timerRef,saveRef,msgPollRef,extraPollRef].forEach(r=>{if(r.current)clearInterval(r.current)})
+    ;[timerRef,saveRef,msgPollRef,extraPollRef,heartbeatRef,multiScreenIntervalRef].forEach(r=>{if(r.current)clearInterval(r.current)})
     if(saveRetryTimerRef.current){clearTimeout(saveRetryTimerRef.current);saveRetryTimerRef.current=null}
     try { (navigator as any).keyboard?.unlock?.() } catch {}
     document.exitFullscreen?.().catch(()=>{})
