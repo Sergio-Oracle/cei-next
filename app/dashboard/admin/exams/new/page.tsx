@@ -34,7 +34,7 @@ export default function NewExamPage() {
     scheduled_correction_at: '',
     enable_calculator: false,
     allow_secondary_camera: false,
-    require_biometric: true,
+    require_biometric: false,
   })
 
   useEffect(() => {

@@ -32,7 +32,7 @@ export default function NewExamPage() {
     scheduled_correction_at: '',
     enable_calculator:  false,
     allow_secondary_camera: false,
-    require_biometric: true,
+    require_biometric: false,
   })
 
   // Retour : la sélection manuelle de surveillants a été retirée du
