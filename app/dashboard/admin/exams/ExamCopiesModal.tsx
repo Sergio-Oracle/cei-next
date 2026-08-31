@@ -227,7 +227,15 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
 
   async function load() {
     setLoading(true)
-    try { setAttempts(await api.get<RichAttempt[]>(`/api/online_exams/${examId}/attempts`)) }
+    try {
+      // Correctif fonctionnel (29/08, audit) : /attempts a été refactoré
+      // (pagination) pour renvoyer {attempts, total, page} au lieu d'un
+      // tableau brut — ce composant attendait encore un tableau brut,
+      // cassant silencieusement l'affichage des copies. limit=200 (max
+      // autorisé) pour couvrir les gros examens.
+      const res = await api.get<{ attempts: RichAttempt[]; total: number }>(`/api/online_exams/${examId}/attempts?limit=200`)
+      setAttempts(Array.isArray(res?.attempts) ? res.attempts : [])
+    }
     catch { error('Erreur de chargement des copies') }
     finally { setLoading(false) }
   }

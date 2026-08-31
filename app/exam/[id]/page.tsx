@@ -9,7 +9,11 @@ import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObje
 import Calculator from '@/components/exam/Calculator'
 import BiometricCallModal from '@/components/exam/BiometricCallModal'
 import { loadFaceApi, captureSingleDescriptor, warmupFaceApi } from '@/lib/faceCapture'
-import QRCode from 'qrcode'
+// Correctif montée en charge (29/08, audit) : import statique retiré —
+// 'qrcode' n'est utilisé que dans openPhoneCameraModal() ci-dessous
+// (fonctionnalité optionnelle, caméra secondaire par smartphone), pourtant
+// téléchargée par CHAQUE étudiant composant un examen, même ceux qui
+// n'ouvrent jamais cette fonctionnalité. Import dynamique au point d'usage.
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 interface ExamData {
@@ -1358,6 +1362,7 @@ export default function ExamPage() {
       const res = await api.post<{code:string; url:string}>(`/api/exam_attempts/${aId}/phone_camera/pair`)
       setPhoneCamCode(res.code)
       setPhoneCamUrl(res.url)
+      const { default: QRCode } = await import('qrcode')
       const qr = await QRCode.toDataURL(res.url, { width: 220, margin: 1 })
       setPhoneCamQr(qr)
       if (phoneCamPollRef.current) clearInterval(phoneCamPollRef.current)

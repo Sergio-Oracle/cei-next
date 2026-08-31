@@ -70,7 +70,7 @@ export default function AdminExamDetailPage() {
     try {
       const [examData, attData] = await Promise.all([
         api.get<OnlineExam>(`/api/online_exams/${id}/details`),
-        api.get<any>(`/api/online_exams/${id}/attempts`).catch(() => []),
+        api.get<any>(`/api/online_exams/${id}/attempts?limit=200`).catch(() => []),
       ])
       setExam(examData as OnlineExam)
       setAttempts(Array.isArray(attData) ? attData : attData.attempts ?? [])

@@ -80,11 +80,18 @@ export default function OnlineCorrectionPage() {
     try {
       const all = await api.get<any[]>('/api/online_exams')
       const relevant = (Array.isArray(all) ? all : []).filter((e: any) => e.status === 'active' || e.status === 'closed')
+      // Correctif fonctionnel + montée en charge (29/08, audit) : /attempts
+      // a été refactoré (pagination) pour renvoyer {attempts, total, page}
+      // au lieu d'un tableau brut — cette page attendait encore un tableau
+      // brut (Array.isArray échouait donc toujours sur l'objet réel), ce
+      // qui faisait afficher ZÉRO examen en permanence, silencieusement.
+      // limit=200 (max autorisé) pour couvrir les gros examens ; needs_correction_count
+      // (dans la réponse) permet de savoir si la page réelle a été tronquée.
       const withAttempts = await Promise.all(
         relevant.map(async (exam: any) => {
           try {
-            const attempts = await api.get<Attempt[]>(`/api/online_exams/${exam.id}/attempts`)
-            return { ...exam, attempts: Array.isArray(attempts) ? attempts : [] }
+            const res = await api.get<{ attempts: Attempt[]; total: number }>(`/api/online_exams/${exam.id}/attempts?limit=200`)
+            return { ...exam, attempts: Array.isArray(res?.attempts) ? res.attempts : [] }
           } catch { return { ...exam, attempts: [] } }
         })
       )
@@ -101,7 +108,15 @@ export default function OnlineCorrectionPage() {
     try {
       const res = await api.aiPost<{ success: boolean; attempt: { score: number } }>(`/api/exam_attempts/${attempt.id}/correct`, {})
       success(`Correction terminée — ${attempt.student_name} : ${fmtScore(res.attempt.score)}/20`)
-      load()
+      // Correctif montée en charge (29/08, audit) : load() refaisait TOUT le
+      // cycle (liste des examens + un appel /attempts par examen) après
+      // CHAQUE correction unitaire — un professeur qui corrige un par un
+      // reproduisait le N+1 complet à chaque clic. Une correction ne change
+      // que cette tentative précise : on met à jour l'état local en place.
+      setExams(prev => prev.map(e => ({
+        ...e,
+        attempts: e.attempts.map(a => a.id === attempt.id ? { ...a, score: res.attempt.score, needs_correction: false } : a),
+      })))
     } catch (e: any) { error(e.message || 'Erreur de correction') }
     finally { setCorrecting(null); setProgress(null); stopTimer() }
   }

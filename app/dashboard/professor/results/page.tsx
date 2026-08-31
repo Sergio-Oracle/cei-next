@@ -315,12 +315,15 @@ export default function ProfessorResultsPage() {
     try {
       const list = await api.get<SubjectMeta[]>('/api/subjects')
       const arr  = Array.isArray(list) ? list : []
-      const withStats = await Promise.all(
-        arr.map(async s => {
-          try   { return { ...s, stats: await api.get<SubjectStats>(`/api/statistics/${s.id}`) } }
-          catch { return { ...s, stats: null } }
-        })
-      )
+      // Correctif montée en charge (29/08, audit) : un appel /api/statistics/{id}
+      // par sujet (Promise.all — parallèle mais toujours N requêtes/N connexions
+      // DB) remplacé par un seul appel groupé.
+      let statsById: Record<string, SubjectStats> = {}
+      if (arr.length) {
+        try { statsById = await api.get<Record<string, SubjectStats>>(`/api/statistics/bulk?subject_ids=${arr.map(s => s.id).join(',')}`) }
+        catch { statsById = {} }
+      }
+      const withStats = arr.map(s => ({ ...s, stats: statsById[String(s.id)] ?? null }))
       setSubjects(withStats)
     } catch { error('Erreur de chargement des résultats') }
     finally   { setLoading(false) }
