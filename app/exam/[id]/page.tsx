@@ -57,6 +57,36 @@ function isDeviceSupported(): boolean {
   if (typeof navigator === 'undefined') return true
   return !!(navigator.mediaDevices && typeof (navigator.mediaDevices as any).getDisplayMedia === 'function')
 }
+
+/* Correctif montée en charge (31/08, retour utilisateur sur l'ajout de
+   YOLO) : YOLOv8n (~17,5 Mo, modèle+moteur WASM) est un RENFORT, pas
+   essentiel — EfficientDet-Lite2 (déjà chargé, bien plus léger) continue
+   seul de couvrir la détection d'objets si YOLO ne charge jamais (voir
+   isYoloReady() dans lib/yolo-detector.ts). Sur une connexion déjà
+   identifiée comme faible, ne pas tenter le téléchargement du tout : même
+   principe déjà appliqué ailleurs dans ce fichier (voir le useEffect de
+   dégradation réseau continue plus bas) — la capacité de l'étudiant à
+   charger l'examen et sauvegarder ses réponses prime toujours sur la
+   fidélité de la surveillance. Mêmes seuils que le reste du fichier. */
+function isConnectionPoor(): boolean {
+  const conn = (typeof navigator !== 'undefined' ? (navigator as any).connection : null)
+  if (!conn) return false // API absente (Firefox/Safari) — pas de signal, on tente quand même
+  return conn.downlink < 0.5 || ['slow-2g','2g'].includes(conn.effectiveType) || !!conn.saveData
+}
+
+/* Étale dans le temps le démarrage du téléchargement de YOLO plutôt que de
+   le déclencher au même instant pour tous — un examen programmé à heure
+   fixe fait typiquement démarrer de nombreux étudiants dans la même
+   poignée de secondes, et sans cet étalement chacun réclamerait ~17,5 Mo
+   au serveur au même moment (voir aussi le cache 7 jours ajouté dans
+   next.config.ts, qui élimine ce coût pour les visites suivantes mais pas
+   la toute première). Fenêtre courte (0-4s) : le modèle n'est de toute
+   façon nécessaire qu'au mieux quelques dizaines de secondes plus tard
+   (fin du scan environnement / première alerte EfficientDet en cours
+   d'examen), un tel délai est totalement imperceptible pour l'étudiant. */
+function yoloLoadJitterMs(): number {
+  return Math.floor(Math.random() * 4000)
+}
 type PermStatus = 'pending' | 'loading' | 'ok' | 'error'
 declare global { interface Window { LivekitClient: any } }
 
@@ -1128,13 +1158,19 @@ export default function ExamPage() {
   async function runEnvironmentScan() {
     setEnvScanStatus('loading_ai'); setEnvScanProgress(0); setEnvScanMaxPeople(0)
     // YOLOv8n (31/08, retour utilisateur : "je veux que Yolo participe aussi
-    // au scan de l'environnement") — lancé en parallèle dès le tout début du
-    // scan, le plus tôt possible dans le parcours étudiant, pour maximiser
-    // ses chances d'être prêt avant la fin des 8s (chargement mesuré ~11s la
-    // première fois, voir lib/yolo-detector.ts). Non bloquant : s'il n'est
-    // pas prêt à temps, le scan continue avec EfficientDet seul comme avant
-    // (isYoloReady() garde chaque usage aval).
-    initYoloDetector().catch(()=>{})
+    // au scan de l'environnement") — lancé en parallèle dès le début du
+    // scan pour maximiser ses chances d'être prêt avant la fin des 8s
+    // (chargement mesuré ~11s la première fois, voir lib/yolo-detector.ts).
+    // Non bloquant : s'il n'est pas prêt à temps, le scan continue avec
+    // EfficientDet seul comme avant (isYoloReady() garde chaque usage aval).
+    // Correctif montée en charge (31/08) : ni tenté sur une connexion déjà
+    // faible (isConnectionPoor — EfficientDet seul suffit), ni déclenché à
+    // l'instant précis où tous les étudiants d'un même examen programmé
+    // démarrent leur scan (yoloLoadJitterMs — étale la demande sur le
+    // serveur au lieu d'un pic synchronisé, voir en-tête de ces fonctions).
+    if (!isConnectionPoor()) {
+      setTimeout(() => { initYoloDetector().catch(()=>{}) }, yoloLoadJitterMs())
+    }
     const ready = await initProctoringVision()
     if (!ready) {
       // Dégradé : impossible de vérifier par IA, mais on ne bloque pas un
@@ -2368,8 +2404,15 @@ export default function ExamPage() {
       // s'exécute jamais en continu (voir visionEnrichedTick) — si le
       // modèle ne charge jamais (réseau, navigateur non supporté), le
       // proctoring continue avec EfficientDet seul, isYoloReady() garde
-      // chaque usage aval.
-      initYoloDetector().catch(()=>{})
+      // chaque usage aval. En pratique déjà chargé (ou en cours) depuis le
+      // scan environnement — cet appel-ci est idempotent (initYoloDetector
+      // se contente de retourner la même promesse déjà en cours), donc sans
+      // effet la plupart du temps ; les mêmes garde-fous montée en charge
+      // (isConnectionPoor/yoloLoadJitterMs) sont appliqués par cohérence,
+      // au cas où l'examen serait entré directement sans passer par le scan.
+      if (!isConnectionPoor()) {
+        setTimeout(() => { initYoloDetector().catch(()=>{}) }, yoloLoadJitterMs())
+      }
       const fa=(window as any).faceapi
       if(!fa){setTimeout(loadAndStart,500);return}
       fa.nets.tinyFaceDetector.loadFromUri(FACEAPI_MODEL_URL)
