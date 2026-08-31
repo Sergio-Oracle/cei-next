@@ -491,6 +491,19 @@ export default function ExamPage() {
   // livre, écran) reste visible sur la durée ; une image isolée mal
   // classifiée (reflet, objet du décor confondu un instant) ne se répète pas.
   const consObjectRef = useRef<{ what: string | null; count: number }>({ what: null, count: 0 })
+  // Correctif (31/08, retour utilisateur — un téléphone tenu très près/à un
+  // angle inhabituel devant la caméra n'a déclenché aucune alerte) : la
+  // corroboration YOLO ci-dessus (visionEnrichedTick) ne s'exécute QUE si
+  // EfficientDet a déjà lui-même atteint son propre seuil — si EfficientDet
+  // ne détecte jamais l'objet (angle/distance/lumière difficiles pour ce
+  // modèle plus léger), YOLO n'a alors JAMAIS l'occasion de le voir, malgré
+  // ses propres capacités de détection réelles (vérifiées séparément).
+  // yoloIndependentTick (cadence propre, plus lente, voir loadAndStart)
+  // fait tourner YOLO en véritable second détecteur, indépendamment de ce
+  // qu'EfficientDet a vu ou non — comble ce point aveugle structurel sans
+  // faire tourner YOLO à la cadence de 5s d'EfficientDet (coût CPU).
+  const consYoloIndependentRef = useRef<{ what: string | null; count: number }>({ what: null, count: 0 })
+  const yoloObjectIntervalRef = useRef<ReturnType<typeof setInterval>|null>(null)
   /* Phase 6 — détection audio légère (énergie RMS du signal, pas de
      transcription : plus respectueux de la vie privée et bien moins coûteux
      qu'une reconnaissance vocale continue). */
@@ -650,7 +663,7 @@ export default function ExamPage() {
 
   /* ── Nettoyage ────────────────────────────────────────────────────────── */
   useEffect(() => () => {
-    ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef,heartbeatRef,multiScreenIntervalRef].forEach(r => { if (r.current) clearInterval(r.current) })
+    ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef,heartbeatRef,multiScreenIntervalRef,yoloObjectIntervalRef].forEach(r => { if (r.current) clearInterval(r.current) })
     ;[saveRetryTimerRef,submitRetryTimerRef].forEach(r => { if (r.current) clearTimeout(r.current) })
     camStream.current?.getTracks().forEach(t => t.stop())
     screenStream.current?.getTracks().forEach(t => t.stop())
@@ -1845,7 +1858,7 @@ export default function ExamPage() {
 
   function triggerBan() {
     sessionEndedRef.current=true; setShowBanModal(true)
-    ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef,heartbeatRef,multiScreenIntervalRef].forEach(r=>{if(r.current)clearInterval(r.current)})
+    ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef,heartbeatRef,multiScreenIntervalRef,yoloObjectIntervalRef].forEach(r=>{if(r.current)clearInterval(r.current)})
     if(lkRoomRef.current){try{lkRoomRef.current.disconnect()}catch{}}
   }
 
@@ -2395,6 +2408,60 @@ export default function ExamPage() {
       }
     }
 
+    // Correctif (31/08, retour utilisateur : un téléphone tenu près/à un
+    // angle inhabituel de la caméra n'a déclenché aucune alerte pendant
+    // l'examen) — voir le commentaire sur consYoloIndependentRef plus haut
+    // pour le diagnostic complet. YOLO tourne ici en véritable second
+    // détecteur, sur sa propre cadence PLUS LENTE (15s, contre 5s pour
+    // EfficientDet) et INDÉPENDAMMENT de ce qu'EfficientDet a vu ou non —
+    // ne remplace pas la corroboration existante dans visionEnrichedTick
+    // (qui reste la voie normale, plus rapide, quand les deux modèles sont
+    // d'accord), la complète pour les cas où EfficientDet rate l'objet.
+    // Même garde-fou anti-bruit que partout ailleurs dans ce fichier (2
+    // vérifications consécutives) ; même clé de cooldown que la
+    // corroboration existante (lastVisionAlertRef.current.object) pour ne
+    // jamais doubler une alerte déjà envoyée par l'autre voie pour le même
+    // épisode.
+    async function yoloIndependentTick(curAId: number) {
+      if (sessionEndedRef.current || breakActiveRef.current || !isYoloReady()) return
+      const vid = videoRef.current
+      if (!vid || vid.readyState < 2) return
+      const now = Date.now()
+      const COOLDOWN = 30_000
+      let y
+      try { y = await detectSuspectObjects(vid) } catch { return }
+      if (!y) return
+      const yWhatCategory: 'phone'|'book'|'screen'|null = y.phoneDetected?'phone':y.bookDetected?'book':y.otherScreenDetected?'screen':null
+      const yWhat = yWhatCategory==='phone'?'téléphone':yWhatCategory==='book'?'livre/document':yWhatCategory==='screen'?'écran supplémentaire':null
+      // Alimente aussi le moteur de corrélation de patterns comportementaux
+      // (checkBehaviorPatterns, ex. pattern_object_gaze_away) — même signal
+      // que celui déjà posé par EfficientDet dans visionEnrichedTick, sur
+      // chaque détection brute, pas seulement au déclenchement de l'alerte.
+      if (yWhat) markSignal('objectDetected')
+      if (yWhat && yWhat===consYoloIndependentRef.current.what) {
+        consYoloIndependentRef.current.count++
+      } else {
+        consYoloIndependentRef.current = { what: yWhat, count: yWhat ? 1 : 0 }
+      }
+      if (yWhat && consYoloIndependentRef.current.count>=2 && now-(lastVisionAlertRef.current.object||0)>COOLDOWN) {
+        lastVisionAlertRef.current.object = now
+        const label = `Objet suspect détecté : ${yWhat}`
+        warning(label)
+        setAlerts(a => [{type:'object',msg:label,at:new Date().toLocaleTimeString('fr-FR')},...a])
+        // yolo.status='independent' — nouveau cas distinct de 'agreed'/
+        // 'disagreed'/'unavailable'/'no_equivalent_class' (voir en-tête
+        // visionEnrichedTick) : signifie qu'EfficientDet n'a PAS vu cet
+        // objet du tout à ce moment (pas de candidat à corroborer), pas
+        // qu'il a regardé et n'était pas d'accord — distinction affichée
+        // au personnel par _format_incident_description (routes/exams.py).
+        const payload = { category: yWhatCategory, efficientdet: [], yolo: { status: 'independent', matches: y.matches } }
+        logActivity(curAId,'suspect_object_detected',JSON.stringify(payload)).catch(()=>{})
+        logProctoring(curAId,'suspect_object_detected',JSON.stringify(payload)).catch(()=>{})
+        const topScore = Math.max(0, ...y.matches.map(m=>m.score))
+        captureSnapshot('suspect_object_detected',curAId,true,1,topScore,5_000)
+      }
+    }
+
     function loadAndStart() {
       // Généralement déjà chargé pendant le scan environnement (Phase 1) —
       // appel idempotent ici en filet de sécurité si ce n'est pas le cas.
@@ -2413,6 +2480,17 @@ export default function ExamPage() {
       if (!isConnectionPoor()) {
         setTimeout(() => { initYoloDetector().catch(()=>{}) }, yoloLoadJitterMs())
       }
+      // Correctif (31/08) — YOLO en second détecteur indépendant (voir
+      // yoloIndependentTick plus haut), cadence propre (15s, 3x moins
+      // fréquent qu'EfficientDet) et détachée du chargement de face-api.js
+      // ci-dessous : la détection d'objets suspects ne doit pas dépendre du
+      // succès du chargement de la reconnaissance faciale, ce sont deux
+      // fonctionnalités indépendantes.
+      if (yoloObjectIntervalRef.current) clearInterval(yoloObjectIntervalRef.current)
+      yoloObjectIntervalRef.current = setInterval(() => {
+        if (sessionEndedRef.current) { if(yoloObjectIntervalRef.current) clearInterval(yoloObjectIntervalRef.current); return }
+        yoloIndependentTick(attemptRef.current||aId).catch(()=>{})
+      }, 15000)
       const fa=(window as any).faceapi
       if(!fa){setTimeout(loadAndStart,500);return}
       fa.nets.tinyFaceDetector.loadFromUri(FACEAPI_MODEL_URL)
@@ -2480,7 +2558,7 @@ export default function ExamPage() {
   const handleSubmit = useCallback(async(auto=false)=>{
     const aId=attemptRef.current; if(!aId||submitting||sessionEndedRef.current) return
     sessionEndedRef.current=true; setSubmitting(true)
-    ;[timerRef,saveRef,msgPollRef,extraPollRef,heartbeatRef,multiScreenIntervalRef].forEach(r=>{if(r.current)clearInterval(r.current)})
+    ;[timerRef,saveRef,msgPollRef,extraPollRef,heartbeatRef,multiScreenIntervalRef,yoloObjectIntervalRef].forEach(r=>{if(r.current)clearInterval(r.current)})
     if(saveRetryTimerRef.current){clearTimeout(saveRetryTimerRef.current);saveRetryTimerRef.current=null}
     try { (navigator as any).keyboard?.unlock?.() } catch {}
     document.exitFullscreen?.().catch(()=>{})
