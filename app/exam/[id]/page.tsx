@@ -1127,6 +1127,14 @@ export default function ExamPage() {
   const SCAN_DURATION_MS = 8000
   async function runEnvironmentScan() {
     setEnvScanStatus('loading_ai'); setEnvScanProgress(0); setEnvScanMaxPeople(0)
+    // YOLOv8n (31/08, retour utilisateur : "je veux que Yolo participe aussi
+    // au scan de l'environnement") — lancé en parallèle dès le tout début du
+    // scan, le plus tôt possible dans le parcours étudiant, pour maximiser
+    // ses chances d'être prêt avant la fin des 8s (chargement mesuré ~11s la
+    // première fois, voir lib/yolo-detector.ts). Non bloquant : s'il n'est
+    // pas prêt à temps, le scan continue avec EfficientDet seul comme avant
+    // (isYoloReady() garde chaque usage aval).
+    initYoloDetector().catch(()=>{})
     const ready = await initProctoringVision()
     if (!ready) {
       // Dégradé : impossible de vérifier par IA, mais on ne bloque pas un
@@ -1143,6 +1151,7 @@ export default function ExamPage() {
     setEnvScanStatus('scanning')
     const start = Date.now()
     let maxPeople = 0
+    let yoloUsed = false
     const objectSeenCount: Record<string, number> = {}
     const objectBestScore: Record<string, number> = {}
     while (Date.now() - start < SCAN_DURATION_MS) {
@@ -1159,6 +1168,31 @@ export default function ExamPage() {
         objectSeenCount[what] = (objectSeenCount[what]||0) + 1
         const bestHere = Math.max(...obj!.matches.map(m=>m.score))
         objectBestScore[what] = Math.max(objectBestScore[what]||0, bestHere)
+      }
+      // YOLOv8n (31/08) — tourne à CHAQUE échantillon en parallèle
+      // d'EfficientDet pendant ce scan court et unique, contrairement au
+      // mode "corroboration à la demande" utilisé en cours d'examen (voir
+      // en-tête lib/yolo-detector.ts) : la contrainte de coût CPU continu
+      // qui justifie ce mode-là ne s'applique pas ici (8s, une seule fois).
+      // Personnes : le MAXIMUM des deux modèles est retenu. Objets : union
+      // des deux (soit l'un soit l'autre suffit à signaler) — un faux
+      // positif ici coûte juste un nouveau balayage (bouton "Relancer"), un
+      // faux négatif laisserait passer une vraie personne/un vrai objet non
+      // détecté dans la pièce.
+      if (isYoloReady()) {
+        yoloUsed = true
+        try {
+          const y = await detectSuspectObjects(vid, 0.35)
+          if (y) {
+            if (y.personCount > maxPeople) { maxPeople = y.personCount; setEnvScanMaxPeople(maxPeople) }
+            const yWhat = y.phoneDetected?'téléphone':y.bookDetected?'livre/document':y.otherScreenDetected?'écran supplémentaire':null
+            if (yWhat) {
+              objectSeenCount[yWhat] = (objectSeenCount[yWhat]||0) + 1
+              const bestHere = Math.max(...y.matches.map(m=>m.score))
+              objectBestScore[yWhat] = Math.max(objectBestScore[yWhat]||0, bestHere)
+            }
+          }
+        } catch {}
       }
       setEnvScanProgress(Math.min(100, Math.round(((Date.now()-start)/SCAN_DURATION_MS)*100)))
       // Cadence resserrée (700ms→400ms, 22/08) : vérifié avec de vraies
@@ -1182,20 +1216,26 @@ export default function ExamPage() {
     setEnvScanObjects(objectsDetected)
 
     const aId = attemptRef.current
+    // Mention explicite si YOLO a effectivement pu participer (il peut ne
+    // pas être prêt à temps sur un appareil/réseau lent, voir plus haut) —
+    // visible par le surveillant/professeur dans l'historique de la
+    // tentative, sans complexifier ce log en JSON structuré (ce scan reste
+    // purement informatif, contrairement à la détection en cours d'examen).
+    const modelsNote = yoloUsed ? ' (vérification renforcée par EfficientDet + YOLOv8n)' : ''
     if (objectsDetected.length && aId) {
       const detail = objectsDetected.map(w=>`${w} (confiance ${(objectBestScore[w]*100).toFixed(0)}%)`).join(', ')
-      logActivity(aId,'env_scan_object_detected',`Objets détectés pendant le scan : ${detail}`).catch(()=>{})
-      logProctoring(aId,'env_scan_object_detected',`Objets détectés pendant le scan : ${detail}`).catch(()=>{})
+      logActivity(aId,'env_scan_object_detected',`Objets détectés pendant le scan : ${detail}${modelsNote}`).catch(()=>{})
+      logProctoring(aId,'env_scan_object_detected',`Objets détectés pendant le scan : ${detail}${modelsNote}`).catch(()=>{})
     }
     if (maxPeople > 1) {
       setEnvScanStatus('blocked')
       if (aId) {
-        logActivity(aId,'env_scan_person_detected',`${maxPeople} personnes détectées pendant le scan`).catch(()=>{})
-        logProctoring(aId,'env_scan_person_detected',`${maxPeople} personnes détectées`).catch(()=>{})
+        logActivity(aId,'env_scan_person_detected',`${maxPeople} personnes détectées pendant le scan${modelsNote}`).catch(()=>{})
+        logProctoring(aId,'env_scan_person_detected',`${maxPeople} personnes détectées${modelsNote}`).catch(()=>{})
       }
     } else {
       setEnvScanStatus('ok')
-      if (aId) logActivity(aId,'env_scan_completed','Scan environnement validé — aucune personne supplémentaire détectée').catch(()=>{})
+      if (aId) logActivity(aId,'env_scan_completed',`Scan environnement validé — aucune personne supplémentaire détectée${modelsNote}`).catch(()=>{})
       // Pas d'enchaînement automatique vers enterExam() ici : requestFullscreen()
       // exige un geste utilisateur DIRECT (clic) pour aboutir dans la plupart des
       // navigateurs — un appel différé (même via setTimeout) rompt cette chaîne et

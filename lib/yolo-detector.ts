@@ -7,18 +7,28 @@
  * utilisateur : "renforcer les modèles déjà présents... vraiment fiable
  * et robuste").
  *
- * Ne tourne JAMAIS en continu comme EfficientDet (voir visionEnrichedTick
- * dans exam/[id]/page.tsx) — appelé une seule fois, à la demande, au
- * moment précis où EfficientDet a déjà atteint son propre seuil de
- * détection et s'apprête à déclencher une alerte. Coût CPU inchangé en
- * régime normal (pas de second modèle tournant toutes les 5s), tout en
- * apportant une vraie vérification indépendante au moment où elle compte :
- * deux architectures différentes d'accord sur la même catégorie d'objet
- * est une preuve nettement plus fiable qu'un seul modèle (voir le
- * commentaire sur 'suspect_object_detected' dans proctoring_risk_map,
- * cei-api-v2/proctoring_routes.py — poids volontairement abaissé de 25 à
- * 12 à cause d'un problème documenté de confusion main/objet avec un seul
- * modèle).
+ * En cours d'examen (visionEnrichedTick, exam/[id]/page.tsx), ne tourne
+ * JAMAIS en continu comme EfficientDet — appelé une seule fois, à la
+ * demande, au moment précis où EfficientDet a déjà atteint son propre
+ * seuil de détection et s'apprête à déclencher une alerte. Coût CPU
+ * inchangé en régime normal (pas de second modèle tournant toutes les
+ * 5s), tout en apportant une vraie vérification indépendante au moment où
+ * elle compte : deux architectures différentes d'accord sur la même
+ * catégorie d'objet est une preuve nettement plus fiable qu'un seul
+ * modèle (voir le commentaire sur 'suspect_object_detected' dans
+ * proctoring_risk_map, cei-api-v2/proctoring_routes.py — poids
+ * volontairement abaissé de 25 à 12 à cause d'un problème documenté de
+ * confusion main/objet avec un seul modèle).
+ *
+ * Pendant le scan environnement 360° AVANT l'examen (runEnvironmentScan,
+ * même fichier — 31/08, retour utilisateur : "je veux que Yolo participe
+ * aussi au scan de l'environnement"), la contrainte de coût CPU continu
+ * ci-dessus ne s'applique pas (scan court, unique, borné à 8s) : YOLO y
+ * tourne à CHAQUE échantillon en parallèle d'EfficientDet, comme un
+ * second détecteur à part entière plutôt qu'un simple corroborateur —
+ * le nombre de personnes retenu est le MAXIMUM des deux modèles (un faux
+ * positif y coûte juste un nouveau balayage, un faux négatif laisserait
+ * passer une vraie personne supplémentaire non détectée dans la pièce).
  *
  * 100% côté navigateur, comme le reste du pipeline vision (voir l'en-tête
  * de proctoring-vision.ts) — aucune image ne quitte l'ordinateur de
@@ -101,6 +111,13 @@ export interface YoloSignal {
   bookDetected: boolean
   otherScreenDetected: boolean
   matches: YoloMatch[]
+  /** Nombre de détections "person" (classe COCO 0) au-dessus de minScore —
+   * calculé dans le MÊME passage d'inférence que les objets suspects (le
+   * modèle détecte déjà toutes les classes à chaque appel, pas de coût
+   * supplémentaire). Utilisé par le scan environnement 360° (31/08, retour
+   * utilisateur : "je veux que Yolo participe aussi au scan") en renfort du
+   * comptage EfficientDet existant (countPeople, proctoring-vision.ts). */
+  personCount: number
 }
 
 // Sous-ensemble de COCO-80 pertinent, même taxonomie que SUSPECT_LABELS
@@ -150,14 +167,22 @@ function preprocess(video: HTMLVideoElement): Float32Array {
   return out
 }
 
-/** Corroboration à la demande — voir en-tête du fichier. minScore
- * volontairement un peu plus permissif (0.45) que le seuil EfficientDet en
- * cours d'examen (0.5, voir analyzeObjects dans proctoring-vision.ts) :
- * YOLO n'agit ici qu'en RENFORT d'une détection déjà candidate, pas en
- * détecteur principal — un seuil trop strict réduirait sa capacité à
- * corroborer de vraies détections sans réduire le risque de faux positif
- * (c'est justement l'ACCORD des deux modèles, pas YOLO seul, qui doit
- * porter la confiance renforcée côté appelant). */
+/** Détection d'objets suspects (+ comptage de personnes, voir personCount
+ * sur YoloSignal) en un seul appel. Deux usages, avec des minScore
+ * différents passés explicitement par l'appelant selon le contexte :
+ *  - Corroboration à la demande en cours d'examen (visionEnrichedTick,
+ *    exam/[id]/page.tsx) — minScore par défaut (0.45), volontairement un
+ *    peu plus permissif que le seuil EfficientDet en cours d'examen (0.5,
+ *    voir analyzeObjects dans proctoring-vision.ts) : YOLO n'agit ici qu'en
+ *    RENFORT d'une détection déjà candidate, pas en détecteur principal —
+ *    un seuil trop strict réduirait sa capacité à corroborer de vraies
+ *    détections sans réduire le risque de faux positif (c'est justement
+ *    l'ACCORD des deux modèles, pas YOLO seul, qui doit porter la
+ *    confiance renforcée côté appelant).
+ *  - Scan environnement 360° (runEnvironmentScan) — minScore plus bas
+ *    (0.35, même valeur que le seuil EfficientDet y utilisé), car ce scan
+ *    est un passage unique purement informatif où un signalement en trop
+ *    coûte bien moins qu'une personne/un objet réellement présent manqué. */
 export async function detectSuspectObjects(video: HTMLVideoElement, minScore = 0.45): Promise<YoloSignal | null> {
   if (!session) return null
   try {
@@ -176,11 +201,14 @@ export async function detectSuspectObjects(video: HTMLVideoElement, minScore = 0
     // sans caméra réelle).
     const n = (out.dims as number[])[1] ?? 0
     const matches: YoloMatch[] = []
+    let personCount = 0
+    const PERSON_CLASS_ID = 0 // COCO
     for (let i = 0; i < n; i++) {
       const base = i * 6
       const conf = data[base + 4]
       if (conf < minScore) continue
       const classId = Math.round(data[base + 5])
+      if (classId === PERSON_CLASS_ID) { personCount++; continue }
       const entry = YOLO_CLASS_MAP[classId]
       if (!entry) continue
       matches.push({ label: entry.label, score: conf, classId })
@@ -190,6 +218,7 @@ export async function detectSuspectObjects(video: HTMLVideoElement, minScore = 0
       bookDetected:        matches.some(m => YOLO_CLASS_MAP[m.classId]?.category === 'book'),
       otherScreenDetected: matches.some(m => YOLO_CLASS_MAP[m.classId]?.category === 'screen'),
       matches,
+      personCount,
     }
   } catch (err) {
     console.warn('[yolo-detector] échec inférence', err)
