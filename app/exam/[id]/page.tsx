@@ -59,7 +59,7 @@ function isDeviceSupported(): boolean {
 }
 
 /* Correctif montée en charge (31/08, retour utilisateur sur l'ajout de
-   YOLO) : YOLOv8n (~17,5 Mo, modèle+moteur WASM) est un RENFORT, pas
+   YOLO) : YOLO26n (~17 Mo, modèle+moteur WASM) est un RENFORT, pas
    essentiel — EfficientDet-Lite2 (déjà chargé, bien plus léger) continue
    seul de couvrir la détection d'objets si YOLO ne charge jamais (voir
    isYoloReady() dans lib/yolo-detector.ts). Sur une connexion déjà
@@ -1170,7 +1170,7 @@ export default function ExamPage() {
   const SCAN_DURATION_MS = 8000
   async function runEnvironmentScan() {
     setEnvScanStatus('loading_ai'); setEnvScanProgress(0); setEnvScanMaxPeople(0)
-    // YOLOv8n (31/08, retour utilisateur : "je veux que Yolo participe aussi
+    // YOLO26n (31/08, retour utilisateur : "je veux que Yolo participe aussi
     // au scan de l'environnement") — lancé en parallèle dès le début du
     // scan pour maximiser ses chances d'être prêt avant la fin des 8s
     // (chargement mesuré ~11s la première fois, voir lib/yolo-detector.ts).
@@ -1218,7 +1218,7 @@ export default function ExamPage() {
         const bestHere = Math.max(...obj!.matches.map(m=>m.score))
         objectBestScore[what] = Math.max(objectBestScore[what]||0, bestHere)
       }
-      // YOLOv8n (31/08) — tourne à CHAQUE échantillon en parallèle
+      // YOLO26n (31/08) — tourne à CHAQUE échantillon en parallèle
       // d'EfficientDet pendant ce scan court et unique, contrairement au
       // mode "corroboration à la demande" utilisé en cours d'examen (voir
       // en-tête lib/yolo-detector.ts) : la contrainte de coût CPU continu
@@ -1270,7 +1270,7 @@ export default function ExamPage() {
     // visible par le surveillant/professeur dans l'historique de la
     // tentative, sans complexifier ce log en JSON structuré (ce scan reste
     // purement informatif, contrairement à la détection en cours d'examen).
-    const modelsNote = yoloUsed ? ' (vérification renforcée par EfficientDet + YOLOv8n)' : ''
+    const modelsNote = yoloUsed ? ' (vérification renforcée par EfficientDet + YOLO26n)' : ''
     if (objectsDetected.length && aId) {
       const detail = objectsDetected.map(w=>`${w} (confiance ${(objectBestScore[w]*100).toFixed(0)}%)`).join(', ')
       logActivity(aId,'env_scan_object_detected',`Objets détectés pendant le scan : ${detail}${modelsNote}`).catch(()=>{})
@@ -2365,7 +2365,7 @@ export default function ExamPage() {
       }
       if (what && consObjectRef.current.count>=2 && now-(lastVisionAlertRef.current.object||0)>COOLDOWN) {
         lastVisionAlertRef.current.object=now
-        // Corroboration YOLOv8n (31/08, retour utilisateur : "renforcer les
+        // Corroboration YOLO26n (31/08, retour utilisateur : "renforcer les
         // modèles déjà présents") — voir lib/yolo-detector.ts. Un seul
         // appel, sur l'image courante, exactement au moment où EfficientDet
         // a déjà atteint son propre seuil de 2 vérifications consécutives —
@@ -2466,7 +2466,7 @@ export default function ExamPage() {
       // Généralement déjà chargé pendant le scan environnement (Phase 1) —
       // appel idempotent ici en filet de sécurité si ce n'est pas le cas.
       initProctoringVision().catch(()=>{})
-      // YOLOv8n (31/08) — chargement anticipé en parallèle, non bloquant.
+      // YOLO26n (31/08) — chargement anticipé en parallèle, non bloquant.
       // Seul le CHARGEMENT est anticipé ici ; l'INFÉRENCE elle-même ne
       // s'exécute jamais en continu (voir visionEnrichedTick) — si le
       // modèle ne charge jamais (réseau, navigateur non supporté), le

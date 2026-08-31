@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Détecteur d'objets YOLOv8n — second modèle, INDÉPENDANT du détecteur
+ * Détecteur d'objets YOLO26n — second modèle, INDÉPENDANT du détecteur
  * MediaPipe EfficientDet-Lite2 déjà en place (lib/proctoring-vision.ts),
  * pour CORROBORER ses détections plutôt que les remplacer (31/08, retour
  * utilisateur : "renforcer les modèles déjà présents... vraiment fiable
@@ -34,18 +34,31 @@
  * de proctoring-vision.ts) — aucune image ne quitte l'ordinateur de
  * l'étudiant pour l'inférence.
  *
- * Modèle : YOLOv8n (Ultralytics, licence AGPL-3.0 — acceptée explicitement
+ * Modèle : YOLO26n (Ultralytics, licence AGPL-3.0 — acceptée explicitement
  * par l'utilisateur ; l'alternative permissive proposée, YOLOX/Apache 2.0,
- * a été refusée en faveur du modèle le plus reconnu/outillé). Export ONNX
- * avec NMS intégré au graphe (nms=True à l'export) — la sortie du modèle
- * est déjà [x1,y1,x2,y2,conf,cls] par détection, aucun décodage de grille
- * ni NMS à écrire à la main côté client (zone à haut risque de bug
- * qu'aucune webcam réelle ne permet de vérifier dans cet environnement de
- * développement — voir la validation faite hors-navigateur, en Python,
- * avant l'intégration : pipeline de prétraitement identique, exécuté sur
- * une vraie photo, détections cohérentes et confiantes). Quantifié en
- * int8 (3,5 Mo, comparable au 7,5 Mo d'efficientdet_lite2.tflite déjà
- * utilisé) — public/models/yolo/yolov8n.onnx.
+ * a été refusée en faveur du modèle le plus reconnu/outillé). Remplace
+ * YOLOv8n (31/08, même jour, benchmark réel avant migration — voir plus bas) :
+ * architecture "end-to-end" native, la suppression des doublons (NMS) est
+ * intégrée à l'entraînement du modèle lui-même, pas ajoutée après coup à
+ * l'export (contrairement à YOLOv8n où `nms=True` insérait un bloc NMS
+ * séparé dans le graphe) — la sortie reste néanmoins exactement la même
+ * forme [x1,y1,x2,y2,conf,cls] par détection, donc aucun changement de la
+ * logique de décodage ci-dessous. Aucun décodage de grille ni NMS à écrire
+ * à la main côté client (zone à haut risque de bug qu'aucune webcam réelle
+ * ne permet de vérifier dans cet environnement de développement — voir la
+ * validation faite hors-navigateur, en Python, avant l'intégration :
+ * pipeline de prétraitement identique, exécuté sur une vraie photo,
+ * détections cohérentes et confiantes). Quantifié en int8 (2,9 Mo, plus
+ * léger que le 3,5 Mo de l'ancien YOLOv8n ET que le 7,5 Mo
+ * d'efficientdet_lite2.tflite déjà utilisé) — public/models/yolo/yolo26n.onnx.
+ *
+ * Migration décidée après comparaison réelle (pas sur la seule base de
+ * l'annonce Ultralytics) : sur une même photo réelle difficile (téléphone
+ * partiellement tenu en main, angle défavorable — le cas exact remonté par
+ * l'utilisateur comme non détecté), confiance du téléphone passée de 40%
+ * (YOLOv8n) à 76% (YOLO26n), fichier plus petit, coût CPU +25% par
+ * inférence — acceptable vu la cadence déjà faible (jamais en continu, voir
+ * plus bas).
  *
  * IMPORTANT — contrairement aux modèles MediaPipe, il n'existe aucun
  * miroir CDN externe faisant autorité pour CE fichier .onnx précis (export
@@ -63,7 +76,7 @@ import * as ort from 'onnxruntime-web/wasm'
 const ORT_VERSION = '1.29.0'
 const WASM_BASE_LOCAL = '/models/ort/'
 const WASM_BASE_CDN   = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`
-const YOLO_MODEL_URL  = '/models/yolo/yolov8n.onnx' // local uniquement, voir en-tête
+const YOLO_MODEL_URL  = '/models/yolo/yolo26n.onnx' // local uniquement, voir en-tête
 
 const INPUT_SIZE = 640
 
@@ -73,7 +86,7 @@ let initPromise: Promise<boolean> | null = null
 export function isYoloReady() { return !!session }
 
 /** Charge le runtime ONNX (WASM local d'abord, CDN en secours) puis le
- * modèle YOLOv8n. Dégradation silencieuse si tout échoue (réseau,
+ * modèle YOLO26n. Dégradation silencieuse si tout échoue (réseau,
  * navigateur non supporté) : retourne false, l'appelant continue avec
  * EfficientDet seul (voir isYoloReady() dans exam/[id]/page.tsx) — jamais
  * bloquant pour l'étudiant. */
@@ -192,9 +205,10 @@ export async function detectSuspectObjects(video: HTMLVideoElement, minScore = 0
     const out = outputs['output0']
     if (!out) return null
     const data = out.data as Float32Array
-    // [1, N, 6] = [x1,y1,x2,y2,conf,cls] par détection, NMS déjà appliqué
-    // dans le graphe (export nms=True) — pas de décodage de grille ni de
-    // NMS à refaire ici. Les coordonnées de boîte sont ignorées (même
+    // [1, N, 6] = [x1,y1,x2,y2,conf,cls] par détection, doublons déjà
+    // éliminés nativement (architecture end-to-end de YOLO26, voir en-tête
+    // du fichier) — pas de décodage de grille ni de NMS à refaire ici.
+    // Les coordonnées de boîte sont ignorées (même
     // forme de sortie que ObjectSignal côté EfficientDet, {label,score}
     // uniquement — aucune UI n'affiche de boîte englobante aujourd'hui,
     // choix délibéré pour réduire la surface de calcul non vérifiable
