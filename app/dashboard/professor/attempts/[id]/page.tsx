@@ -10,6 +10,14 @@ import { useToast } from '@/contexts/ToastContext'
 interface Incident {
   timestamp: string
   type: string
+  // Correctif (31/08) : le backend (get_attempt_review) ne renvoyait ni
+  // description ni event_type, seulement type/data/timestamp — la
+  // description construite côté client (ex. confiance des modèles pour un
+  // objet suspect) était donc silencieusement perdue avant même d'arriver
+  // ici. Champs optionnels pour rester compatible avec un backend plus
+  // ancien (jamais undefined depuis la correction).
+  description?: string
+  data?: unknown
 }
 
 interface ProctorNote {
@@ -115,6 +123,7 @@ const INCIDENT_LABELS: Record<string, string> = {
   head_turned:             'Tête tournée',
   talking_detected:        'Parole détectée',
   suspect_object_detected: 'Objet suspect détecté',
+  suspect_object_confirmed:'Objet suspect confirmé par 2 modèles',
   liveness_check_failed:   'Contrôle de vivacité échoué (aucun clignement détecté)',
   sustained_audio_detected:'Bruit prolongé détecté',
   multi_screen_detected:   'Plusieurs écrans détectés',
@@ -423,13 +432,18 @@ export default function AttemptDetailPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {data.incidents.slice(-20).map((inc, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 10px', background: i % 2 === 0 ? '#fef2f2' : 'white', borderRadius: 6 }}>
-                    <span style={{ fontSize:13, color: '#94a3b8', whiteSpace: 'nowrap', minWidth: 54 }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '7px 10px', background: i % 2 === 0 ? '#fef2f2' : 'white', borderRadius: 6 }}>
+                    <span style={{ fontSize:13, color: '#94a3b8', whiteSpace: 'nowrap', minWidth: 54, marginTop: 1 }}>
                       {inc.timestamp ? new Date(inc.timestamp).toLocaleTimeString('fr-FR') : '—'}
                     </span>
-                    <span style={{ fontSize:14.5, fontWeight: 600, color: '#ef4444' }}>
-                      {INCIDENT_LABELS[inc.type] || inc.type}
-                    </span>
+                    <div>
+                      <div style={{ fontSize:14.5, fontWeight: 600, color: '#ef4444' }}>
+                        {INCIDENT_LABELS[inc.type] || inc.type}
+                      </div>
+                      {inc.description && (
+                        <div style={{ fontSize:13, color: '#64748b', marginTop: 2 }}>{inc.description}</div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

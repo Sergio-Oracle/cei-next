@@ -6,6 +6,7 @@ import api from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObjects, countPeople } from '@/lib/proctoring-vision'
+import { initYoloDetector, isYoloReady, detectSuspectObjects, type YoloMatch } from '@/lib/yolo-detector'
 import Calculator from '@/components/exam/Calculator'
 import BiometricCallModal from '@/components/exam/BiometricCallModal'
 import { loadFaceApi, captureSingleDescriptor, warmupFaceApi } from '@/lib/faceCapture'
@@ -2168,7 +2169,7 @@ export default function ExamPage() {
     // des valeurs raisonnables mais non calibrées en conditions réelles —
     // aucune caméra/visage disponible pour un test visuel en dehors du
     // navigateur de l'étudiant ; à ajuster après un premier retour d'usage.
-    function visionEnrichedTick(curAId:number, now:number) {
+    async function visionEnrichedTick(curAId:number, now:number) {
       if (!isProctoringVisionReady()) return
       const vid=videoRef.current; if(!vid||vid.readyState<2) return
       const COOLDOWN=30_000
@@ -2265,7 +2266,8 @@ export default function ExamPage() {
       // pour atteindre 2 vérifications consécutives ; l'exigence de 2
       // détections consécutives ci-dessous reste le garde-fou anti-bruit.
       const obj = analyzeObjects(vid, now)
-      const what = obj?.phoneDetected?'téléphone':obj?.bookDetected?'livre/document':obj?.otherScreenDetected?'écran supplémentaire':null
+      const whatCategory: 'phone'|'book'|'screen'|null = obj?.phoneDetected?'phone':obj?.bookDetected?'book':obj?.otherScreenDetected?'screen':null
+      const what = whatCategory==='phone'?'téléphone':whatCategory==='book'?'livre/document':whatCategory==='screen'?'écran supplémentaire':null
       if (what) markSignal('objectDetected')
       if (what && what===consObjectRef.current.what) {
         consObjectRef.current.count++
@@ -2274,12 +2276,46 @@ export default function ExamPage() {
       }
       if (what && consObjectRef.current.count>=2 && now-(lastVisionAlertRef.current.object||0)>COOLDOWN) {
         lastVisionAlertRef.current.object=now
-        warning(`Objet suspect détecté : ${what}`)
-        setAlerts(a => [{type:'object',msg:`Objet suspect détecté : ${what}`,at:new Date().toLocaleTimeString('fr-FR')},...a])
-        const detail = obj!.matches.map(m=>`${m.label} (confiance ${(m.score*100).toFixed(0)}%)`).join(', ')
-        logActivity(curAId,'suspect_object_detected',`Objets détectés : ${detail}`).catch(()=>{})
-        logProctoring(curAId,'suspect_object_detected',`Objets détectés : ${detail}`).catch(()=>{})
-        captureSnapshot('suspect_object_detected',curAId,true,1,null,5_000)
+        // Corroboration YOLOv8n (31/08, retour utilisateur : "renforcer les
+        // modèles déjà présents") — voir lib/yolo-detector.ts. Un seul
+        // appel, sur l'image courante, exactement au moment où EfficientDet
+        // a déjà atteint son propre seuil de 2 vérifications consécutives —
+        // pas un second modèle tournant en continu, coût CPU inchangé en
+        // régime normal. N'annule JAMAIS l'alerte, change seulement son
+        // type/poids : deux modèles indépendants d'accord est une preuve
+        // nettement plus fiable qu'un seul (voir suspect_object_confirmed
+        // dans proctoring_risk_map côté backend).
+        let yoloStatus: 'agreed'|'disagreed'|'unavailable'|'no_equivalent_class' = 'unavailable'
+        let yoloMatches: YoloMatch[] = []
+        if (isYoloReady()) {
+          try {
+            const y = await detectSuspectObjects(vid)
+            yoloMatches = y?.matches ?? []
+            const yCategory: 'phone'|'book'|'screen'|null = y?.phoneDetected?'phone':y?.bookDetected?'book':y?.otherScreenDetected?'screen':null
+            // COCO (le jeu de classes connu de YOLO) n'a pas de classe
+            // "tablet" — si la seule contribution EfficientDet à la
+            // catégorie "écran" est une tablette, YOLO ne peut
+            // structurellement pas corroborer : ce n'est pas un désaccord
+            // réel, à ne pas confondre avec un cas où YOLO a bien regardé
+            // mais n'est pas d'accord (voir en-tête yolo-detector.ts).
+            const tabletOnly = whatCategory==='screen' && !obj!.matches.some(m=>m.label==='laptop'||m.label==='tv')
+            yoloStatus = tabletOnly ? 'no_equivalent_class' : (yCategory===whatCategory ? 'agreed' : 'disagreed')
+          } catch { yoloStatus = 'unavailable' }
+        }
+        const eventType = yoloStatus==='agreed' ? 'suspect_object_confirmed' : 'suspect_object_detected'
+        const label = yoloStatus==='agreed' ? `Objet suspect confirmé par 2 modèles : ${what}` : `Objet suspect détecté : ${what}`
+        warning(label)
+        setAlerts(a => [{type:'object',msg:label,at:new Date().toLocaleTimeString('fr-FR')},...a])
+        // event_data envoyé en JSON exploitable (corrige un bug préexistant
+        // : une simple phrase française y était envoyée avant, perdue
+        // silencieusement côté backend au parsing — voir get_attempt_review,
+        // routes/exams.py) — logActivity/logProctoring acceptent déjà une
+        // chaîne, aucun changement de signature nécessaire.
+        const payload = { category: whatCategory, efficientdet: obj!.matches, yolo: { status: yoloStatus, matches: yoloMatches } }
+        logActivity(curAId,eventType,JSON.stringify(payload)).catch(()=>{})
+        logProctoring(curAId,eventType,JSON.stringify(payload)).catch(()=>{})
+        const topScore = Math.max(0, ...obj!.matches.map(m=>m.score), ...yoloMatches.map(m=>m.score))
+        captureSnapshot(eventType,curAId,true,1,topScore,5_000)
       }
     }
 
@@ -2287,6 +2323,13 @@ export default function ExamPage() {
       // Généralement déjà chargé pendant le scan environnement (Phase 1) —
       // appel idempotent ici en filet de sécurité si ce n'est pas le cas.
       initProctoringVision().catch(()=>{})
+      // YOLOv8n (31/08) — chargement anticipé en parallèle, non bloquant.
+      // Seul le CHARGEMENT est anticipé ici ; l'INFÉRENCE elle-même ne
+      // s'exécute jamais en continu (voir visionEnrichedTick) — si le
+      // modèle ne charge jamais (réseau, navigateur non supporté), le
+      // proctoring continue avec EfficientDet seul, isYoloReady() garde
+      // chaque usage aval.
+      initYoloDetector().catch(()=>{})
       const fa=(window as any).faceapi
       if(!fa){setTimeout(loadAndStart,500);return}
       fa.nets.tinyFaceDetector.loadFromUri(FACEAPI_MODEL_URL)
