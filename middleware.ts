@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const PUBLIC_PATHS = new Set([
   '/login',
   '/forgot-password',
+  '/reset-password',
   '/conditions',
   '/',
   '/robots.txt',
