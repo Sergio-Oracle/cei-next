@@ -1784,13 +1784,34 @@ export default function ExamPage() {
   /* ── Helpers API ──────────────────────────────────────────────────────── */
   // Sous-ensemble des event_type diffusés en direct au surveillant (canal de
   // données LiveKit, déjà utilisé dans l'autre sens pour les messages
-  // enseignant→étudiant) — volontairement restreint aux incidents qui
-  // méritent une notification immédiate pendant l'examen (bruit/parole,
-  // changement de focus/onglet, plusieurs écrans), pas chaque micro-signal
-  // de vision (regard détourné, tête tournée...) qui inonderait l'écran de
-  // surveillance. Le journal complet (preuve) reste, lui, exhaustif — voir
-  // logActivity/logProctoring ci-dessous, non filtrés.
-  const LIVE_ALERT_EVENTS = new Set(['sustained_audio_detected','tab_switch','window_blur','fullscreen_exit','multi_screen_detected','identity_mismatch_sustained'])
+  // enseignant→étudiant) — le journal complet (preuve) reste, lui, exhaustif
+  // et non filtré, voir logActivity/logProctoring ci-dessous.
+  // Retour utilisateur (01/09) : élargi à tous les signaux de vision/audio
+  // qui indiquent un comportement potentiellement problématique, y compris
+  // les patterns composites. Chacun des event_types ajoutés est protégé par
+  // son propre cooldown côté source (30s, voir ALERT_COOLDOWN/COOLDOWN/
+  // PATTERN_COOLDOWN_MS plus bas dans ce fichier) — donc pas de risque de
+  // spam même en cas de comportement persistant.
+  // Volontairement toujours EXCLUS (l'affichage est un badge unique par
+  // étudiant, un nouveau message écrase l'ancien avant qu'il ait pu être lu
+  // — inclure un signal trop fréquent ferait disparaître les alertes
+  // importantes derrière du bruit) :
+  //  - mouse_left_window : aucun cooldown, se déclenche à chaque sortie de
+  //    fenêtre par la souris, déjà documenté dans le code comme "signal
+  //    faible, pas d'alerte visible" au moment de son émission.
+  //  - no_face_low_light, env_scan_*, face_reference_captured, pause_started,
+  //    network_*, low_bandwidth_mode(_ended), screen_share_stopped :
+  //    événements informatifs/de confort, jamais comptés comme fraude.
+  const LIVE_ALERT_EVENTS = new Set([
+    'sustained_audio_detected','tab_switch','window_blur','fullscreen_exit',
+    'multi_screen_detected','identity_mismatch_sustained',
+    'gaze_away','head_turned','talking_detected','whisper_detected',
+    'no_face_detected','multiple_faces','face_covered','face_hidden_object_detected',
+    'suspect_object_detected','suspect_object_confirmed',
+    'liveness_check_failed','devtools_attempt',
+    'pattern_gaze_talk_mouth','pattern_object_gaze_away','pattern_multi_face_audio',
+    'pattern_head_turned_talking','pattern_whisper_gaze','pattern_mouth_covered_audio',
+  ])
   function broadcastLiveAlert(eventType:string, message:string) {
     try {
       const room = lkRoomRef.current
