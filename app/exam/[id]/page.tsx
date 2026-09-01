@@ -2273,20 +2273,16 @@ export default function ExamPage() {
       const sig = analyzeFace(vid, now)
       if (sig && sig.faceCount === 1) {
         const baseline = gazeBaselineRef.current
-        // Compensation par la pose de tête (Phase X, point C — dépend du
-        // point B) : gazeX seul (position de l'iris dans l'œil) est faussé
-        // par un simple mouvement de tête, dans les deux sens — un léger
-        // tour de tête déplace l'iris dans son orbite même si le regard
-        // reste sur l'écran (faux positif), et inversement un vrai
-        // détournement du regard combiné à une rotation compensatoire de la
-        // tête peut passer inaperçu (faux négatif). On soustrait l'écart de
-        // lacet courant (vs baseline individuelle) avant seuillage — facteur
-        // 0.4 empirique, à ajuster après retour d'usage réel (même limite
-        // que la pose 3D elle-même : pas de vraie webcam pour calibrer ici).
-        const yawDelta = (baseline && sig.headYaw!==null) ? sig.headYaw-baseline.yaw : 0
-        const gazeXAdj = sig.gazeX!==null ? sig.gazeX - 0.4*yawDelta : null
+        // Correctif (01/09, retour utilisateur — regard/tête plus détectés
+        // du tout après le 27/08) : la compensation par pose 3D (Phase X,
+        // point C) et le calcul de headYaw dont elle dépendait (matrice de
+        // transformation MediaPipe, jamais vérifiés sur une vraie webcam —
+        // le commentaire d'origine le disait déjà explicitement) sont
+        // retirés ici. Restaure le calcul exact du 26/08 (dernière version
+        // confirmée fonctionner en usage réel) : gazeX/gazeY directs, sans
+        // compensation par le lacet de la tête.
         const gazeAway = baseline
-          ? (gazeXAdj!==null && Math.abs(gazeXAdj-baseline.x)>Math.max(0.28, baseline.spreadX*3))
+          ? (sig.gazeX!==null && Math.abs(sig.gazeX-baseline.x)>Math.max(0.28, baseline.spreadX*3))
             || (sig.gazeY!==null && Math.abs(sig.gazeY-baseline.y)>Math.max(0.24, baseline.spreadY*3))
           : (sig.gazeX!==null && (sig.gazeX<0.20||sig.gazeX>0.80)) || (sig.gazeY!==null && (sig.gazeY<0.15||sig.gazeY>0.85))
         if (gazeAway) markSignal('gazeAway')

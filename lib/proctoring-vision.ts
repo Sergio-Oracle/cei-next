@@ -64,13 +64,14 @@ async function loadVisionModels(wasmBase: string, faceModelUrl: string, objectMo
       numFaces: 3,
       minFaceDetectionConfidence: 0.5,
       outputFaceBlendshapes: true,
-      // Activé le 27/08 (Phase X, point B du plan) — MediaPipe calcule déjà
-      // en interne une vraie matrice de rotation 3D de la tête (lacet/
-      // tangage/roulis), gratuite en infrastructure (déjà chargée côté
-      // client) : plus précise que l'heuristique 2D (écart du nez vs centre
-      // du contour du visage) utilisée jusqu'ici. Voir analyzeFace ci-dessous
-      // pour l'extraction + le repli 2D si jamais absente sur un device.
-      outputFacialTransformationMatrixes: true,
+      // Correctif (01/09, retour utilisateur — regard/tête plus détectés du
+      // tout après le 27/08) : la matrice de rotation 3D activée ce jour-là
+      // (Phase X, point B) n'a jamais été vérifiée sur une vraie webcam (le
+      // commentaire d'origine le disait déjà : "le SIGNE de chaque angle...
+      // n'est vérifiable qu'avec une vraie caméra"). Redésactivée — retour à
+      // l'heuristique 2D simple (écart du nez vs centre du contour du
+      // visage) confirmée fonctionner en usage réel avant cette date.
+      outputFacialTransformationMatrixes: false,
     }),
     ObjectDetector.createFromOptions(vision, {
       baseOptions: { modelAssetPath: objectModelUrl, delegate: 'CPU' },
@@ -171,11 +172,6 @@ export interface FaceSignal {
   gazeY: number | null
   /** -1 = tête tournée à gauche, 0 = face caméra, 1 = à droite */
   headYaw: number | null
-  /** -1 = menton baissé, 0 = face caméra, 1 = menton levé — null si matrice
-   *  de transformation indisponible (repli 2D, voir analyzeFace) */
-  headPitch: number | null
-  /** -1/1 = tête penchée sur le côté (roulis) — même disponibilité que headPitch */
-  headRoll: number | null
   /** 0-1, "jawOpen" — plus haut = bouche plus ouverte (parole probable) */
   mouthOpen: number | null
   blinkLeft: number | null
@@ -189,7 +185,7 @@ export function analyzeFace(video: HTMLVideoElement, timestampMs: number): FaceS
   try { result = faceLandmarker.detectForVideo(video, timestampMs) } catch { return null }
   const faceCount = result.faceLandmarks?.length || 0
   if (faceCount === 0 || !result.faceLandmarks[0]) {
-    return { faceCount, gazeX: null, gazeY: null, headYaw: null, headPitch: null, headRoll: null, mouthOpen: null, blinkLeft: null, blinkRight: null }
+    return { faceCount, gazeX: null, gazeY: null, headYaw: null, mouthOpen: null, blinkLeft: null, blinkRight: null }
   }
 
   const landmarks = result.faceLandmarks[0] as Pt[]
@@ -206,40 +202,17 @@ export function analyzeFace(video: HTMLVideoElement, timestampMs: number): FaceS
   const gazeX = avg2(gazeXLeft, gazeXRight)
   const gazeY = avg2(gazeYLeft, gazeYRight)
 
-  // Pose 3D de la tête (lacet/tangage/roulis) — extraite de la matrice de
-  // rotation retournée par MediaPipe (activée le 27/08, Phase X point B)
-  // quand disponible, avec repli sur l'ancienne heuristique 2D (écart du
-  // nez vs centre du contour du visage) sinon. Extraction Euler XYZ
-  // standard depuis la sous-matrice de rotation 3x3 (indices calculés
-  // via m.rows/m.columns, pas supposés, au cas où le format changerait).
-  // IMPORTANT — même limite que l'ancienne heuristique documentée ci-avant :
-  // le SIGNE de chaque angle (quel sens = "tourné à droite") n'est
-  // vérifiable qu'avec une vraie webcam et une rotation connue, pas en
-  // conditions simulées (Playwright/vidéo de test). Seuils/comportement
-  // aval identiques (même échelle -1..1) tant que ce n'est pas confirmé.
-  let headYaw: number | null = null, headPitch: number | null = null, headRoll: number | null = null
-  const matrix = result.facialTransformationMatrixes?.[0]
-  if (matrix && matrix.data && matrix.data.length >= 16) {
-    const cols = matrix.columns || 4
-    const at = (r: number, c: number) => matrix.data[r * cols + c]
-    const r00 = at(0,0), r10 = at(1,0)
-    const r20 = at(2,0), r21 = at(2,1), r22 = at(2,2)
-    const rawYaw = Math.atan2(-r20, Math.sqrt(r21*r21 + r22*r22))
-    const rawPitch = Math.atan2(r21, r22)
-    const rawRoll = Math.atan2(r10, r00)
-    const norm = (rad: number) => Math.max(-1, Math.min(1, rad / (Math.PI/2)))
-    headYaw = norm(rawYaw)
-    headPitch = norm(rawPitch)
-    headRoll = norm(rawRoll)
-  } else {
-    const nose = landmarks[1]
-    const ovalBox = bbox(landmarks, ovalIdx)
-    const ovalCenterX = (ovalBox.minX + ovalBox.maxX) / 2
-    const ovalHalfWidth = (ovalBox.maxX - ovalBox.minX) / 2
-    headYaw = nose && ovalHalfWidth > 0
-      ? Math.max(-1, Math.min(1, ((nose.x - ovalCenterX) / ovalHalfWidth) * -1))
-      : null
-  }
+  // Lacet de la tête : écart du nez (repère 1, le plus stable de la
+  // topologie MediaPipe Face Mesh) par rapport au centre du contour du
+  // visage — géométrie simple, sans dépendre de la convention de la
+  // matrice de transformation faciale (non vérifiable sans caméra réelle).
+  const nose = landmarks[1]
+  const ovalBox = bbox(landmarks, ovalIdx)
+  const ovalCenterX = (ovalBox.minX + ovalBox.maxX) / 2
+  const ovalHalfWidth = (ovalBox.maxX - ovalBox.minX) / 2
+  const headYaw = nose && ovalHalfWidth > 0
+    ? Math.max(-1, Math.min(1, ((nose.x - ovalCenterX) / ovalHalfWidth) * -1))
+    : null
 
   let mouthOpen: number | null = null, blinkLeft: number | null = null, blinkRight: number | null = null
   const blendshapes = result.faceBlendshapes?.[0]?.categories
@@ -251,7 +224,7 @@ export function analyzeFace(video: HTMLVideoElement, timestampMs: number): FaceS
     }
   }
 
-  return { faceCount, gazeX, gazeY, headYaw, headPitch, headRoll, mouthOpen, blinkLeft, blinkRight }
+  return { faceCount, gazeX, gazeY, headYaw, mouthOpen, blinkLeft, blinkRight }
 }
 
 export interface ObjectSignal {
