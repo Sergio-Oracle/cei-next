@@ -2512,14 +2512,15 @@ export default function ExamPage() {
         }
 
         // Anti-usurpation — voir prevBlendshapesRef ci-dessus pour le
-        // principe. Fenêtre volontairement longue (~30 échantillons, ~2min30
-        // à raison d'un tick/5s) : le rythme de clignement documenté peut
-        // descendre à 1/8-10s en pleine concentration (voir runLivenessCheck
-        // plus haut) — une fenêtre courte confondrait un étudiant réel très
-        // concentré avec une photo statique. Double corroboration exigée
-        // (mouvement ET clignement absents sur TOUTE la fenêtre) pour
-        // limiter le risque de faux positif d'un signal jamais calibré sur
-        // une vraie webcam.
+        // principe. Fenêtre resserrée à 8 échantillons (~40s à raison d'un
+        // tick/5s) — retour utilisateur (01/09) : 2-3min jugé trop lent.
+        // Marge conservée (4x) au-dessus du rythme de clignement le plus
+        // lent documenté (1/8-10s en pleine concentration, voir
+        // runLivenessCheck plus haut) — vérifié par simulation avant ce
+        // changement : ce cas limite précis ne déclenche toujours pas.
+        // Double corroboration exigée (mouvement ET clignement absents sur
+        // TOUTE la fenêtre) pour limiter le risque de faux positif d'un
+        // signal jamais calibré sur une vraie webcam.
         if (sig.blendshapes) {
           const blink = Math.max(sig.blinkLeft ?? 0, sig.blinkRight ?? 0)
           const prev = prevBlendshapesRef.current
@@ -2533,11 +2534,12 @@ export default function ExamPage() {
             // Xms" produisait un faux positif sur un étudiant réel très
             // concentré si le prochain clignement tombait juste après la
             // limite de la fenêtre de mouvement).
+            const LIVENESS_WINDOW = 8
             const winE = livenessMotionWindowRef.current
             const winB = livenessBlinkWindowRef.current
-            winE.push(energy); if (winE.length > 30) winE.shift()
-            winB.push(blink > 0.6 ? 1 : 0); if (winB.length > 30) winB.shift()
-            if (winE.length === 30) {
+            winE.push(energy); if (winE.length > LIVENESS_WINDOW) winE.shift()
+            winB.push(blink > 0.6 ? 1 : 0); if (winB.length > LIVENESS_WINDOW) winB.shift()
+            if (winE.length === LIVENESS_WINDOW) {
               const avgEnergy = winE.reduce((s,v)=>s+v,0) / winE.length
               const blinksInWindow = winB.reduce((s,v)=>s+v,0)
               const LIVENESS_MOTION_FLOOR = 0.03
