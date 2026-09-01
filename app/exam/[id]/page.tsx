@@ -1796,27 +1796,41 @@ export default function ExamPage() {
   // étudiant, un nouveau message écrase l'ancien avant qu'il ait pu être lu
   // — inclure un signal trop fréquent ferait disparaître les alertes
   // importantes derrière du bruit) :
-  //  - mouse_left_window : aucun cooldown, se déclenche à chaque sortie de
-  //    fenêtre par la souris, déjà documenté dans le code comme "signal
-  //    faible, pas d'alerte visible" au moment de son émission.
   //  - no_face_low_light, env_scan_*, face_reference_captured, pause_started,
   //    network_*, low_bandwidth_mode(_ended), screen_share_stopped :
   //    événements informatifs/de confort, jamais comptés comme fraude.
+  // mouse_left_window a été ajouté (01/09, retour utilisateur) malgré
+  // l'absence de cooldown à la source — voir BROADCAST_MIN_INTERVAL_MS
+  // ci-dessous, qui limite spécifiquement sa fréquence de DIFFUSION en
+  // direct sans jamais toucher au journal (logActivity/logProctoring
+  // restent, eux, appelés à chaque occurrence réelle — preuve exhaustive).
   const LIVE_ALERT_EVENTS = new Set([
     'sustained_audio_detected','tab_switch','window_blur','fullscreen_exit',
     'multi_screen_detected','identity_mismatch_sustained',
     'gaze_away','head_turned','talking_detected','whisper_detected',
     'no_face_detected','multiple_faces','face_covered','face_hidden_object_detected',
     'suspect_object_detected','suspect_object_confirmed',
-    'liveness_check_failed','devtools_attempt',
+    'liveness_check_failed','devtools_attempt','mouse_left_window',
     'pattern_gaze_talk_mouth','pattern_object_gaze_away','pattern_multi_face_audio',
     'pattern_head_turned_talking','pattern_whisper_gaze','pattern_mouth_covered_audio',
   ])
+  // Filet de sécurité générique (pas seulement pour mouse_left_window) : le
+  // badge de surveillance est un slot UNIQUE par étudiant, donc un signal
+  // répété inonderait l'écran même si chaque occurrence individuelle est
+  // légitime. Les event_types déjà cadencés par leur propre cooldown source
+  // (30s, voir ALERT_COOLDOWN/COOLDOWN/PATTERN_COOLDOWN_MS) ne sont jamais
+  // freinés par ceci en pratique ; seuls les signaux sans cooldown source
+  // (mouse_left_window) sont réellement concernés.
+  const BROADCAST_MIN_INTERVAL_MS = 20_000
+  const lastBroadcastRef = useRef<Record<string, number>>({})
   function broadcastLiveAlert(eventType:string, message:string) {
     try {
       const room = lkRoomRef.current
       if (!room || !room.localParticipant) return
-      const payload = JSON.stringify({ kind:'proctor_live_alert', event_type:eventType, message, ts:Date.now() })
+      const now = Date.now()
+      if (now - (lastBroadcastRef.current[eventType] || 0) < BROADCAST_MIN_INTERVAL_MS) return
+      lastBroadcastRef.current[eventType] = now
+      const payload = JSON.stringify({ kind:'proctor_live_alert', event_type:eventType, message, ts:now })
       room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable:true })
     } catch {}
   }
