@@ -2485,10 +2485,13 @@ export default function ExamPage() {
       checkBehaviorPatterns(curAId, now)
 
       // Détection d'objets : à chaque tick (~5s). Réduit de "un tick sur deux"
-      // (22/08, retour utilisateur) — un téléphone tenu brièvement pouvait
-      // n'être vu qu'une fois avant de disparaître du cadre, jamais assez
-      // pour atteindre 2 vérifications consécutives ; l'exigence de 2
-      // détections consécutives ci-dessous reste le garde-fou anti-bruit.
+      // (22/08, retour utilisateur) puis de "2 vérifications consécutives" à
+      // 1 seule (01/09, même retour répété : un téléphone tenu brièvement le
+      // temps d'une photo, souvent bas dans le cadre, ne restait jamais
+      // visible ~10s d'affilée). Le garde-fou anti-bruit devient le seuil de
+      // confiance du modèle lui-même (minScore=0.5, déjà strict) + le
+      // cooldown de 30s ci-dessous, plutôt qu'une exigence de durée qui
+      // ratait systématiquement les gestes brefs.
       const obj = analyzeObjects(vid, now)
       const whatCategory: 'phone'|'book'|'screen'|null = obj?.phoneDetected?'phone':obj?.bookDetected?'book':obj?.otherScreenDetected?'screen':null
       const what = whatCategory==='phone'?'téléphone':whatCategory==='book'?'livre/document':whatCategory==='screen'?'écran supplémentaire':null
@@ -2498,7 +2501,7 @@ export default function ExamPage() {
       } else {
         consObjectRef.current = { what, count: what ? 1 : 0 }
       }
-      if (what && consObjectRef.current.count>=2 && now-(lastVisionAlertRef.current.object||0)>COOLDOWN) {
+      if (what && consObjectRef.current.count>=1 && now-(lastVisionAlertRef.current.object||0)>COOLDOWN) {
         lastVisionAlertRef.current.object=now
         // Corroboration YOLO26n (31/08, retour utilisateur : "renforcer les
         // modèles déjà présents") — voir lib/yolo-detector.ts. Un seul
@@ -2578,7 +2581,11 @@ export default function ExamPage() {
       } else {
         consYoloIndependentRef.current = { what: yWhat, count: yWhat ? 1 : 0 }
       }
-      if (yWhat && consYoloIndependentRef.current.count>=2 && now-(lastVisionAlertRef.current.object||0)>COOLDOWN) {
+      // Seuil abaissé à 1 (01/09), même raison que côté EfficientDet
+      // ci-dessus — cette voie tourne déjà plus lentement (15s, pas 5s),
+      // exiger 2 consécutifs revenait à demander ~30s de visibilité
+      // continue pour un objet tenu brièvement.
+      if (yWhat && consYoloIndependentRef.current.count>=1 && now-(lastVisionAlertRef.current.object||0)>COOLDOWN) {
         lastVisionAlertRef.current.object = now
         const label = `Objet suspect détecté : ${yWhat}`
         warning(label)
