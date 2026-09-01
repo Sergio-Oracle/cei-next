@@ -119,6 +119,8 @@ const INCIDENT_LABELS: Record<string, string> = {
   env_scan_completed:      'Scan environnement effectué',
   env_scan_person_detected:'Personne détectée dans la pièce',
   env_scan_unavailable:    'Scan environnement indisponible',
+  face_detection_unavailable: 'Détection faciale indisponible (problème réseau ou navigateur)',
+  live_monitoring_unavailable: 'Canal de surveillance en direct indisponible (problème réseau)',
   gaze_away:               "Regard détourné de l'écran",
   head_turned:             'Tête tournée',
   talking_detected:        'Parole détectée',

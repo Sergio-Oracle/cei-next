@@ -345,7 +345,7 @@ export default function ExamPage() {
   const [camOn,        setCamOn]        = useState(false)
   const [micOn,        setMicOn]        = useState(false)
   const [screenOn,     setScreenOn]     = useState(false)
-  const [faceStatus,   setFaceStatus]   = useState<'init'|'ok'|'warn'|'bad'>('init')
+  const [faceStatus,   setFaceStatus]   = useState<'init'|'ok'|'warn'|'bad'|'unavailable'>('init')
   const [faceIssue,    setFaceIssue]    = useState<'none'|'no_face'|'multiple'|'mismatch'>('none')
   const [warnText,     setWarnText]     = useState('')
   const [showWarnModal,setShowWarnModal]= useState(false)
@@ -1729,7 +1729,7 @@ export default function ExamPage() {
     }catch(e){console.warn('[LiveKit] échec republication adaptative caméra:',e)}
   }
 
-  async function connectLiveKit(aId:number) {
+  async function connectLiveKit(aId:number, attempt=1) {
     try {
       const tok=await api.get<{ws_url:string;token:string}>(`/api/exam_attempts/${aId}/livekit_token`)
       if(!tok.ws_url||!tok.token) return
@@ -1737,7 +1737,17 @@ export default function ExamPage() {
       const room=new LK.Room({adaptiveStream:true,dynacast:true}); lkRoomRef.current=room
       let reconnects=0
       room.on(LK.RoomEvent.Disconnected,()=>{
-        if(sessionEndedRef.current||reconnects>=5) return
+        if(sessionEndedRef.current) return
+        if(reconnects>=5){
+          // Correctif (01/09, audit complet) — abandon jusqu'ici silencieux
+          // après 5 tentatives ; trace désormais consignée (diagnostic
+          // seulement, jamais de pénalité étudiant).
+          console.warn('[live-monitoring] abandon après 5 tentatives de reconnexion')
+          const curAId = attemptRef.current || aId
+          logActivity(curAId,'live_monitoring_unavailable','Reconnexion au canal de surveillance en direct abandonnée après 5 tentatives').catch(()=>{})
+          logProctoring(curAId,'live_monitoring_unavailable','Reconnexion au canal de surveillance en direct abandonnée après 5 tentatives').catch(()=>{})
+          return
+        }
         const delay=Math.min(2000*Math.pow(1.5,reconnects),30000); reconnects++
         setTimeout(async()=>{
           try{
@@ -1802,7 +1812,27 @@ export default function ExamPage() {
       if(videoRef.current&&camStream.current&&videoRef.current.srcObject!==camStream.current)
         videoRef.current.srcObject=camStream.current
       await publishLocalTracks(room,LK)
-    } catch {}
+    } catch (err) {
+      // Correctif (01/09, audit complet) — un échec de la CONNEXION
+      // INITIALE (avant tout `room.connect()` réussi) restait jusqu'ici
+      // totalement silencieux : aucune vidéo/canal d'alerte en direct pour
+      // tout le reste de l'examen, sans trace nulle part, sans retry — à la
+      // différence d'une coupure APRÈS coup, déjà gérée par le repli
+      // 'Disconnected' ci-dessus. Retry avec backoff comme ce repli, puis
+      // trace consignée (jamais de pénalité, purement diagnostic) si les
+      // tentatives échouent toutes — le reste de l'examen (réponses,
+      // détection locale) continue sans dépendre de ce canal.
+      if (sessionEndedRef.current) return
+      if (attempt < 4) {
+        const delay = Math.min(2000 * Math.pow(1.5, attempt-1), 15000)
+        setTimeout(() => connectLiveKit(aId, attempt+1), delay)
+      } else {
+        console.warn('[live-monitoring] échec de connexion après plusieurs tentatives', err)
+        const curAId = attemptRef.current || aId
+        logActivity(curAId,'live_monitoring_unavailable','Connexion au canal de surveillance en direct impossible après plusieurs tentatives').catch(()=>{})
+        logProctoring(curAId,'live_monitoring_unavailable','Connexion au canal de surveillance en direct impossible après plusieurs tentatives').catch(()=>{})
+      }
+    }
   }
 
   /* ── Helpers API ──────────────────────────────────────────────────────── */
@@ -1837,6 +1867,12 @@ export default function ExamPage() {
     'liveness_check_failed','devtools_attempt','mouse_left_window',
     'pattern_gaze_talk_mouth','pattern_object_gaze_away','pattern_multi_face_audio',
     'pattern_head_turned_talking','pattern_whisper_gaze','pattern_mouth_covered_audio',
+    // Audit complet (01/09) — signal rare (un seul par session, au pire) et
+    // important : la détection faciale (absence/multi-visages/identité) est
+    // hors service pour tout le reste de l'examen. Le surveillant doit le
+    // savoir immédiatement, pas seulement le découvrir a posteriori dans le
+    // journal.
+    'face_detection_unavailable',
   ])
   // Filet de sécurité générique (pas seulement pour mouse_left_window) : le
   // badge de surveillance est un slot UNIQUE par étudiant, donc un signal
@@ -2127,6 +2163,14 @@ export default function ExamPage() {
 
   function initFaceDetection(aId:number) {
     const FACEAPI_MODEL_URL='/models/faceapi'
+    // Repli CDN (retour utilisateur 01/09, audit complet suite à un
+    // signalement de détection multi-visages non fiable) — même principe
+    // que initProctoringVision (MediaPipe) : local d'abord, CDN en secours
+    // si le réseau/l'hébergement local échoue, jamais un échec total et
+    // silencieux. Package correspondant à /vendor/face-api.js (voir plus
+    // bas), vérifié joignable (poids réellement servis sous /model, pas
+    // /models — chemin propre à ce miroir jsDelivr).
+    const FACEAPI_MODEL_URL_CDN='https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model'
     const ALERT_COOLDOWN=30_000
     const CONSEC_ALERT=3
     // Détection de personne(s) supplémentaire(s) : seuil plus court que le
@@ -2584,16 +2628,46 @@ export default function ExamPage() {
       }, 15000)
       const fa=(window as any).faceapi
       if(!fa){setTimeout(loadAndStart,500);return}
-      fa.nets.tinyFaceDetector.loadFromUri(FACEAPI_MODEL_URL)
-        .then(()=>fa.nets.faceLandmark68Net.loadFromUri(FACEAPI_MODEL_URL))
-        .then(()=>fa.nets.faceRecognitionNet.loadFromUri(FACEAPI_MODEL_URL))
+      async function loadModels(baseUrl:string) {
+        await fa.nets.tinyFaceDetector.loadFromUri(baseUrl)
+        await fa.nets.faceLandmark68Net.loadFromUri(baseUrl)
+        await fa.nets.faceRecognitionNet.loadFromUri(baseUrl)
+      }
+      // Correctif (01/09, audit complet suite à un signalement de détection
+      // multi-visages non fiable) — jusqu'ici, un échec RÉSEAU du
+      // chargement des POIDS des modèles (pas du script face-api.js
+      // lui-même, qui avait déjà un repli CDN) tombait dans un catch{}
+      // affichant quand même 'ok' (vert, "Visage OK") : silencieux,
+      // trompeur, et surtout désactivait pour TOUTE la durée de l'examen
+      // absence/multi-visages/identité — sans qu'aucune trace n'en
+      // subsiste nulle part, pas même dans la console. Repli CDN ajouté
+      // (même principe que MediaPipe, voir initProctoringVision), échec
+      // désormais consigné (console + événement informatif horodaté côté
+      // serveur) et affiché honnêtement à l'étudiant plutôt que masqué.
+      loadModels(FACEAPI_MODEL_URL)
         .then(()=>{
           setFaceStatus('warn')
           setTimeout(captureReference,3000)
           if(faceIntervalRef.current) clearInterval(faceIntervalRef.current)
           faceIntervalRef.current=setInterval(faceDetectionTick,5000)
         })
-        .catch(()=>{ setFaceStatus('ok') }) // dégradé: pas de modèles → indicateur OK simple
+        .catch((localErr:any)=>{
+          console.warn('[face-detection] échec chargement local des modèles, repli CDN', localErr)
+          loadModels(FACEAPI_MODEL_URL_CDN)
+            .then(()=>{
+              setFaceStatus('warn')
+              setTimeout(captureReference,3000)
+              if(faceIntervalRef.current) clearInterval(faceIntervalRef.current)
+              faceIntervalRef.current=setInterval(faceDetectionTick,5000)
+            })
+            .catch((cdnErr:any)=>{
+              console.warn('[face-detection] échec chargement CDN également — détection faciale indisponible pour cette session', cdnErr)
+              setFaceStatus('unavailable')
+              const curAId=attemptRef.current||aId
+              logActivity(curAId,'face_detection_unavailable','Échec du chargement des modèles (local + CDN)').catch(()=>{})
+              logProctoring(curAId,'face_detection_unavailable','Échec du chargement des modèles (local + CDN)').catch(()=>{})
+            })
+        })
     }
 
     // Charger face-api.js si pas encore chargé — hébergé localement en
@@ -2608,7 +2682,14 @@ export default function ExamPage() {
       s.onerror=()=>{
         const cdn=document.createElement('script')
         cdn.src='https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js'
-        cdn.crossOrigin='anonymous'; cdn.onload=loadAndStart; cdn.onerror=()=>setFaceStatus('ok')
+        cdn.crossOrigin='anonymous'; cdn.onload=loadAndStart
+        cdn.onerror=(e:any)=>{
+          console.warn('[face-detection] échec chargement du script (local + CDN) — détection faciale indisponible', e)
+          setFaceStatus('unavailable')
+          const curAId=attemptRef.current||aId
+          logActivity(curAId,'face_detection_unavailable','Échec du chargement du script face-api (local + CDN)').catch(()=>{})
+          logProctoring(curAId,'face_detection_unavailable','Échec du chargement du script face-api (local + CDN)').catch(()=>{})
+        }
         document.head.appendChild(cdn)
       }
       document.head.appendChild(s)
@@ -3252,6 +3333,7 @@ export default function ExamPage() {
               {!identityUnderReview&&faceStatus==='warn'&&faceIssue!=='multiple'&&<><i className="fas fa-eye-slash"/>Repositionnez…</>}
               {!identityUnderReview&&faceStatus==='bad'&&faceIssue==='multiple'&&<><i className="fas fa-user-group"/>Plusieurs visages</>}
               {!identityUnderReview&&faceStatus==='bad'&&faceIssue!=='multiple'&&<><i className="fas fa-times"/>Visage absent</>}
+              {!identityUnderReview&&faceStatus==='unavailable'&&<><i className="fas fa-triangle-exclamation"/>Vérification indisponible</>}
             </div>
           </div>
           {identityUnderReview && (
