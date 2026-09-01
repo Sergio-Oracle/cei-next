@@ -2196,11 +2196,34 @@ export default function ExamPage() {
       if(sessionEndedRef.current){if(faceIntervalRef.current)clearInterval(faceIntervalRef.current);return}
       if(breakActiveRef.current) return
       const curAId=attemptRef.current||aId; const now=Date.now()
-      const opts=new fa.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.45})
+      // Seuil abaissé 0.45→0.2 (retour utilisateur 01/09 : un ami présent
+      // dans le cadre n'était pas détecté). Vérifié sur une vraie photo à 2
+      // visages (l'un net et de face, l'autre tourné/flou, cas réaliste
+      // d'une deuxième personne qui se penche brièvement dans le cadre) :
+      // au seuil 0.45, TinyFaceDetector ne détectait QUE le premier visage
+      // (score 0.76) et ratait complètement le second (score 0.22, sous le
+      // seuil) — testé précisément, 0.25 était ENCORE trop haut (0.22<0.25),
+      // seul 0.2 récupère les deux, sans changer le coût de calcul
+      // (inputSize inchangé). Le filtre à 2 vérifications consécutives
+      // (CONSEC_ALERT_MULTI, 10s) reste la protection contre un faux
+      // positif isolé (reflet, affiche en arrière-plan).
+      const opts=new fa.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.2})
       try{
-        const dets=refDescRef.current
-          ?await fa.detectAllFaces(vid,opts).withFaceLandmarks().withFaceDescriptors()
-          :await fa.detectAllFaces(vid,opts)
+        // Retour utilisateur (01/09) : plusieurs visages présents mais jamais
+        // signalés. Cause trouvée — dès qu'une référence existait, CE tick
+        // calculait aussi les descripteurs de reconnaissance (128 valeurs,
+        // coûteux) pour CHAQUE visage détecté, y compris quand il y en avait
+        // plusieurs — alors que seule la comparaison d'identité (cas à UN
+        // seul visage) en a besoin. Un échec de ce calcul plus lourd sur un
+        // second visage tombait dans le catch{} global ci-dessous et
+        // effaçait silencieusement le comptage lui-même, qui n'en avait
+        // pourtant pas besoin. Le comptage (présence/absence/plusieurs
+        // visages — signal prioritaire) utilise désormais TOUJOURS le
+        // pipeline léger ; les descripteurs ne sont calculés qu'ensuite,
+        // séparément, et seulement dans le cas à un seul visage (voir plus
+        // bas) — leur échec éventuel n'efface plus jamais ce comptage déjà
+        // acquis.
+        const dets = await fa.detectAllFaces(vid,opts)
         const count=dets.length
         if(count===0){
           consNoFaceRef.current++; consMismatchRef.current=0; consMultiRef.current=0; consGood=0
@@ -2275,14 +2298,27 @@ export default function ExamPage() {
             // surveillant n'a pas tranché : plus de recapture silencieuse,
             // plus de spam de logs, plus de dérive EMA de la référence.
             setFaceStatus('bad'); setFaceIssue('mismatch')
-          } else if(refDescRef.current&&(dets[0] as any).descriptor){
-            const dist=fa.euclideanDistance((dets[0] as any).descriptor,refDescRef.current)
-            if(dist<=RECOG_THRESHOLD){
+          } else if(refDescRef.current){
+            // Calcul du descripteur ISOLÉ dans son propre try/catch — un
+            // échec ici (frame de mauvaise qualité, timing WebGL...) ne doit
+            // plus jamais remonter jusqu'au catch{} global qui, avant ce
+            // correctif, effaçait aussi le comptage de visages déjà établi
+            // ci-dessus. Au pire, ce cycle-ci ne vérifie pas l'identité —
+            // sans conséquence, le prochain tick (5s) réessaiera.
+            let dist: number | null = null
+            let singleDescriptor: Float32Array | null = null
+            try {
+              const single = await fa.detectSingleFace(vid,opts).withFaceLandmarks().withFaceDescriptor()
+              if (single) { singleDescriptor = single.descriptor; dist = fa.euclideanDistance(single.descriptor, refDescRef.current) }
+            } catch {}
+            if(dist===null){
+              // Descripteur indisponible ce cycle — ne pas pénaliser.
+            } else if(dist<=RECOG_THRESHOLD){
               consMismatchRef.current=0; consGood++
               setFaceStatus('ok'); setFaceIssue('none')
-              if(consGood%10===0&&dist<0.4){
+              if(consGood%10===0&&dist<0.4&&singleDescriptor){
                 const alpha=0.1; const upd=new Float32Array(refDescRef.current.length)
-                for(let i=0;i<upd.length;i++) upd[i]=(1-alpha)*refDescRef.current[i]+alpha*(dets[0] as any).descriptor[i]
+                for(let i=0;i<upd.length;i++) upd[i]=(1-alpha)*refDescRef.current[i]+alpha*singleDescriptor[i]
                 refDescRef.current=upd
               }
             } else {
