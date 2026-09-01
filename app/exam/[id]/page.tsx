@@ -1280,6 +1280,24 @@ export default function ExamPage() {
         logActivity(aId,'env_scan_person_detected',`${maxPeople} personnes détectées pendant le scan${modelsNote}`).catch(()=>{})
         logProctoring(aId,'env_scan_person_detected',`${maxPeople} personnes détectées${modelsNote}`).catch(()=>{})
       }
+    } else if (maxPeople === 0) {
+      // Correctif (01/09, retour utilisateur — capture d'écran à l'appui,
+      // pièce très sombre/à contre-jour) : "0 personne détectée" était
+      // jusqu'ici traité EXACTEMENT comme "1 personne, tout va bien" (même
+      // branche 'ok', "Vérifié" affiché en vert) — alors que 0 signifie que
+      // le système n'a même pas réussi à voir l'ÉTUDIANT LUI-MÊME pendant
+      // les 8s du scan, ce qui n'arrive normalement jamais avec une caméra
+      // correctement pointée en conditions normales. C'est le même type de
+      // faux "tout va bien" que la détection faciale et le canal de
+      // surveillance en direct plus tôt aujourd'hui — corrigé de la même
+      // façon : statut honnête plutôt qu'un succès non mérité, sans
+      // bloquer l'étudiant pour une limitation technique (éclairage,
+      // caméra) hors de son contrôle.
+      setEnvScanStatus('degraded')
+      if (aId) {
+        logActivity(aId,'env_scan_unavailable',`Scan environnement peu fiable — aucune personne détectée pendant les 8s (éclairage/caméra probable)${modelsNote}`).catch(()=>{})
+        logProctoring(aId,'env_scan_unavailable',`Scan environnement peu fiable — aucune personne détectée pendant les 8s${modelsNote}`).catch(()=>{})
+      }
     } else {
       setEnvScanStatus('ok')
       if (aId) logActivity(aId,'env_scan_completed',`Scan environnement validé — aucune personne supplémentaire détectée${modelsNote}`).catch(()=>{})
@@ -3104,7 +3122,7 @@ export default function ExamPage() {
             <div style={{background:'rgba(245,158,11,.12)',border:'1px solid rgba(245,158,11,.3)',borderRadius:10,padding:'14px 16px',marginBottom:16}}>
               <p style={{fontSize:15.5,color:'#fcd34d',margin:0,lineHeight:1.5}}>
                 <i className="fas fa-info-circle" style={{marginRight:6}}/>
-                Vérification automatique indisponible sur cet appareil/navigateur — vous pouvez continuer, le surveillant en a été informé.
+                Vérification automatique incomplète (éclairage, caméra ou navigateur) — vous pouvez continuer, le surveillant en a été informé.
               </p>
             </div>
           )}
