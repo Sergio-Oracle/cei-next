@@ -155,6 +155,27 @@ const EVENT_LABEL_MAP: Record<string, string> = {
   sustained_audio_detected:'Bruit prolongé détecté',
   multi_screen_detected:   'Plusieurs écrans détectés',
   env_scan_object_detected:'Objet repéré pendant le scan environnement',
+  // Correctif (01/09, retour utilisateur — mots anglais bruts affichés) :
+  // event_types réels envoyés par exam/[id]/page.tsx mais jusqu'ici absents
+  // de cette table — le repli `et.replace(/_/g,' ')` affichait alors la clé
+  // technique brute (ex. "mouse left window", "pattern head turned talking")
+  // au lieu d'un libellé français.
+  mouse_left_window:         'Curseur sorti de la fenêtre',
+  low_bandwidth_mode:        'Mode basse bande passante activé',
+  low_bandwidth_mode_ended:  'Connexion redevenue normale',
+  low_camera_quality:        'Qualité caméra faible',
+  network_disconnected:      'Connexion réseau perdue',
+  network_reconnected:       'Connexion réseau rétablie',
+  screen_share_stopped:      "Partage d'écran arrêté",
+  whisper_detected:          'Chuchotement détecté',
+  pause_started:             'Pause étudiant démarrée',
+  suspect_object_confirmed:  'Objet suspect confirmé par 2 modèles',
+  pattern_gaze_talk_mouth:     'Regard détourné + parole + bouche en mouvement',
+  pattern_object_gaze_away:    'Objet suspect + regard détourné',
+  pattern_multi_face_audio:    'Plusieurs visages + parole détectés',
+  pattern_head_turned_talking: 'Tête tournée + prise de parole',
+  pattern_whisper_gaze:        'Chuchotement + regard détourné',
+  pattern_mouth_covered_audio: 'Bouche couverte + parole détectée',
 }
 
 // Icône + couleur par event_type — source unique partagée entre le panneau
@@ -830,7 +851,7 @@ export default function ProctorMonitorPage() {
 
   async function toggleCam() {
     const room = roomRef.current
-    if (!room) { toastErr('Connexion LiveKit non établie — rechargez la page'); return }
+    if (!room) { toastErr('Connexion de surveillance non établie — rechargez la page'); return }
     const LK = window.LivekitClient
     try {
       if (!camOn) {
@@ -853,7 +874,7 @@ export default function ProctorMonitorPage() {
 
   async function toggleMic() {
     const room = roomRef.current
-    if (!room) { toastErr('Connexion LiveKit non établie — rechargez la page'); return }
+    if (!room) { toastErr('Connexion de surveillance non établie — rechargez la page'); return }
     const LK = window.LivekitClient
     try {
       if (!micOn) {
@@ -1159,7 +1180,7 @@ export default function ProctorMonitorPage() {
       })
       const tok = await api.get<{ ws_url: string; token: string }>(`/api/exam_attempts/${attemptId}/private_token`)
       const LK  = window.LivekitClient
-      if (!LK) throw new Error('LiveKit non chargé')
+      if (!LK) throw new Error('Module de surveillance non chargé')
       const pr = new LK.Room({ adaptiveStream: true, dynacast: true })
       privateRoomRef.current = pr
       pr.on(LK.RoomEvent.TrackSubscribed, (track: any) => {
@@ -2165,7 +2186,7 @@ export default function ProctorMonitorPage() {
                           {videoRecs?.error || 'Aucun enregistrement vidéo pour cet examen'}
                         </div>
                         <div style={{ fontSize:14.5, lineHeight: 1.8, maxWidth: 420, margin: '0 auto', color: 'rgba(255,255,255,.45)' }}>
-                          L'enregistrement ne fonctionne que <strong style={{ color: 'rgba(255,255,255,.7)' }}>pendant que l'examen est en cours</strong> et que les étudiants sont connectés à la salle LiveKit.
+                          L'enregistrement ne fonctionne que <strong style={{ color: 'rgba(255,255,255,.7)' }}>pendant que l'examen est en cours</strong> et que les étudiants sont connectés à la salle de surveillance.
                         </div>
                         <div style={{ marginTop: 20, background: 'rgba(245,158,11,.08)', border: '1px solid rgba(245,158,11,.25)', borderRadius: 10, padding: '14px 16px', textAlign: 'left', maxWidth: 420, margin: '20px auto 0' }}>
                           <div style={{ fontSize:13, fontWeight: 700, color: '#f59e0b', marginBottom: 10, letterSpacing: '.5px' }}>

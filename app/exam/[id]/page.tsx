@@ -1270,7 +1270,7 @@ export default function ExamPage() {
     // visible par le surveillant/professeur dans l'historique de la
     // tentative, sans complexifier ce log en JSON structuré (ce scan reste
     // purement informatif, contrairement à la détection en cours d'examen).
-    const modelsNote = yoloUsed ? ' (vérification renforcée par EfficientDet + YOLO26n)' : ''
+    const modelsNote = yoloUsed ? ' (vérification renforcée par 2 modèles indépendants)' : ''
     if (objectsDetected.length && aId) {
       const detail = objectsDetected.map(w=>`${w} (confiance ${(objectBestScore[w]*100).toFixed(0)}%)`).join(', ')
       logActivity(aId,'env_scan_object_detected',`Objets détectés pendant le scan : ${detail}${modelsNote}`).catch(()=>{})
@@ -1910,7 +1910,7 @@ export default function ExamPage() {
     try {
       const tok = await api.get<{ws_url:string;token:string}>(`/api/exam_attempts/${aId}/private_token`)
       const LK = (window as any).LivekitClient
-      if(!LK) { toastErr('LiveKit non disponible'); return }
+      if(!LK) { toastErr('Module d\'appel non disponible'); return }
       const pr = new LK.Room({ adaptiveStream:true, dynacast:true })
       privateRoomRef.current = pr
 

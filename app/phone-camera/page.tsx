@@ -22,7 +22,7 @@ function loadLiveKit(): Promise<any> {
     s.src = 'https://cdn.jsdelivr.net/npm/livekit-client@2.5.7/dist/livekit-client.umd.min.js'
     s.crossOrigin = 'anonymous'
     s.onload = () => resolve(window.LivekitClient)
-    s.onerror = () => reject(new Error('LiveKit indisponible'))
+    s.onerror = () => reject(new Error('Module de connexion indisponible'))
     document.head.appendChild(s)
   })
 }

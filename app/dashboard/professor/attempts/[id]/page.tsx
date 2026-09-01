@@ -127,6 +127,23 @@ const INCIDENT_LABELS: Record<string, string> = {
   liveness_check_failed:   'Contrôle de vivacité échoué (aucun clignement détecté)',
   sustained_audio_detected:'Bruit prolongé détecté',
   multi_screen_detected:   'Plusieurs écrans détectés',
+  // Correctif (01/09, retour utilisateur — mots anglais bruts affichés
+  // dans le panneau de logs du surveillant, même défaut ici) :
+  mouse_left_window:         'Curseur sorti de la fenêtre',
+  low_bandwidth_mode:        'Mode basse bande passante activé',
+  low_bandwidth_mode_ended:  'Connexion redevenue normale',
+  low_camera_quality:        'Qualité caméra faible',
+  network_disconnected:      'Connexion réseau perdue',
+  network_reconnected:       'Connexion réseau rétablie',
+  screen_share_stopped:      "Partage d'écran arrêté",
+  whisper_detected:          'Chuchotement détecté',
+  pause_started:             'Pause étudiant démarrée',
+  pattern_gaze_talk_mouth:     'Regard détourné + parole + bouche en mouvement',
+  pattern_object_gaze_away:    'Objet suspect + regard détourné',
+  pattern_multi_face_audio:    'Plusieurs visages + parole détectés',
+  pattern_head_turned_talking: 'Tête tournée + prise de parole',
+  pattern_whisper_gaze:        'Chuchotement + regard détourné',
+  pattern_mouth_covered_audio: 'Bouche couverte + parole détectée',
 }
 
 function getMention(score: number) {
