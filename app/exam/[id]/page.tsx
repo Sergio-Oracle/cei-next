@@ -509,8 +509,6 @@ export default function ExamPage() {
      qu'une reconnaissance vocale continue). */
   const audioAnalyserRef = useRef<AnalyserNode|null>(null)
   const audioCtxRef = useRef<AudioContext|null>(null)
-  const consAudioRef = useRef(0)
-  const consWhisperRef = useRef(0)
   const faceIntervalRef = useRef<ReturnType<typeof setInterval>|null>(null)
   const lastFaceAlertRef= useRef<{no_face:number;multiple:number;mismatch:number}>({no_face:0,multiple:0,mismatch:0})
   const consNoFaceRef   = useRef(0)
@@ -1568,7 +1566,26 @@ export default function ExamPage() {
       audioCtxRef.current = ctx
       audioAnalyserRef.current = analyser
       const data = new Uint8Array(analyser.fftSize)
-      const CONSEC_ALERT_AUDIO = 3
+      // Retour utilisateur (01/09) : détection pas assez sensible ni assez
+      // instantanée. Deux causes réelles corrigées ensemble :
+      //  1. Un tick toutes les 2s avec un compteur "tout ou rien" remis à
+      //     zéro au moindre échantillon calme — la parole naturelle contient
+      //     des pauses entre les mots qu'un tick aussi espacé prenait pour
+      //     du silence, redémarrant le décompte indéfiniment et retardant
+      //     (voire empêchant) l'alerte. Remplacé par un tick à 400ms +
+      //     une fenêtre glissante : on déclenche dès qu'une MAJORITÉ des
+      //     derniers échantillons dépasse le seuil, pas la totalité — ce
+      //     qui tolère les pauses de la parole réelle tout en filtrant un
+      //     bruit isolé (clic, raclement de chaise). Premier signalement
+      //     possible en ~2s de parole soutenue au lieu de 6s.
+      //  2. Seuils multiplicateurs légèrement resserrés (2.5x/1.5x →
+      //     2.0x/1.3x le bruit ambiant) pour capter une conversation à
+      //     volume modéré, tout en gardant les planchers absolus (0.05/
+      //     0.025) qui évitent un déclenchement dans une pièce bruyante
+      //     mais parfaitement légitime (ventilateur, rue).
+      const AUDIO_TICK_MS = 400
+      const AUDIO_WINDOW_SIZE = 8   // ~3.2s de fenêtre glissante
+      const AUDIO_WINDOW_NEED = 5   // majorité (62%) suffit à déclencher
       // Un seuil absolu unique ne convient à aucune pièce en particulier —
       // une chambre avec ventilateur/rue bruyante déclenche en continu,
       // tandis qu'une pièce très calme laisserait passer des niveaux qu'un
@@ -1576,11 +1593,16 @@ export default function ExamPage() {
       // bruit ambiant RÉEL de cet étudiant pendant les 5 premières secondes
       // (aucune alerte pendant cette fenêtre), puis on ne signale qu'un
       // dépassement net de SA propre référence — plancher à 0.05 pour éviter
-      // un seuil absurdement bas dans une pièce quasi silencieuse.
+      // un seuil absurdement bas dans une pièce quasi silencieuse. Référence
+      // = MÉDIANE des échantillons de calibration (pas la moyenne) — une
+      // seule salve de bruit pendant ces 5s (toux, porte) ne fausse plus
+      // toute la référence pour le reste de l'examen.
       const CALIBRATION_MS = 5_000
       const calibrationStart = Date.now()
       let calibSamples: number[] = []
       let ambientBaseline: number | null = null
+      let talkWindow: boolean[] = []
+      let whisperWindow: boolean[] = []
       const tick = () => {
         if (sessionEndedRef.current) return
         const an = audioAnalyserRef.current
@@ -1592,27 +1614,29 @@ export default function ExamPage() {
           if (ambientBaseline===null) {
             calibSamples.push(rms)
             if (Date.now()-calibrationStart >= CALIBRATION_MS) {
-              const avg = calibSamples.reduce((s,v)=>s+v,0)/calibSamples.length
-              ambientBaseline = avg
+              const sorted = [...calibSamples].sort((a,b)=>a-b)
+              ambientBaseline = sorted[Math.floor(sorted.length/2)]
             }
-            setTimeout(tick, 2000)
+            setTimeout(tick, AUDIO_TICK_MS)
             return
           }
-          const threshold = Math.max(0.05, ambientBaseline*2.5)
+          const threshold = Math.max(0.05, ambientBaseline*2.0)
           // Seuil bas dédié au chuchotement : un son au-dessus du bruit
           // ambiant mais sous le seuil "parole" — un vrai chuchotement reste
           // audible (RMS notable) sans atteindre le volume d'une parole
           // normale ; les deux seuils ne se recouvrent jamais (whisperThreshold
           // < threshold), donc chaque échantillon tombe dans une seule case.
-          const whisperThreshold = Math.max(0.025, ambientBaseline*1.5)
+          const whisperThreshold = Math.max(0.025, ambientBaseline*1.3)
           const talking = rms > threshold
           const whispering = !talking && rms > whisperThreshold
-          consAudioRef.current = talking ? consAudioRef.current+1 : 0
-          consWhisperRef.current = whispering ? consWhisperRef.current+1 : 0
+          talkWindow.push(talking); if (talkWindow.length>AUDIO_WINDOW_SIZE) talkWindow.shift()
+          whisperWindow.push(whispering); if (whisperWindow.length>AUDIO_WINDOW_SIZE) whisperWindow.shift()
           const now = Date.now()
           if (talking) markSignal('audioTalking')
           if (whispering) markSignal('audioWhisper')
-          if (consAudioRef.current >= CONSEC_ALERT_AUDIO) {
+          const talkCount = talkWindow.reduce((n,v)=>n+(v?1:0),0)
+          const whisperCount = whisperWindow.reduce((n,v)=>n+(v?1:0),0)
+          if (talkCount >= AUDIO_WINDOW_NEED) {
             if (now-(lastVisionAlertRef.current.audio||0) > 30_000) {
               lastVisionAlertRef.current.audio = now
               const aId = attemptRef.current
@@ -1622,7 +1646,7 @@ export default function ExamPage() {
               }
             }
           }
-          if (consWhisperRef.current >= CONSEC_ALERT_AUDIO) {
+          if (whisperCount >= AUDIO_WINDOW_NEED) {
             if (now-(lastVisionAlertRef.current.whisper||0) > 30_000) {
               lastVisionAlertRef.current.whisper = now
               const aId = attemptRef.current
@@ -1635,7 +1659,7 @@ export default function ExamPage() {
           const aIdForPattern = attemptRef.current
           if (aIdForPattern) checkBehaviorPatterns(aIdForPattern, now)
         }
-        setTimeout(tick, 2000)
+        setTimeout(tick, AUDIO_TICK_MS)
       }
       tick()
     } catch {}
