@@ -176,6 +176,14 @@ export interface FaceSignal {
   mouthOpen: number | null
   blinkLeft: number | null
   blinkRight: number | null
+  /** Vecteur complet des ~52 coefficients d'expression MediaPipe (déjà
+   * calculé en interne pour jawOpen/eyeBlink* ci-dessus, simplement aussi
+   * exposé ici) — sert de base à un signal de vivacité anti-usurpation
+   * indépendant du clignement seul (voir livenessMotion dans exam/[id]/page.tsx) :
+   * un visage réel présente une micro-variation continue de ces coefficients
+   * d'une frame à l'autre (respiration, tension musculaire involontaire),
+   * qu'une photo imprimée ou un écran de remplacement statique ne produit pas. */
+  blendshapes: Record<string, number> | null
 }
 
 export function analyzeFace(video: HTMLVideoElement, timestampMs: number): FaceSignal | null {
@@ -185,7 +193,7 @@ export function analyzeFace(video: HTMLVideoElement, timestampMs: number): FaceS
   try { result = faceLandmarker.detectForVideo(video, timestampMs) } catch { return null }
   const faceCount = result.faceLandmarks?.length || 0
   if (faceCount === 0 || !result.faceLandmarks[0]) {
-    return { faceCount, gazeX: null, gazeY: null, headYaw: null, mouthOpen: null, blinkLeft: null, blinkRight: null }
+    return { faceCount, gazeX: null, gazeY: null, headYaw: null, mouthOpen: null, blinkLeft: null, blinkRight: null, blendshapes: null }
   }
 
   const landmarks = result.faceLandmarks[0] as Pt[]
@@ -215,16 +223,19 @@ export function analyzeFace(video: HTMLVideoElement, timestampMs: number): FaceS
     : null
 
   let mouthOpen: number | null = null, blinkLeft: number | null = null, blinkRight: number | null = null
+  let blendshapeMap: Record<string, number> | null = null
   const blendshapes = result.faceBlendshapes?.[0]?.categories
   if (blendshapes) {
+    blendshapeMap = {}
     for (const c of blendshapes) {
+      blendshapeMap[c.categoryName] = c.score
       if (c.categoryName === 'jawOpen') mouthOpen = c.score
       else if (c.categoryName === 'eyeBlinkLeft') blinkLeft = c.score
       else if (c.categoryName === 'eyeBlinkRight') blinkRight = c.score
     }
   }
 
-  return { faceCount, gazeX, gazeY, headYaw, mouthOpen, blinkLeft, blinkRight }
+  return { faceCount, gazeX, gazeY, headYaw, mouthOpen, blinkLeft, blinkRight, blendshapes: blendshapeMap }
 }
 
 export interface ObjectSignal {

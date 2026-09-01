@@ -476,6 +476,23 @@ export default function ExamPage() {
   /* Compteur dédié "bouche couverte" — même logique CONSEC_ALERT que le
      reste (pas d'alerte sur un seul instant, cf. commentaire plus bas). */
   const consMouthCoveredRef = useRef(0)
+  // Anti-usurpation (01/09, retour utilisateur — dépôts de référence
+  // partagés, ex. github.com/ee09115/spoofing_detection) : un visage réel
+  // présente une micro-variation continue des coefficients d'expression
+  // MediaPipe (jawOpen, sourcils, joues...) d'une image à l'autre — même
+  // en essayant de rester parfaitement immobile (respiration, tension
+  // musculaire involontaire). Une photo imprimée ou un écran de
+  // remplacement statique tenu devant la caméra ne produit, lui, qu'un
+  // bruit de mesure quasi nul (l'image ne change pas, seul le bruit
+  // numérique/la compression varie légèrement). PAS de nouveau modèle
+  // téléchargé (aucun risque de licence, contrairement aux modèles
+  // pré-entraînés des dépôts de référence, dont certains sont entraînés
+  // sur des jeux de données académiques non-commerciaux) — réutilise
+  // uniquement des coefficients déjà calculés par MediaPipe pour d'autres
+  // besoins (jawOpen, eyeBlink*, voir FaceSignal.blendshapes).
+  const prevBlendshapesRef = useRef<Record<string, number> | null>(null)
+  const livenessMotionWindowRef = useRef<number[]>([])
+  const livenessBlinkWindowRef = useRef<number[]>([])
   /* Étalonnage individuel du regard/de l'orientation de la tête, mesuré
      pendant la capture de la photo de référence (l'étudiant regarde déjà la
      caméra à ce moment). MediaPipe ne peut pas détecter "porte des lunettes"
@@ -2494,7 +2511,54 @@ export default function ExamPage() {
           logProctoring(curAId,'face_covered','Bas du visage non exploitable par la détection').catch(()=>{})
         }
 
+        // Anti-usurpation — voir prevBlendshapesRef ci-dessus pour le
+        // principe. Fenêtre volontairement longue (~30 échantillons, ~2min30
+        // à raison d'un tick/5s) : le rythme de clignement documenté peut
+        // descendre à 1/8-10s en pleine concentration (voir runLivenessCheck
+        // plus haut) — une fenêtre courte confondrait un étudiant réel très
+        // concentré avec une photo statique. Double corroboration exigée
+        // (mouvement ET clignement absents sur TOUTE la fenêtre) pour
+        // limiter le risque de faux positif d'un signal jamais calibré sur
+        // une vraie webcam.
+        if (sig.blendshapes) {
+          const blink = Math.max(sig.blinkLeft ?? 0, sig.blinkRight ?? 0)
+          const prev = prevBlendshapesRef.current
+          if (prev) {
+            let energy = 0
+            for (const key in sig.blendshapes) energy += Math.abs(sig.blendshapes[key] - (prev[key] ?? 0))
+            // Fenêtres alignées EXACTEMENT sur les mêmes échantillons (pas de
+            // vérification temporelle séparée pour le clignement, qui peut se
+            // désynchroniser en bord de fenêtre — corrigé après simulation :
+            // une version antérieure basée sur "clignement vu il y a moins de
+            // Xms" produisait un faux positif sur un étudiant réel très
+            // concentré si le prochain clignement tombait juste après la
+            // limite de la fenêtre de mouvement).
+            const winE = livenessMotionWindowRef.current
+            const winB = livenessBlinkWindowRef.current
+            winE.push(energy); if (winE.length > 30) winE.shift()
+            winB.push(blink > 0.6 ? 1 : 0); if (winB.length > 30) winB.shift()
+            if (winE.length === 30) {
+              const avgEnergy = winE.reduce((s,v)=>s+v,0) / winE.length
+              const blinksInWindow = winB.reduce((s,v)=>s+v,0)
+              const LIVENESS_MOTION_FLOOR = 0.03
+              if (avgEnergy < LIVENESS_MOTION_FLOOR && blinksInWindow === 0) {
+                if (now-(lastVisionAlertRef.current.liveness||0) > 120_000) {
+                  lastVisionAlertRef.current.liveness = now
+                  const detail = `Énergie de micro-mouvement moyenne=${avgEnergy.toFixed(4)} sur ${winE.length} échantillons, aucun clignement détecté sur la même fenêtre`
+                  logActivity(curAId,'liveness_suspect_static',detail).catch(()=>{})
+                  logProctoring(curAId,'liveness_suspect_static',detail).catch(()=>{})
+                  captureSnapshot('liveness_suspect_static',curAId,true,1,null,5_000)
+                }
+              }
+            }
+          }
+          prevBlendshapesRef.current = sig.blendshapes
+        }
+
       } else {
+        prevBlendshapesRef.current = null
+        livenessMotionWindowRef.current = []
+        livenessBlinkWindowRef.current = []
         consGazeAwayRef.current=0; consHeadTurnRef.current=0; consMouthRef.current=0; consMouthCoveredRef.current=0
       }
       // Hors du bloc "un seul visage" ci-dessus : le motif multi-visages+audio

@@ -121,6 +121,7 @@ const INCIDENT_LABELS: Record<string, string> = {
   env_scan_unavailable:    'Scan environnement indisponible',
   face_detection_unavailable: 'Détection faciale indisponible (problème réseau ou navigateur)',
   live_monitoring_unavailable: 'Canal de surveillance en direct indisponible (problème réseau)',
+  liveness_suspect_static: 'Visage suspecté statique (photo/écran ?) — signal expérimental, à vérifier manuellement',
   gaze_away:               "Regard détourné de l'écran",
   head_turned:             'Tête tournée',
   talking_detected:        'Parole détectée',
