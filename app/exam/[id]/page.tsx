@@ -22,7 +22,7 @@ interface ExamData {
   start_time: string; end_time: string; subject_title?: string
   max_tab_switches?: number; enable_copy_paste?: boolean; enable_right_click?: boolean; enable_file_download?: boolean
   camera_required?: boolean; ban_on_devtools?: boolean; auto_correct?: boolean; enable_calculator?: boolean
-  allow_secondary_camera?: boolean
+  allow_secondary_camera?: boolean; run_environment_scan?: boolean
   questions_per_page?: number; randomize_questions?: boolean; time_per_question_seconds?: number | null
   status: string; questions?: Question[]
   subject_content?: { id: number; title: string; content: string } | string | null
@@ -1173,7 +1173,13 @@ export default function ExamPage() {
       setPermError("Le partage de l'écran complet est obligatoire.")
       setPermBusy(false); return
     }
-    setPermBusy(false); setPhase('env_scan')
+    setPermBusy(false)
+    // Le scan de l'environnement est désormais optionnel, choisi par le
+    // professeur à la création de l'examen (opt-in, décoché par défaut pour
+    // tout nouvel examen — voir OnlineExam.run_environment_scan côté
+    // backend). Quand désactivé, on saute directement à la composition.
+    if (examRef.current?.run_environment_scan) setPhase('env_scan')
+    else enterExam()
   }
 
   /* ── Phase 1 : scan environnement 360° ────────────────────────────────────
