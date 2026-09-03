@@ -666,6 +666,7 @@ export default function ProctorMonitorPage() {
           if (isScreen) {
             screenTracksRef.current.set(identity, track)
             setScreenSet(prev => new Set(prev).add(identity))
+            setTimeout(() => attachScreenVideo(identity, track), 50)
           } else {
             videoTracksRef.current.set(identity, track)
             setData(prev => {
@@ -808,6 +809,7 @@ export default function ProctorMonitorPage() {
           if (isScreen) {
             screenTracksRef.current.set(ident, pub.track)
             setScreenSet(prev => new Set(prev).add(ident))
+            setTimeout(() => attachScreenVideo(ident, pub.track), 100)
           } else {
             videoTracksRef.current.set(ident, pub.track)
             setData(prev => {
@@ -831,6 +833,19 @@ export default function ProctorMonitorPage() {
         setLiveSet(new Set(alreadyLive))
       }
     } catch (e) { console.warn('LiveKit proctor connection failed:', e) }
+  }
+
+  // Partage d'écran — même participant que la caméra principale (distingué
+  // par pub.source, pas par l'identité), d'où un attach dédié plutôt que de
+  // réutiliser attachVideo() (qui indexe sur `video-${identity}` déjà pris
+  // par la caméra principale). Miniature toujours visible dans la grille
+  // (bas-gauche), symétrique de la caméra secondaire (bas-droite) —
+  // l'élément lui-même n'existe dans le DOM que si screenAvail est vrai,
+  // React s'occupe du démontage, pas besoin de masquer/afficher à la main.
+  function attachScreenVideo(identity: string, track: any) {
+    const el = document.getElementById(`video-${identity}-screen`) as HTMLVideoElement | null
+    if (!el) return
+    try { track.attach(el); el.play?.().catch(() => {}) } catch {}
   }
 
   function attachVideo(identity: string, track: any) {
@@ -2681,7 +2696,7 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
           const meta = EVENT_ICON_MAP[liveAlert.eventType] || { icon: 'circle-exclamation', color: '#f59e0b' }
           return (
             <div title={liveAlert.message}
-              style={{ position: 'absolute', bottom: 6, left: 6, right: phoneLive ? 130 : 6, zIndex: 4, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, background: 'rgba(15,23,42,.9)', border: `1px solid ${meta.color}`, boxShadow: '0 2px 10px rgba(0,0,0,.5)', animation: 'liveAlertIn .2s ease-out' }}>
+              style={{ position: 'absolute', bottom: 6, left: screenAvail ? 130 : 6, right: phoneLive ? 130 : 6, zIndex: 4, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, background: 'rgba(15,23,42,.9)', border: `1px solid ${meta.color}`, boxShadow: '0 2px 10px rgba(0,0,0,.5)', animation: 'liveAlertIn .2s ease-out' }}>
               <i className={`fas fa-${meta.icon}`} style={{ color: meta.color, fontSize: 12, flexShrink: 0 }} />
               <span style={{ fontSize: 11.5, fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
                 {EVENT_LABEL_MAP[liveAlert.eventType] || liveAlert.message}
@@ -2695,6 +2710,23 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
             </div>
           )
         })()}
+
+        {/* Partage d'écran — miniature en incrustation, bas-gauche, symétrique
+            de la caméra secondaire (bas-droite) ci-dessous. Auparavant
+            accessible uniquement via le bouton "Écran"/modal (onScreen) ;
+            reste cliquable pour agrandir (même modal), mais maintenant
+            visible en permanence dans la grille dès que le partage est actif
+            — plus besoin de cliquer pour savoir si l'étudiant partage bien
+            son écran. */}
+        {screenAvail && (
+          <button type="button" title="Cliquer pour agrandir le partage d'écran" onClick={e => { e.stopPropagation(); onScreen() }}
+            style={{ position: 'absolute', bottom: 6, left: 6, width: 122, height: 92, borderRadius: 6, overflow: 'hidden', border: '1.5px solid rgba(255,255,255,.5)', boxShadow: '0 2px 8px rgba(0,0,0,.5)', zIndex: 5, background: '#000', cursor: 'pointer', padding: 0, margin: 0, display: 'block' }}>
+            <video id={`video-${s.livekit_identity}-screen`} autoPlay playsInline muted
+              style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+            <i className="fas fa-desktop" style={{ position: 'absolute', top: 3, left: 3, fontSize: 11, color: 'rgba(255,255,255,.7)', pointerEvents: 'none' }} />
+            <i className="fas fa-magnifying-glass-plus" style={{ position: 'absolute', bottom: 3, right: 3, fontSize: 12, color: 'rgba(255,255,255,.9)', pointerEvents: 'none' }} />
+          </button>
+        )}
 
         {/* Caméra secondaire (smartphone) — miniature en incrustation, angle latéral.
             Cliquable pour l'agrandir et voir clairement les angles morts.
