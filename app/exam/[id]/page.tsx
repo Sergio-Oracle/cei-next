@@ -553,6 +553,18 @@ export default function ExamPage() {
         if (cancelled) return
         setExam(res); examRef.current = res
         setPhase(isDeviceSupported() ? 'instructions' : 'unsupported')
+        // Préchargement anticipé du moteur MediaPipe (retour utilisateur du
+        // 03/09 : "je veux que ce soit ultra rapide" — la phase env_scan
+        // affichait "Chargement du moteur de vérification…" à l'instant même
+        // où l'étudiant y arrivait). initProctoringVision() est idempotente
+        // (mémorise sa promesse en cours, cf lib/proctoring-vision.ts) : la
+        // déclencher ici, dès que l'examen est chargé — pendant que
+        // l'étudiant lit les instructions puis accorde caméra/micro/écran,
+        // plusieurs secondes avant d'atteindre l'étape env_scan — fait que
+        // le modèle est déjà prêt (ou très avancé) à ce moment-là, sans
+        // rien changer au comportement si le chargement échoue (repli local
+        // puis CDN déjà géré à l'intérieur, jamais bloquant ici).
+        initProctoringVision().catch(()=>{})
       } catch (e: any) {
         if (cancelled) return
         // Retour #13 — ne pas rebondir systématiquement vers "Mes Notes" sur
