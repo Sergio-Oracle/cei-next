@@ -1177,8 +1177,14 @@ export default function ExamPage() {
     // Le scan de l'environnement est désormais optionnel, choisi par le
     // professeur à la création de l'examen (opt-in, décoché par défaut pour
     // tout nouvel examen — voir OnlineExam.run_environment_scan côté
-    // backend). Quand désactivé, on saute directement à la composition.
-    if (examRef.current?.run_environment_scan) setPhase('env_scan')
+    // backend). Mais la phase 'env_scan' reste aussi le seul endroit où le
+    // couplage obligatoire de la caméra secondaire est proposé/bloqué
+    // (needsPhoneCam plus bas) — la sauter entièrement quand le scan est
+    // désactivé laissait passer les examens à caméra secondaire sans jamais
+    // demander le couplage (régression repérée le 03/09). On y entre donc
+    // aussi quand allow_secondary_camera est vrai, même sans scan — le rendu
+    // de la phase adapte alors son contenu (voir plus bas, envScanEnabled).
+    if (examRef.current?.run_environment_scan || examRef.current?.allow_secondary_camera) setPhase('env_scan')
     else enterExam()
   }
 
@@ -1335,7 +1341,15 @@ export default function ExamPage() {
     }
   }
   useEffect(() => {
-    if (phase === 'env_scan') runEnvironmentScan()
+    if (phase !== 'env_scan') return
+    // Cette phase est aussi atteinte uniquement pour le couplage obligatoire
+    // de la caméra secondaire (allow_secondary_camera) quand le scan lui-même
+    // est désactivé pour cet examen — dans ce cas on saute directement le
+    // scan (envScanStatus 'ok' immédiat) pour n'afficher que la section
+    // caméra secondaire + le bouton "Continuer", sans jamais démarrer la
+    // caméra/l'IA de vérification 360°.
+    if (examRef.current?.run_environment_scan) runEnvironmentScan()
+    else setEnvScanStatus('ok')
   }, [phase]) // eslint-disable-line
 
   // Keyboard Lock API (Chrome/Edge uniquement, ignorée ailleurs) : tant
@@ -3131,29 +3145,51 @@ export default function ExamPage() {
       : scanStage.dir==='right' ? 'scanArrowRight 1.1s ease-in-out infinite'
       : scanStage.dir==='down' ? 'scanArrowDown 1.1s ease-in-out infinite'
       : 'scanPulseBlue 1.8s ease-in-out infinite'
+    // Cette phase sert désormais à deux choses indépendantes : le scan 360°
+    // de la pièce (si activé pour cet examen) ET/OU le couplage obligatoire
+    // de la caméra secondaire (si activé) — un examen peut n'avoir que l'un
+    // des deux. Quand le scan est désactivé, on masque tout son contenu
+    // (vidéo, étapes animées, textes) et n'affiche que la section caméra
+    // secondaire + le bouton "Continuer" (déjà débloqué immédiatement,
+    // envScanStatus passé à 'ok' sans jamais démarrer le scan — voir l'effet
+    // de déclenchement plus haut).
+    const envScanEnabled = !!exam?.run_environment_scan
 
     return(
       <div style={{minHeight:'100vh',background:'#0f172a',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
         <style>{`@keyframes scanArrowLeft{0%,100%{transform:translateX(0)}50%{transform:translateX(-10px)}}@keyframes scanArrowRight{0%,100%{transform:translateX(0)}50%{transform:translateX(10px)}}@keyframes scanArrowDown{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}@keyframes scanPulseBlue{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.6)}50%{box-shadow:0 0 0 10px rgba(59,130,246,0)}}`}</style>
         <div style={{background:'#1e293b',border:'1px solid #334155',borderRadius:20,padding:'32px 32px',maxWidth:520,width:'100%',color:'white'}}>
-          <h2 style={{fontSize:24,fontWeight:800,margin:'0 0 8px',display:'flex',alignItems:'center',gap:10}}>
-            <i className="fas fa-house-signal" style={{color:'#3b82f6'}}/> Vérification de votre environnement
-          </h2>
-          <p style={{fontSize:15.5,color:'#94a3b8',lineHeight:1.6,marginBottom:20}}>
-            Tournez lentement votre caméra (ou votre ordinateur) pour montrer l'ensemble de la pièce autour de vous,
-            afin de confirmer qu'aucune autre personne n'est présente.
-          </p>
-          <div style={{borderRadius:14,overflow:'hidden',background:'#000',position:'relative',aspectRatio:'4/3',marginBottom:18}}>
-            <video ref={el=>{scanVideoRef.current=el;if(el&&camStream.current&&el.srcObject!==camStream.current)el.srcObject=camStream.current}}
-              autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)'}}/>
-            {envScanStatus==='scanning' && (
-              <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none'}}>
-                <div style={{width:64,height:64,borderRadius:'50%',background:'rgba(15,23,42,.55)',backdropFilter:'blur(2px)',display:'flex',alignItems:'center',justifyContent:'center',animation:scanStageAnim}}>
-                  <i className={`fas ${scanStage.icon}`} style={{fontSize:26,color:'#fff'}}/>
-                </div>
+          {envScanEnabled ? (
+            <>
+              <h2 style={{fontSize:24,fontWeight:800,margin:'0 0 8px',display:'flex',alignItems:'center',gap:10}}>
+                <i className="fas fa-house-signal" style={{color:'#3b82f6'}}/> Vérification de votre environnement
+              </h2>
+              <p style={{fontSize:15.5,color:'#94a3b8',lineHeight:1.6,marginBottom:20}}>
+                Tournez lentement votre caméra (ou votre ordinateur) pour montrer l'ensemble de la pièce autour de vous,
+                afin de confirmer qu'aucune autre personne n'est présente.
+              </p>
+              <div style={{borderRadius:14,overflow:'hidden',background:'#000',position:'relative',aspectRatio:'4/3',marginBottom:18}}>
+                <video ref={el=>{scanVideoRef.current=el;if(el&&camStream.current&&el.srcObject!==camStream.current)el.srcObject=camStream.current}}
+                  autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover',transform:'scaleX(-1)'}}/>
+                {envScanStatus==='scanning' && (
+                  <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none'}}>
+                    <div style={{width:64,height:64,borderRadius:'50%',background:'rgba(15,23,42,.55)',backdropFilter:'blur(2px)',display:'flex',alignItems:'center',justifyContent:'center',animation:scanStageAnim}}>
+                      <i className={`fas ${scanStage.icon}`} style={{fontSize:26,color:'#fff'}}/>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <>
+              <h2 style={{fontSize:24,fontWeight:800,margin:'0 0 8px',display:'flex',alignItems:'center',gap:10}}>
+                <i className="fas fa-mobile-screen" style={{color:'#3b82f6'}}/> Caméra secondaire requise
+              </h2>
+              <p style={{fontSize:15.5,color:'#94a3b8',lineHeight:1.6,marginBottom:20}}>
+                Cet examen exige un deuxième angle de vue (via votre téléphone) avant de commencer — connectez-le ci-dessous.
+              </p>
+            </>
+          )}
 
           {envScanStatus==='loading_ai' && (
             <div style={{display:'flex',alignItems:'center',gap:10,color:'#94a3b8',fontSize:15.5,marginBottom:8}}>
@@ -3201,9 +3237,11 @@ export default function ExamPage() {
 
           {envScanStatus==='ok' && (
             <>
-              <div style={{display:'flex',alignItems:'center',gap:10,color:'#10b981',fontSize:17,fontWeight:700,marginBottom:8}}>
-                <i className="fas fa-check-circle"/> Vérifié — cliquez pour démarrer l'examen en plein écran
-              </div>
+              {envScanEnabled && (
+                <div style={{display:'flex',alignItems:'center',gap:10,color:'#10b981',fontSize:17,fontWeight:700,marginBottom:8}}>
+                  <i className="fas fa-check-circle"/> Vérifié — cliquez pour démarrer l'examen en plein écran
+                </div>
+              )}
               {envScanObjects.length>0 && (
                 <div style={{background:'rgba(245,158,11,.12)',border:'1px solid rgba(245,158,11,.3)',borderRadius:10,padding:'10px 14px',marginBottom:8,fontSize:14.5,color:'#fcd34d'}}>
                   <i className="fas fa-triangle-exclamation" style={{marginRight:6}}/>
