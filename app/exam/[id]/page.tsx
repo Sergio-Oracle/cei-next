@@ -1233,8 +1233,33 @@ export default function ExamPage() {
       setEnvScanStatus('degraded')
       return
     }
-    const vid = scanVideoRef.current
-    if (!vid || vid.readyState < 2) { setEnvScanStatus('degraded'); return }
+    // Bug trouvé le 03/09 (capture à l'appui, malgré le correctif précédent)
+    // : ce test ne laissait AUCUNE trace côté serveur (aucun logActivity ici,
+    // contrairement à la branche !ready juste au-dessus) — en creusant,
+    // c'est une vraie course de temporisation, et le préchargement précoce
+    // ajouté ce jour-là l'a rendue nettement plus probable : initProctoringVision()
+    // répond désormais quasi instantanément (modèle déjà chargé pendant les
+    // instructions), donc ce test tombe parfois avant même que l'élément
+    // <video> du scan (attaché seulement au rendu de cette phase) ait eu le
+    // temps de recevoir sa première frame décodée (readyState passe de 0 à 2
+    // en quelques dizaines/centaines de ms, pas instantané). Avant le
+    // préchargement précoce, le chargement lent du modèle masquait
+    // accidentellement cette course en laissant largement le temps à la
+    // vidéo de démarrer. Corrigé en patientant activement jusqu'à ~1,5s
+    // plutôt qu'un seul essai sec, et en journalisant si ça échoue quand même
+    // (pour ne plus jamais retomber sur un cas silencieux et invisible).
+    let vid = scanVideoRef.current
+    const videoWaitStart = Date.now()
+    while ((!vid || vid.readyState < 2) && Date.now() - videoWaitStart < 1500) {
+      await new Promise(r => setTimeout(r, 100))
+      vid = scanVideoRef.current
+    }
+    if (!vid || vid.readyState < 2) {
+      const aId = attemptRef.current
+      if (aId) logActivity(aId,'env_scan_unavailable',"Scan environnement impossible — caméra pas encore prête").catch(()=>{})
+      setEnvScanStatus('degraded')
+      return
+    }
 
     setEnvScanStatus('scanning')
     const start = Date.now()
