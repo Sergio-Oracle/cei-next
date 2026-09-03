@@ -117,6 +117,17 @@ export async function initProctoringVision(): Promise<boolean> {
         console.warn('[proctoring-vision] échec chargement CDN également', cdnErr)
         faceLandmarker = null
         objectDetector = null
+        // Bug trouvé le 03/09 (capture à l'appui : "vérification automatique
+        // incomplète" affiché immédiatement, sans jamais avoir tenté le
+        // scan) — initPromise n'était JAMAIS réinitialisée après un échec,
+        // donc un premier appel raté (ex. le préchargement précoce ajouté ce
+        // jour-là, déclenché dès l'ouverture de la page, avant que tout soit
+        // forcément prêt) restait mis en cache pour toujours : le vrai appel
+        // fait plus tard par runEnvironmentScan() récupérait ce même échec
+        // périmé sans jamais réessayer, même si le réseau/la page allaient
+        // très bien entre-temps. On efface la promesse ratée pour que le
+        // PROCHAIN appel reparte sur un essai complètement neuf.
+        initPromise = null
         return false
       }
     }
