@@ -2662,26 +2662,53 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
   return (
     <div className="video-card" style={{ border: `1px solid ${isBanned ? 'rgba(239,68,68,.35)' : s.risk_score >= 60 ? 'rgba(245,158,11,.25)' : 'rgba(255,255,255,.07)'}` }}>
 
-      {/* Zone vidéo */}
-      <div style={{ aspectRatio: '16/9', background: '#000', position: 'relative', overflow: 'hidden' }}>
-        <div id={`ph-${s.livekit_identity}`}
-          style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <i className="fas fa-video-slash" style={{ fontSize: 29, color: 'rgba(255,255,255,.18)' }} />
-          <span style={{ fontSize:12, color: 'rgba(255,255,255,.18)' }}>Flux vidéo</span>
+      {/* Zone vidéo — caméra principale seule, ou côte à côte avec la caméra
+          secondaire (smartphone) quand elle est connectée (retour utilisateur
+          du 03/09 : "je ne veux pas que l'écran soit incrusté comme ça [en
+          PiP], je veux que ce soit exactement côte à côte", avec le clic pour
+          zoomer conservé sur le second volet). Les deux volets partagent la
+          même case aspect-ratio 16/9 (chacun ~8:9) plutôt que d'agrandir la
+          carte — garde une grille de hauteur homogène entre étudiants avec et
+          sans caméra secondaire. */}
+      <div style={{ aspectRatio: '16/9', background: '#000', position: 'relative', overflow: 'hidden', display: phoneLive ? 'flex' : 'block' }}>
+        <div style={{ position: phoneLive ? 'relative' : 'absolute', inset: phoneLive ? undefined : 0, flex: phoneLive ? 1 : undefined, minWidth: 0, height: '100%' }}>
+          <div id={`ph-${s.livekit_identity}`}
+            style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <i className="fas fa-video-slash" style={{ fontSize: 29, color: 'rgba(255,255,255,.18)' }} />
+            <span style={{ fontSize:12, color: 'rgba(255,255,255,.18)' }}>Flux vidéo</span>
+          </div>
+          <video id={`video-${s.livekit_identity}`} autoPlay playsInline
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'none' }} />
         </div>
-        <video id={`video-${s.livekit_identity}`} autoPlay playsInline
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'none' }} />
+
+        {/* Caméra secondaire (smartphone) — volet à part entière, pas une
+            miniature incrustée. <button> plutôt que <div onClick> :
+            sémantique clic/tactile native, plus fiable que la gestion
+            manuelle d'événements sur certains navigateurs mobiles (le
+            surveillant peut consulter depuis une tablette). */}
+        {phoneLive && (
+          <button type="button" title="Cliquer pour agrandir la caméra secondaire" onClick={e => { e.stopPropagation(); onZoomPhone() }}
+            style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%', borderRadius: 0, overflow: 'hidden', border: 'none', borderLeft: '1.5px solid rgba(255,255,255,.15)', zIndex: 5, background: '#000', cursor: 'pointer', padding: 0, margin: 0, display: 'block' }}>
+            <video id={`video-${s.livekit_identity}-phone`} autoPlay playsInline muted
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+            <i className="fas fa-mobile-screen" style={{ position: 'absolute', top: 6, left: 6, fontSize: 12, color: 'rgba(255,255,255,.7)', pointerEvents: 'none' }} />
+            <i className="fas fa-magnifying-glass-plus" style={{ position: 'absolute', bottom: 6, right: 6, fontSize: 13, color: 'rgba(255,255,255,.9)', pointerEvents: 'none' }} />
+          </button>
+        )}
 
         {/* Alerte en direct (bruit/parole, changement de focus, plusieurs
             écrans…) — badge transitoire (~7s) reçu en temps réel via le
             canal de données LiveKit, distinct du badge de risque permanent
             en haut de la tuile. Reste aussi consultable après coup, en
-            détail, dans "Logs" (preuve enregistrée côté serveur). */}
+            détail, dans "Logs" (preuve enregistrée côté serveur). Positionné
+            sur la case entière (les deux volets), pas seulement la caméra
+            principale — position:absolute l'ignore superbement du display:flex
+            ci-dessus, se place bien par rapport à ce conteneur. */}
         {liveAlert && (() => {
           const meta = EVENT_ICON_MAP[liveAlert.eventType] || { icon: 'circle-exclamation', color: '#f59e0b' }
           return (
             <div title={liveAlert.message}
-              style={{ position: 'absolute', bottom: 6, left: 6, right: phoneLive ? 130 : 6, zIndex: 4, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, background: 'rgba(15,23,42,.9)', border: `1px solid ${meta.color}`, boxShadow: '0 2px 10px rgba(0,0,0,.5)', animation: 'liveAlertIn .2s ease-out' }}>
+              style={{ position: 'absolute', bottom: 6, left: 6, right: 6, zIndex: 4, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, background: 'rgba(15,23,42,.9)', border: `1px solid ${meta.color}`, boxShadow: '0 2px 10px rgba(0,0,0,.5)', animation: 'liveAlertIn .2s ease-out' }}>
               <i className={`fas fa-${meta.icon}`} style={{ color: meta.color, fontSize: 12, flexShrink: 0 }} />
               <span style={{ fontSize: 11.5, fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
                 {EVENT_LABEL_MAP[liveAlert.eventType] || liveAlert.message}
@@ -2695,23 +2722,6 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
             </div>
           )
         })()}
-
-        {/* Caméra secondaire (smartphone) — miniature en incrustation, angle latéral.
-            Cliquable pour l'agrandir et voir clairement les angles morts.
-            <button> plutôt que <div onClick> : sémantique clic/tactile native,
-            plus fiable que la gestion manuelle d'événements sur certains
-            navigateurs mobiles (le surveillant peut consulter depuis une
-            tablette). zIndex volontairement au-dessus de tous les autres
-            calques de la carte (overlays exclu/soumis à 2, barre haute/REC à 3). */}
-        {phoneLive && (
-          <button type="button" title="Cliquer pour agrandir la caméra secondaire" onClick={e => { e.stopPropagation(); onZoomPhone() }}
-            style={{ position: 'absolute', bottom: 6, right: 6, width: 122, height: 92, borderRadius: 6, overflow: 'hidden', border: '1.5px solid rgba(255,255,255,.5)', boxShadow: '0 2px 8px rgba(0,0,0,.5)', zIndex: 5, background: '#000', cursor: 'pointer', padding: 0, margin: 0, display: 'block' }}>
-            <video id={`video-${s.livekit_identity}-phone`} autoPlay playsInline muted
-              style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
-            <i className="fas fa-mobile-screen" style={{ position: 'absolute', top: 3, left: 3, fontSize: 11, color: 'rgba(255,255,255,.7)', pointerEvents: 'none' }} />
-            <i className="fas fa-magnifying-glass-plus" style={{ position: 'absolute', bottom: 3, right: 3, fontSize: 12, color: 'rgba(255,255,255,.9)', pointerEvents: 'none' }} />
-          </button>
-        )}
 
         {/* Overlay exclu */}
         {isBanned && (
