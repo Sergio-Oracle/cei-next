@@ -1,20 +1,24 @@
 'use client'
 /**
- * Long-polling Redis Pub/Sub via /api/notifications/poll.
+ * Poll court de /api/notifications/poll.
  *
- * Le endpoint Flask attend au plus 25 s un événement Redis, puis répond
- * 200 (événement) ou 204 (timeout silencieux). Ce hook se reconnecte
- * immédiatement dans les deux cas — simulant un flux continu.
+ * L'endpoint Flask draine la file Redis de l'utilisateur et répond
+ * *immédiatement* : `{ has_events, events: [...] }` (éventuellement vide).
+ * Aucune connexion tenue côté serveur — ce hook rappelle simplement
+ * l'endpoint toutes les ~15 s (onglet visible) ou ~60 s (onglet caché),
+ * avec rattrapage immédiat au retour au premier plan / retour réseau.
  *
- * Avantage vs setInterval : délai ≈ 0 dès qu'un événement arrive côté serveur.
- * Avantage vs WebSocket   : aucun état serveur, compat Nginx sans config spéciale.
+ * Remplace l'ancien long-polling Redis Pub/Sub (une connexion Gunicorn
+ * tenue 25 s par client). Compromis assumé : latence de bout en bout
+ * jusqu'à l'intervalle de poll au lieu de ≈ 0.
  */
 import { useEffect, useRef } from 'react'
 
-const API_URL      = process.env.NEXT_PUBLIC_API_URL || 'https://dev-cei.ddns.net'
-const POLL_MS      = 27_000   // légèrement inférieur au timeout serveur (25 s)
-const RETRY_MS     = 3_000    // délai avant retry sur erreur réseau
-const HIDDEN_WAIT  = 15_000   // onglet caché : on ne poll pas en continu
+const API_URL         = process.env.NEXT_PUBLIC_API_URL || 'https://dev-cei.ddns.net'
+const POLL_VISIBLE_MS = 15_000   // onglet au premier plan
+const POLL_HIDDEN_MS  = 60_000   // onglet caché — on ralentit sans couper
+const RETRY_MS        = 5_000    // délai avant retry sur erreur réseau
+const REQ_TIMEOUT_MS  = 12_000   // garde-fou : la requête doit être quasi instantanée
 
 export interface NotifEvent {
   type:    string
@@ -45,19 +49,15 @@ async function tryRefresh(): Promise<boolean> {
   return false
 }
 
-// Le token PASETO expire toutes les 15 min (ACCESS_TTL côté serveur) ; sans ça,
-// le long-polling — qui tourne en continu tant que l'onglet reste ouvert —
-// finit *systématiquement* par présenter un token expiré au serveur, provoquant
-// un 401 visible dans la console à chaque cycle d'expiration. Le code gère déjà
-// ce cas proprement (refresh + retry, cf. plus bas), mais le 401 reste visible
-// dans les DevTools même quand il est intercepté côté JS. On rafraîchit donc le
-// token *avant* qu'il n'expire quand on le peut, pour que ce cas attendu ne
-// génère plus jamais de requête en échec.
+// Le token PASETO expire toutes les 15 min (ACCESS_TTL côté serveur). On le
+// rafraîchit avant expiration quand on le peut, pour qu'un cycle de poll ne
+// tombe pas systématiquement sur un 401 (attendu, géré, mais visible dans les
+// DevTools).
 function tokenExpiringSoon(): boolean {
   const raw = typeof window === 'undefined' ? null : localStorage.getItem('token_expires_at')
-  if (!raw) return false   // pas d'info d'expiration connue (ancien login) — laisser le repli réactif faire son travail
+  if (!raw) return false
   const expiresAt = Number(raw)
-  return Number.isFinite(expiresAt) && expiresAt - Date.now() < POLL_MS
+  return Number.isFinite(expiresAt) && expiresAt - Date.now() < POLL_VISIBLE_MS
 }
 
 function isPageVisible(): boolean {
@@ -65,9 +65,13 @@ function isPageVisible(): boolean {
   return document.visibilityState !== 'hidden'
 }
 
+function nextDelay(): number {
+  return isPageVisible() ? POLL_VISIBLE_MS : POLL_HIDDEN_MS
+}
+
 /**
- * @param enabled  Activer le long-polling (lier à `!!user`)
- * @param onEvent  Callback appelé à chaque événement reçu du serveur
+ * @param enabled  Activer le poll (lier à `!!user`)
+ * @param onEvent  Callback appelé une fois par événement reçu
  */
 export function useNotificationPoll(
   enabled: boolean,
@@ -104,10 +108,6 @@ export function useNotificationPoll(
 
     async function poll(): Promise<void> {
       if (!activeRef.current || cancelled) return
-      if (!isPageVisible()) {
-        schedule(HIDDEN_WAIT)
-        return
-      }
 
       let token = getToken()
       if (!token) {
@@ -122,7 +122,7 @@ export function useNotificationPoll(
       }
 
       const controller = new AbortController()
-      const timer = window.setTimeout(() => controller.abort(), POLL_MS)
+      const timer = window.setTimeout(() => controller.abort(), REQ_TIMEOUT_MS)
 
       try {
         const res = await fetch(`${API_URL}/api/notifications/poll`, {
@@ -146,37 +146,36 @@ export function useNotificationPoll(
           return
         }
 
-        if (res.ok && res.status !== 204) {
+        if (res.ok) {
           const data = await res.json()
-          if (data?.has_event && data.event) {
-            onEventRef.current(data.event as NotifEvent)
+          const events: NotifEvent[] = Array.isArray(data?.events)
+            ? data.events
+            : (data?.event ? [data.event] : [])   // repli client d'une version précédente
+          for (const ev of events) {
+            if (ev && ev.type) onEventRef.current(ev as NotifEvent)
           }
         }
-      } catch (err: unknown) {
+      } catch {
         if (!activeRef.current || cancelled) return
-        const isAbort = (err as { name?: string })?.name === 'AbortError'
-        if (!isAbort) {
-          schedule(RETRY_MS)
-          return
-        }
+        // AbortError (timeout requête) ou erreur réseau → retry rapproché
+        schedule(RETRY_MS)
+        return
       } finally {
         window.clearTimeout(timer)
       }
 
       if (!cancelled && activeRef.current) {
-        schedule(0)
+        schedule(nextDelay())
       }
     }
 
-    const handleVisibility = () => {
+    const handleWake = () => {
       if (!activeRef.current || cancelled) return
-      if (isPageVisible()) {
-        schedule(0)
-      }
+      if (isPageVisible()) schedule(0)   // rattrapage immédiat
     }
 
-    document.addEventListener('visibilitychange', handleVisibility)
-    window.addEventListener('online', handleVisibility)
+    document.addEventListener('visibilitychange', handleWake)
+    window.addEventListener('online', handleWake)
     schedule(0)
 
     return () => {
@@ -186,8 +185,8 @@ export function useNotificationPoll(
         window.clearTimeout(timeoutRef.current)
         timeoutRef.current = null
       }
-      document.removeEventListener('visibilitychange', handleVisibility)
-      window.removeEventListener('online', handleVisibility)
+      document.removeEventListener('visibilitychange', handleWake)
+      window.removeEventListener('online', handleWake)
     }
   }, [enabled])
 }
