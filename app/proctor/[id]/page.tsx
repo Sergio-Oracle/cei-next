@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
-import { useNtfy } from '@/hooks/useNtfy'
 
 interface Student {
   attempt_id:       number
@@ -94,17 +93,10 @@ export default function ProctorPage() {
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [load])
 
-  // Alertes temps réel via ntfy — ban + risque élevé + agent autonome
-  useNtfy(id ? `exam-${id}` : null, useCallback((msg) => {
-    const type = msg.event ?? (msg as any).type
-    if (type === 'student_banned') {
-      toastErr(msg.message ?? 'Étudiant exclu')
-      load()
-    } else if (type === 'high_risk' || type === 'agent_alert') {
-      toastErr(msg.message ?? 'Alerte fraude')
-      load()
-    }
-  }, [load, toastErr]))
+  // Les alertes temps réel (bannissement, risque élevé, agent autonome) sont
+  // reçues via le long-polling déjà branché sur ce layout (SupervisorCallListener)
+  // et rafraîchissent cette liste ; ce composant se resynchronise en plus toutes
+  // les 8 s ci-dessus.
 
   const students  = data?.attempts ?? []
   const active    = students.filter(s => s.status === 'in_progress')

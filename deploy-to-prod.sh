@@ -70,3 +70,9 @@ ssh -i "$PROD_KEY" -p "$PROD_PORT" -o ConnectTimeout=15 "$PROD_HOST" '
   done
 '
 echo "== Terminé =="
+echo ""
+echo "!! ATTENTION : ce dossier local (.next/) contient maintenant le build de PRODUCTION"
+echo "   (NEXT_PUBLIC_API_URL=$PROD_API_URL). Le service local cei-next.service sert CE dossier."
+echo "   Avant de retester en local (dev-cei.ddns.net), lancez :"
+echo "     cd $(dirname "$0") && npm run build && systemctl restart cei-next"
+echo "   Sinon dev-cei.ddns.net appellera l'API de production (échec CORS)."

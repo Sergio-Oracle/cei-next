@@ -142,6 +142,14 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
       playAlertBeep()
       showToast(ev.message, 'info', 10000, () => router.push(`/proctor/monitor/${anyEv.exam_id}`))
     }
+    // Alertes de surveillance émises par notify_exam (bus back-end) vers le
+    // personnel couvrant l'examen — le professeur créateur en fait partie et
+    // travaille depuis /dashboard (avec ce Header), pas depuis /proctor/*.
+    if (['student_banned', 'high_risk', 'identity_mismatch', 'threshold_alert', 'proctor_disconnected', 'agent_alert'].includes(ev.type)) {
+      playAlertBeep()
+      showToast(ev.message || ev.title || 'Alerte de surveillance', 'warning', 10000,
+        anyEv.exam_id ? () => router.push(`/proctor/monitor/${anyEv.exam_id}`) : undefined)
+    }
   }, [showToast, router])
 
   useNotificationPoll(!!user, handleNotifEvent)

@@ -22,6 +22,7 @@ export default function SupervisorCallListener() {
   const [incoming, setIncoming] = useState<{ supervisorId: number; supervisorName: string } | null>(null)
   const [answering, setAnswering] = useState(false)
   const [resumedAlert, setResumedAlert] = useState<{ examId: number; message: string } | null>(null)
+  const [riskAlert, setRiskAlert] = useState<{ message: string } | null>(null)
 
   const handleNotifEvent = useCallback((ev: NotifEvent) => {
     const anyEv = ev as NotifEvent & { supervisor_id?: number; supervisor_name?: string; exam_id?: number }
@@ -32,6 +33,15 @@ export default function SupervisorCallListener() {
       playAlertBeep()
       setResumedAlert({ examId: anyEv.exam_id, message: ev.message })
     }
+    // Alertes surveillance émises par notify_exam (bus back-end) : bannissement,
+    // risque élevé, identité non confirmée, seuil atteint, surveillant
+    // déconnecté, agent autonome. Le contenu de la grille se rafraîchit par
+    // ailleurs (poll 8 s de la page de surveillance) — ici on ne fait que
+    // signaler.
+    if (['student_banned', 'high_risk', 'identity_mismatch', 'threshold_alert', 'proctor_disconnected', 'agent_alert'].includes(ev.type)) {
+      playAlertBeep()
+      setRiskAlert({ message: ev.message || ev.title || 'Alerte de surveillance' })
+    }
   }, [])
 
   // Surveillants ET superviseurs travaillent depuis /proctor/* — les deux
@@ -40,6 +50,16 @@ export default function SupervisorCallListener() {
 
   return (
     <>
+      {riskAlert && (
+        <div style={{ position: 'fixed', top: incoming ? 96 : 16, left: 20, zIndex: 9599, background: '#0f172a', color: 'white', borderRadius: 12, padding: '12px 16px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid rgba(245,158,11,.5)', maxWidth: 340 }}>
+          <i className="fas fa-triangle-exclamation" style={{ color: '#f59e0b', fontSize: 22, flexShrink: 0 }} />
+          <div style={{ fontSize:15, flex: 1 }}>{riskAlert.message}</div>
+          <button onClick={() => setRiskAlert(null)}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.6)', cursor: 'pointer', fontSize:17 }}>
+            <i className="fas fa-times" />
+          </button>
+        </div>
+      )}
       {resumedAlert && (
         <div style={{ position: 'fixed', top: incoming ? 96 : 16, right: 20, zIndex: 9599, background: '#0f172a', color: 'white', borderRadius: 12, padding: '12px 16px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid rgba(59,130,246,.4)', cursor: 'pointer', maxWidth: 320 }}
           onClick={() => { router.push(`/proctor/monitor/${resumedAlert.examId}`); setResumedAlert(null) }}>
