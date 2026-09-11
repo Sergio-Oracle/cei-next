@@ -74,13 +74,8 @@ const Btn = ({ color, onClick, children, title }: { color: string; onClick: () =
   </button>
 )
 
-const POLE_COLORS: Record<string, string> = {
-  STN:  '#2563eb',
-  LSHE: '#10b981',
-  SEJA: '#f59e0b',
-  RTN:  '#0891b2',
-}
-function poleColor(code?: string) { return POLE_COLORS[code || ''] || '#3b82f6' }
+const ACCENT = '#3b82f6'
+function poleColor(_code?: string) { return ACCENT }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 export default function AdminFormationsPage() {
@@ -546,7 +541,7 @@ export default function AdminFormationsPage() {
             </button>
           )}
           <button onClick={onCreateSubmit} disabled={wizardBusy || createDisabled}
-            style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700, opacity: createDisabled ? .5 : 1 }}>
+            style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700, opacity: createDisabled ? .5 : 1 }}>
             <i className={`fas ${wizardBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 6 }} />
             {wizardBusy ? 'Création…' : `${createLabel} et continuer`}
           </button>
@@ -622,11 +617,11 @@ export default function AdminFormationsPage() {
           <div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
               <button type="button" onClick={() => { setWizardUeMode('manual'); setExcelPreview(null); setExcelFile(null) }}
-                style={{ padding: '7px 14px', borderRadius: 8, border: wizardUeMode === 'manual' ? 'none' : '1.5px solid var(--border)', background: wizardUeMode === 'manual' ? '#db2777' : 'transparent', color: wizardUeMode === 'manual' ? 'white' : 'var(--text)', fontSize:15, fontWeight: 700, cursor: 'pointer' }}>
+                style={{ padding: '7px 14px', borderRadius: 8, border: wizardUeMode === 'manual' ? 'none' : '1.5px solid var(--border)', background: wizardUeMode === 'manual' ? '#3b82f6' : 'transparent', color: wizardUeMode === 'manual' ? 'white' : 'var(--text)', fontSize:15, fontWeight: 700, cursor: 'pointer' }}>
                 UE par UE (manuel)
               </button>
               <button type="button" onClick={() => setWizardUeMode('excel')}
-                style={{ padding: '7px 14px', borderRadius: 8, border: wizardUeMode === 'excel' ? 'none' : '1.5px solid var(--border)', background: wizardUeMode === 'excel' ? '#0891b2' : 'transparent', color: wizardUeMode === 'excel' ? 'white' : 'var(--text)', fontSize:15, fontWeight: 700, cursor: 'pointer' }}>
+                style={{ padding: '7px 14px', borderRadius: 8, border: wizardUeMode === 'excel' ? 'none' : '1.5px solid var(--border)', background: wizardUeMode === 'excel' ? '#3b82f6' : 'transparent', color: wizardUeMode === 'excel' ? 'white' : 'var(--text)', fontSize:15, fontWeight: 700, cursor: 'pointer' }}>
                 <i className="fas fa-file-excel" style={{ marginRight: 6 }} />Importer via Excel (toutes les UE/EC)
               </button>
             </div>
@@ -638,7 +633,7 @@ export default function AdminFormationsPage() {
                     Fichier au format réel de l&apos;établissement (colonnes Code/Nom/Crédit/Type UE puis Code/Nom/Coef EC, pourcentages CC/EX entre crochets dans le nom de l&apos;EC) — importe toutes les UE et EC de ce semestre d&apos;un coup.
                   </p>
                   <button onClick={downloadExcelTemplate}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700, marginBottom: 14 }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700, marginBottom: 14 }}>
                     <i className="fas fa-download" /> Télécharger Template Excel
                   </button>
                   <div style={{ marginBottom: 14 }}>
@@ -647,28 +642,28 @@ export default function AdminFormationsPage() {
                       onChange={e => setExcelFile(e.target.files?.[0] || null)} />
                   </div>
                   <button onClick={handleExcelPreview} disabled={excelBusy || !excelFile}
-                    style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#0891b2', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700, opacity: !excelFile ? .5 : 1 }}>
+                    style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700, opacity: !excelFile ? .5 : 1 }}>
                     <i className={`fas ${excelBusy ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} style={{ marginRight: 7 }} />
                     {excelBusy ? 'Analyse…' : 'Analyser le fichier'}
                   </button>
                 </div>
               ) : (
                 <div>
-                  <div style={{ background: '#ecfeff', border: '1px solid #a5f3fc', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize:15, color: '#0e7490' }}>
+                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize:15, color: '#1d4ed8' }}>
                     <strong>{excelPreview.ue_count} UE</strong> et <strong>{excelPreview.ec_count} EC</strong> détectés — vérifiez avant de valider.
                   </div>
                   <div style={{ maxHeight: '32vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
                     {excelPreview.ues.map((u: any) => (
                       <div key={u.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-                        <div style={{ padding: '8px 12px', background: u.already_exists ? '#fef3c7' : '#f0fdf4', fontSize:15 }}>
+                        <div style={{ padding: '8px 12px', background: u.already_exists ? '#f1f5f9' : '#eff6ff', fontSize:15 }}>
                           <strong>{u.code}</strong> — {u.name} <span style={{ color: 'var(--text-muted)' }}>({u.credits} crédits)</span>
-                          {u.already_exists && <span style={{ marginLeft: 8, fontSize:13, fontWeight: 700, color: '#92400e' }}><i className="fas fa-triangle-exclamation" /> déjà existante</span>}
+                          {u.already_exists && <span style={{ marginLeft: 8, fontSize:13, fontWeight: 700, color: '#64748b' }}><i className="fas fa-triangle-exclamation" /> déjà existante</span>}
                         </div>
                         <div style={{ padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: 3 }}>
                           {u.ecs.map((e: any) => (
                             <div key={e.code} style={{ fontSize:14, color: e.already_exists ? 'var(--text-muted)' : 'var(--text)' }}>
                               <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{e.code}</span> — {e.name} <span style={{ color: 'var(--text-muted)' }}>(Coef.{e.coefficient}, CC:{e.cc_percentage}%/EX:{e.ex_percentage}%)</span>
-                              {e.already_exists && <span style={{ marginLeft: 6, fontWeight: 700, color: '#b45309' }}>ignoré</span>}
+                              {e.already_exists && <span style={{ marginLeft: 6, fontWeight: 700, color: '#64748b' }}>ignoré</span>}
                             </div>
                           ))}
                         </div>
@@ -677,7 +672,7 @@ export default function AdminFormationsPage() {
                   </div>
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={handleExcelConfirm} disabled={excelBusy}
-                      style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700 }}>
+                      style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700 }}>
                       <i className={`fas ${excelBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 7 }} />
                       {excelBusy ? 'Import…' : "Confirmer l'import et terminer"}
                     </button>
@@ -710,7 +705,7 @@ export default function AdminFormationsPage() {
         return (
           <div>
             {wizardEcCount > 0 && (
-              <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize:15, color: '#166534' }}>
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize:15, color: '#1d4ed8' }}>
                 <i className="fas fa-check-circle" style={{ marginRight: 6 }} />{wizardEcCount} EC déjà créé(s) sous {currentUe?.code}
               </div>
             )}
@@ -730,11 +725,11 @@ export default function AdminFormationsPage() {
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               <button onClick={() => wizardCreateEc('another_ec')} disabled={wizardBusy || !wizardForm.code || !wizardForm.name}
-                style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize:15, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
+                style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize:15, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
                 <i className="fas fa-plus" style={{ marginRight: 6 }} />Créer et ajouter un autre EC
               </button>
               <button onClick={() => wizardCreateEc('another_ue')} disabled={wizardBusy || !wizardForm.code || !wizardForm.name}
-                style={{ padding: '10px 16px', borderRadius: 10, border: '1.5px solid #db2777', background: 'transparent', color: '#db2777', cursor: 'pointer', fontSize:15, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
+                style={{ padding: '10px 16px', borderRadius: 10, border: '1.5px solid #3b82f6', background: 'transparent', color: '#3b82f6', cursor: 'pointer', fontSize:15, fontWeight: 700, opacity: (!wizardForm.code || !wizardForm.name) ? .5 : 1 }}>
                 Créer et ajouter une autre UE
               </button>
               <button onClick={() => wizardCreateEc('done')} disabled={wizardBusy || !wizardForm.code || !wizardForm.name}
@@ -918,7 +913,7 @@ export default function AdminFormationsPage() {
             <Btn color="rgba(255,255,255,.2)" onClick={() => openEdit('edit_formation', f)} title="Modifier">
               <i className="fas fa-pen" />
             </Btn>
-            <Btn color="#10b981" onClick={() => openCreate('create_semester', { formationId: f.id })}>
+            <Btn color="#3b82f6" onClick={() => openCreate('create_semester', { formationId: f.id })}>
               <i className="fas fa-plus" /> Semestre
             </Btn>
             <Btn color="#ef4444" onClick={() => del(`/api/admin/formations/${f.id}`, 'Supprimer cette formation et tous ses semestres/UEs/ECs ?')} title="Supprimer">
@@ -941,12 +936,12 @@ export default function AdminFormationsPage() {
                   <i className="fas fa-calendar-alt" style={{ marginRight: 7, color: '#3b82f6' }} />
                   Semestre {s.number}{s.name ? ` — ${s.name}` : ''}
                   <span style={{ color: '#64748b', marginLeft: 12, fontWeight: 400, fontSize:15.5 }}>
-                    <i className="fas fa-star" style={{ marginRight: 4, color: '#f59e0b' }} />{s.total_credits} crédits
+                    <i className="fas fa-star" style={{ marginRight: 4, color: '#64748b' }} />{s.total_credits} crédits
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 7 }}>
                   <Btn color="#3b82f6" onClick={() => openEdit('edit_semester', s)} title="Modifier"><i className="fas fa-pen" /></Btn>
-                  <Btn color="#10b981" onClick={() => openCreate('create_ue', { semesterId: s.id })}><i className="fas fa-plus" /> UE</Btn>
+                  <Btn color="#3b82f6" onClick={() => openCreate('create_ue', { semesterId: s.id })}><i className="fas fa-plus" /> UE</Btn>
                   <Btn color="#ef4444" onClick={() => del(`/api/admin/semesters/${s.id}`, 'Supprimer ce semestre et toutes ses UEs/ECs ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
                 </div>
               </div>
@@ -956,19 +951,19 @@ export default function AdminFormationsPage() {
                 {s.ues.length === 0 ? (
                   <p style={{ color: 'var(--text-muted)', fontSize:15.5, margin: 0 }}>Aucune UE</p>
                 ) : s.ues.map(u => (
-                  <div key={u.id} style={{ borderLeft: '4px solid #10b981', background: '#fafcff', borderRadius: '0 10px 10px 0', border: '1px solid #e2e8f0', borderLeftWidth: 4, borderLeftColor: '#10b981' }}>
+                  <div key={u.id} style={{ borderLeft: '4px solid #3b82f6', background: '#fafcff', borderRadius: '0 10px 10px 0', border: '1px solid #e2e8f0', borderLeftWidth: 4, borderLeftColor: '#3b82f6' }}>
                     <div style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ fontSize:15.5, color: '#0f172a' }}>
-                        <i className="fas fa-book-open" style={{ marginRight: 6, color: '#10b981' }} />
+                        <i className="fas fa-book-open" style={{ marginRight: 6, color: '#3b82f6' }} />
                         <strong>{u.code}</strong> — {u.name}
                         <span style={{ color: '#64748b', marginLeft: 10, fontSize:14.5 }}>
-                          <i className="fas fa-award" style={{ marginRight: 3, color: '#f59e0b' }} />{u.credits} crédits
+                          <i className="fas fa-award" style={{ marginRight: 3, color: '#64748b' }} />{u.credits} crédits
                         </span>
                         {u.ue_type && (
                           <span style={{
                             marginLeft: 8, fontSize:13, fontWeight: 700, padding: '2px 8px', borderRadius: 12,
-                            background: u.ue_type === 'obligatoire' ? '#dbeafe' : '#fef9c3',
-                            color: u.ue_type === 'obligatoire' ? '#1d4ed8' : '#a16207'
+                            background: u.ue_type === 'obligatoire' ? '#dbeafe' : '#f1f5f9',
+                            color: u.ue_type === 'obligatoire' ? '#1d4ed8' : '#64748b'
                           }}>
                             {u.ue_type === 'obligatoire' ? 'Obligatoire' : 'Optionnel'}
                           </span>
@@ -976,7 +971,7 @@ export default function AdminFormationsPage() {
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <Btn color="#3b82f6" onClick={() => openEdit('edit_ue', u)} title="Modifier"><i className="fas fa-pen" /></Btn>
-                        <Btn color="#10b981" onClick={() => openCreate('create_ec', { ueId: u.id })}><i className="fas fa-plus" /> EC</Btn>
+                        <Btn color="#3b82f6" onClick={() => openCreate('create_ec', { ueId: u.id })}><i className="fas fa-plus" /> EC</Btn>
                         <Btn color="#ef4444" onClick={() => del(`/api/admin/ues/${u.id}`, 'Supprimer cette UE et tous ses ECs ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
                       </div>
                     </div>
@@ -985,11 +980,11 @@ export default function AdminFormationsPage() {
                     {u.ecs.length > 0 && (
                       <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: 7 }}>
                         {u.ecs.map(ec => (
-                          <div key={ec.id} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 9, padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div key={ec.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                              <span style={{ fontSize:15.5, fontWeight: 700, color: '#78350f' }}>{ec.code}</span>
-                              <span style={{ fontSize:15.5, color: '#92400e' }}> — {ec.name}</span>
-                              <div style={{ fontSize:13, color: '#b45309', marginTop: 3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize:15.5, fontWeight: 700, color: '#0f172a' }}>{ec.code}</span>
+                              <span style={{ fontSize:15.5, color: '#64748b' }}> — {ec.name}</span>
+                              <div style={{ fontSize:13, color: '#64748b', marginTop: 3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                                 <span>Coef: {ec.coefficient}</span>
                                 {(ec.cm || 0) > 0 && <span>CM: {ec.cm}h</span>}
                                 {(ec.td || 0) > 0 && <span>TD: {ec.td}h</span>}
@@ -1042,12 +1037,12 @@ export default function AdminFormationsPage() {
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={openWizard}
               title="Créer pas-à-pas : Pôle → Niveau → Formation → Semestre → UE → EC"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#db2777', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700 }}>
               <i className="fas fa-shoe-prints" /> Créer la hiérarchie (pas-à-pas)
             </button>
             <button onClick={() => { setModal({ kind: 'import_csv' }); setCsvFile(null); setImportResult(null) }}
               title="Import en masse — crée aussi le Pôle et le Niveau à la volée s'ils n'existent pas encore"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700 }}>
               <i className="fas fa-file-csv" /> Import CSV
             </button>
           </div>
@@ -1096,15 +1091,15 @@ export default function AdminFormationsPage() {
                       {pnv.map(n => {
                         const nf = formations.filter(f => f.niveau_id === n.id)
                         return (
-                          <div key={n.id} style={{ border: '1px solid #0d948840', borderRadius: 12, overflow: 'hidden' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0d948812', padding: '10px 16px' }}>
-                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#0d9488' }} />
+                          <div key={n.id} style={{ border: '1px solid #3b82f640', borderRadius: 12, overflow: 'hidden' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#3b82f612', padding: '10px 16px' }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#3b82f6' }} />
                               <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 800, fontSize:15, color: '#0d9488' }}>Niveau {n.code} — {n.name}</div>
+                                <div style={{ fontWeight: 800, fontSize:15, color: '#3b82f6' }}>Niveau {n.code} — {n.name}</div>
                                 <div style={{ fontSize:12.5, color: 'var(--text-muted)' }}>{nf.length} formation(s)</div>
                               </div>
                               <button onClick={() => openEdit('edit_niveau', n)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize:14.5, padding: 2 }} title="Modifier">
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', fontSize:14.5, padding: 2 }} title="Modifier">
                                 <i className="fas fa-pen" />
                               </button>
                               <button onClick={() => deleteNiveau(n.id, n.code)}
@@ -1131,7 +1126,7 @@ export default function AdminFormationsPage() {
                             onChange={e => setNiveauForm(f => ({ ...f, name: e.target.value }))}
                             style={{ width: 150, padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 7, fontSize:14.5, background: 'var(--surface)', color: 'var(--text)' }} />
                           <button onClick={() => createNiveau(p.id)} disabled={niveauSubmitting || !niveauForm.code || !niveauForm.name}
-                            style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: '#0d9488', color: 'white', cursor: 'pointer', fontSize:14.5, fontWeight: 700, opacity: (!niveauForm.code || !niveauForm.name) ? .5 : 1 }}>
+                            style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize:14.5, fontWeight: 700, opacity: (!niveauForm.code || !niveauForm.name) ? .5 : 1 }}>
                             <i className={`fas ${niveauSubmitting ? 'fa-spinner fa-spin' : 'fa-check'}`} />
                           </button>
                           <button onClick={() => { setQuickNiveauPoleId(null); setNiveauForm({ code: '', name: '', description: '' }) }}
@@ -1141,7 +1136,7 @@ export default function AdminFormationsPage() {
                         </div>
                       ) : (
                         <button onClick={() => { setQuickNiveauPoleId(p.id); setNiveauForm({ code: '', name: '', description: '' }) }}
-                          style={{ alignSelf: 'flex-start', background: 'none', border: '1.5px dashed #0d948870', borderRadius: 8, padding: '6px 12px', color: '#0d9488', fontSize:14.5, fontWeight: 700, cursor: 'pointer' }}>
+                          style={{ alignSelf: 'flex-start', background: 'none', border: '1.5px dashed #3b82f670', borderRadius: 8, padding: '6px 12px', color: '#3b82f6', fontSize:14.5, fontWeight: 700, cursor: 'pointer' }}>
                           <i className="fas fa-plus" style={{ marginRight: 5 }} />Niveau
                         </button>
                       )}
@@ -1166,7 +1161,7 @@ export default function AdminFormationsPage() {
                               <div style={{ fontSize:12.5, color: 'var(--text-muted)' }}>{nf.length} formation(s)</div>
                             </div>
                             <button onClick={() => openEdit('edit_niveau', n)}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize:14.5, padding: 2 }} title="Modifier">
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', fontSize:14.5, padding: 2 }} title="Modifier">
                               <i className="fas fa-pen" />
                             </button>
                             <button onClick={() => deleteNiveau(n.id, n.code)}
@@ -1189,7 +1184,7 @@ export default function AdminFormationsPage() {
               {/* Formations sans niveau (à rattacher via "Modifier") */}
               {formationsSansNiveau.length > 0 && (
                 <div>
-                  <div style={{ fontSize:15.5, fontWeight: 800, color: '#b45309', marginBottom: 10 }}>
+                  <div style={{ fontSize:15.5, fontWeight: 800, color: '#64748b', marginBottom: 10 }}>
                     <i className="fas fa-triangle-exclamation" style={{ marginRight: 6 }} />
                     Formations sans niveau ({formationsSansNiveau.length}) — à rattacher via &quot;Modifier&quot;
                   </div>
@@ -1231,8 +1226,8 @@ export default function AdminFormationsPage() {
       {modal?.kind === 'import_csv' && (
         <ModalOverlay onClose={() => setModal(null)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid var(--border)' }}>
-            <div style={{ width: 42, height: 42, borderRadius: 11, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className="fas fa-file-import" style={{ color: '#10b981', fontSize: 20 }} />
+            <div style={{ width: 42, height: 42, borderRadius: 11, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fas fa-file-import" style={{ color: '#3b82f6', fontSize: 20 }} />
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize:21.5, fontWeight: 800 }}>Import Bulk Maquette</h3>
@@ -1254,7 +1249,7 @@ export default function AdminFormationsPage() {
           </div>
 
           <button onClick={downloadCsvTemplate}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#06b6d4', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700, marginBottom: 18 }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize:15.5, fontWeight: 700, marginBottom: 18 }}>
             <i className="fas fa-download" /> Télécharger Template CSV
           </button>
 
@@ -1266,13 +1261,13 @@ export default function AdminFormationsPage() {
           </div>
 
           {importResult?.created && (
-            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: 14, marginBottom: 14, fontSize:15.5 }}>
-              <strong style={{ color: '#166534' }}><i className="fas fa-check-circle" style={{ marginRight: 5 }} />Import réussi !</strong>
-              <div style={{ marginTop: 5, color: '#166534' }}>
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: 14, marginBottom: 14, fontSize:15.5 }}>
+              <strong style={{ color: '#1d4ed8' }}><i className="fas fa-check-circle" style={{ marginRight: 5 }} />Import réussi !</strong>
+              <div style={{ marginTop: 5, color: '#1d4ed8' }}>
                 Formations: {importResult.created.formations || 0} · Semestres: {importResult.created.semesters || 0} · UEs: {importResult.created.ues || 0} · ECs: {importResult.created.ecs || 0}
               </div>
               {importResult.errors?.length > 0 && (
-                <ul style={{ margin: '8px 0 0 16px', color: '#92400e', fontSize:14.5 }}>
+                <ul style={{ margin: '8px 0 0 16px', color: '#64748b', fontSize:14.5 }}>
                   {importResult.errors.map((e: string, i: number) => <li key={i}>{e}</li>)}
                 </ul>
               )}
@@ -1281,7 +1276,7 @@ export default function AdminFormationsPage() {
 
           <div style={{ display: 'flex', gap: 10, paddingTop: 8 }}>
             <button onClick={handleImportCsv} disabled={importing || !csvFile}
-              style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontSize:17, fontWeight: 700, opacity: !csvFile ? .5 : 1 }}>
+              style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize:17, fontWeight: 700, opacity: !csvFile ? .5 : 1 }}>
               <i className={`fas ${importing ? 'fa-spinner fa-spin' : 'fa-upload'}`} style={{ marginRight: 7 }} />
               {importing ? 'Import en cours…' : 'Importer'}
             </button>
@@ -1298,8 +1293,8 @@ export default function AdminFormationsPage() {
       {modal?.kind === 'wizard' && (
         <ModalOverlay onClose={() => setModal(null)} wide>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
-            <div style={{ width: 42, height: 42, borderRadius: 11, background: '#fdf2f8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className="fas fa-shoe-prints" style={{ color: '#db2777', fontSize: 20 }} />
+            <div style={{ width: 42, height: 42, borderRadius: 11, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fas fa-shoe-prints" style={{ color: '#3b82f6', fontSize: 20 }} />
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize:21.5, fontWeight: 800 }}>Créer la hiérarchie pas-à-pas</h3>
@@ -1316,8 +1311,8 @@ export default function AdminFormationsPage() {
                 <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{
                     fontSize:15, fontWeight: 800, padding: '4px 10px', borderRadius: 20,
-                    background: state === 'current' ? '#db2777' : state === 'done' ? '#fce7f3' : 'var(--border)',
-                    color: state === 'current' ? 'white' : state === 'done' ? '#db2777' : 'var(--text-muted)',
+                    background: state === 'current' ? '#3b82f6' : state === 'done' ? '#dbeafe' : 'var(--border)',
+                    color: state === 'current' ? 'white' : state === 'done' ? '#3b82f6' : 'var(--text-muted)',
                   }}>
                     {state === 'done' && <i className="fas fa-check" style={{ marginRight: 4 }} />}
                     {WIZARD_LABELS[s]}
