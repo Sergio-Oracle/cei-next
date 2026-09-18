@@ -1,0 +1,79 @@
+#!/bin/bash
+# Construit ce dépôt localement puis envoie UNIQUEMENT l'artefact
+# .next/standalone/ vers preprod-thieboudiene (préproduction, préprod-cei.unchk.sn,
+# 102.36.139.47) — jamais le code source, jamais un `npm run build` exécuté sur
+# le serveur. Miroir de deploy-to-prod.sh, adapté au nouveau serveur de
+# préproduction créé par la DITSI (dupliqué de thieboudiene le 2026-09-16).
+#
+# Depuis le 2026-09-16, thieboudiene (prod) ne doit plus être touché sans
+# autorisation explicite — ce script devient la cible de déploiement par
+# défaut : local -> preprod-cei.unchk.sn -> (avec autorisation) production.
+set -euo pipefail
+cd "$(dirname "$0")"
+
+PREPROD_API_URL="https://preprod-cei.unchk.sn"
+PREPROD_HOST="serge@102.36.139.47"
+PREPROD_PORT="3120"
+PREPROD_KEY="$HOME/.ssh/id_ed25519_unchk"
+PREPROD_PATH="/home/serge/projet-cei/cei-next"
+
+echo "== Build (NEXT_PUBLIC_API_URL=$PREPROD_API_URL, en dur, ignore .env.local) =="
+NEXT_PUBLIC_API_URL="$PREPROD_API_URL" npm run build
+
+echo "== Garde-fou : vérifier qu'aucune URL de dev ou de prod n'a fui dans le build =="
+if grep -rl "dev-cei.ddns.net" .next/static/ >/dev/null 2>&1; then
+  echo "ERREUR : dev-cei.ddns.net trouvé dans .next/static/ — build refusé, ne pas déployer." >&2
+  exit 1
+fi
+if grep -rlE "https://cei\.unchk\.sn" .next/static/ >/dev/null 2>&1; then
+  echo "ERREUR : URL de PRODUCTION (cei.unchk.sn) trouvée dans .next/static/ — build refusé, ne pas déployer sur preprod." >&2
+  exit 1
+fi
+if ! grep -rl "$PREPROD_API_URL" .next/static/ >/dev/null 2>&1; then
+  echo "ERREUR : $PREPROD_API_URL introuvable dans .next/static/ — build suspect, ne pas déployer." >&2
+  exit 1
+fi
+echo "OK — build propre."
+
+echo "== Assemblage de l'artefact standalone =="
+cp -r .next/static .next/standalone/.next/static
+cp -r public .next/standalone/public
+BUILD_ID=$(cat .next/BUILD_ID)
+sed -i "s/__BUILD_ID__/$BUILD_ID/" .next/standalone/public/sw.js
+echo "BUILD_ID=$BUILD_ID"
+
+echo "== Envoi vers preprod-cei.unchk.sn (rsync, artefact seul, pas le code source) =="
+rsync -az --delete -e "ssh -i $PREPROD_KEY -p $PREPROD_PORT -o ConnectTimeout=15" \
+  .next/standalone/ "$PREPROD_HOST:$PREPROD_PATH/.next/standalone/"
+
+echo "== Garde-fou : re-vérifier sur le serveur lui-même après transfert =="
+ssh -i "$PREPROD_KEY" -p "$PREPROD_PORT" -o ConnectTimeout=15 "$PREPROD_HOST" "
+  if grep -rl 'dev-cei.ddns.net' '$PREPROD_PATH/.next/standalone/.next/static/' >/dev/null 2>&1; then
+    echo 'ERREUR CRITIQUE : dev-cei.ddns.net présent sur le serveur après transfert — redémarrage ANNULÉ.' >&2
+    exit 1
+  fi
+  if grep -rlE 'https://cei\.unchk\.sn' '$PREPROD_PATH/.next/standalone/.next/static/' >/dev/null 2>&1; then
+    echo 'ERREUR CRITIQUE : URL de PRODUCTION présente sur le serveur de préprod après transfert — redémarrage ANNULÉ.' >&2
+    exit 1
+  fi
+  echo 'OK — vérifié sur le serveur, aucune URL de dev/prod.'
+"
+
+echo "== Redémarrage des 6 instances =="
+ssh -i "$PREPROD_KEY" -p "$PREPROD_PORT" -o ConnectTimeout=15 "$PREPROD_HOST" \
+  "sudo -n /bin/systemctl restart cei-next && sudo -n /bin/systemctl restart 'cei-next-2' && sudo -n /bin/systemctl restart 'cei-next-3' && sudo -n /bin/systemctl restart 'cei-next-4' && sudo -n /bin/systemctl restart 'cei-next-5' && sudo -n /bin/systemctl restart 'cei-next-6'"
+sleep 3
+
+echo "== Vérification des 6 ports =="
+ssh -i "$PREPROD_KEY" -p "$PREPROD_PORT" -o ConnectTimeout=15 "$PREPROD_HOST" '
+  for p in 5175 5176 5177 5178 5179 5180; do
+    echo "  port $p -> $(curl -s -o /dev/null -w "%{http_code}" http://localhost:$p/)"
+  done
+'
+echo "== Terminé =="
+echo ""
+echo "!! ATTENTION : ce dossier local (.next/) contient maintenant le build de PRÉPRODUCTION"
+echo "   (NEXT_PUBLIC_API_URL=$PREPROD_API_URL). Le service local cei-next.service sert CE dossier."
+echo "   Avant de retester en local (dev-cei.ddns.net), lancez :"
+echo "     cd $(dirname "$0") && npm run build && systemctl restart cei-next"
+echo "   Sinon dev-cei.ddns.net appellera l'API de préproduction (échec CORS)."

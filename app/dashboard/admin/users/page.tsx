@@ -15,10 +15,58 @@ const ROLE_META: Record<string, { label: string; plural: string; color: string; 
 }
 
 const SECTION_ORDER = ['admin', 'professor', 'superviseur', 'surveillant', 'student']
+const PAGE_SIZE = 50
 
 interface Pole { id: number; code: string; name: string }
 interface Niveau { id: number; code: string; name: string; pole_id?: number }
 interface FormationOpt { id: number; code: string; name: string; niveau_id?: number; pole_id?: number }
+
+interface StudentPoleGroup { pole_id: number | null; pole_code: string; pole_name: string; count: number }
+
+interface ListState {
+  users: User[]
+  page: number
+  totalPages: number
+  total: number
+  loading: boolean
+}
+
+const emptyList = (): ListState => ({ users: [], page: 1, totalPages: 1, total: 0, loading: false })
+
+/* ── Pager façon Moodle : « Précédent  1 … 4 5 [6] 7 8 … 40  Suivant » ────── */
+function Pager({ page, totalPages, onChange, loading }: { page: number; totalPages: number; onChange: (p: number) => void; loading?: boolean }) {
+  if (totalPages <= 1) return null
+  const windowSize = 2
+  const nums = new Set<number>([1, totalPages])
+  for (let p = page - windowSize; p <= page + windowSize; p++) if (p > 1 && p < totalPages) nums.add(p)
+  const sorted = Array.from(nums).sort((a, b) => a - b)
+  const items: (number | '…')[] = []
+  let prev = 0
+  for (const p of sorted) { if (prev && p - prev > 1) items.push('…'); items.push(p); prev = p }
+
+  const btn = (active?: boolean): React.CSSProperties => ({
+    minWidth: 32, height: 32, padding: '0 9px', borderRadius: 7,
+    border: active ? '1px solid var(--primary)' : '1px solid var(--border)',
+    background: active ? 'var(--primary)' : 'var(--surface)',
+    color: active ? '#fff' : 'var(--text)',
+    cursor: 'pointer', fontSize: 14, fontWeight: 600,
+  })
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 5, padding: '14px 8px', flexWrap: 'wrap' }}>
+      <button disabled={page <= 1 || loading} onClick={() => onChange(page - 1)} style={{ ...btn(), opacity: page <= 1 ? .5 : 1 }}>
+        ‹ Précédent
+      </button>
+      {items.map((it, i) => it === '…'
+        ? <span key={`e${i}`} style={{ padding: '0 3px', color: 'var(--text-muted)' }}>…</span>
+        : <button key={it} disabled={loading} onClick={() => onChange(it as number)} style={btn(it === page)}>{it}</button>
+      )}
+      <button disabled={page >= totalPages || loading} onClick={() => onChange(page + 1)} style={{ ...btn(), opacity: page >= totalPages ? .5 : 1 }}>
+        Suivant ›
+      </button>
+    </div>
+  )
+}
 
 /* ── Initiales depuis le nom complet ─────────────────────────────────────── */
 function initials(name: string) {
@@ -28,12 +76,22 @@ function initials(name: string) {
 export default function AdminUsersPage() {
   const { success, error } = useToast()
 
-  const [users, setUsers]         = useState<User[]>([])
-  const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState<string>('') // role | 'no_email'
   const [deleting, setDeleting]   = useState<number | null>(null)
   const [togglingActive, setTogglingActive] = useState<number | null>(null)
+
+  // Compteurs globaux (bandeau de stats) + répartition étudiants par pôle —
+  // indépendants de la pagination, chargés une fois (+ recache 30s côté API).
+  const [roleCounts, setRoleCounts] = useState<Record<string, number>>({})
+  const [studentPoleGroups, setStudentPoleGroups] = useState<StudentPoleGroup[]>([])
+  const [countsLoaded, setCountsLoaded] = useState(false)
+
+  // Une liste paginée par section (admin/professor/superviseur/surveillant),
+  // et une liste paginée par pôle pour les étudiants (clé = String(pole_id), 'none', ou 'all').
+  const [roleLists, setRoleLists] = useState<Record<string, ListState>>({})
+  const [poleLists, setPoleLists] = useState<Record<string, ListState>>({})
 
   /* Modal créer / modifier */
   const [modal, setModal]       = useState<'create' | 'edit' | 'no_email' | 'csv' | null>(null)
@@ -63,7 +121,14 @@ export default function AdminUsersPage() {
   const [importResult, setImportResult] = useState<any>(null)
   const [showCodesRef, setShowCodesRef] = useState(false)
 
-  useEffect(() => { load(); loadHierarchy() }, [])
+  useEffect(() => { loadCounts(); loadHierarchy() }, [])
+
+  // Recherche débattue (400ms) : évite de déclencher un fetch par section/pôle
+  // à chaque frappe — jusqu'à une dizaine de colonnes pourraient être ouvertes.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 400)
+    return () => clearTimeout(t)
+  }, [search])
 
   async function loadHierarchy() {
     try {
@@ -78,36 +143,89 @@ export default function AdminUsersPage() {
     } catch { /* silencieux — la Maquette peut ne pas encore être configurée */ }
   }
 
-  async function load() {
-    setLoading(true)
+  async function loadCounts() {
     try {
-      const data = await api.get<User[]>('/api/admin/users')
-      setUsers(Array.isArray(data) ? data : (data as any).users || [])
-    } catch { error('Erreur chargement utilisateurs') }
-    finally { setLoading(false) }
+      const data = await api.get<any>('/api/admin/users/role-counts')
+      setRoleCounts(data.roles || {})
+      setStudentPoleGroups(data.student_poles || [])
+    } catch { /* silencieux — le bandeau de stats reste à 0, pas bloquant */ }
+    finally { setCountsLoaded(true) }
   }
 
-  /* ── Filtrage ─────────────────────────────────────────────────────────── */
+  /* ── Fetch paginé générique ──────────────────────────────────────────── */
+  async function fetchUsersPage(params: Record<string, string>) {
+    const qs = new URLSearchParams(params)
+    const data = await api.get<any>(`/api/admin/users?${qs.toString()}`)
+    if (Array.isArray(data)) return { users: data, total: data.length, page: 1, total_pages: 1 }
+    return { users: data.users ?? [], total: data.total ?? 0, page: data.page ?? 1, total_pages: data.total_pages ?? 1 }
+  }
+
+  async function loadRoleList(role: string, page: number) {
+    setRoleLists(p => ({ ...p, [role]: { ...(p[role] || emptyList()), loading: true } }))
+    const params: Record<string, string> = { role, page: String(page), limit: String(PAGE_SIZE) }
+    if (debouncedSearch) params.search = debouncedSearch
+    if (activeFilter === 'no_email') params.no_email = '1'
+    try {
+      const r = await fetchUsersPage(params)
+      setRoleLists(p => ({ ...p, [role]: { users: r.users, total: r.total, page: r.page, totalPages: r.total_pages, loading: false } }))
+    } catch {
+      error('Erreur chargement utilisateurs')
+      setRoleLists(p => ({ ...p, [role]: { ...(p[role] || emptyList()), loading: false } }))
+    }
+  }
+
+  async function loadPoleList(key: string, poleIdParam: string, page: number) {
+    setPoleLists(p => ({ ...p, [key]: { ...(p[key] || emptyList()), loading: true } }))
+    const params: Record<string, string> = { role: 'student', page: String(page), limit: String(PAGE_SIZE) }
+    if (poleIdParam) params.pole_id = poleIdParam
+    if (debouncedSearch) params.search = debouncedSearch
+    if (activeFilter === 'no_email') params.no_email = '1'
+    try {
+      const r = await fetchUsersPage(params)
+      setPoleLists(p => ({ ...p, [key]: { users: r.users, total: r.total, page: r.page, totalPages: r.total_pages, loading: false } }))
+    } catch {
+      error('Erreur chargement étudiants')
+      setPoleLists(p => ({ ...p, [key]: { ...(p[key] || emptyList()), loading: false } }))
+    }
+  }
+
+  // Sections à afficher/recharger : soit tout (SECTION_ORDER), soit une seule
+  // (stat card cliquée), soit "student" seul pour le filtre "sans email".
+  const rolesToLoad = activeFilter === 'no_email' ? ['student'] : activeFilter ? [activeFilter] : SECTION_ORDER
+
+  function reloadVisible() {
+    rolesToLoad.forEach(role => {
+      if (role === 'student') {
+        if (studentPoleGroups.length === 0) {
+          loadPoleList('all', '', 1)
+        } else {
+          studentPoleGroups.forEach(g => loadPoleList(g.pole_id == null ? 'none' : String(g.pole_id), g.pole_id == null ? 'none' : String(g.pole_id), 1))
+        }
+      } else {
+        loadRoleList(role, 1)
+      }
+    })
+  }
+
+  useEffect(() => {
+    reloadVisible()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFilter, debouncedSearch, studentPoleGroups])
+
+  /* ── "Sans email" (badge, calculé côté client sur les lignes déjà reçues) ── */
   const isNoEmail = (u: User) => !!u.email?.includes('@no-email.cei.local') || u.has_email === false
 
-  const filtered = users.filter(u => {
-    const q = search.toLowerCase()
-    const matchQ = !q || u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)
-    const matchF =
-      !activeFilter ? true :
-      activeFilter === 'no_email' ? isNoEmail(u) :
-      u.role === activeFilter
-    return matchQ && matchF
-  })
+  const stats = SECTION_ORDER.map(r => ({ role: r, count: roleCounts[r] || 0 }))
 
-  const countByRole = (role: string) => users.filter(u => u.role === role).length
-  const stats = SECTION_ORDER.map(r => ({ role: r, count: countByRole(r) }))
-
-  /* ── Grouper par rôle ────────────────────────────────────────────────── */
-  const sections = SECTION_ORDER.map(role => ({
-    role,
-    users: filtered.filter(u => u.role === role),
-  })).filter(s => s.users.length > 0)
+  /* ── Sections à rendre (celles visibles + non vides) ────────────────────── */
+  const sections = SECTION_ORDER
+    .filter(role => rolesToLoad.includes(role))
+    .map(role => ({
+      role,
+      isStudent: role === 'student',
+      list: role === 'student' ? null : (roleLists[role] || emptyList()),
+    }))
+    .filter(s => s.isStudent ? (roleCounts['student'] || 0) > 0 : (s.list!.total > 0 || s.list!.loading))
 
   /* ── Actions ─────────────────────────────────────────────────────────── */
   function openCreate(role: UserRole) {
@@ -145,7 +263,7 @@ export default function AdminUsersPage() {
         success('Utilisateur créé')
       }
       setModal(null)
-      await load()
+      reloadVisible(); loadCounts()
     } catch (e: any) { error(e.message) }
     finally { setSaving(false) }
   }
@@ -156,7 +274,7 @@ export default function AdminUsersPage() {
     try {
       await api.delete(`/api/admin/users/${id}`)
       success('Utilisateur supprimé')
-      setUsers(p => p.filter(u => u.id !== id))
+      reloadVisible(); loadCounts()
     } catch (e: any) { error(e.message) }
     finally { setDeleting(null) }
   }
@@ -166,8 +284,8 @@ export default function AdminUsersPage() {
     setTogglingActive(id)
     try {
       await api.put(`/api/admin/users/${id}`, { is_active: !currentlyActive })
-      setUsers(p => p.map(u => u.id === id ? { ...u, is_active: !currentlyActive } : u))
       success(currentlyActive ? 'Compte désactivé' : 'Compte réactivé')
+      reloadVisible()
     } catch (e: any) { error(e.message) }
     finally { setTogglingActive(null) }
   }
@@ -181,7 +299,7 @@ export default function AdminUsersPage() {
         formation_id: noEmailForm.formation_id || undefined,
       })
       setNoEmailResult({ email: res.user?.email || '', temp_password: res.temp_password || '' })
-      await load()
+      reloadVisible(); loadCounts()
     } catch (e: any) { error(e.message) }
     finally { setSaving(false) }
   }
@@ -207,7 +325,7 @@ export default function AdminUsersPage() {
       const res = await api.upload<any>('/api/admin/users/import-csv', fd)
       setImportResult(res)
       success(`${res.created || res.imported || 0} utilisateur(s) créé(s)`)
-      setTimeout(() => { setModal(null); load() }, 2000)
+      setTimeout(() => { setModal(null); reloadVisible(); loadCounts() }, 2000)
     } catch (e: any) { error(e.message) }
     finally { setImporting(false) }
   }
@@ -298,7 +416,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Sections par rôle */}
-      {loading ? (
+      {!countsLoaded ? (
         <div style={{ textAlign: 'center', padding: 60 }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: 35, color: 'var(--primary)' }} />
         </div>
@@ -308,16 +426,19 @@ export default function AdminUsersPage() {
           Aucun utilisateur trouvé
         </div>
       ) : (
-        sections.map(({ role, users: sUsers }) => {
+        sections.map(({ role, isStudent, list }) => {
           const m = ROLE_META[role] || ROLE_META.student
-
-          // Retour : "je veux que tu les affiches par Pôles" — puis "il faut
-          // les afficher côte à côte par pôles" : au lieu d'onglets filtrant
-          // une même table, chaque pôle obtient sa propre colonne affichée
-          // simultanément à côté des autres.
-          const studentPoles = role === 'student'
-            ? Array.from(new Map(sUsers.filter(u => u.pole_code).map(u => [u.pole_code, { code: u.pole_code!, name: u.pole_name || u.pole_code! }])).values())
+          // Pour les étudiants : une colonne par pôle (état serveur, plus fiable
+          // que ce qui est chargé sur la page courante). Sinon, une seule "colonne".
+          const poleColumns: { key: string; poleIdParam: string; name: string }[] = isStudent
+            ? (studentPoleGroups.length > 0
+                ? studentPoleGroups.map(g => ({ key: g.pole_id == null ? 'none' : String(g.pole_id), poleIdParam: g.pole_id == null ? 'none' : String(g.pole_id), name: g.pole_name || g.pole_code }))
+                : [{ key: 'all', poleIdParam: '', name: 'Étudiants' }])
             : []
+          const showPoleColumnStyle = isStudent && poleColumns.length > 1
+          const sectionTotal = isStudent
+            ? (poleColumns.length > 0 ? poleColumns.reduce((s, c) => s + (poleLists[c.key]?.total || 0), 0) : 0)
+            : list!.total
 
           const renderRow = (u: User) => (
             <tr key={u.id}>
@@ -333,14 +454,14 @@ export default function AdminUsersPage() {
                 </div>
               </td>
               <td style={{ color: 'var(--text-muted)', fontSize:15.5 }}>{u.email || '—'}</td>
-              {role === 'student' && studentPoles.length <= 1 && (
+              {isStudent && !showPoleColumnStyle && (
                 <td style={{ fontSize:15.5 }}>
                   {u.pole_code
                     ? <span title={u.pole_name} style={{ background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4', borderRadius: 99, padding: '2px 9px', fontSize:13, fontWeight: 700 }}>{u.pole_code}</span>
                     : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                 </td>
               )}
-              {role === 'student' && (
+              {isStudent && (
                 <td style={{ fontSize:15.5 }}>
                   {u.formation_code ? (
                     <span title={u.formation_name}>{u.niveau ? `${u.niveau} · ` : ''}{u.formation_code}</span>
@@ -382,8 +503,8 @@ export default function AdminUsersPage() {
               <tr>
                 <th>NOM</th>
                 <th>EMAIL</th>
-                {role === 'student' && studentPoles.length <= 1 && <th>PÔLE</th>}
-                {role === 'student' && <th>NIVEAU</th>}
+                {isStudent && !showPoleColumnStyle && <th>PÔLE</th>}
+                {isStudent && <th>NIVEAU</th>}
                 <th>STATUT</th>
                 <th>ACTIONS</th>
               </tr>
@@ -399,40 +520,77 @@ export default function AdminUsersPage() {
                 </div>
                 <h3 style={{ margin: 0, fontSize:19 }}>
                   {m.plural}
-                  <span style={{ marginLeft: 8, fontSize:15.5, fontWeight: 600, color: m.color, background: m.bg, padding: '2px 8px', borderRadius: 20 }}>{sUsers.length}</span>
+                  <span style={{ marginLeft: 8, fontSize:15.5, fontWeight: 600, color: m.color, background: m.bg, padding: '2px 8px', borderRadius: 20 }}>{sectionTotal}</span>
                 </h3>
               </div>
 
-              {role === 'student' && studentPoles.length > 1 ? (
-                /* Un pôle = une colonne, affichées côte à côte */
-                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${studentPoles.length}, 1fr)`, gap: 16, padding: 16, overflowX: 'auto' }}>
-                  {studentPoles.map(p => {
-                    const poleUsers = sUsers.filter(u => u.pole_code === p.code)
-                    return (
-                      <div key={p.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', minWidth: 320 }}>
-                        <div style={{ padding: '10px 14px', background: '#f0fdfa', borderBottom: '1px solid #99f6e4', display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <i className="fas fa-sitemap" style={{ color: '#0d9488', fontSize: 16 }} />
-                          <span style={{ fontWeight: 700, fontSize:15.5, color: '#0d9488' }}>{p.name}</span>
-                          <span style={{ marginLeft: 'auto', fontSize:14.5, fontWeight: 700, color: '#0d9488', background: '#ccfbf1', padding: '2px 8px', borderRadius: 20 }}>{poleUsers.length}</span>
+              {isStudent ? (
+                showPoleColumnStyle ? (
+                  /* Un pôle = une colonne, affichées côte à côte, chacune paginée A-Z */
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${poleColumns.length}, 1fr)`, gap: 16, padding: 16, overflowX: 'auto' }}>
+                    {poleColumns.map(col => {
+                      const pl = poleLists[col.key] || emptyList()
+                      return (
+                        <div key={col.key} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', minWidth: 320 }}>
+                          <div style={{ padding: '10px 14px', background: '#f0fdfa', borderBottom: '1px solid #99f6e4', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <i className="fas fa-sitemap" style={{ color: '#0d9488', fontSize: 16 }} />
+                            <span style={{ fontWeight: 700, fontSize:15.5, color: '#0d9488' }}>{col.name}</span>
+                            <span style={{ marginLeft: 'auto', fontSize:14.5, fontWeight: 700, color: '#0d9488', background: '#ccfbf1', padding: '2px 8px', borderRadius: 20 }}>{pl.total}</span>
+                          </div>
+                          <div className="table-responsive" style={{ position: 'relative', minHeight: 60 }}>
+                            {pl.loading && (
+                              <div style={{ position: 'absolute', inset: 0, background: 'var(--surface)', opacity: .6, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                                <i className="fas fa-spinner fa-spin" style={{ color: 'var(--primary)' }} />
+                              </div>
+                            )}
+                            <table>
+                              {tableHead}
+                              <tbody>{pl.users.map(renderRow)}</tbody>
+                            </table>
+                          </div>
+                          <Pager page={pl.page} totalPages={pl.totalPages} loading={pl.loading}
+                            onChange={p => loadPoleList(col.key, col.poleIdParam, p)} />
                         </div>
-                        <div className="table-responsive">
-                          <table>
-                            {tableHead}
-                            <tbody>{poleUsers.map(renderRow)}</tbody>
-                          </table>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  /* Un seul "pôle" (ou aucun configuré) — table unique paginée */
+                  <>
+                    <div className="table-responsive" style={{ position: 'relative', minHeight: 60 }}>
+                      {(poleLists[poleColumns[0]?.key]?.loading) && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'var(--surface)', opacity: .6, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                          <i className="fas fa-spinner fa-spin" style={{ color: 'var(--primary)' }} />
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                      )}
+                      <table>
+                        {tableHead}
+                        <tbody>{(poleLists[poleColumns[0]?.key] || emptyList()).users.map(renderRow)}</tbody>
+                      </table>
+                    </div>
+                    <Pager page={(poleLists[poleColumns[0]?.key] || emptyList()).page}
+                      totalPages={(poleLists[poleColumns[0]?.key] || emptyList()).totalPages}
+                      loading={(poleLists[poleColumns[0]?.key] || emptyList()).loading}
+                      onChange={p => loadPoleList(poleColumns[0].key, poleColumns[0].poleIdParam, p)} />
+                  </>
+                )
               ) : (
-                /* Table unique — autres rôles, ou étudiants sur un seul pôle */
-                <div className="table-responsive">
-                  <table>
-                    {tableHead}
-                    <tbody>{sUsers.map(renderRow)}</tbody>
-                  </table>
-                </div>
+                /* Table unique — admin / professeur / superviseur / surveillant */
+                <>
+                  <div className="table-responsive" style={{ position: 'relative', minHeight: 60 }}>
+                    {list!.loading && (
+                      <div style={{ position: 'absolute', inset: 0, background: 'var(--surface)', opacity: .6, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                        <i className="fas fa-spinner fa-spin" style={{ color: 'var(--primary)' }} />
+                      </div>
+                    )}
+                    <table>
+                      {tableHead}
+                      <tbody>{list!.users.map(renderRow)}</tbody>
+                    </table>
+                  </div>
+                  <Pager page={list!.page} totalPages={list!.totalPages} loading={list!.loading}
+                    onChange={p => loadRoleList(role, p)} />
+                </>
               )}
             </div>
           )
