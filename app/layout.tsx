@@ -40,7 +40,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             },'google_translate_element');
           }
         `}} />
-        <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer />
+        {/* C-16 (audit DITSI-SSSI AVR-2026-09-CEI-AUDIT) : pas de Subresource
+            Integrity possible ici par construction — ce script est généré
+            dynamiquement par Google à chaque requête (varie selon locale,
+            feature flags, cb=...), pas un fichier statique dont le contenu
+            pourrait être figé/hashé ; c'est vrai pour tout intégrateur de ce
+            widget, pas spécifique à ce projet. La compensation retenue est la
+            CSP (script-src limité à translate.google.com/googleapis.com,
+            voir nginx) plutôt qu'une SRI infaisable. URL mise en https:
+            explicite (était en //, relative au protocole — sans effet
+            pratique ici vu que le site est HTTPS partout, mais retire toute
+            ambiguïté). */}
+        <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer />
         {/* Capture le prompt d'installation PWA le plus tôt possible (avant même
             l'hydratation React) — pratique standard recommandée : si l'écouteur
             n'est posé qu'une fois le composant React monté, l'événement peut

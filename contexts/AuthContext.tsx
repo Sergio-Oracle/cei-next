@@ -50,6 +50,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     api.setToken(null)
     localStorage.removeItem('user')
     clearAuthCookie()
+    // C-15 : filet de sécurité, purge tout cache de page qu'un Service Worker
+    // antérieur à ce correctif aurait pu laisser (le SW actuel ne met déjà en
+    // cache que les pages publiques, donc normalement rien à purger ici).
+    navigator.serviceWorker?.controller?.postMessage('CLEAR_PAGE_CACHE')
     if (mounted.current) { setToken(null); setUser(null) }
     router.push('/login')
   }, [router])

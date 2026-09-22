@@ -21,6 +21,20 @@ const PRECACHE_URLS = [
   '/fontawesome/all.min.css',
 ];
 
+// C-15 (audit DITSI-SSSI AVR-2026-09-CEI-AUDIT) : avant ce correctif, TOUTE
+// page HTML réussie était mise en cache ici, tableaux de bord/examens/
+// surveillance compris — un poste partagé (salle d'examen, cybercafé) pouvait
+// resservir hors-ligne le contenu d'un compte précédent, et le cache n'était
+// jamais purgé à la déconnexion. Miroir volontaire des routes publiques de
+// middleware.ts (PUBLIC_PATHS/PUBLIC_PREFIXES côté serveur) : seules CES pages
+// sont mises en cache ci-dessous ; tout le reste (dashboard, exam, proctor,
+// profile, settings...) reste en Network-first SANS jamais écrire dans
+// PAGE_CACHE, donc rien à purger — il n'y a simplement jamais rien dedans.
+const PUBLIC_PAGE_PATHS = new Set([
+  '/', '/login', '/forgot-password', '/reset-password', '/conditions', '/phone-camera',
+  '/guide-etudiant', '/guide-enseignant', '/guide-surveillant', '/guide-superviseur',
+]);
+
 // ── Installation ──────────────────────────────────────────────────────────────
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -106,10 +120,12 @@ self.addEventListener('fetch', event => {
   // que le cache HTTP du navigateur répond directement sans jamais recontacter
   // le serveur — un PWA installé restait alors bloqué sur une ancienne version
   // de la page (ex. connexion) même après un nouveau déploiement.
+  const cacheable = PUBLIC_PAGE_PATHS.has(url.pathname);
+
   event.respondWith(
     fetch(request, { cache: 'no-store' })
       .then(response => {
-        if (response.ok) {
+        if (response.ok && cacheable) {
           const clone = response.clone();
           caches.open(PAGE_CACHE).then(c => c.put(request, clone));
         }
@@ -123,7 +139,14 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// ── Message : forcer la mise à jour ──────────────────────────────────────────
+// ── Message : forcer la mise à jour / purger le cache de pages ───────────────
 self.addEventListener('message', event => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
+  // C-15 : envoyé par AuthContext.logout() — filet de sécurité en plus du
+  // filtre d'écriture ci-dessus (n'écrit déjà que des pages publiques), au
+  // cas où une page authentifiée aurait été mise en cache par un build
+  // antérieur à ce correctif et serait encore présente chez un client.
+  if (event.data === 'CLEAR_PAGE_CACHE') {
+    event.waitUntil(caches.delete(PAGE_CACHE));
+  }
 });
