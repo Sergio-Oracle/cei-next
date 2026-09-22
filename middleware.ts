@@ -8,6 +8,7 @@ const PUBLIC_PATHS = new Set([
   '/conditions',
   '/',
   '/robots.txt',
+  '/security.txt',
   // Ouverte depuis le téléphone en scannant un QR code — cet appareil n'a
   // jamais de session CEI (pas de cookie token), voir POST /api/phone_camera/token.
   '/phone-camera',
@@ -30,6 +31,11 @@ const PUBLIC_PREFIXES = [
   '/favicon',
   '/manifest.json',
   '/sw.js',
+  // C-23 (audit DITSI-SSSI AVR-2026-09-CEI-AUDIT) : /.well-known/security.txt
+  // retournait un 307 vers /login (redirigé comme n'importe quelle route
+  // privée, faute d'être listé ici) — pas un problème de fichier manquant,
+  // le middleware l'interceptait avant même d'atteindre le serveur statique.
+  '/.well-known/',
   '/api/',          // l'API gère sa propre auth
   '/guide-etudiant',
   '/guide-enseignant',
