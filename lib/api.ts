@@ -15,9 +15,27 @@ const DEFAULT_TIMEOUT_MS = 25_000    // 25s pour les routes normales
 export const AI_TIMEOUT_MS = 600_000  // 10 min pour les routes IA (génération/correction)
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+// C-06 (audit sécurité DITSI-SSSI AVR-2026-09-CEI-AUDIT) : le jeton d'accès n'est
+// plus jamais écrit dans localStorage ni dans un cookie posé par du JS (lisibles
+// par n'importe quel script exécuté dans la page — XSS, extension malveillante,
+// script tiers compromis). Gardé uniquement en mémoire JS : perdu au rechargement
+// de page ou à la fermeture d'onglet, la session est alors restaurée silencieusement
+// via /api/auth/refresh, qui s'appuie sur le refresh token déjà en cookie HttpOnly
+// côté serveur (donc jamais exposé au JS, avant comme après ce correctif).
+let _accessToken: string | null = null
+let _tokenExpiresAt: number | null = null
+
 function getToken(): string | null {
-  if (typeof window === 'undefined') return null
-  return localStorage.getItem('token')
+  return _accessToken
+}
+
+function setToken(token: string | null, expiresInSec?: number) {
+  _accessToken = token
+  _tokenExpiresAt = token && expiresInSec ? Date.now() + expiresInSec * 1000 : null
+}
+
+function tokenExpiringSoon(thresholdMs = 15_000): boolean {
+  return _tokenExpiresAt !== null && _tokenExpiresAt - Date.now() < thresholdMs
 }
 
 function sleep(ms: number) {
@@ -53,10 +71,7 @@ async function tryRefresh(): Promise<string | null> {
         }
         const json = await res.json()
         const token = json.access_token
-        if (token) {
-          localStorage.setItem('token', token)
-          if (json.expires_in) localStorage.setItem('token_expires_at', String(Date.now() + json.expires_in * 1000))
-        }
+        if (token) setToken(token, json.expires_in)
         return token ?? null
       } catch {
         if (attempt === 0) { await sleep(800); continue }
@@ -136,8 +151,9 @@ async function _request<T = any>(
     const newToken = await tryRefresh()
     if (newToken) return _request<T>(method, path, data, opts, false)
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('token')
+      setToken(null)
       localStorage.removeItem('user')
+      document.cookie = 'cei_logged_in=; path=/; max-age=0; SameSite=Strict'
       window.location.href = '/login'
     }
     return {} as T
@@ -203,6 +219,10 @@ export const api = {
   aiPost: <T = any>(path: string, data?: any)                                  =>
     _request<T>('POST', path, data, { timeoutMs: AI_TIMEOUT_MS }),
   postBeacon,
+  getToken,
+  setToken,
+  tokenExpiringSoon,
+  refresh: tryRefresh,
 }
 
 export default api

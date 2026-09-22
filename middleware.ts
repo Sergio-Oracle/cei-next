@@ -44,8 +44,10 @@ export function middleware(request: NextRequest) {
   if (PUBLIC_PREFIXES.some(p => pathname.startsWith(p))) return NextResponse.next()
   if (PUBLIC_PATHS.has(pathname)) return NextResponse.next()
 
-  // Vérifier la présence du token dans le cookie (posé par AuthContext)
-  const token = request.cookies.get('token')?.value
+  // Vérifier la présence de la session (cookie non-secret posé par AuthContext —
+  // C-06 : ne contient plus le jeton, juste un indicateur ; la vraie validation
+  // se fait côté serveur sur chaque appel API via le jeton en mémoire).
+  const token = request.cookies.get('cei_logged_in')?.value
   if (!token) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)

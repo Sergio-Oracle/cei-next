@@ -16,15 +16,18 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-function setAuthCookie(token: string) {
-  // Cookie lisible par le middleware Next.js (edge runtime) pour le garde de routes.
-  // Pas HttpOnly car posé côté client — ne remplace pas la validation serveur.
+// C-06 : ce cookie ne contient plus le jeton lui-même (avant : lisible par tout
+// script JS, donc par une XSS — voir lib/api.ts pour où le vrai jeton vit
+// désormais). Il ne sert qu'à indiquer au middleware Next.js (édge, côté
+// serveur) qu'une session existe, pour rediriger vers /login sans round-trip —
+// aucune valeur secrète dedans, donc aucun risque à ce qu'il reste lisible en JS.
+function setAuthCookie() {
   const secure = window.location.protocol === 'https:' ? '; Secure' : ''
-  document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Strict${secure}`
+  document.cookie = `cei_logged_in=1; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Strict${secure}`
 }
 
 function clearAuthCookie() {
-  document.cookie = 'token=; path=/; max-age=0; SameSite=Strict'
+  document.cookie = 'cei_logged_in=; path=/; max-age=0; SameSite=Strict'
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -40,34 +43,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token')
+    // Révoque le refresh token côté serveur (blocklist) — best-effort : on ne
+    // bloque pas la déconnexion locale si l'appel échoue (token déjà expiré,
+    // réseau coupé, etc.), l'utilisateur doit pouvoir se déconnecter dans tous les cas.
+    api.post('/api/auth/logout').catch(() => {})
+    api.setToken(null)
     localStorage.removeItem('user')
     clearAuthCookie()
     if (mounted.current) { setToken(null); setUser(null) }
     router.push('/login')
   }, [router])
 
-  // Restore session on mount — avec guard sur montage pour éviter setState orphelin
+  // Restore session on mount — le jeton d'accès n'est plus persisté (C-06), on le
+  // reconstitue silencieusement via /api/auth/refresh, qui s'appuie sur le refresh
+  // token déjà présent en cookie HttpOnly (posé par le serveur au login précédent).
   useEffect(() => {
-    const t = localStorage.getItem('token')
-    if (!t) { setLoading(false); return }
-    setToken(t)
-    api.get<{ user: User }>('/api/auth/me')
-      .then(res => { if (mounted.current) setUser(res.user ?? (res as any)) })
-      .catch(() => {
-        localStorage.removeItem('token')
-        clearAuthCookie()
-        if (mounted.current) setToken(null)
-      })
-      .finally(() => { if (mounted.current) setLoading(false) })
+    api.refresh().then((t: string | null) => {
+      if (!mounted.current) return
+      if (!t) { setLoading(false); return }
+      setToken(t)
+      api.get<{ user: User }>('/api/auth/me')
+        .then(res => { if (mounted.current) setUser(res.user ?? (res as any)) })
+        .catch(() => {
+          api.setToken(null)
+          clearAuthCookie()
+          if (mounted.current) setToken(null)
+        })
+        .finally(() => { if (mounted.current) setLoading(false) })
+    })
   }, [])
 
   const login = useCallback(async (email: string, password: string, force?: boolean) => {
     const res = await api.post<{ access_token: string; user: User; expires_in?: number }>('/api/auth/login', { email, password, force })
     const t = res.access_token
-    localStorage.setItem('token', t)
-    if (res.expires_in) localStorage.setItem('token_expires_at', String(Date.now() + res.expires_in * 1000))
-    setAuthCookie(t)
+    api.setToken(t, res.expires_in)
+    setAuthCookie()
     if (mounted.current) { setToken(t); setUser(res.user) }
     const role = res.user.role
     if      (role === 'admin')       router.push('/dashboard/admin')

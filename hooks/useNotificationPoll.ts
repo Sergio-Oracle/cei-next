@@ -13,6 +13,7 @@
  * jusqu'à l'intervalle de poll au lieu de ≈ 0.
  */
 import { useEffect, useRef } from 'react'
+import api from '@/lib/api'
 
 const API_URL         = process.env.NEXT_PUBLIC_API_URL || 'https://dev-cei.ddns.net'
 const POLL_VISIBLE_MS = 15_000   // onglet au premier plan
@@ -26,27 +27,12 @@ export interface NotifEvent {
   message: string
 }
 
-function getToken(): string | null {
-  if (typeof window === 'undefined') return null
-  return localStorage.getItem('token')
-}
-
+// C-06 : le jeton et son suivi d'expiration vivent en mémoire dans lib/api.ts
+// (jamais dans localStorage) — ce hook réutilise cette même source plutôt que
+// de garder sa propre copie, pour ne pas rouvrir la faille ailleurs.
+const getToken = api.getToken
 async function tryRefresh(): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_URL}/api/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include',
-    })
-    if (res.ok) {
-      const data = await res.json()
-      if (data?.access_token) {
-        localStorage.setItem('token', data.access_token)
-        if (data.expires_in) localStorage.setItem('token_expires_at', String(Date.now() + data.expires_in * 1000))
-        return true
-      }
-    }
-  } catch {}
-  return false
+  return (await api.refresh()) !== null
 }
 
 // Le token PASETO expire toutes les 15 min (ACCESS_TTL côté serveur). On le
@@ -54,10 +40,7 @@ async function tryRefresh(): Promise<boolean> {
 // tombe pas systématiquement sur un 401 (attendu, géré, mais visible dans les
 // DevTools).
 function tokenExpiringSoon(): boolean {
-  const raw = typeof window === 'undefined' ? null : localStorage.getItem('token_expires_at')
-  if (!raw) return false
-  const expiresAt = Number(raw)
-  return Number.isFinite(expiresAt) && expiresAt - Date.now() < POLL_VISIBLE_MS
+  return api.tokenExpiringSoon(POLL_VISIBLE_MS)
 }
 
 function isPageVisible(): boolean {
@@ -137,8 +120,9 @@ export function useNotificationPoll(
           const refreshed = await tryRefresh()
           if (!refreshed) {
             activeRef.current = false
-            localStorage.removeItem('token')
+            api.setToken(null)
             localStorage.removeItem('user')
+            document.cookie = 'cei_logged_in=; path=/; max-age=0; SameSite=Strict'
             window.location.href = '/login'
             return
           }
