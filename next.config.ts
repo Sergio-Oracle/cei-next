@@ -12,18 +12,14 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      {
-        source: '/(.*)',
-        headers: [
-          { key: 'X-Frame-Options', value: 'DENY' },
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(self), microphone=(self), geolocation=(), payment=()',
-          },
-        ],
-      },
+      // C-13 (audit DITSI-SSSI AVR-2026-09-CEI-AUDIT) : X-Frame-Options,
+      // X-Content-Type-Options, Referrer-Policy et Permissions-Policy étaient
+      // posés ICI *et* par NGINX *et* par le backend Flask — jusqu'à trois
+      // copies du même en-tête sur une même réponse, avec une contradiction
+      // réelle sur X-Frame-Options (DENY ici, SAMEORIGIN côté NGINX d'avant
+      // ce correctif). NGINX (server{} du vhost cei) est désormais la seule
+      // source pour ces quatre en-têtes, sur toutes les routes — retirés
+      // d'ici et du backend (voir cei-api-v2/app.py, même référence C-13).
       {
         source: '/_next/static/(.*)',
         headers: [
