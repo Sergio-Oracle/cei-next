@@ -4,7 +4,8 @@ Allow: /guide-etudiant
 Allow: /guide-enseignant
 Allow: /guide-surveillant
 Allow: /guide-superviseur
-Disallow: /dashboard
-Disallow: /exam
-Disallow: /proctor
-Disallow: /api
+Allow: /login
+Allow: /forgot-password
+Allow: /reset-password
+Allow: /conditions
+Disallow: /
