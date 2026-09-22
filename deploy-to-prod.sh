@@ -45,6 +45,9 @@ BUILD_ID=$(cat .next/BUILD_ID)
 sed -i "s/__BUILD_ID__/$BUILD_ID/" .next/standalone/public/sw.js
 echo "BUILD_ID=$BUILD_ID"
 
+echo "== C-19 : allègement des commentaires internes de sw.js (artefact déployé uniquement) =="
+node scripts/strip-sw-comments.js .next/standalone/public/sw.js
+
 echo "== Envoi vers thieboudiene (rsync, artefact seul, pas le code source) =="
 rsync -az --delete -e "ssh -i $PROD_KEY -p $PROD_PORT -o ConnectTimeout=15" \
   .next/standalone/ "$PROD_HOST:$PROD_PATH/.next/standalone/"
