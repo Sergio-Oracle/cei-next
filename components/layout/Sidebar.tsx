@@ -41,7 +41,6 @@ const adminNav: NavEntry[] = [
   { label: 'Banque questions',    href: '/dashboard/admin/questions',      icon: 'fa-database' },
   { label: 'Analytique',          href: '/dashboard/admin/analytics',      icon: 'fa-chart-bar' },
   { label: 'Sécurité',            href: '/dashboard/admin/security',       icon: 'fa-shield-alt' },
-  { label: 'Clés API',            href: '/dashboard/admin/api-clients',    icon: 'fa-key' },
 ]
 
 const professorNav: NavEntry[] = [
