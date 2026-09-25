@@ -18,6 +18,10 @@ const SSO_ERROR_MESSAGES: Record<string, string> = {
   invalid_token: 'Réponse UNCHK invalide, réessayez.',
   no_email: "Votre compte UNCHK ne transmet pas d'adresse email — contactez la DITSI.",
   unknown_account: "Aucun compte CEI ne correspond à votre identité UNCHK. Contactez l'administration CEI pour faire créer votre compte.",
+  not_in_moodle: "Votre identité UNCHK n'est rattachée ni à CEI ni à une plateforme Moodle de l'UNCHK. Contactez l'administration CEI pour faire créer votre compte.",
+  no_moodle_course: "Votre compte Moodle n'est inscrit à aucun cours : CEI ne peut pas déterminer si vous êtes enseignant ou étudiant. Contactez l'administration CEI.",
+  moodle_suspended: "Votre compte Moodle est suspendu. Contactez l'administration de l'UNCHK.",
+  moodle_unavailable: "La plateforme Moodle ne répond pas pour le moment : votre compte CEI n'a pas pu être créé. Réessayez dans quelques minutes.",
 }
 
 const LANGS = {
