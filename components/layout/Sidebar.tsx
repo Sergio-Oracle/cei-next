@@ -38,6 +38,7 @@ const adminNav: NavEntry[] = [
   { label: 'Relevés de Notes',    href: '/dashboard/admin/transcripts',    icon: 'fa-file-alt' },
   { label: 'Réclamations',        href: '/dashboard/admin/reclamations',   icon: 'fa-exclamation-triangle' },
   { divider: 'Administration' },
+  { label: 'Moodle',              href: '/dashboard/admin/moodle',         icon: 'fa-graduation-cap' },
   { label: 'Banque questions',    href: '/dashboard/admin/questions',      icon: 'fa-database' },
   { label: 'Analytique',          href: '/dashboard/admin/analytics',      icon: 'fa-chart-bar' },
   { label: 'Sécurité',            href: '/dashboard/admin/security',       icon: 'fa-shield-alt' },
