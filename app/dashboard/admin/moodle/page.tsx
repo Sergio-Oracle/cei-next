@@ -35,6 +35,12 @@ interface CourseResult {
                without_formation: Record<string, string[]>; formations_created: string[]; created_emails: string[]; enrolled_emails: string[]; formation_filled_emails: string[] }
 }
 
+interface StructureReport {
+  instance_id: number; instance: string; error?: string
+  formations?: string[]; formations_renamed?: string[]; semesters?: string[]; ues?: string[]; ecs?: string[]
+  ue_links?: number; skipped?: { code: string; reason: string }[]
+}
+
 const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 15.5, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }
 const card: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }
 const cardHead: React.CSSProperties = { padding: '16px 22px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }
@@ -99,6 +105,9 @@ export default function AdminMoodlePage() {
   const [results, setResults] = useState<CourseResult[]>([])
   const [lastMode, setLastMode] = useState<null | 'dry' | 'apply'>(null)
   const [confirmApply, setConfirmApply] = useState(false)
+  const [structRunning, setStructRunning] = useState<null | 'dry' | 'apply'>(null)
+  const [structResult, setStructResult] = useState<{ dry_run: boolean; instances: StructureReport[] } | null>(null)
+  const [confirmStruct, setConfirmStruct] = useState(false)
   const stopRef = useRef(false)
 
   const loadInstances = useCallback(async () => {
@@ -177,6 +186,24 @@ export default function AdminMoodlePage() {
       await loadInstances()
     } catch (e: any) { error(e.message || 'Suppression impossible') }
   }
+
+  /* ── Maquette depuis Moodle ── */
+  async function runStructure(mode: 'dry' | 'apply') {
+    setConfirmStruct(false); setStructRunning(mode)
+    try {
+      const r = await api.aiPost<{ dry_run: boolean; instances: StructureReport[] }>('/api/admin/moodle/sync/structure',
+        { dry_run: mode === 'dry', ...(syncInstance ? { instance_id: Number(syncInstance) } : {}) })
+      setStructResult(r)
+      if (mode === 'apply') { success('Maquette complétée depuis Moodle'); setResults([]); setLastMode(null); loadMapping() }
+    } catch (e: any) { error(e.message || 'Création de la maquette impossible') }
+    finally { setStructRunning(null) }
+  }
+  const structTotals = (structResult?.instances || []).reduce((t, r) => ({
+    formations: t.formations + (r.formations?.length || 0), renamed: t.renamed + (r.formations_renamed?.length || 0),
+    semesters: t.semesters + (r.semesters?.length || 0), ues: t.ues + (r.ues?.length || 0), ecs: t.ecs + (r.ecs?.length || 0),
+    links: t.links + (r.ue_links || 0),
+  }), { formations: 0, renamed: 0, semesters: 0, ues: 0, ecs: 0, links: 0 })
+  const structNothing = structResult && Object.values(structTotals).every(n => n === 0)
 
   /* ── Synchronisation ── */
   const courses = (mapping?.matched || []).filter(c => !syncInstance || String(c.instance_id) === syncInstance)
@@ -372,7 +399,7 @@ export default function AdminMoodlePage() {
                     </div>
                     {mapping.errors.map((e, k) => <div key={k} style={{ color: '#b91c1c', fontSize: 14.5 }}><i className="fas fa-circle-exclamation" /> {e.instance} : {e.error}</div>)}
                     {mapping.moodle_courses_without_ec.length > 0 && (
-                      <details><summary style={{ cursor: 'pointer', fontSize: 14.5 }}>Cours Moodle sans EC CEI ({mapping.moodle_courses_without_ec.length}) : à ajouter à la maquette si nécessaire</summary>
+                      <details><summary style={{ cursor: 'pointer', fontSize: 14.5 }}>Cours Moodle sans EC CEI ({mapping.moodle_courses_without_ec.length}) : voir « Maquette depuis Moodle » ci-dessous</summary>
                         <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.8 }}>
                           {mapping.moodle_courses_without_ec.map(c => `${c.shortname} (${c.instance})`).join(' · ')}
                         </div>
@@ -390,6 +417,78 @@ export default function AdminMoodlePage() {
                       </div>
                     )}
                   </>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* ── Maquette depuis Moodle ── */}
+          {mapping && (
+            <section style={card}>
+              <div style={cardHead}>
+                <h3 style={{ margin: 0, fontSize: 18.5, fontWeight: 700 }}><i className="fas fa-sitemap" style={{ color: ACCENT, marginRight: 8 }} />Maquette depuis Moodle</h3>
+                {mapping.counts.moodle_courses_without_ec > 0 && (
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#92400e', background: '#fef3c7', padding: '3px 10px', borderRadius: 99 }}>
+                    {mapping.counts.moodle_courses_without_ec} cours Moodle sans EC
+                  </span>
+                )}
+              </div>
+              <div style={{ padding: '16px 22px', display: 'grid', gap: 14 }}>
+                <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14.5, color: 'var(--text-muted)', display: 'grid', gap: 4 }}>
+                  <li>Les catégories Moodle (Formation › Licence › Semestre › UE) servent à créer les formations, semestres, UE et EC qui manquent dans CEI. À faire avant la synchronisation.</li>
+                  <li>Moodle ne connaît ni crédits, ni coefficients, ni CC/EX : les éléments créés sont marqués « à confirmer » dans la Maquette, et les relevés de notes restent bloqués pour eux jusqu&apos;à l&apos;import de la maquette Excel officielle, qui les complète.</li>
+                  <li>Rien n&apos;est supprimé. Les examens, sujets et suggestions fonctionnent dès la création.</li>
+                </ul>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <Button onClick={() => runStructure('dry')} disabled={!!structRunning || !!running}>
+                    <i className={`fas ${structRunning === 'dry' ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} /> Simuler
+                  </Button>
+                  {!confirmStruct ? (
+                    <Button variant="ghost" onClick={() => setConfirmStruct(true)} disabled={!!structRunning || !!running}><i className="fas fa-check-double" /> Appliquer…</Button>
+                  ) : (
+                    <>
+                      <Button onClick={() => runStructure('apply')}><i className="fas fa-check-double" /> Confirmer la création{syncInstance ? '' : ' (toutes les plateformes)'}</Button>
+                      <Button variant="ghost" onClick={() => setConfirmStruct(false)}>Annuler</Button>
+                    </>
+                  )}
+                  {structRunning === 'apply' && <span style={{ fontSize: 14.5, color: 'var(--text-muted)', alignSelf: 'center' }}><i className="fas fa-spinner fa-spin" /> Création en cours…</span>}
+                </div>
+
+                {structResult && (
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    <div style={{ fontSize: 14.5, fontWeight: 600 }}>
+                      {structNothing ? 'La maquette CEI couvre déjà tous les cours Moodle de la maquette : rien à créer.'
+                        : structResult.dry_run ? 'Simulation — rien n’a été modifié :' : 'Créé dans CEI :'}
+                    </div>
+                    {!structNothing && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+                        {([['Formations', structTotals.formations], ['Formations renommées', structTotals.renamed], ['Semestres', structTotals.semesters],
+                           ['UE', structTotals.ues], ['EC', structTotals.ecs], ['UE reliées à leur catégorie', structTotals.links]] as [string, number][]).map(([label, n]) => (
+                          <div key={label} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px' }}>
+                            <div style={{ fontSize: 22, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{n}</div>
+                            <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>{label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {structResult.instances.map(r => (
+                      <div key={r.instance_id} style={{ display: 'grid', gap: 6, fontSize: 14 }}>
+                        {structResult.instances.length > 1 && <strong>{r.instance}</strong>}
+                        {r.error && <div style={{ color: '#b91c1c' }}><i className="fas fa-circle-exclamation" /> {r.error}</div>}
+                        {([['Formations', r.formations], ['Formations renommées', r.formations_renamed], ['Semestres', r.semesters], ['UE', r.ues], ['EC', r.ecs]] as [string, string[] | undefined][])
+                          .filter(([, list]) => list && list.length > 0).map(([label, list]) => (
+                          <details key={label}><summary style={{ cursor: 'pointer' }}>{label} ({list!.length})</summary>
+                            <div style={{ color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.8 }}>{list!.join(' · ')}</div>
+                          </details>
+                        ))}
+                        {r.skipped && r.skipped.length > 0 && (
+                          <details><summary style={{ cursor: 'pointer' }}>Cours laissés de côté ({r.skipped.length})</summary>
+                            <div style={{ color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.8 }}>{r.skipped.map(x => `${x.code} : ${x.reason}`).join(' · ')}</div>
+                          </details>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </section>

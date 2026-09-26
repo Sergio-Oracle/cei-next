@@ -17,9 +17,11 @@ interface EC {
   id: number; code: string; name: string
   coefficient: number; cm?: number; td?: number; tp?: number; tpe?: number; vht?: number
   cc_percentage?: number; ex_percentage?: number; is_active: boolean; assigned_professor?: string
+  values_confirmed?: boolean
 }
 interface UE {
   id: number; code: string; name: string; credits: number; ue_type?: string; is_active: boolean; ecs: EC[]
+  values_confirmed?: boolean
 }
 interface Semester {
   id: number; number: number; name?: string; total_credits: number; is_active: boolean; ues: UE[]
@@ -78,6 +80,17 @@ const ACCENT = '#3b82f6'
 function poleColor(_code?: string) { return ACCENT }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
+/* UE/EC créés depuis Moodle : crédits, coefficient et CC/EX sont des valeurs
+   par défaut jusqu'à l'import de la maquette Excel ou une saisie manuelle. */
+function ToConfirmTag({ what }: { what: string }) {
+  return (
+    <span title={`${what} par défaut (créé depuis Moodle) — importez la maquette Excel officielle ou modifiez-le pour confirmer. Les relevés de notes sont bloqués d'ici là.`}
+      style={{ marginLeft: 8, fontSize: 12.5, fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: '#fef3c7', color: '#92400e', whiteSpace: 'nowrap' }}>
+      <i className="fas fa-circle-exclamation" style={{ marginRight: 4 }} />à confirmer
+    </span>
+  )
+}
+
 export default function AdminFormationsPage() {
   const { success, error } = useToast()
   const [formations, setFormations] = useState<Formation[]>([])
@@ -657,13 +670,13 @@ export default function AdminFormationsPage() {
                       <div key={u.code} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
                         <div style={{ padding: '8px 12px', background: u.already_exists ? '#f1f5f9' : '#eff6ff', fontSize:15 }}>
                           <strong>{u.code}</strong> — {u.name} <span style={{ color: 'var(--text-muted)' }}>({u.credits} crédits)</span>
-                          {u.already_exists && <span style={{ marginLeft: 8, fontSize:13, fontWeight: 700, color: '#64748b' }}><i className="fas fa-triangle-exclamation" /> déjà existante</span>}
+                          {u.already_exists && <span style={{ marginLeft: 8, fontSize:13, fontWeight: 700, color: '#64748b' }}><i className="fas fa-rotate" /> existante — sera complétée</span>}
                         </div>
                         <div style={{ padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: 3 }}>
                           {u.ecs.map((e: any) => (
                             <div key={e.code} style={{ fontSize:14, color: e.already_exists ? 'var(--text-muted)' : 'var(--text)' }}>
                               <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{e.code}</span> — {e.name} <span style={{ color: 'var(--text-muted)' }}>(Coef.{e.coefficient}, CC:{e.cc_percentage}%/EX:{e.ex_percentage}%)</span>
-                              {e.already_exists && <span style={{ marginLeft: 6, fontWeight: 700, color: '#64748b' }}>ignoré</span>}
+                              {e.already_exists && <span style={{ marginLeft: 6, fontWeight: 700, color: '#64748b' }}>existant — sera complété</span>}
                             </div>
                           ))}
                         </div>
@@ -865,7 +878,7 @@ export default function AdminFormationsPage() {
       const res = await api.post<any>('/api/admin/maquette/import-excel-confirm', {
         semester_id: excelPreview.semester_id, ues: excelPreview.ues,
       })
-      success(`Import réussi — UEs créées: ${res.created_ues}, ECs créés: ${res.created_ecs}${res.skipped_existing ? `, ${res.skipped_existing} EC(s) déjà existant(s) ignoré(s)` : ''}`)
+      success(`Import réussi — UEs créées: ${res.created_ues}, ECs créés: ${res.created_ecs}${res.completed_ues || res.completed_ecs ? `, complétés : ${res.completed_ues} UE et ${res.completed_ecs} EC` : ''}`)
       setModal(null); setExcelPreview(null); setExcelFile(null); setExcelSemesterId('')
       load()
     } catch (e: any) { error(e.message) }
@@ -907,6 +920,15 @@ export default function AdminFormationsPage() {
             </div>
             <div style={{ fontSize:13, opacity: .68, marginTop: 2 }}>
               <i className="fas fa-book" style={{ marginRight: 4 }} />{f.semesters.length} semestre(s)
+              {(() => {
+                const n = f.semesters.reduce((acc, s) => acc + s.ues.reduce((a2, u) =>
+                  a2 + (u.values_confirmed === false ? 1 : 0) + u.ecs.filter(ec => ec.values_confirmed === false).length, 0), 0)
+                return n > 0 ? (
+                  <span style={{ marginLeft: 10, fontWeight: 700 }} title="UE/EC créés depuis Moodle : importez la maquette Excel officielle pour confirmer crédits, coefficients et CC/EX">
+                    <i className="fas fa-circle-exclamation" style={{ marginRight: 4 }} />{n} élément{n > 1 ? 's' : ''} à confirmer
+                  </span>
+                ) : null
+              })()}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -968,6 +990,7 @@ export default function AdminFormationsPage() {
                             {u.ue_type === 'obligatoire' ? 'Obligatoire' : 'Optionnel'}
                           </span>
                         )}
+                        {u.values_confirmed === false && <ToConfirmTag what="Crédits" />}
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <Btn color="#3b82f6" onClick={() => openEdit('edit_ue', u)} title="Modifier"><i className="fas fa-pen" /></Btn>
@@ -984,6 +1007,7 @@ export default function AdminFormationsPage() {
                             <div>
                               <span style={{ fontSize:15.5, fontWeight: 700, color: '#0f172a' }}>{ec.code}</span>
                               <span style={{ fontSize:15.5, color: '#64748b' }}> — {ec.name}</span>
+                              {ec.values_confirmed === false && <ToConfirmTag what="Coefficient et CC/EX" />}
                               <div style={{ fontSize:13, color: '#64748b', marginTop: 3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                                 <span>Coef: {ec.coefficient}</span>
                                 {(ec.cm || 0) > 0 && <span>CM: {ec.cm}h</span>}
