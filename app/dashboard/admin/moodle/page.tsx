@@ -32,7 +32,7 @@ interface CourseResult {
   teachers?: { moodle: number; created: number; upgraded: number; assignments_added: number; other_role: { email: string; role: string }[]
                created_emails: string[]; upgraded_emails: string[] }
   students?: { moodle: number; created: number; enrollments_added: number; already_enrolled: number; formation_filled: number; other_role: number
-               without_formation: Record<string, string[]>; created_emails: string[]; enrolled_emails: string[]; formation_filled_emails: string[] }
+               without_formation: Record<string, string[]>; formations_created: string[]; created_emails: string[]; enrolled_emails: string[]; formation_filled_emails: string[] }
 }
 
 const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 15.5, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }
@@ -213,7 +213,7 @@ export default function AdminMoodlePage() {
   const totals = (() => {
     const tCreated = new Set<string>(), tUpgraded = new Set<string>(), sCreated = new Set<string>()
     const sEnroll = new Set<string>(), sFormation = new Set<string>()
-    const otherTeachers = new Map<string, string>(), noFormation: Record<string, Set<string>> = {}
+    const otherTeachers = new Map<string, string>(), noFormation: Record<string, Set<string>> = {}, formationsCreated = new Set<string>()
     let tAssign = 0, otherStudents = 0, errors = 0
     for (const r of results) {
       if (r.error) { errors++; continue }
@@ -224,13 +224,14 @@ export default function AdminMoodlePage() {
       r.students?.created_emails?.forEach(e => sCreated.add(e))
       r.students?.enrolled_emails?.forEach(e => sEnroll.add(`${r.ue_code}|${e}`))
       r.students?.formation_filled_emails?.forEach(e => sFormation.add(e))
+      r.students?.formations_created?.forEach(c => formationsCreated.add(c))
       otherStudents += r.students?.other_role || 0
       for (const [d, emails] of Object.entries(r.students?.without_formation || {})) {
         noFormation[d] = noFormation[d] || new Set(); emails.forEach(e => noFormation[d].add(e))
       }
     }
     return { tCreated: tCreated.size, tUpgraded: tUpgraded.size, tAssign, sCreated: sCreated.size, sEnroll: sEnroll.size,
-             sFormation: sFormation.size, otherStudents, errors, otherTeachers,
+             sFormation: sFormation.size, otherStudents, errors, otherTeachers, formationsCreated: [...formationsCreated].sort(),
              noFormation: Object.fromEntries(Object.entries(noFormation).map(([d, s]) => [d, s.size])) as Record<string, number> }
   })()
 
@@ -449,10 +450,16 @@ export default function AdminMoodlePage() {
                         </div>
                       ))}
                     </div>
-                    {Object.keys(totals.noFormation).length > 0 && (
+                    {totals.formationsCreated.length > 0 && (
                       <div style={{ fontSize: 14.5 }}>
-                        <i className="fas fa-circle-info" style={{ color: ACCENT }} /> Étudiants dont le département Moodle n&apos;a pas encore de formation dans CEI (formation laissée vide) :{' '}
-                        {Object.entries(totals.noFormation).map(([d, n]) => `${d} : ${n}`).join(' · ')}. Ajoutez ces formations à la maquette puis relancez.
+                        <i className="fas fa-circle-info" style={{ color: ACCENT }} /> {isDry ? 'Formations qui seront créées automatiquement' : 'Formations créées automatiquement'} pour des départements Moodle absents de la maquette :{' '}
+                        <strong>{totals.formationsCreated.join(', ')}</strong>. Niveau et pôle repris du cours suivi ; leur nom complet peut être complété plus tard dans la maquette, sans rien bloquer.
+                      </div>
+                    )}
+                    {Object.keys(totals.noFormation).length > 0 && (
+                      <div style={{ fontSize: 14.5, color: 'var(--text-muted)' }}>
+                        Étudiants sans département renseigné dans Moodle (formation laissée vide) :{' '}
+                        {Object.entries(totals.noFormation).map(([d, n]) => `${d} : ${n}`).join(' · ')}.
                       </div>
                     )}
                     {totals.otherTeachers.size > 0 && (
