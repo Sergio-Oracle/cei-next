@@ -797,6 +797,14 @@ export default function AdminFormationsPage() {
     catch (e: any) { error(e.message || 'Erreur suppression') }
   }
 
+  async function confirmSemester(s: Semester, n: number) {
+    if (!confirm(`Confirmer les ${n} élément(s) « à confirmer » de ce semestre avec les valeurs actuellement affichées (crédits, coefficients, CC/EX) ?\n\nFaites-le seulement si ces valeurs sont les bonnes : elles serviront au calcul des relevés de notes. Sinon, importez la maquette Excel officielle ou corrigez-les d'abord avec le crayon.`)) return
+    try {
+      const r = await api.post<any>(`/api/admin/semesters/${s.id}/confirm-values`, {})
+      success(`Valeurs confirmées : ${r.confirmed_ues} UE et ${r.confirmed_ecs} EC`); load()
+    } catch (e: any) { error(e.message || 'Erreur') }
+  }
+
   async function deletePole(id: number, code: string) {
     if (!confirm(`Supprimer définitivement le pôle ${code} et tous ses niveaux ?\n\nLes formations qui en dépendaient seront conservées (juste détachées, à retrouver sous "Formations sans niveau").`)) return
     try { await api.delete(`/api/admin/poles/${id}`); success('Pôle et ses niveaux supprimés'); load() }
@@ -962,6 +970,14 @@ export default function AdminFormationsPage() {
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 7 }}>
+                  {(() => {
+                    const n = s.ues.reduce((a2, u) => a2 + (u.values_confirmed === false ? 1 : 0) + u.ecs.filter(ec => ec.values_confirmed === false).length, 0)
+                    return n > 0 ? (
+                      <Btn color="#d97706" onClick={() => confirmSemester(s, n)} title="Valider les valeurs affichées de toutes les UE/EC « à confirmer » de ce semestre">
+                        <i className="fas fa-check-double" /> Confirmer tout ({n})
+                      </Btn>
+                    ) : null
+                  })()}
                   <Btn color="#3b82f6" onClick={() => openEdit('edit_semester', s)} title="Modifier"><i className="fas fa-pen" /></Btn>
                   <Btn color="#3b82f6" onClick={() => openCreate('create_ue', { semesterId: s.id })}><i className="fas fa-plus" /> UE</Btn>
                   <Btn color="#ef4444" onClick={() => del(`/api/admin/semesters/${s.id}`, 'Supprimer ce semestre et toutes ses UEs/ECs ?')} title="Supprimer"><i className="fas fa-trash" /></Btn>
