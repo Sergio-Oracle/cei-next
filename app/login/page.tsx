@@ -17,6 +17,7 @@ const SSO_ERROR_MESSAGES: Record<string, string> = {
   token_exchange_failed: 'Erreur de communication avec le service UNCHK. Réessayez dans un instant.',
   invalid_token: 'Réponse UNCHK invalide, réessayez.',
   no_email: "Votre compte UNCHK ne transmet pas d'adresse email — contactez la DITSI.",
+  not_configured: "La connexion UNCHK n'est pas encore disponible sur ce serveur. Utilisez votre email et votre mot de passe CEI.",
   unknown_account: "Aucun compte CEI ne correspond à votre identité UNCHK. Contactez l'administration CEI pour faire créer votre compte.",
 }
 
@@ -83,6 +84,8 @@ export default function LoginPage() {
   // absent = conflit du login classique (login(email, password, true)).
   const [sessionConflict, setSessionConflict] = useState<{ deviceLabel: string; retryToken?: string } | null>(null)
   const [ssoError, setSsoError] = useState<string | null>(null)
+  // Bouton UNCHK affiché seulement si le serveur a un client Keycloak configuré.
+  const [ssoEnabled, setSsoEnabled] = useState(false)
   const [lang, setLang]         = useState<'fr' | 'en' | 'wo'>('fr')
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -102,6 +105,11 @@ export default function LoginPage() {
       }
     } catch {}
     if (s && ['fr', 'en', 'wo'].includes(s)) setLang(s)
+
+    fetch(`${API_URL}/api/auth/oidc/enabled`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setSsoEnabled(!!d?.enabled))
+      .catch(() => {})
 
     // Retour du SSO UNCHK (GET /api/auth/oidc/callback) — mêmes conventions
     // que le paramètre _l ci-dessus (URLSearchParams sur window.location).
@@ -465,7 +473,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {!sessionConflict && (
+          {ssoEnabled && !sessionConflict && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0' }}>
                 <div style={{ flex: 1, height: 1, background: 'var(--border, #e2e8f0)' }} />
