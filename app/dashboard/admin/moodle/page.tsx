@@ -28,9 +28,11 @@ interface Mapping {
   counts: Record<string, number>
 }
 interface CourseResult {
-  ec_code: string; instance?: string; error?: string
-  teachers?: { moodle: number; created: number; upgraded: number; assignments_added: number; other_role: { email: string; role: string }[] }
-  students?: { moodle: number; created: number; enrollments_added: number; already_enrolled: number; formation_filled: number; other_role: number; without_formation: Record<string, number> }
+  ec_code: string; ue_code?: string | null; instance?: string; error?: string
+  teachers?: { moodle: number; created: number; upgraded: number; assignments_added: number; other_role: { email: string; role: string }[]
+               created_emails: string[]; upgraded_emails: string[] }
+  students?: { moodle: number; created: number; enrollments_added: number; already_enrolled: number; formation_filled: number; other_role: number
+               without_formation: Record<string, string[]>; created_emails: string[]; enrolled_emails: string[]; formation_filled_emails: string[] }
 }
 
 const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 15.5, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }
@@ -205,15 +207,32 @@ export default function AdminMoodlePage() {
     if (mode === 'apply') loadMapping()
   }
 
-  const totals = results.reduce((t, r) => {
-    if (r.error) { t.errors++; return t }
-    t.tCreated += r.teachers?.created || 0; t.tUpgraded += r.teachers?.upgraded || 0; t.tAssign += r.teachers?.assignments_added || 0
-    t.sCreated += r.students?.created || 0; t.sEnroll += r.students?.enrollments_added || 0; t.sFormation += r.students?.formation_filled || 0
-    t.otherStudents += r.students?.other_role || 0
-    for (const o of r.teachers?.other_role || []) t.otherTeachers.set(o.email, o.role)
-    for (const [d, n] of Object.entries(r.students?.without_formation || {})) t.noFormation[d] = (t.noFormation[d] || 0) + n
-    return t
-  }, { tCreated: 0, tUpgraded: 0, tAssign: 0, sCreated: 0, sEnroll: 0, sFormation: 0, otherStudents: 0, errors: 0, otherTeachers: new Map<string, string>(), noFormation: {} as Record<string, number> })
+  // Bilan dédoublonné : en simulation, un même étudiant absent de CEI apparaît
+  // dans chacun de ses cours, et plusieurs EC partagent la même UE — on compte
+  // des personnes (et des couples UE + personne), pas des lignes de cours.
+  const totals = (() => {
+    const tCreated = new Set<string>(), tUpgraded = new Set<string>(), sCreated = new Set<string>()
+    const sEnroll = new Set<string>(), sFormation = new Set<string>()
+    const otherTeachers = new Map<string, string>(), noFormation: Record<string, Set<string>> = {}
+    let tAssign = 0, otherStudents = 0, errors = 0
+    for (const r of results) {
+      if (r.error) { errors++; continue }
+      r.teachers?.created_emails?.forEach(e => tCreated.add(e))
+      r.teachers?.upgraded_emails?.forEach(e => tUpgraded.add(e))
+      tAssign += r.teachers?.assignments_added || 0
+      r.teachers?.other_role?.forEach(o => otherTeachers.set(o.email, o.role))
+      r.students?.created_emails?.forEach(e => sCreated.add(e))
+      r.students?.enrolled_emails?.forEach(e => sEnroll.add(`${r.ue_code}|${e}`))
+      r.students?.formation_filled_emails?.forEach(e => sFormation.add(e))
+      otherStudents += r.students?.other_role || 0
+      for (const [d, emails] of Object.entries(r.students?.without_formation || {})) {
+        noFormation[d] = noFormation[d] || new Set(); emails.forEach(e => noFormation[d].add(e))
+      }
+    }
+    return { tCreated: tCreated.size, tUpgraded: tUpgraded.size, tAssign, sCreated: sCreated.size, sEnroll: sEnroll.size,
+             sFormation: sFormation.size, otherStudents, errors, otherTeachers,
+             noFormation: Object.fromEntries(Object.entries(noFormation).map(([d, s]) => [d, s.size])) as Record<string, number> }
+  })()
 
   const isDry = lastMode === 'dry'
   const summary: [string, number][] = [
@@ -447,6 +466,11 @@ export default function AdminMoodlePage() {
                     )}
                     {totals.errors > 0 && <div style={{ fontSize: 14.5, color: '#b91c1c' }}><i className="fas fa-circle-exclamation" /> {totals.errors} cours en erreur (voir le détail ci-dessous).</div>}
 
+                    {isDry && results.length > 1 && (
+                      <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>
+                        Le bilan compte chaque personne une seule fois. Dans le tableau, en simulation, un même étudiant absent de CEI apparaît dans chacun de ses cours.
+                      </div>
+                    )}
                     <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 10 }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, minWidth: 640 }}>
                         <thead>
