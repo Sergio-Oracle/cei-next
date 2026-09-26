@@ -6,6 +6,7 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { useSuggestionFlow } from '@/hooks/useSuggestionFlow'
 import SearchableSelect from '@/components/ui/SearchableSelect'
+import MoodleSourcePicker, { MoodleSelection } from '@/components/shared/MoodleSourcePicker'
 
 /* ── Types ─────────────────────────────────────────────────────── */
 interface EC {
@@ -80,7 +81,7 @@ const BLOOM_LEVELS = ['Connaissance','Compréhension','Application','Analyse','S
 
 /* ── Page ──────────────────────────────────────────────────────── */
 export default function AdminSuggestionsPage() {
-  const { success, error: toastErr } = useToast()
+  const { success, error: toastErr, warning } = useToast()
   const router = useRouter()
 
   const [ecs,  setEcs]  = useState<EC[]>([])
@@ -154,6 +155,23 @@ export default function AdminSuggestionsPage() {
   const [level,      setLevel]      = useState('Licence 3')
   const [duration,   setDuration]   = useState(90)
   const [ecId,       setEcId]       = useState('')
+  // Phase 3 — source des documents : téléversés, ou pris d'un cours Moodle.
+  // Depuis Moodle, EC, formation et niveau viennent de la maquette : les
+  // blocs « Niveau des étudiants » et « Pôle / Formation / EC » disparaissent.
+  const [source,     setSource]     = useState<'upload' | 'moodle'>('upload')
+  const [moodleSel,  setMoodleSel]  = useState<MoodleSelection>({ ec: null, files: [] })
+  const sourceTouchedRef = useRef(false)
+  const fromMoodle   = source === 'moodle'
+  const moodleLevel  = fromMoodle ? moodleSel.ec?.student_level ?? null : null
+  const effectiveLevel = moodleLevel ?? level
+  function changeMoodleSel(v: MoodleSelection) {
+    setMoodleSel(v)
+    if (v.ec) setEcId(String(v.ec.ec_id))
+  }
+  function chooseSource(src: 'upload' | 'moodle') {
+    sourceTouchedRef.current = true
+    setSource(src)
+  }
   const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false, appariement: false, code: false, subopen: false })
   // QCM = un seul type sélectionnable avec un sous-réglage "une seule / plusieurs
   // réponses" — même mécanisme que le type "Choix multiple" de Moodle
@@ -179,7 +197,7 @@ export default function AdminSuggestionsPage() {
     setSuggestingCount(true)
     try {
       const res = await api.aiPost<{ suggested_count: number }>('/api/subjects/suggest-question-count', {
-        duration, difficulty, student_level: level,
+        duration, difficulty, student_level: effectiveLevel,
         question_types: Object.entries(qTypes).filter(([, v]) => v).map(([k]) => k).join(',') || 'mixte',
       })
       setQuestionCount(res.suggested_count)
@@ -220,6 +238,8 @@ export default function AdminSuggestionsPage() {
           if (d.result) restoreResult(d.result)
           if (d.ecId != null) setEcId(d.ecId)
           if (d.level) setLevel(d.level)
+          if (d.source) { setSource(d.source); sourceTouchedRef.current = true }
+          if (d.moodleSel) setMoodleSel(d.moodleSel)
           if (d.difficulty) setDifficulty(d.difficulty)
           if (d.duration) setDuration(d.duration)
           if (d.qTypes) setQTypes(d.qTypes)
@@ -247,12 +267,12 @@ export default function AdminSuggestionsPage() {
         localStorage.removeItem(DRAFT_KEY)
       } else {
         localStorage.setItem(DRAFT_KEY, JSON.stringify({
-          step, result, ecId, level, difficulty, duration, qTypes, qcmSingle, bloom, questionCount,
+          step, result, ecId, level, source, moodleSel, difficulty, duration, qTypes, qcmSingle, bloom, questionCount,
           totalPoints, pointsByType, previewTitle, previewContent, previewRubric, savedAt: Date.now(),
         }))
       }
     } catch { /* quota localStorage dépassé — tant pis, pas bloquant */ }
-  }, [draftHydrated, step, result, ecId, level, difficulty, duration, qTypes, qcmSingle, bloom, questionCount, totalPoints, pointsByType, previewTitle, previewContent, previewRubric]) // eslint-disable-line
+  }, [draftHydrated, step, result, ecId, level, source, moodleSel, difficulty, duration, qTypes, qcmSingle, bloom, questionCount, totalPoints, pointsByType, previewTitle, previewContent, previewRubric]) // eslint-disable-line
 
   function discardDraft() {
     try { localStorage.removeItem(DRAFT_KEY) } catch {}
@@ -302,6 +322,9 @@ export default function AdminSuggestionsPage() {
     if (result?.suggestions?.length) {
       setStep('results')
       success(`${result.suggestions.length} suggestion(s) générée(s) avec succès`)
+      if (result.moodle_skipped?.length) {
+        warning(`${result.moodle_skipped.length} document(s) Moodle illisible(s), non utilisé(s) : ${result.moodle_skipped.map(m => m.filename).join(', ')}`)
+      }
     }
   }, [result]) // eslint-disable-line
 
@@ -318,8 +341,16 @@ export default function AdminSuggestionsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!courseFiles.length) { toastErr('Sélectionnez au moins un fichier de cours'); return }
     if (!Object.values(qTypes).some(Boolean)) { toastErr('Sélectionnez au moins un type de question avant de générer'); return }
+    if (fromMoodle) {
+      if (!moodleSel.ec) { toastErr('Choisissez un cours Moodle'); return }
+      if (!moodleSel.files.length) { toastErr('Cochez au moins un document du cours'); return }
+      setEcId(String(moodleSel.ec.ec_id))
+      await generate({ courseFiles: [], difficulty, studentLevel: effectiveLevel, examType: '', qTypes, duration,
+                       moodleEcId: moodleSel.ec.ec_id, moodleFiles: moodleSel.files })
+      return
+    }
+    if (!courseFiles.length) { toastErr('Sélectionnez au moins un fichier de cours'); return }
     await generate({ courseFiles, difficulty, studentLevel: level, examType: '', qTypes, duration })
   }
 
@@ -438,7 +469,7 @@ export default function AdminSuggestionsPage() {
     try {
       const data = await api.post<{ success: boolean; new_content: string; full_content?: string; full_rubric?: string; count_generated: number; duplicates: { similarity: number }[] }>(
         '/api/subjects/generate-more-questions',
-        { existing_content: previewContent, existing_rubric: previewRubric, count: moreCount, question_type: moreType, title: previewTitle, student_level: level, difficulty, total_points: totalPoints }
+        { existing_content: previewContent, existing_rubric: previewRubric, count: moreCount, question_type: moreType, title: previewTitle, student_level: effectiveLevel, difficulty, total_points: totalPoints }
       )
       // Le backend redistribue les points sur le total choisi par l'enseignant
       // (anciennes + nouvelles questions) et étend le barème — sans ça, les
@@ -1004,69 +1035,89 @@ export default function AdminSuggestionsPage() {
         <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 290px', gap:24, alignItems:'start' }}>
           <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
-            {/* Upload */}
-            <div className="card" style={{ padding:0, overflow:'hidden' }}>
-              <div className="card-header" style={{ background:'var(--primary)', borderBottom:'none' }}>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                    <div style={{ width:34, height:34, background:'rgba(255,255,255,.2)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                      <i className="fas fa-upload" style={{ color:'#fff' }} />
-                    </div>
-                    <div>
-                      <h3 style={{ margin:0, color:'#fff', fontSize:18 }}>Fichier de cours</h3>
-                      <p style={{ margin:0, color:'rgba(255,255,255,.75)', fontSize:14.5 }}>PDF, DOCX ou TXT</p>
-                    </div>
-                  </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', borderRadius:8, padding:'5px 12px' }}>
-                    <i className="fas fa-weight-hanging" style={{ color:'#fff', fontSize:14 }} />
-                    <span style={{ color:'#fff', fontSize:15.5, fontWeight:700 }}>Max : {MAX_MB} Mo</span>
-                  </div>
-                </div>
-              </div>
-              <div style={{ padding:24 }}>
-                <div onClick={() => fileRef.current?.click()}
-                  onDragOver={e=>{e.preventDefault();setDragOver(true)}} onDragLeave={()=>setDragOver(false)}
-                  onDrop={e=>{e.preventDefault();setDragOver(false);const fs=Array.from(e.dataTransfer.files);if(fs.length)pickFiles(fs)}}
-                  style={{ border:`2px dashed ${dragOver?'var(--primary)':courseFiles.length?'#10b981':'var(--border)'}`, borderRadius:12, padding:'40px 24px', textAlign:'center', cursor:'pointer', background:dragOver?'#eff6ff':courseFiles.length?'#f0fdf4':'var(--background)', transition:'all .2s' }}>
-                  {courseFiles.length > 0 ? (
-                    <>
-                      <div style={{ width:52, height:52, background:'#dcfce7', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
-                        <i className="fas fa-file-circle-check" style={{ fontSize:24, color:'#10b981' }} />
-                      </div>
-                      <div style={{ fontWeight:700, fontSize:17, color:'#15803d', marginBottom:10 }}>{courseFiles.length} fichier{courseFiles.length > 1 ? 's' : ''} sélectionné{courseFiles.length > 1 ? 's' : ''}</div>
-                      <div style={{ display:'flex', flexDirection:'column', gap:6, maxWidth:340, margin:'0 auto' }} onClick={e => e.stopPropagation()}>
-                        {courseFiles.map((f, idx) => (
-                          <div key={idx} style={{ display:'flex', alignItems:'center', gap:8, background:'#fff', border:'1px solid #bbf7d0', borderRadius:8, padding:'6px 10px' }}>
-                            <i className="fas fa-file-check" title="Fichier chargé" style={{ color:'#16a34a', fontSize:17, flexShrink:0 }} />
-                            <span style={{ flex:1, textAlign:'left', fontSize:14.5, color:'#15803d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</span>
-                            <span style={{ fontSize:13, color:'#10b981' }}>{(f.size/1024/1024).toFixed(2)} Mo</span>
-                            <button type="button" onClick={() => removeCourseFile(idx)} style={{ background:'none', border:'none', color:'#6b7280', cursor:'pointer', fontSize:17, padding:2 }}><i className="fas fa-times-circle" /></button>
-                          </div>
-                        ))}
-                      </div>
-                      <div style={{ fontSize:14.5, color:'#10b981', marginTop:10 }}>Cliquez pour ajouter d'autres fichiers</div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ width:52, height:52, background:'#eff6ff', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
-                        <i className="fas fa-cloud-upload-alt" style={{ fontSize:24, color:'var(--primary)' }} />
-                      </div>
-                      <div style={{ fontWeight:600, fontSize:18, color:'var(--text)', marginBottom:6 }}>Glissez un ou plusieurs fichiers ici</div>
-                      <div style={{ fontSize:15.5, color:'var(--text-muted)', marginBottom:16 }}>ou</div>
-                      <span style={{ display:'inline-block', background:'var(--primary)', color:'#fff', padding:'9px 22px', borderRadius:8, fontSize:15.5, fontWeight:600 }}>
-                        <i className="fas fa-folder-open" style={{ marginRight:7 }} />Parcourir les fichiers
-                      </span>
-                      <div style={{ marginTop:14, fontSize:14.5, color:'var(--text-muted)' }}>
-                        <i className="fas fa-info-circle" style={{ marginRight:5 }} />
-                        Taille maximale autorisée (cumulée) : <strong>{MAX_MB} Mo</strong>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <input ref={fileRef} type="file" accept=".pdf,.docx,.doc,.txt" multiple style={{ display:'none' }}
-                  onChange={e => { const fs = Array.from(e.target.files || []); if (fs.length) pickFiles(fs) }} />
-              </div>
+            {/* Source des documents (phase 3) */}
+            <div role="tablist" style={{ display:'flex', gap:6, background:'var(--background)', border:'1px solid var(--border)', borderRadius:12, padding:5 }}>
+              {([['moodle', 'fa-graduation-cap', 'Depuis Moodle'], ['upload', 'fa-upload', 'Téléverser']] as const).map(([k, icon, label]) => (
+                <button key={k} type="button" role="tab" aria-selected={source === k} onClick={() => chooseSource(k)}
+                  style={{ flex:1, padding:'10px 14px', borderRadius:9, border:'none', cursor:'pointer', fontSize:15.5, fontWeight:700,
+                           background: source === k ? 'var(--surface)' : 'transparent', color: source === k ? 'var(--primary)' : 'var(--text-muted)',
+                           boxShadow: source === k ? '0 1px 3px rgba(15,23,42,.12)' : 'none' }}>
+                  <i className={`fas ${icon}`} style={{ marginRight:8 }} />{label}
+                </button>
+              ))}
             </div>
+
+            {/* Toujours monté (masqué hors de son onglet) : il détecte au chargement
+                si l'enseignant a des cours Moodle pour ouvrir cet onglet par défaut,
+                et garde le cours choisi quand on change d'onglet. */}
+            <div style={{ display: fromMoodle ? 'block' : 'none' }}>
+              <MoodleSourcePicker value={moodleSel} onChange={changeMoodleSel}
+                onLoaded={n => { if (n > 0 && !sourceTouchedRef.current) setSource('moodle') }} />
+            </div>
+            {!fromMoodle && (
+              <div className="card" style={{ padding:0, overflow:'hidden' }}>
+                <div className="card-header" style={{ background:'var(--primary)', borderBottom:'none' }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                      <div style={{ width:34, height:34, background:'rgba(255,255,255,.2)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <i className="fas fa-upload" style={{ color:'#fff' }} />
+                      </div>
+                      <div>
+                        <h3 style={{ margin:0, color:'#fff', fontSize:18 }}>Fichier de cours</h3>
+                        <p style={{ margin:0, color:'rgba(255,255,255,.75)', fontSize:14.5 }}>PDF, DOCX ou TXT</p>
+                      </div>
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.3)', borderRadius:8, padding:'5px 12px' }}>
+                      <i className="fas fa-weight-hanging" style={{ color:'#fff', fontSize:14 }} />
+                      <span style={{ color:'#fff', fontSize:15.5, fontWeight:700 }}>Max : {MAX_MB} Mo</span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ padding:24 }}>
+                  <div onClick={() => fileRef.current?.click()}
+                    onDragOver={e=>{e.preventDefault();setDragOver(true)}} onDragLeave={()=>setDragOver(false)}
+                    onDrop={e=>{e.preventDefault();setDragOver(false);const fs=Array.from(e.dataTransfer.files);if(fs.length)pickFiles(fs)}}
+                    style={{ border:`2px dashed ${dragOver?'var(--primary)':courseFiles.length?'#10b981':'var(--border)'}`, borderRadius:12, padding:'40px 24px', textAlign:'center', cursor:'pointer', background:dragOver?'#eff6ff':courseFiles.length?'#f0fdf4':'var(--background)', transition:'all .2s' }}>
+                    {courseFiles.length > 0 ? (
+                      <>
+                        <div style={{ width:52, height:52, background:'#dcfce7', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
+                          <i className="fas fa-file-circle-check" style={{ fontSize:24, color:'#10b981' }} />
+                        </div>
+                        <div style={{ fontWeight:700, fontSize:17, color:'#15803d', marginBottom:10 }}>{courseFiles.length} fichier{courseFiles.length > 1 ? 's' : ''} sélectionné{courseFiles.length > 1 ? 's' : ''}</div>
+                        <div style={{ display:'flex', flexDirection:'column', gap:6, maxWidth:340, margin:'0 auto' }} onClick={e => e.stopPropagation()}>
+                          {courseFiles.map((f, idx) => (
+                            <div key={idx} style={{ display:'flex', alignItems:'center', gap:8, background:'#fff', border:'1px solid #bbf7d0', borderRadius:8, padding:'6px 10px' }}>
+                              <i className="fas fa-file-check" title="Fichier chargé" style={{ color:'#16a34a', fontSize:17, flexShrink:0 }} />
+                              <span style={{ flex:1, textAlign:'left', fontSize:14.5, color:'#15803d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</span>
+                              <span style={{ fontSize:13, color:'#10b981' }}>{(f.size/1024/1024).toFixed(2)} Mo</span>
+                              <button type="button" onClick={() => removeCourseFile(idx)} style={{ background:'none', border:'none', color:'#6b7280', cursor:'pointer', fontSize:17, padding:2 }}><i className="fas fa-times-circle" /></button>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ fontSize:14.5, color:'#10b981', marginTop:10 }}>Cliquez pour ajouter d'autres fichiers</div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ width:52, height:52, background:'#eff6ff', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
+                          <i className="fas fa-cloud-upload-alt" style={{ fontSize:24, color:'var(--primary)' }} />
+                        </div>
+                        <div style={{ fontWeight:600, fontSize:18, color:'var(--text)', marginBottom:6 }}>Glissez un ou plusieurs fichiers ici</div>
+                        <div style={{ fontSize:15.5, color:'var(--text-muted)', marginBottom:16 }}>ou</div>
+                        <span style={{ display:'inline-block', background:'var(--primary)', color:'#fff', padding:'9px 22px', borderRadius:8, fontSize:15.5, fontWeight:600 }}>
+                          <i className="fas fa-folder-open" style={{ marginRight:7 }} />Parcourir les fichiers
+                        </span>
+                        <div style={{ marginTop:14, fontSize:14.5, color:'var(--text-muted)' }}>
+                          <i className="fas fa-info-circle" style={{ marginRight:5 }} />
+                          Taille maximale autorisée (cumulée) : <strong>{MAX_MB} Mo</strong>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <input ref={fileRef} type="file" accept=".pdf,.docx,.doc,.txt" multiple style={{ display:'none' }}
+                    onChange={e => { const fs = Array.from(e.target.files || []); if (fs.length) pickFiles(fs) }} />
+                </div>
+              </div>
+            )}
 
             {/* Options */}
             <div className="card" style={{ padding:0, overflow:'hidden' }}>
@@ -1094,6 +1145,21 @@ export default function AdminSuggestionsPage() {
                       })}
                     </div>
                   </div>
+                  {moodleLevel || (fromMoodle && !moodleSel.ec) ? (
+                    <div>
+                      <label style={{ display:'block', fontSize:15.5, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
+                        <i className="fas fa-user-graduate" style={{ color:'var(--primary)', marginRight:6 }} />Niveau des étudiants
+                      </label>
+                      <div style={{ padding:'12px 14px', borderRadius:8, border:'1.5px solid var(--primary)', background:'#eff6ff', color:'#1d4ed8', fontWeight:700, fontSize:15.5 }}>
+                        {moodleLevel ? (<>
+                          <i className="fas fa-circle-check" style={{ marginRight:8 }} />{moodleLevel}
+                          <div style={{ fontWeight:400, fontSize:13.5, color:'var(--text-muted)', marginTop:4 }}>Repris de la maquette ({moodleSel.ec?.formation_code}) pour le cours Moodle choisi.</div>
+                        </>) : (
+                          <span style={{ fontWeight:400, fontSize:14.5, color:'var(--text-muted)' }}>Repris de la maquette dès que vous aurez choisi le cours Moodle.</span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
                   <div>
                     <label style={{ display:'block', fontSize:15.5, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
                       <i className="fas fa-user-graduate" style={{ color:'var(--primary)', marginRight:6 }} />Niveau des étudiants
@@ -1110,6 +1176,7 @@ export default function AdminSuggestionsPage() {
                       })}
                     </div>
                   </div>
+                  )}
                 </div>
 
                 <div>
@@ -1320,6 +1387,18 @@ export default function AdminSuggestionsPage() {
                   )}
                 </div>
 
+                {fromMoodle ? (
+                  <div style={{ padding:'12px 14px', borderRadius:10, border:'1px solid var(--border)', background:'var(--background)', fontSize:15, color:'var(--text)', lineHeight:1.6 }}>
+                    <i className="fas fa-layer-group" style={{ color:'var(--primary)', marginRight:8 }} />
+                    {moodleSel.ec ? (
+                      <>Sujet rattaché à <strong>{moodleSel.ec.ec_code}</strong> — {moodleSel.ec.ec_name}
+                        <span style={{ color:'var(--text-muted)' }}> · {[moodleSel.ec.formation_code, moodleSel.ec.student_level].filter(Boolean).join(' · ')} — repris du cours Moodle</span></>
+                    ) : (
+                      <span style={{ color:'var(--text-muted)' }}>L&apos;élément constitutif, la formation et le pôle seront repris du cours Moodle choisi.</span>
+                    )}
+                  </div>
+                ) : (
+                <>
                 <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:4 }}>
                   <div>
                     <label style={{ display:'block', fontSize:14.5, fontWeight:700, color:'#2563eb', marginBottom:6 }}>
@@ -1353,6 +1432,8 @@ export default function AdminSuggestionsPage() {
                     emptyLabel="— Lier à un EC —"
                     options={filteredEcs.map(ec => ({ value: String(ec.id), label: `${ec.ue_code ? ec.ue_code + ' - ' : ''}${ec.code}: ${ec.name}` }))} />
                 </div>
+                </>
+                )}
               </div>
             </div>
 

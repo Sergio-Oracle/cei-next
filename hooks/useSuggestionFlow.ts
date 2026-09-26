@@ -29,6 +29,7 @@ export interface SuggestionResult {
   suggestions: Suggestion[]
   course_filename: string
   from_cache?: boolean
+  moodle_skipped?: { filename: string; error: string }[]
 }
 
 export interface QTypes { qcm: boolean; open: boolean; vf: boolean }
@@ -40,6 +41,10 @@ interface GeneratePayload {
   examType: string
   qTypes: QTypes
   duration: number
+  // Source « Depuis Moodle » : EC CEI relié au cours + URLs des documents cochés
+  // (re-vérifiées côté serveur, jamais téléchargées par le navigateur).
+  moodleEcId?: number
+  moodleFiles?: string[]
 }
 
 export interface UseSuggestionFlowReturn {
@@ -65,7 +70,7 @@ export function useSuggestionFlow(): UseSuggestionFlowReturn {
     setGenerating(false); setGenElapsed(0); setResult(null); setError('')
   }
 
-  async function generate({ courseFiles, difficulty, studentLevel, examType, qTypes, duration }: GeneratePayload) {
+  async function generate({ courseFiles, difficulty, studentLevel, examType, qTypes, duration, moodleEcId, moodleFiles }: GeneratePayload) {
     reset()
     setGenerating(true)
     setGenElapsed(0)
@@ -81,6 +86,10 @@ export function useSuggestionFlow(): UseSuggestionFlowReturn {
 
       const fd = new FormData()
       courseFiles.forEach(f => fd.append('course_files', f))
+      if (moodleEcId && moodleFiles?.length) {
+        fd.append('moodle_ec_id', String(moodleEcId))
+        moodleFiles.forEach(u => fd.append('moodle_files', u))
+      }
       fd.append('difficulty', difficulty)
       fd.append('student_level', studentLevel)
       fd.append('duration', String(duration))
