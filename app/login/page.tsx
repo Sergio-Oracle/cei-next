@@ -1,9 +1,24 @@
 'use client'
 
 import { useState, FormEvent, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
+import api from '@/lib/api'
 import Link from 'next/link'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dev-cei.ddns.net'
+
+// Messages affichés selon ?sso_error=... posé par GET /api/auth/oidc/callback
+// (voir routes/oidc.py côté backend pour la liste exacte des codes).
+const SSO_ERROR_MESSAGES: Record<string, string> = {
+  denied: "Connexion annulée sur l'UNCHK.",
+  state_invalid: 'Session de connexion expirée, réessayez.',
+  token_exchange_failed: 'Erreur de communication avec le service UNCHK. Réessayez dans un instant.',
+  invalid_token: 'Réponse UNCHK invalide, réessayez.',
+  no_email: "Votre compte UNCHK ne transmet pas d'adresse email — contactez la DITSI.",
+  unknown_account: "Aucun compte CEI ne correspond à votre identité UNCHK. Contactez l'administration CEI pour faire créer votre compte.",
+}
 
 const LANGS = {
   fr: {
@@ -56,6 +71,7 @@ function setGoogTransAllScopes(val: string) {
 
 export default function LoginPage() {
   const { login } = useAuth()
+  const router = useRouter()
   const { error: showError } = useToast()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -63,7 +79,10 @@ export default function LoginPage() {
   // Session unique (étudiants) — retour utilisateur du 24/08 : bloquer une
   // nouvelle connexion tant qu'une session est active sur un autre appareil,
   // avec confirmation explicite pour la déconnecter plutôt qu'échec silencieux.
-  const [sessionConflict, setSessionConflict] = useState<{ deviceLabel: string } | null>(null)
+  // retryToken présent = conflit remonté par le SSO UNCHK (POST /api/auth/oidc/force-login),
+  // absent = conflit du login classique (login(email, password, true)).
+  const [sessionConflict, setSessionConflict] = useState<{ deviceLabel: string; retryToken?: string } | null>(null)
+  const [ssoError, setSsoError] = useState<string | null>(null)
   const [lang, setLang]         = useState<'fr' | 'en' | 'wo'>('fr')
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -83,6 +102,20 @@ export default function LoginPage() {
       }
     } catch {}
     if (s && ['fr', 'en', 'wo'].includes(s)) setLang(s)
+
+    // Retour du SSO UNCHK (GET /api/auth/oidc/callback) — mêmes conventions
+    // que le paramètre _l ci-dessus (URLSearchParams sur window.location).
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const err = params.get('sso_error')
+      if (err) setSsoError(SSO_ERROR_MESSAGES[err] || 'Connexion via UNCHK impossible, réessayez.')
+      if (params.get('sso_conflict') === '1') {
+        setSessionConflict({
+          deviceLabel: params.get('device_label') || 'un autre appareil',
+          retryToken: params.get('retry_token') || undefined,
+        })
+      }
+    } catch {}
 
     const close = (e: MouseEvent) => {
       const sw = document.getElementById('login-lang-sw')
@@ -137,8 +170,16 @@ export default function LoginPage() {
   async function forceLoginAnyway() {
     setLoading(true)
     try {
-      await login(email, password, true)
-      setSessionConflict(null)
+      if (sessionConflict?.retryToken) {
+        // Conflit remonté par le SSO UNCHK — pas de email/password ici,
+        // juste confirmer via le retry_token à usage unique du callback.
+        await api.post('/api/auth/oidc/force-login', { retry_token: sessionConflict.retryToken })
+        setSessionConflict(null)
+        router.push('/dashboard')
+      } else {
+        await login(email, password, true)
+        setSessionConflict(null)
+      }
     } catch (err: any) {
       showError(err.message || 'Identifiants invalides')
     } finally {
@@ -367,6 +408,15 @@ export default function LoginPage() {
           <h1>{t.connexion}</h1>
           <p>{t.connexionSub}</p>
 
+          {ssoError && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '12px 16px', marginBottom: 18 }}>
+              <p style={{ margin: 0, fontSize: 14.5, color: '#991b1b', lineHeight: 1.5 }}>
+                <i className="fas fa-circle-exclamation" style={{ marginRight: 8 }} />
+                {ssoError}
+              </p>
+            </div>
+          )}
+
           {sessionConflict && (
             <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 10, padding: '14px 16px', marginBottom: 18 }}>
               <p style={{ margin: '0 0 10px', fontSize: 14.5, color: '#92400e', lineHeight: 1.5 }}>
@@ -414,6 +464,21 @@ export default function LoginPage() {
               }
             </button>
           </form>
+
+          {!sessionConflict && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border, #e2e8f0)' }} />
+                <span style={{ fontSize: 13, color: 'var(--text-light, #64748b)' }}>ou</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border, #e2e8f0)' }} />
+              </div>
+              {/* Vraie navigation (pas un fetch) — mène chez Keycloak, pas d'appel XHR possible. */}
+              <a href={`${API_URL}/api/auth/oidc/login`} className="btn btn-secondary btn-block"
+                style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <i className="fas fa-building-columns" /> Se connecter via UNCHK
+              </a>
+            </>
+          )}
 
           <p style={{ textAlign: 'center', margin: '14px 0 0' }}>
             <Link href="/forgot-password" style={{ background: 'none', color: '#3b82f6', fontSize:15.5, cursor: 'pointer', textDecoration: 'underline', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
