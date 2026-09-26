@@ -961,15 +961,15 @@ export default function AdminFormationsPage() {
           ) : f.semesters.map(s => (
             <div key={s.id} style={{ border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
               {/* Semester header */}
-              <div style={{ background: '#f8fafc', padding: '11px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
-                <div style={{ fontWeight: 700, fontSize:17, color: '#0f172a' }}>
+              <div style={{ background: '#f8fafc', padding: '11px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, borderBottom: '1px solid #e2e8f0' }}>
+                <div style={{ fontWeight: 700, fontSize:17, color: '#0f172a', flex: '1 1 220px', minWidth: 0 }}>
                   <i className="fas fa-calendar-alt" style={{ marginRight: 7, color: '#3b82f6' }} />
                   Semestre {s.number}{s.name ? ` — ${s.name}` : ''}
                   <span style={{ color: '#64748b', marginLeft: 12, fontWeight: 400, fontSize:15.5 }}>
                     <i className="fas fa-star" style={{ marginRight: 4, color: '#64748b' }} />{s.total_credits} crédits
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: 7 }}>
+                <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
                   {(() => {
                     const n = s.ues.reduce((a2, u) => a2 + (u.values_confirmed === false ? 1 : 0) + u.ecs.filter(ec => ec.values_confirmed === false).length, 0)
                     return n > 0 ? (
