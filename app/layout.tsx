@@ -4,6 +4,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import OfflineBanner from '@/components/shared/OfflineBanner'
 import InstallPwaBanner from '@/components/shared/InstallPwaBanner'
+import GoogleTranslateLoader from '@/components/shared/GoogleTranslateLoader'
 
 export const metadata: Metadata = {
   title: 'CEI — Centre d\'Examen Intelligent',
@@ -31,27 +32,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {display:none!important;height:0!important;overflow:hidden!important}
           html,body{top:0!important;position:static!important}
         `}} />
-        <script dangerouslySetInnerHTML={{__html:`
-          function googleTranslateElementInit(){
-            new google.translate.TranslateElement({
-              pageLanguage:'fr',
-              includedLanguages:'fr,en,wo',
-              autoDisplay:false
-            },'google_translate_element');
-          }
-        `}} />
-        {/* C-16 (audit DITSI-SSSI AVR-2026-09-CEI-AUDIT) : pas de Subresource
-            Integrity possible ici par construction — ce script est généré
-            dynamiquement par Google à chaque requête (varie selon locale,
-            feature flags, cb=...), pas un fichier statique dont le contenu
-            pourrait être figé/hashé ; c'est vrai pour tout intégrateur de ce
-            widget, pas spécifique à ce projet. La compensation retenue est la
-            CSP (script-src limité à translate.google.com/googleapis.com,
-            voir nginx) plutôt qu'une SRI infaisable. URL mise en https:
-            explicite (était en //, relative au protocole — sans effet
-            pratique ici vu que le site est HTTPS partout, mais retire toute
-            ambiguïté). */}
-        <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer />
+        {/* Google Translate : chargé après l'hydratation par GoogleTranslateLoader
+            (voir ce composant — chargé ici, il provoquait l'erreur React #418).
+            C-16 (audit DITSI-SSSI) : pas de SRI possible sur ce script généré
+            dynamiquement par Google ; compensation = CSP script-src limitée à
+            translate.google.com/googleapis.com (nginx). */}
         {/* Capture le prompt d'installation PWA le plus tôt possible (avant même
             l'hydratation React) — pratique standard recommandée : si l'écouteur
             n'est posé qu'une fois le composant React monté, l'événement peut
@@ -96,7 +81,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         `}} />
       </head>
       <body>
-        <div id="google_translate_element" style={{display:'none'}} />
         <AuthProvider>
           <ToastProvider>
             {children}
@@ -104,6 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </AuthProvider>
         <OfflineBanner />
         <InstallPwaBanner />
+        <GoogleTranslateLoader />
       </body>
     </html>
   )
