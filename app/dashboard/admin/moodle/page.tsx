@@ -41,6 +41,11 @@ interface StructureReport {
   ue_links?: number; skipped?: { code: string; reason: string }[]
 }
 
+interface CalendarReport {
+  dry_run: boolean; created: string[]; updated: string[]; unchanged: string[]; removed: string[]
+  skipped: { exam: string; reason: string }[]; errors: { exam: string; error: string }[]
+}
+
 const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 15.5, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }
 const card: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }
 const cardHead: React.CSSProperties = { padding: '16px 22px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }
@@ -108,6 +113,9 @@ export default function AdminMoodlePage() {
   const [structRunning, setStructRunning] = useState<null | 'dry' | 'apply'>(null)
   const [structResult, setStructResult] = useState<{ dry_run: boolean; instances: StructureReport[] } | null>(null)
   const [confirmStruct, setConfirmStruct] = useState(false)
+  const [calRunning, setCalRunning] = useState<null | 'dry' | 'apply'>(null)
+  const [calResult, setCalResult] = useState<CalendarReport | null>(null)
+  const [confirmCal, setConfirmCal] = useState(false)
   const stopRef = useRef(false)
 
   const loadInstances = useCallback(async () => {
@@ -204,6 +212,17 @@ export default function AdminMoodlePage() {
     links: t.links + (r.ue_links || 0),
   }), { formations: 0, renamed: 0, semesters: 0, ues: 0, ecs: 0, links: 0 })
   const structNothing = structResult && Object.values(structTotals).every(n => n === 0)
+
+  /* ── Calendrier Moodle ── */
+  async function runCalendar(mode: 'dry' | 'apply') {
+    setConfirmCal(false); setCalRunning(mode)
+    try {
+      const r = await api.aiPost<CalendarReport>('/api/admin/moodle/calendar/sync', { dry_run: mode === 'dry' })
+      setCalResult(r)
+      if (mode === 'apply') r.errors.length ? error(`${r.errors.length} examen(s) non publiés, voir le détail`) : success('Calendriers Moodle à jour')
+    } catch (e: any) { error(e.message || 'Publication impossible') }
+    finally { setCalRunning(null) }
+  }
 
   /* ── Synchronisation ── */
   const courses = (mapping?.matched || []).filter(c => !syncInstance || String(c.instance_id) === syncInstance)
@@ -607,6 +626,75 @@ export default function AdminMoodlePage() {
                     </div>
                   </>
                 )}
+              </div>
+            </section>
+          )}
+          {/* ── Calendrier Moodle ── */}
+          {instances.some(i => i.is_active) && (
+            <section style={card}>
+              <div style={cardHead}>
+                <h3 style={{ margin: 0, fontSize: 18.5, fontWeight: 700 }}><i className="fas fa-calendar-days" style={{ color: ACCENT, marginRight: 8 }} />Calendrier Moodle</h3>
+              </div>
+              <div style={{ padding: '16px 22px', display: 'grid', gap: 14 }}>
+                <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14.5, color: 'var(--text-muted)', display: 'grid', gap: 4 }}>
+                  <li>Chaque examen CEI apparaît automatiquement dans le calendrier du cours Moodle de son EC (« Examen CEI : titre », date, durée, lien vers CEI), visible par tous les inscrits.</li>
+                  <li>Mis à jour quand l&apos;examen est modifié ou prolongé, retiré quand il est supprimé. Un Moodle indisponible ne bloque jamais la création d&apos;un examen.</li>
+                  <li>Ce bouton sert au rattrapage : examens créés avant cette fonctionnalité, ou après une panne de Moodle. Seuls les examens à venir ou en cours sont concernés.</li>
+                </ul>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <Button onClick={() => runCalendar('dry')} disabled={!!calRunning}>
+                    <i className={`fas ${calRunning === 'dry' ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} /> Simuler
+                  </Button>
+                  {!confirmCal ? (
+                    <Button variant="ghost" onClick={() => setConfirmCal(true)} disabled={!!calRunning}><i className="fas fa-calendar-check" /> Publier les examens à venir…</Button>
+                  ) : (
+                    <>
+                      <Button onClick={() => runCalendar('apply')}><i className="fas fa-calendar-check" /> Confirmer la publication</Button>
+                      <Button variant="ghost" onClick={() => setConfirmCal(false)}>Annuler</Button>
+                    </>
+                  )}
+                  {calRunning === 'apply' && <span style={{ fontSize: 14.5, color: 'var(--text-muted)', alignSelf: 'center' }}><i className="fas fa-spinner fa-spin" /> Publication en cours…</span>}
+                </div>
+                {calResult && (() => {
+                  const d = calResult.dry_run
+                  const counts: [string, number][] = [
+                    [d ? 'À publier' : 'Publiés', calResult.created.length],
+                    [d ? 'À mettre à jour' : 'Mis à jour', calResult.updated.length],
+                    ['Déjà à jour', calResult.unchanged.length],
+                    [d ? 'À retirer' : 'Retirés', calResult.removed.length],
+                    ['Sans cours Moodle', calResult.skipped.length],
+                  ]
+                  const total = counts.reduce((a, [, n]) => a + n, 0) + calResult.errors.length
+                  return (
+                    <div style={{ display: 'grid', gap: 10, fontSize: 14 }}>
+                      <div style={{ fontSize: 14.5, fontWeight: 600 }}>
+                        {total === 0 ? 'Aucun examen à venir.' : d ? 'Simulation — rien n’a été modifié :' : 'Résultat :'}
+                      </div>
+                      {total > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+                          {counts.map(([label, n]) => (
+                            <div key={label} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px' }}>
+                              <div style={{ fontSize: 22, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{n}</div>
+                              <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>{label}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {([[d ? 'À publier' : 'Publiés', calResult.created], [d ? 'À mettre à jour' : 'Mis à jour', calResult.updated], [d ? 'À retirer' : 'Retirés', calResult.removed]] as [string, string[]][])
+                        .filter(([, l]) => l.length > 0).map(([label, l]) => (
+                        <details key={label}><summary style={{ cursor: 'pointer' }}>{label} ({l.length})</summary>
+                          <div style={{ color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.8 }}>{l.join(' · ')}</div>
+                        </details>
+                      ))}
+                      {calResult.skipped.length > 0 && (
+                        <details><summary style={{ cursor: 'pointer' }}>Sans cours Moodle ({calResult.skipped.length})</summary>
+                          <div style={{ color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.8 }}>{calResult.skipped.map(x => `${x.exam} : ${x.reason}`).join(' · ')}</div>
+                        </details>
+                      )}
+                      {calResult.errors.map((x, k) => <div key={k} style={{ color: '#b91c1c' }}><i className="fas fa-circle-exclamation" /> {x.exam} : {x.error}</div>)}
+                    </div>
+                  )
+                })()}
               </div>
             </section>
           )}
