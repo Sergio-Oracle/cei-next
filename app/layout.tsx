@@ -73,6 +73,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 // la connexion LiveKit, laissant la page dans un état d'échec alors
                 // que le premier échange avait pourtant réussi).
                 if(window.location.pathname.indexOf('/phone-camera')===0) return;
+                // /lti/enter (arrivée depuis Moodle) attend elle-même la prise
+                // de contrôle du SW avant d'ouvrir le tableau de bord : la
+                // recharger ici ferait un double rafraîchissement de session.
+                if(window.location.pathname.indexOf('/lti/enter')===0) return;
                 reloaded = true;
                 window.location.reload();
               });

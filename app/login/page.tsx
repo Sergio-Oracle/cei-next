@@ -187,6 +187,13 @@ export default function LoginPage() {
         // juste confirmer via le retry_token à usage unique du callback.
         await api.post('/api/auth/oidc/force-login', { retry_token: sessionConflict.retryToken })
         setSessionConflict(null)
+        // Venu de l'activité « CEI » de Moodle : même passage que sans conflit,
+        // pour garder le retour vers Moodle.
+        const back = new URLSearchParams(window.location.search).get('lti_back')
+        if (back) {
+          window.location.replace(`/lti/enter?${new URLSearchParams({ to: '/dashboard', back, k: String(Date.now()) })}`)
+          return
+        }
         router.push('/dashboard')
       } else {
         await login(email, password, true)

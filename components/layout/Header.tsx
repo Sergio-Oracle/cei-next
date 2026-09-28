@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { getLtiReturn } from '@/lib/ltiReturn'
 import { useAuth } from '@/contexts/AuthContext'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import api from '@/lib/api'
@@ -63,6 +64,8 @@ interface HeaderProps {
 
 export default function Header({ onToggleSidebar }: HeaderProps) {
   const { user, logout } = useAuth()
+  const [moodleReturn, setMoodleReturn] = useState<string | null>(null)
+  useEffect(() => { setMoodleReturn(getLtiReturn()) }, [])
   const router = useRouter()
   const { canInstallManually, showIosInstructionsManually, promptInstall } = usePwaInstall()
   const { showToast } = useToast()
@@ -234,6 +237,16 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                 border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)' }}>
               <i className="fas fa-download" style={{ fontSize: 20 }} />
             </button>
+          )}
+
+          {/* Ouvert depuis Moodle : retour au cours Moodle (la session CEI reste ouverte). */}
+          {moodleReturn && (
+            <a href={moodleReturn} title="Revenir dans Moodle"
+              style={{ display: 'flex', alignItems: 'center', gap: 7, height: 36, padding: '0 14px', borderRadius: 18,
+                background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--text)',
+                textDecoration: 'none', fontSize: 14.5, fontWeight: 600, whiteSpace: 'nowrap' }}>
+              <i className="fas fa-arrow-left" /> Retour à Moodle
+            </a>
           )}
 
           {/* Toggle thème */}

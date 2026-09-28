@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { useRouter } from 'next/navigation'
 import type { User } from '@/types'
 import api from '@/lib/api'
+import { getLtiReturn, clearLtiReturn } from '@/lib/ltiReturn'
 
 interface AuthContextValue {
   user: User | null
@@ -55,6 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // cache que les pages publiques, donc normalement rien à purger ici).
     navigator.serviceWorker?.controller?.postMessage('CLEAR_PAGE_CACHE')
     if (mounted.current) { setToken(null); setUser(null) }
+    // Ouvert depuis Moodle (activité « CEI ») : quitter CEI ramène dans Moodle.
+    const moodle = getLtiReturn()
+    if (moodle) { clearLtiReturn(); window.location.replace(moodle); return }
     router.push('/login')
   }, [router])
 
