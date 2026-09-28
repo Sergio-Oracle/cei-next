@@ -17,7 +17,10 @@ interface Instance {
   id: number; name: string; base_url: string; token_hint: string
   pole_id: number | null; pole_code: string | null; is_active: boolean
   last_check_at: string | null; last_check_ok: boolean | null; last_check: Diagnosis | null
+  lti_client_id?: string | null; lti_deployment_id?: string | null; lti_type_id?: number | null; lti_configured?: boolean
 }
+interface ToolConfig { tool_url: string; initiate_login_url: string; redirection_uris: string; public_keyset_url: string }
+interface GradeRow { exam_id: number; title: string; pushed_at: string | null; pushed_count: number; last_error: string | null }
 interface Pole { id: number; code: string; name: string }
 interface Mapping {
   matched: { instance_id: number; instance: string; shortname: string; fullname: string; ec_code: string; ue_code: string | null }[]
@@ -114,6 +117,11 @@ export default function AdminMoodlePage() {
   const [structResult, setStructResult] = useState<{ dry_run: boolean; instances: StructureReport[] } | null>(null)
   const [confirmStruct, setConfirmStruct] = useState(false)
   const [calRunning, setCalRunning] = useState<null | 'dry' | 'apply'>(null)
+  const [toolCfg, setToolCfg] = useState<ToolConfig | null>(null)
+  const [ltiForm, setLtiForm] = useState<Record<number, { lti_client_id: string; lti_deployment_id: string; lti_type_id: string }>>({})
+  const [ltiSaving, setLtiSaving] = useState<number | null>(null)
+  const [grades, setGrades] = useState<GradeRow[] | null>(null)
+  const [pushing, setPushing] = useState<number | null>(null)
   const [calResult, setCalResult] = useState<CalendarReport | null>(null)
   const [confirmCal, setConfirmCal] = useState(false)
   const stopRef = useRef(false)
@@ -212,6 +220,38 @@ export default function AdminMoodlePage() {
     links: t.links + (r.ue_links || 0),
   }), { formations: 0, renamed: 0, semesters: 0, ues: 0, ecs: 0, links: 0 })
   const structNothing = structResult && Object.values(structTotals).every(n => n === 0)
+
+  /* ── LTI (phase 6) ── */
+  const loadLti = useCallback(async () => {
+    try { setToolCfg(await api.get<ToolConfig>('/api/admin/moodle/lti/tool-config')) } catch {}
+    try { setGrades((await api.get<{ exams: GradeRow[] }>('/api/admin/moodle/lti/grades')).exams) } catch { setGrades([]) }
+  }, [])
+  useEffect(() => { if (instances.some(i => i.is_active)) loadLti() }, [instances, loadLti])
+  useEffect(() => {
+    setLtiForm(Object.fromEntries(instances.map(i => [i.id, {
+      lti_client_id: i.lti_client_id || '', lti_deployment_id: i.lti_deployment_id || '', lti_type_id: i.lti_type_id ? String(i.lti_type_id) : '',
+    }])))
+  }, [instances])
+  async function saveLti(id: number) {
+    setLtiSaving(id)
+    try { await api.put(`/api/admin/moodle/instances/${id}`, ltiForm[id]); success('Réglages LTI enregistrés'); loadInstances() }
+    catch (e: any) { error(e.message || 'Enregistrement impossible') }
+    finally { setLtiSaving(null) }
+  }
+  async function pushGrades(examId: number) {
+    setPushing(examId)
+    try {
+      const r = await api.aiPost<any>(`/api/admin/moodle/lti/grades/${examId}`, { dry_run: false })
+      if (r.error) error(r.error)
+      else if (r.skipped) error(`Non envoyé : ${r.skipped}`)
+      else success(`${r.pushed} note(s) déposée(s) dans Moodle${r.not_in_moodle?.length ? ` — ${r.not_in_moodle.length} étudiant(s) absent(s) du cours Moodle` : ''}`)
+      loadLti()
+    } catch (e: any) { error(e.message || 'Envoi impossible') }
+    finally { setPushing(null) }
+  }
+  function copy(text: string) {
+    navigator.clipboard?.writeText(text).then(() => success('Copié'), () => {})
+  }
 
   /* ── Calendrier Moodle ── */
   async function runCalendar(mode: 'dry' | 'apply') {
@@ -629,6 +669,84 @@ export default function AdminMoodlePage() {
               </div>
             </section>
           )}
+          {/* ── LTI : activité « Examens CEI » et notes ── */}
+          {instances.some(i => i.is_active) && (
+            <section style={card}>
+              <div style={cardHead}>
+                <h3 style={{ margin: 0, fontSize: 18.5, fontWeight: 700 }}><i className="fas fa-puzzle-piece" style={{ color: ACCENT, marginRight: 8 }} />Activité « Examens CEI » (LTI) et notes</h3>
+              </div>
+              <div style={{ padding: '16px 22px', display: 'grid', gap: 16 }}>
+                <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14.5, color: 'var(--text-muted)', display: 'grid', gap: 4 }}>
+                  <li>Une activité « Examens CEI » par cours Moodle : l&apos;étudiant y retrouve ses examens CEI de l&apos;EC et compose sans se reconnecter.</li>
+                  <li>À la publication des résultats, CEI crée une colonne « Examen CEI – titre » dans le carnet de notes du cours et y dépose les notes sur 20.</li>
+                  <li>Une fois par plateforme, dans Moodle : Administration du site → Plugins → Outil externe → Gérer les outils → configurer un outil manuellement, avec les valeurs ci-dessous.</li>
+                </ul>
+                {toolCfg && (
+                  <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                    {([['URL de l’outil', toolCfg.tool_url], ['URL de connexion (initiate login)', toolCfg.initiate_login_url],
+                       ['URI de redirection', toolCfg.redirection_uris], ['URL du jeu de clés publiques (Keyset URL)', toolCfg.public_keyset_url]] as [string, string][]).map(([label, v], k) => (
+                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', borderTop: k ? '1px solid var(--border)' : 'none', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 14, color: 'var(--text-muted)', minWidth: 250 }}>{label}</span>
+                        <code style={{ flex: 1, fontSize: 14, wordBreak: 'break-all' }}>{v}</code>
+                        <button type="button" onClick={() => copy(v)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 7, padding: '4px 10px', cursor: 'pointer', fontSize: 13.5, color: 'var(--text)' }}><i className="fas fa-copy" /> Copier</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                  Autres réglages de l&apos;outil dans Moodle : version LTI 1.3 · type de clé publique « Keyset URL » · conteneur de lancement par défaut « Nouvelle fenêtre » (obligatoire : caméra et plein écran) · partager le nom et l&apos;adresse email du lanceur « Toujours » · services IMS LTI Assignment and Grade Services « Utiliser ce service pour la synchronisation des notes et la gestion des colonnes » · afficher dans le sélecteur d&apos;activités. Moodle affiche ensuite l&apos;identifiant client et l&apos;identifiant de déploiement, à reporter ci-dessous.
+                </div>
+                {instances.filter(i => i.is_active).map(i => {
+                  const f = ltiForm[i.id] || { lti_client_id: '', lti_deployment_id: '', lti_type_id: '' }
+                  const set = (k: keyof typeof f, v: string) => setLtiForm(p => ({ ...p, [i.id]: { ...f, [k]: v } }))
+                  return (
+                    <div key={i.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 14, display: 'grid', gap: 10 }}>
+                      <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        {i.name}
+                        <span style={{ fontSize: 13, fontWeight: 700, padding: '2px 9px', borderRadius: 99, background: i.lti_configured ? '#dcfce7' : '#fef3c7', color: i.lti_configured ? '#166534' : '#92400e' }}>
+                          {i.lti_configured ? 'LTI configuré' : 'LTI à configurer'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+                        <label style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>Identifiant client (Client ID)
+                          <input style={inputStyle} value={f.lti_client_id} onChange={e => set('lti_client_id', e.target.value)} /></label>
+                        <label style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>Identifiant de déploiement (Deployment ID)
+                          <input style={inputStyle} value={f.lti_deployment_id} onChange={e => set('lti_deployment_id', e.target.value)} /></label>
+                        <label style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>Identifiant de l&apos;outil (typeid, facultatif)
+                          <input style={inputStyle} value={f.lti_type_id} onChange={e => set('lti_type_id', e.target.value)} placeholder="appris au 1er lancement" /></label>
+                      </div>
+                      <div><Button onClick={() => saveLti(i.id)} disabled={ltiSaving === i.id}><i className={`fas ${ltiSaving === i.id ? 'fa-spinner fa-spin' : 'fa-floppy-disk'}`} /> Enregistrer</Button></div>
+                    </div>
+                  )
+                })}
+                {grades && grades.length > 0 && (
+                  <div style={{ display: 'grid', gap: 6 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>Notes publiées → carnet Moodle</div>
+                    <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 10 }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, minWidth: 560 }}>
+                        <tbody>
+                          {grades.map(g => (
+                            <tr key={g.exam_id} style={{ borderTop: '1px solid var(--border)' }}>
+                              <td style={{ padding: '8px 12px' }}>{g.title}</td>
+                              <td style={{ padding: '8px 12px', color: g.last_error ? '#b91c1c' : 'var(--text-muted)' }}>
+                                {g.last_error ? g.last_error : g.pushed_at ? `${g.pushed_count} note(s) le ${new Date(g.pushed_at).toLocaleString('fr-FR')}` : 'pas encore envoyées'}
+                              </td>
+                              <td style={{ padding: '8px 12px', textAlign: 'right' }}>
+                                <Button variant="ghost" onClick={() => pushGrades(g.exam_id)} disabled={pushing === g.exam_id}>
+                                  <i className={`fas ${pushing === g.exam_id ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`} /> {g.pushed_at ? 'Renvoyer' : 'Envoyer'}
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
           {/* ── Calendrier Moodle ── */}
           {instances.some(i => i.is_active) && (
             <section style={card}>
