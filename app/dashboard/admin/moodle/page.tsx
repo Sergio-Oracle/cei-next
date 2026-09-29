@@ -36,10 +36,10 @@ interface Mapping {
 interface CourseResult {
   ec_code: string; ue_code?: string | null; instance?: string; error?: string
   teachers?: { moodle: number; created: number; upgraded: number; assignments_added: number; other_role: { email: string; role: string }[]
-               created_emails: string[]; upgraded_emails: string[] }
+               created_emails: string[]; upgraded_emails: string[]; assignments_removed?: number; removed_emails?: string[] }
   students?: { moodle: number; created: number; enrollments_added: number; already_enrolled: number; formation_filled: number; other_role: number
-               without_formation: Record<string, string[]>; formations_created: string[]; created_emails: string[]; enrolled_emails: string[]; formation_filled_emails: string[] }
-  activity?: { status: 'present' | 'installed' | 'to_install' | 'skipped' | 'error'; detail: string }
+               without_formation: Record<string, string[]>; formations_created: string[]; created_emails: string[]; enrolled_emails: string[]; formation_filled_emails: string[]
+               names_updated?: number; formation_changed?: number; formation_changed_emails?: string[]; enrollments_removed?: number; removed_emails?: string[]; removal_suspended?: string | null }
 }
 
 interface StructureReport {
@@ -267,7 +267,8 @@ export default function AdminMoodlePage() {
     const tCreated = new Set<string>(), tUpgraded = new Set<string>(), sCreated = new Set<string>()
     const sEnroll = new Set<string>(), sFormation = new Set<string>()
     const otherTeachers = new Map<string, string>(), noFormation: Record<string, Set<string>> = {}, formationsCreated = new Set<string>()
-    let tAssign = 0, otherStudents = 0, errors = 0
+    let tAssign = 0, otherStudents = 0, errors = 0, tRemoved = 0, names = 0
+    const sRemoved = new Set<string>(), fChanged = new Set<string>(), suspended: string[] = []
     for (const r of results) {
       if (r.error) { errors++; continue }
       r.teachers?.created_emails?.forEach(e => tCreated.add(e))
@@ -278,12 +279,17 @@ export default function AdminMoodlePage() {
       r.students?.enrolled_emails?.forEach(e => sEnroll.add(`${r.ue_code}|${e}`))
       r.students?.formation_filled_emails?.forEach(e => sFormation.add(e))
       r.students?.formations_created?.forEach(c => formationsCreated.add(c))
+      tRemoved += r.teachers?.assignments_removed || 0
+      names += r.students?.names_updated || 0
+      r.students?.removed_emails?.forEach(e => sRemoved.add(`${r.ue_code}|${e}`))
+      r.students?.formation_changed_emails?.forEach(e => fChanged.add(e))
+      if (r.students?.removal_suspended) suspended.push(`${r.ec_code} : ${r.students.removal_suspended}`)
       otherStudents += r.students?.other_role || 0
       for (const [d, emails] of Object.entries(r.students?.without_formation || {})) {
         noFormation[d] = noFormation[d] || new Set(); emails.forEach(e => noFormation[d].add(e))
       }
     }
-    return { tCreated: tCreated.size, tUpgraded: tUpgraded.size, tAssign, sCreated: sCreated.size, sEnroll: sEnroll.size,
+    return { tRemoved, names, sRemoved: sRemoved.size, fChanged: fChanged.size, suspended, tCreated: tCreated.size, tUpgraded: tUpgraded.size, tAssign, sCreated: sCreated.size, sEnroll: sEnroll.size,
              sFormation: sFormation.size, otherStudents, errors, otherTeachers, formationsCreated: [...formationsCreated].sort(),
              noFormation: Object.fromEntries(Object.entries(noFormation).map(([d, s]) => [d, s.size])) as Record<string, number> }
   })()
@@ -296,6 +302,10 @@ export default function AdminMoodlePage() {
     [isDry ? 'Étudiants à créer' : 'Étudiants créés', totals.sCreated],
     [isDry ? 'Inscriptions UE à ajouter' : 'Inscriptions UE ajoutées', totals.sEnroll],
     [isDry ? 'Formations à compléter' : 'Formations complétées', totals.sFormation],
+    [isDry ? 'Formations à changer' : 'Formations changées', totals.fChanged],
+    [isDry ? 'Noms à mettre à jour' : 'Noms mis à jour', totals.names],
+    [isDry ? 'Inscriptions UE à retirer' : 'Inscriptions UE retirées', totals.sRemoved],
+    [isDry ? 'Affectations EC à retirer' : 'Affectations EC retirées', totals.tRemoved],
   ]
 
   /* ── Rendu ── */
@@ -530,7 +540,8 @@ export default function AdminMoodlePage() {
                 <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14.5, color: 'var(--text-muted)', display: 'grid', gap: 4 }}>
                   <li>Enseignants du cours : compte professeur créé s&apos;il manque, compte étudiant promu professeur, affectation à l&apos;EC.</li>
                   <li>Étudiants : compte créé s&apos;il manque, formation reprise du département Moodle, inscription à l&apos;UE.</li>
-                  <li>Uniquement des ajouts : aucun compte supprimé, aucune inscription retirée, aucun autre rôle modifié. Les comptes créés se connectent avec « Se connecter avec UNCHK ».</li>
+                  <li>Mises à jour : nom et formation repris de Moodle pour les comptes venus de Moodle. Retraits : inscription à l&apos;UE si l&apos;étudiant n&apos;est plus dans aucun cours Moodle de l&apos;UE, affectation si l&apos;enseignant n&apos;enseigne plus le cours — seulement pour ce que la synchronisation a elle-même créé, jamais une saisie manuelle ou un import Excel.</li>
+                  <li>Jamais supprimés : comptes, copies, notes, tentatives d&apos;examen. Si Moodle fait disparaître d&apos;un coup plus d&apos;un tiers des inscrits d&apos;une UE, les retraits sont suspendus et signalés.</li>
                 </ul>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                   <select id="sync-instance" style={{ ...inputStyle, width: 'auto', minWidth: 220 }} value={syncInstance} disabled={!!running}
@@ -596,6 +607,11 @@ export default function AdminMoodlePage() {
                     {totals.otherStudents > 0 && (
                       <div style={{ fontSize: 14.5, color: 'var(--text-muted)' }}>{totals.otherStudents} inscription(s) Moodle d&apos;étudiants ayant un autre rôle dans CEI, laissées de côté.</div>
                     )}
+                    {totals.suspended.length > 0 && (
+                      <div style={{ fontSize: 14.5, color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px' }}>
+                        <i className="fas fa-triangle-exclamation" /> Retraits suspendus par précaution (liste Moodle anormalement réduite) : {totals.suspended.join(' · ')}
+                      </div>
+                    )}
                     {totals.errors > 0 && <div style={{ fontSize: 14.5, color: '#b91c1c' }}><i className="fas fa-circle-exclamation" /> {totals.errors} cours en erreur (voir le détail ci-dessous).</div>}
 
                     {isDry && results.length > 1 && (
@@ -607,7 +623,7 @@ export default function AdminMoodlePage() {
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, minWidth: 640 }}>
                         <thead>
                           <tr style={{ background: 'var(--background, #f8fafc)', textAlign: 'left' }}>
-                            {['EC', 'Plateforme', 'Enseignants', 'Affectations', 'Étudiants Moodle', 'Comptes créés', 'Inscriptions ajoutées', 'Activité CEI'].map(h => <th key={h} style={{ padding: '8px 12px', fontWeight: 700 }}>{h}</th>)}
+                            {['EC', 'Plateforme', 'Enseignants', 'Affectations', 'Étudiants Moodle', 'Comptes créés', 'Inscriptions ajoutées', 'Retraits'].map(h => <th key={h} style={{ padding: '8px 12px', fontWeight: 700 }}>{h}</th>)}
                           </tr>
                         </thead>
                         <tbody>
@@ -624,8 +640,9 @@ export default function AdminMoodlePage() {
                                   <td style={{ padding: '7px 12px', fontVariantNumeric: 'tabular-nums' }}>{r.students?.moodle}</td>
                                   <td style={{ padding: '7px 12px', fontVariantNumeric: 'tabular-nums' }}>{(r.teachers?.created || 0) + (r.students?.created || 0)}</td>
                                   <td style={{ padding: '7px 12px', fontVariantNumeric: 'tabular-nums' }}>{r.students?.enrollments_added}</td>
-                                  <td style={{ padding: '7px 12px', color: r.activity?.status === 'error' ? '#b91c1c' : 'var(--text-muted)' }} title={r.activity?.detail}>
-                                    {({ present: 'présente', installed: 'ajoutée', to_install: 'à ajouter', skipped: 'modèle non prêt', error: 'erreur' } as Record<string, string>)[r.activity?.status || ''] || '—'}
+                                  <td style={{ padding: '7px 12px', fontVariantNumeric: 'tabular-nums', color: r.students?.removal_suspended ? '#92400e' : undefined }}
+                                    title={r.students?.removal_suspended || undefined}>
+                                    {r.students?.removal_suspended ? 'suspendus' : (r.students?.enrollments_removed || 0) + (r.teachers?.assignments_removed || 0)}
                                   </td>
                                 </>
                               )}

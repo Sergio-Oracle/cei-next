@@ -5,23 +5,21 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 
 /* Section « CEI dans Moodle » de la page Moodle (phase 6) :
-   enregistrement de CEI (une adresse à coller, rien à recopier), activité
-   CEI copiée dans tous les cours depuis un cours modèle, webhook Moodle →
-   CEI, synchronisation automatique programmée, notes déposées dans Moodle. */
+   bouton « CEI » du menu de Moodle (une ligne), enregistrement de CEI pour
+   les notes (une adresse à coller, rien à recopier), surveillance des
+   changements Moodle (sans rien installer), webhook facultatif, notes. */
 
 const ACCENT = '#3b82f6'
 
 export interface LtiInstance {
   id: number; name: string; is_active: boolean
   lti_client_id?: string | null; lti_deployment_id?: string | null; lti_configured?: boolean
-  lti_template_course?: string | null
   webhook_configured?: boolean; webhook_last_at?: string | null
   auto_sync_enabled?: boolean; auto_sync_last_at?: string | null; auto_sync_last_full_at?: string | null
   auto_sync_last_report?: { at: string; kind: string; detail: any } | null
 }
-interface ToolConfig { registration_url: string; tool_url: string; initiate_login_url: string; redirection_uris: string; public_keyset_url: string }
+interface ToolConfig { moodle_menu_url: string; registration_url: string; tool_url: string; initiate_login_url: string; redirection_uris: string; public_keyset_url: string }
 interface GradeRow { exam_id: number; title: string; pushed_at: string | null; pushed_count: number; last_error: string | null }
-interface Template { problem?: string; course?: { id: number; shortname: string }; module?: { name: string } }
 interface Webhook { url: string; events: string[]; last_received_at: string | null }
 
 const card: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }
@@ -63,17 +61,9 @@ function CopyLine({ label, value, onCopy }: { label: string; value: string; onCo
 
 function InstanceLti({ inst, onChanged, onCopy }: { inst: LtiInstance; onChanged: () => void; onCopy: (v: string) => void }) {
   const { success, error } = useToast()
-  const [template, setTemplate] = useState(inst.lti_template_course || '')
-  const [tplCheck, setTplCheck] = useState<Template | null>(null)
   const [hook, setHook] = useState<Webhook | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
 
-  const checkTemplate = useCallback(async () => {
-    if (!inst.lti_template_course) { setTplCheck(null); return }
-    try { setTplCheck(await api.get<Template>(`/api/admin/moodle/instances/${inst.id}/lti/template`)) }
-    catch (e: any) { setTplCheck({ problem: e.message }) }
-  }, [inst.id, inst.lti_template_course])
-  useEffect(() => { checkTemplate() }, [checkTemplate])
   useEffect(() => { api.get<Webhook>(`/api/admin/moodle/instances/${inst.id}/webhook`).then(setHook).catch(() => {}) }, [inst.id])
 
   async function save(body: Record<string, unknown>, ok: string) {
@@ -87,9 +77,9 @@ function InstanceLti({ inst, onChanged, onCopy }: { inst: LtiInstance; onChanged
     try { setHook(await api.post<Webhook>(`/api/admin/moodle/instances/${inst.id}/webhook`, {})); success('Nouvelle adresse créée : mettez-la à jour dans Moodle') }
     catch (e: any) { error(e.message) } finally { setBusy(null) }
   }
-  async function runNow(full: boolean) {
-    setBusy(full ? 'full' : 'light')
-    try { await api.post(`/api/admin/moodle/instances/${inst.id}/auto-sync/run`, { full }); success(full ? 'Synchronisation complète lancée (plusieurs minutes)' : 'Synchronisation lancée'); setTimeout(onChanged, 4000) }
+  async function runFull() {
+    setBusy('full')
+    try { await api.post(`/api/admin/moodle/instances/${inst.id}/auto-sync/run`, {}); success('Synchronisation complète lancée (plusieurs minutes)'); setTimeout(onChanged, 4000) }
     catch (e: any) { error(e.message) } finally { setBusy(null) }
   }
 
@@ -97,10 +87,20 @@ function InstanceLti({ inst, onChanged, onCopy }: { inst: LtiInstance; onChanged
   const summary = (() => {
     if (!report) return null
     const d = report.detail
-    if (Array.isArray(d)) return `${d.length} changement(s) Moodle traité(s)` + (d.some((x: any) => x.error) ? ' — avec erreurs' : '')
+    if (Array.isArray(d)) {
+      const sum = (k: string) => d.reduce((a: number, x: any) => a + (x[k] || 0), 0)
+      const parts = [`${d.length} cours synchronisé(s) après un changement dans Moodle`]
+      for (const [k, label] of [['students_created', 'comptes créés'], ['enrollments_added', 'inscriptions ajoutées'], ['enrollments_removed', 'inscriptions retirées'],
+                                ['teachers_assigned', 'affectations ajoutées'], ['teachers_removed', 'affectations retirées'], ['names_updated', 'noms mis à jour'],
+                                ['formation_changed', 'formations changées']] as [string, string][]) {
+        if (sum(k)) parts.push(`${sum(k)} ${label}`)
+      }
+      if (d.some((x: any) => x.removal_suspended)) parts.push('retraits suspendus sur un cours (à vérifier)')
+      if (d.some((x: any) => x.error)) parts.push('avec erreurs')
+      return parts.join(' · ')
+    }
     if (d && typeof d === 'object') {
-      const parts = [`${d.courses ?? 0} cours`, `${d.activities_installed ?? 0} activité(s) CEI ajoutée(s)`]
-      if (d.kind === 'full') parts.push(`${d.courses_synced ?? 0} cours synchronisé(s)`)
+      const parts = [`synchronisation complète : ${d.courses_synced ?? 0} cours`]
       if (d.errors?.length) parts.push(`${d.errors.length} erreur(s)`)
       return parts.join(' · ')
     }
@@ -114,39 +114,42 @@ function InstanceLti({ inst, onChanged, onCopy }: { inst: LtiInstance; onChanged
       {/* 1. Enregistrement */}
       <div style={{ display: 'grid', gap: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontWeight: 700 }}>
-          1. CEI enregistré dans Moodle <Pill ok={!!inst.lti_configured} yes="Enregistré" no="À faire" />
+          CEI enregistré dans Moodle (dépôt des notes) <Pill ok={!!inst.lti_configured} yes="Enregistré" no="À faire" />
         </div>
         {inst.lti_configured
           ? <div style={muted}>Identifiant client <code>{inst.lti_client_id}</code> · déploiement <code>{inst.lti_deployment_id}</code> — retenus automatiquement.</div>
           : <div style={muted}>Collez l&apos;adresse d&apos;enregistrement ci-dessus dans Moodle, puis activez l&apos;outil. Rechargez cette page ensuite.</div>}
       </div>
 
-      {/* 2. Activité dans tous les cours */}
+      {/* Surveillance des changements */}
       <div style={{ display: 'grid', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontWeight: 700 }}>
-          2. Activité « CEI » dans tous les cours <Pill ok={!!tplCheck?.course} yes="Modèle prêt" no={inst.lti_template_course ? 'Modèle à corriger' : 'Modèle à définir'} />
+          Synchronisation automatique (surveillance des changements Moodle) <Pill ok={!!inst.auto_sync_enabled} yes="Activée" no="Désactivée" />
         </div>
         <div style={muted}>
-          Dans Moodle, créez une seule fois, dans un cours modèle qui ne contient rien d&apos;autre (supprimez aussi son forum « Annonces »), une activité « Outil externe » CEI :
-          lancement <strong>« Fenêtre existante »</strong> (CEI remplace Moodle), note <strong>« Aucune »</strong>. CEI la copie ensuite dans chaque cours à chaque synchronisation.
+          Sans rien installer sur Moodle : CEI regarde lui-même ce qui change — cours et catégories chaque minute, enseignants toutes les 5 minutes,
+          inscrits de chaque cours environ toutes les 10 minutes — et synchronise aussitôt le cours concerné (ajouts, mises à jour, retraits des liens venus de Moodle).
+          Synchronisation complète chaque nuit (1 h). Dernier traitement : {fmt(inst.auto_sync_last_at)} · dernière synchronisation complète : {fmt(inst.auto_sync_last_full_at)}
+          {summary && <><br />Dernier bilan ({fmt(report?.at)}) : {summary}</>}
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <input style={{ ...inputStyle, maxWidth: 280 }} value={template} onChange={e => setTemplate(e.target.value)} placeholder="Nom abrégé du cours modèle" />
-          <Btn onClick={() => save({ lti_template_course: template }, 'Cours modèle enregistré')} disabled={busy === 'save'}><i className="fas fa-floppy-disk" /> Enregistrer</Btn>
-          {inst.lti_template_course && <Btn ghost onClick={checkTemplate}><i className="fas fa-rotate" /> Vérifier</Btn>}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <Btn onClick={() => save({ auto_sync_enabled: !inst.auto_sync_enabled }, inst.auto_sync_enabled ? 'Synchronisation automatique désactivée' : 'Synchronisation automatique activée')} disabled={busy === 'save'}>
+            <i className={`fas ${inst.auto_sync_enabled ? 'fa-pause' : 'fa-play'}`} /> {inst.auto_sync_enabled ? 'Désactiver' : 'Activer'}
+          </Btn>
+          <Btn ghost onClick={runFull} disabled={!!busy}><i className="fas fa-rotate" /> Synchronisation complète maintenant</Btn>
         </div>
-        {tplCheck?.problem && <div style={{ fontSize: 14, color: '#b91c1c' }}><i className="fas fa-circle-exclamation" /> {tplCheck.problem}</div>}
-        {tplCheck?.course && <div style={{ fontSize: 14, color: '#166534' }}><i className="fas fa-circle-check" /> Activité « {tplCheck.module?.name} » trouvée dans {tplCheck.course.shortname} : elle sera copiée dans les cours.</div>}
       </div>
-
-      {/* 3. Webhook */}
+      <details>
+        <summary style={{ cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>Webhook (facultatif)</summary>
+        <div style={{ marginTop: 8 }}>
+      {/* Webhook (facultatif) */}
       <div style={{ display: 'grid', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontWeight: 700 }}>
-          3. Webhook : Moodle prévient CEI de chaque changement <Pill ok={!!inst.webhook_last_at} yes={`Reçu ${fmt(inst.webhook_last_at)}`} no="Rien reçu pour l’instant" />
+          Webhook (facultatif) <Pill ok={!!inst.webhook_last_at} yes={`Reçu ${fmt(inst.webhook_last_at)}`} no="Non utilisé" />
         </div>
         <div style={muted}>
-          Adresse à déclarer dans le plugin de webhooks de Moodle (par exemple « local_webhooks »), en format JSON, pour les événements listés.
-          Chaque changement (nouveau cours, inscription, enseignant, catégorie) déclenche la synchronisation du cours concerné environ une minute plus tard.
+          Inutile pour le fonctionnement : la surveillance ci-dessus suffit. Seulement si l&apos;UNCHK installe un jour une extension de webhooks sur Moodle,
+          cette adresse permettrait de réagir en quelques secondes au lieu de quelques minutes.
         </div>
         {hook && <CopyLine label="" value={hook.url} onCopy={onCopy} />}
         {hook && (
@@ -157,24 +160,8 @@ function InstanceLti({ inst, onChanged, onCopy }: { inst: LtiInstance; onChanged
         <div><Btn ghost onClick={newSecret} disabled={busy === 'hook'} title="L'ancienne adresse cessera de fonctionner"><i className="fas fa-key" /> Nouvelle adresse secrète</Btn></div>
       </div>
 
-      {/* 4. Programmée */}
-      <div style={{ display: 'grid', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontWeight: 700 }}>
-          4. Synchronisation automatique programmée <Pill ok={!!inst.auto_sync_enabled} yes="Activée" no="Désactivée" />
         </div>
-        <div style={muted}>
-          Filet de sécurité si un webhook se perd : chaque heure, maquette, nouveaux cours, activité CEI et enseignants ; chaque nuit (1 h), toutes les inscriptions.
-          Dernière passe : {fmt(inst.auto_sync_last_at)} · dernière passe complète : {fmt(inst.auto_sync_last_full_at)}
-          {summary && <><br />Dernier bilan ({fmt(report?.at)}) : {summary}</>}
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <Btn onClick={() => save({ auto_sync_enabled: !inst.auto_sync_enabled }, inst.auto_sync_enabled ? 'Synchronisation automatique désactivée' : 'Synchronisation automatique activée')} disabled={busy === 'save'}>
-            <i className={`fas ${inst.auto_sync_enabled ? 'fa-pause' : 'fa-play'}`} /> {inst.auto_sync_enabled ? 'Désactiver' : 'Activer'}
-          </Btn>
-          <Btn ghost onClick={() => runNow(false)} disabled={!!busy}><i className="fas fa-bolt" /> Lancer maintenant</Btn>
-          <Btn ghost onClick={() => runNow(true)} disabled={!!busy}><i className="fas fa-rotate" /> Synchronisation complète maintenant</Btn>
-        </div>
-      </div>
+      </details>
     </div>
   )
 }
@@ -215,12 +202,19 @@ export default function LtiPanel({ instances, onChanged }: { instances: LtiInsta
       </div>
       <div style={{ padding: '16px 22px', display: 'grid', gap: 16 }}>
         <ul style={{ margin: 0, paddingLeft: 20, ...muted, display: 'grid', gap: 4 }}>
-          <li>Un clic sur l&apos;activité « CEI » d&apos;un cours Moodle ouvre le tableau de bord CEI de la personne (étudiant, enseignant, admin) à la place de Moodle, sans reconnexion. « Retour à Moodle », la flèche Retour et la déconnexion ramènent au cours.</li>
+          <li>Le bouton « CEI » du menu de Moodle (sur toutes les pages, dans tous les cours) ouvre le tableau de bord CEI de la personne (étudiant, enseignant, admin) à la place de Moodle, sans reconnexion. « Retour à Moodle », la flèche Retour et la déconnexion ramènent à Moodle.</li>
           <li>À la publication des résultats, CEI crée une colonne « Examen CEI – titre » dans le carnet de notes du cours et y dépose les notes sur 20.</li>
         </ul>
         {toolCfg && (
           <div style={box}>
-            <div style={{ fontWeight: 700 }}>Adresse d&apos;enregistrement de CEI — à coller une fois dans chaque Moodle</div>
+            <div style={{ fontWeight: 700 }}>Bouton « CEI » dans le menu de Moodle — une ligne, une fois par Moodle</div>
+            <div style={muted}>Moodle : Administration du site → Présentation → Réglages des thèmes → « Éléments du menu personnalisé » : ajoutez cette ligne puis enregistrez. Le bouton apparaît sur toutes les pages de Moodle, pour tout le monde.</div>
+            <CopyLine label="" value={`CEI|${toolCfg.moodle_menu_url}`} onCopy={copy} />
+          </div>
+        )}
+        {toolCfg && (
+          <div style={box}>
+            <div style={{ fontWeight: 700 }}>Adresse d&apos;enregistrement de CEI (dépôt des notes) — à coller une fois dans chaque Moodle</div>
             <div style={muted}>Moodle : Administration du site → Plugins → Modules d&apos;activité → Outil externe → Gérer les outils → champ « URL de l&apos;outil » → « Ajouter LTI Advantage », puis « Activer » sur la carte CEI. CEI récupère seul son identifiant client et son déploiement.</div>
             <CopyLine label="" value={toolCfg.registration_url} onCopy={copy} />
             <details><summary style={{ cursor: 'pointer', fontSize: 14 }}>Configuration manuelle (si l&apos;enregistrement automatique n&apos;est pas possible)</summary>
