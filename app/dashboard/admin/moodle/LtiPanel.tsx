@@ -79,7 +79,7 @@ function InstanceLti({ inst, onChanged, onCopy }: { inst: LtiInstance; onChanged
   }
   async function runFull() {
     setBusy('full')
-    try { await api.post(`/api/admin/moodle/instances/${inst.id}/auto-sync/run`, {}); success('Synchronisation complète lancée (plusieurs minutes)'); setTimeout(onChanged, 4000) }
+    try { await api.post(`/api/admin/moodle/instances/${inst.id}/auto-sync/run`, {}); success('Synchronisation complète demandée : le service la lance dans les 30 secondes (plusieurs minutes)'); setTimeout(onChanged, 4000) }
     catch (e: any) { error(e.message) } finally { setBusy(null) }
   }
 
@@ -127,8 +127,9 @@ function InstanceLti({ inst, onChanged, onCopy }: { inst: LtiInstance; onChanged
           Synchronisation automatique (surveillance des changements Moodle) <Pill ok={!!inst.auto_sync_enabled} yes="Activée" no="Désactivée" />
         </div>
         <div style={muted}>
-          Sans rien installer sur Moodle : CEI regarde lui-même ce qui change — cours et catégories chaque minute, enseignants toutes les 5 minutes,
-          inscrits de chaque cours environ toutes les 10 minutes — et synchronise aussitôt le cours concerné (ajouts, mises à jour, retraits des liens venus de Moodle).
+          Sans rien installer sur Moodle : un service CEI dédié (cei-moodle-sync, à part de l&apos;application) regarde ce qui change — cours et catégories chaque minute,
+          enseignants toutes les 5 minutes, inscrits de chaque cours toutes les 15 minutes, une seule requête légère à la fois — et synchronise aussitôt le cours
+          concerné (ajouts, mises à jour, retraits des liens venus de Moodle).
           Synchronisation complète chaque nuit (1 h). Dernier traitement : {fmt(inst.auto_sync_last_at)} · dernière synchronisation complète : {fmt(inst.auto_sync_last_full_at)}
           {summary && <><br />Dernier bilan ({fmt(report?.at)}) : {summary}</>}
         </div>
