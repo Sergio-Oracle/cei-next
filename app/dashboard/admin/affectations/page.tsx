@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { fetchUsersByRole } from '@/lib/fetchUsersByRole'
 import { useToast } from '@/contexts/ToastContext'
 
 interface ECAssignmentRef { id: number; professor_id: number }
@@ -20,6 +21,7 @@ interface Professor {
   id: number
   full_name: string
   email: string
+  is_active?: boolean
 }
 
 interface MultiModal {
@@ -46,14 +48,13 @@ export default function AdminAffectationsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [ecsRes, usersRes] = await Promise.all([
+      const [ecsRes, profList] = await Promise.all([
         api.get<any>('/api/ecs'),
-        api.get<any>('/api/admin/users'),
+        fetchUsersByRole('professor'),
       ])
       const ecList: EC[] = Array.isArray(ecsRes) ? ecsRes : ecsRes.ecs ?? []
-      const userList: any[] = Array.isArray(usersRes) ? usersRes : usersRes.users ?? []
       setEcs(ecList)
-      setProfessors(userList.filter((u: any) => u.role === 'professor'))
+      setProfessors(profList)
     } catch { error('Erreur chargement') }
     finally { setLoading(false) }
   }, []) // eslint-disable-line
@@ -264,7 +265,7 @@ export default function AdminAffectationsPage() {
                             style={{ fontSize:15.5, padding: '7px 10px', minWidth: 200, maxWidth: 240 }}>
                             <option value="">— Sélectionner un professeur —</option>
                             {professors.map(p => (
-                              <option key={p.id} value={p.id}>{p.full_name}</option>
+                              <option key={p.id} value={p.id}>{p.full_name}{p.is_active === false ? ' (inactif)' : ''}</option>
                             ))}
                           </select>
 
@@ -339,6 +340,12 @@ export default function AdminAffectationsPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: isAssigned ? 700 : 500, fontSize:17, color: isAssigned ? '#15803d' : 'var(--text)' }}>
                         {p.full_name}
+                        {p.is_active === false && (
+                          <span title="Compte inactif : ce professeur ne peut pas se connecter à CEI tant qu'il n'est pas réactivé (Utilisateurs)."
+                            style={{ marginLeft: 8, fontSize: 12.5, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: '#fef3c7', color: '#92400e', whiteSpace: 'nowrap' }}>
+                            Inactif
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>{p.email}</div>
                     </div>
