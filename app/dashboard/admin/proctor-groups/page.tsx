@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { fetchUsersByRole } from '@/lib/fetchUsersByRole'
 import { useToast } from '@/contexts/ToastContext'
 
 interface Member { id: number; proctor_id: number; proctor_name: string; proctor_email: string; proctor_last_login?: string | null }
@@ -50,15 +51,15 @@ export default function ProctorGroupsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [groupsRes, usersRes, ecsRes] = await Promise.all([
+      const [groupsRes, survList, supList, ecsRes] = await Promise.all([
         api.get<Group[]>('/api/admin/proctor_groups'),
-        api.get<any>('/api/admin/users'),
+        fetchUsersByRole('surveillant'),
+        fetchUsersByRole('superviseur'),
         api.get<any>('/api/ecs'),
       ])
       setGroups(Array.isArray(groupsRes) ? groupsRes : [])
-      const userList: any[] = Array.isArray(usersRes) ? usersRes : usersRes.users ?? []
-      setSurveillants(userList.filter((u: any) => u.role === 'surveillant'))
-      setSuperviseurs(userList.filter((u: any) => u.role === 'superviseur'))
+      setSurveillants(survList)
+      setSuperviseurs(supList)
       setEcs(Array.isArray(ecsRes) ? ecsRes : ecsRes.ecs ?? [])
     } catch { error('Erreur chargement') }
     finally { setLoading(false) }
