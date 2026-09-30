@@ -19,7 +19,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 PROD_API_URL="https://cei.unchk.sn"
-PROD_HOST="serge@102.36.139.24"
+PROD_HOST="serge@196.207.246.205"   # thieboudiene, nouveau réseau depuis le 30/09 (avant : 102.36.139.24)
 PROD_PORT="3120"
 PROD_KEY="$HOME/.ssh/id_ed25519_unchk"
 PROD_PATH="/home/serge/projet-cei/cei-next"
