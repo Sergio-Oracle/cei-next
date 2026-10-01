@@ -44,6 +44,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    // Ouvert depuis Moodle (bouton « CEI ») : quitter CEI ramène dans Moodle.
+    // On part AVANT de vider l'état React : sinon le garde du tableau de bord
+    // affiche la page de connexion CEI le temps que Moodle réponde. Révocation
+    // en keepalive, pour qu'elle survive au départ de la page.
+    const moodle = getLtiReturn()
+    if (moodle) {
+      api.postBeacon('/api/auth/logout')   // lit le jeton : avant tout nettoyage
+      localStorage.removeItem('user')
+      clearAuthCookie()
+      navigator.serviceWorker?.controller?.postMessage('CLEAR_PAGE_CACHE')
+      clearLtiReturn()
+      window.location.replace(moodle)
+      return
+    }
     // Révoque le refresh token côté serveur (blocklist) — best-effort : on ne
     // bloque pas la déconnexion locale si l'appel échoue (token déjà expiré,
     // réseau coupé, etc.), l'utilisateur doit pouvoir se déconnecter dans tous les cas.
@@ -56,9 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // cache que les pages publiques, donc normalement rien à purger ici).
     navigator.serviceWorker?.controller?.postMessage('CLEAR_PAGE_CACHE')
     if (mounted.current) { setToken(null); setUser(null) }
-    // Ouvert depuis Moodle (activité « CEI ») : quitter CEI ramène dans Moodle.
-    const moodle = getLtiReturn()
-    if (moodle) { clearLtiReturn(); window.location.replace(moodle); return }
     router.push('/login')
   }, [router])
 
