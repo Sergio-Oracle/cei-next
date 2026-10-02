@@ -149,13 +149,14 @@ function InstanceLti({ inst, onChanged, onCopy }: { inst: LtiInstance; onChanged
           Webhook (facultatif) <Pill ok={!!inst.webhook_last_at} yes={`Reçu ${fmt(inst.webhook_last_at)}`} no="Non utilisé" />
         </div>
         <div style={muted}>
-          Inutile pour le fonctionnement : la surveillance ci-dessus suffit. Seulement si l&apos;UNCHK installe un jour une extension de webhooks sur Moodle,
-          cette adresse permettrait de réagir en quelques secondes au lieu de quelques minutes.
+          Avec l&apos;extension Moodle « WebHooks » (local_webhooks), Moodle prévient CEI à chaque changement : le cours est synchronisé
+          en 1 à 2 minutes au lieu de 15 au plus. Dans Moodle : Administration du site → Serveur → WebHooks → Ajouter un service,
+          coller cette adresse, type application/json, puis cocher uniquement les événements ci-dessous. La surveillance ci-dessus reste le filet de sécurité.
         </div>
         {hook && <CopyLine label="" value={hook.url} onCopy={onCopy} />}
         {hook && (
           <details><summary style={{ cursor: 'pointer', fontSize: 14 }}>Événements Moodle à cocher ({hook.events.length})</summary>
-            <div style={{ ...muted, marginTop: 6, fontFamily: 'monospace', fontSize: 13 }}>{hook.events.join('  ·  ')}</div>
+            <div style={{ ...muted, marginTop: 6, fontFamily: 'monospace', fontSize: 13, display: 'grid', gap: 2 }}>{hook.events.map(e => <span key={e}>{e}</span>)}</div>
           </details>
         )}
         <div><Btn ghost onClick={newSecret} disabled={busy === 'hook'} title="L'ancienne adresse cessera de fonctionner"><i className="fas fa-key" /> Nouvelle adresse secrète</Btn></div>
