@@ -8,7 +8,7 @@ import type { Subject } from '@/types'
 
 export default function NewExamPage() {
   const router = useRouter()
-  const { success, error } = useToast()
+  const { success, error, showToast } = useToast()
   const [subjects, setSubjects]   = useState<Subject[]>([])
   const [submitting, setSubmitting] = useState(false)
 
@@ -75,7 +75,7 @@ export default function NewExamPage() {
 
     setSubmitting(true)
     try {
-      const res = await api.post<{ success: boolean; exam: { id: number; duration_minutes: number } }>('/api/online_exams', {
+      const res = await api.post<{ success: boolean; exam: { id: number; duration_minutes: number }; proctor_conflicts?: { group: string; with_exam: string }[] }>('/api/online_exams', {
         subject_id:        Number(form.subject_id),
         title:             form.title,
         instructions:      form.instructions,
@@ -99,6 +99,10 @@ export default function NewExamPage() {
         run_environment_scan: form.run_environment_scan,
       })
       success(`Examen créé — Durée : ${res.exam?.duration_minutes ?? '?'} min`)
+      // Groupe de surveillance déjà pris sur ce créneau : l'examen est créé,
+      // mais il faut prévoir un autre groupe (page Groupes Surveillants).
+      const pc = res.proctor_conflicts?.[0]
+      if (pc) showToast(`Attention : le groupe « ${pc.group} » surveille déjà ${pc.with_exam} sur ce créneau. Rattachez un autre groupe à cet examen.`, 'warning', 10000)
       router.push(`/dashboard/professor/exams`)
     } catch (e: any) {
       error(e.message || 'Erreur lors de la création')
