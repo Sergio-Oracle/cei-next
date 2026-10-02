@@ -3,10 +3,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import GroupExamsPlanning, { conflictMessage, useMemberWarnings } from '@/components/proctor/GroupExamsPlanning'
 
 interface Member { id: number; proctor_id: number; proctor_name: string; proctor_email: string; proctor_last_login?: string | null }
 interface SupervisorLink { id: number; supervisor_id: number; supervisor_name: string; supervisor_email: string }
-interface Group { id: number; name: string; created_by?: string; created_at?: string; members: Member[]; ec_ids: number[]; vigilance_level?: 'A' | 'B' | 'C'; supervisors: SupervisorLink[] }
+interface Group { id: number; name: string; created_by?: string; created_at?: string; members: Member[]; ec_ids: number[]; exam_ids?: number[]; vigilance_level?: 'A' | 'B' | 'C'; supervisors: SupervisorLink[] }
 interface Surveillant { id: number; full_name: string; email: string; last_login?: string | null }
 interface Superviseur { id: number; full_name: string; email: string }
 interface EC { id: number; code: string; name: string; ue_code?: string }
@@ -28,6 +29,7 @@ function lastSeenLabel(iso?: string | null) {
 
 export default function ProfessorProctorGroupsPage() {
   const { success, error } = useToast()
+  const warnMembers = useMemberWarnings()
 
   const [groups, setGroups] = useState<Group[]>([])
   const [surveillants, setSurveillants] = useState<Surveillant[]>([])
@@ -170,8 +172,9 @@ export default function ProfessorProctorGroupsPage() {
       setManageGroup(res)
       setEcToLink('')
       success('EC rattaché au groupe')
+      warnMembers((res as any).member_warnings)
       load()
-    } catch (e: any) { error(e.message || 'Erreur rattachement') }
+    } catch (e: any) { error(conflictMessage(e, 'Erreur rattachement')) }
     finally { setLinkingEc(false) }
   }
 
@@ -250,6 +253,9 @@ export default function ProfessorProctorGroupsPage() {
               <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
                 <span className="status-badge secondary" style={{ fontSize:13 }}><i className="fas fa-users" /> {g.members.length} surveillant(s)</span>
                 <span className="status-badge secondary" style={{ fontSize:13 }}><i className="fas fa-book" /> {g.ec_ids.length} EC</span>
+                {(g.exam_ids?.length ?? 0) > 0 && (
+                  <span className="status-badge secondary" style={{ fontSize:13 }}><i className="fas fa-calendar-check" /> {g.exam_ids!.length} examen{g.exam_ids!.length > 1 ? 's' : ''} précis</span>
+                )}
                 <span className="status-badge secondary" style={{ fontSize:13 }}><i className="fas fa-shield-halved" /> Vigilance {g.vigilance_level || 'A'}</span>
               </div>
               <button className="btn btn-secondary" style={{ width: '100%', fontSize:15.5 }} onClick={() => openManage(g)}>
@@ -447,6 +453,10 @@ export default function ProfessorProctorGroupsPage() {
                   <p style={{ fontSize:14.5, color: 'var(--text-muted)' }}>Aucun EC ne vous est encore assigné — voir « Affectations EC ».</p>
                 )}
               </div>
+
+              <GroupExamsPlanning groupId={manageGroup.id}
+                refreshKey={`${manageGroup.ec_ids.join(',')}|${manageGroup.members.length}`}
+                onGroupChanged={g => { if (g) setManageGroup(g); load() }} />
             </div>
 
             <div style={{ padding: '14px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
