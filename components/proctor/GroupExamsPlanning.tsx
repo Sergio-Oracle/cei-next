@@ -3,8 +3,8 @@
 /* Examens précis d'un groupe de surveillance et son planning — partagé par
    les pages Groupes Surveillants de l'administrateur et de l'enseignant.
    Un même groupe peut enchaîner plusieurs examens d'une journée (7h, 11h,
-   14h…), même sur des EC différents ; le serveur refuse deux examens à moins
-   de 15 minutes d'intervalle. */
+   14h…), même sur des EC différents ; le serveur refuse deux examens séparés
+   de moins que le repos minimum du groupe (30 min par défaut, réglable ici). */
 
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
@@ -40,15 +40,20 @@ export function useMemberWarnings() {
   }
 }
 
+const GAP_OPTIONS = [0, 15, 30, 45, 60, 90, 120, 180]
+const gapLabel = (m: number) => m === 0 ? 'aucun' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${String(m % 60).padStart(2, '0')}` : ''}`
+
 interface Props {
   groupId: number
+  /** Repos minimum (minutes) entre deux examens du groupe. */
+  minGap: number
   /** Change à chaque modification du groupe (membres, EC) pour recharger le planning. */
   refreshKey?: unknown
   /** Groupe renvoyé par le serveur après ajout/retrait d'un examen. */
   onGroupChanged: (group: any) => void
 }
 
-export default function GroupExamsPlanning({ groupId, refreshKey, onGroupChanged }: Props) {
+export default function GroupExamsPlanning({ groupId, minGap, refreshKey, onGroupChanged }: Props) {
   const { success, error } = useToast()
   const warnMembers = useMemberWarnings()
   const [schedule, setSchedule] = useState<PlannedExam[]>([])
@@ -56,6 +61,18 @@ export default function GroupExamsPlanning({ groupId, refreshKey, onGroupChanged
   const [examToLink, setExamToLink] = useState('')
   const [linkingExam, setLinkingExam] = useState(false)
   const [tick, setTick] = useState(0)
+  const [savingGap, setSavingGap] = useState(false)
+
+  async function saveGap(minutes: number) {
+    setSavingGap(true)
+    try {
+      const res = await api.put<any>(`/api/admin/proctor_groups/${groupId}`, { min_gap_minutes: minutes })
+      success(`Repos minimum entre deux examens : ${gapLabel(minutes)}`)
+      setTick(t => t + 1)
+      onGroupChanged(res)
+    } catch (e: any) { error(e.message || 'Erreur mise à jour') }
+    finally { setSavingGap(false) }
+  }
 
   useEffect(() => {
     let alive = true
@@ -104,8 +121,17 @@ export default function GroupExamsPlanning({ groupId, refreshKey, onGroupChanged
         </div>
         <p style={{ fontSize:14.5, color: 'var(--text-muted)', margin: '0 0 8px' }}>
           Le même groupe peut surveiller plusieurs examens dans la journée (par exemple 7h–9h, 11h–13h, 14h–16h), même sur des EC différents.
-          Deux examens doivent être séparés d&apos;au moins 15 minutes.
+          Deux examens du groupe doivent être séparés d&apos;au moins le repos minimum choisi ci-dessous.
         </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10, fontSize: 15 }}>
+          <label htmlFor={`gap-${groupId}`} style={{ fontWeight: 600 }}>Repos minimum entre deux examens</label>
+          <select id={`gap-${groupId}`} className="form-control" value={minGap} disabled={savingGap}
+            onChange={e => saveGap(Number(e.target.value))} style={{ width: 'auto', fontSize: 15 }}>
+            {(GAP_OPTIONS.includes(minGap) ? GAP_OPTIONS : [...GAP_OPTIONS, minGap].sort((a, b) => a - b))
+              .map(m => <option key={m} value={m}>{gapLabel(m)}</option>)}
+          </select>
+          {savingGap && <i className="fas fa-spinner fa-spin" />}
+        </div>
         {direct.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
             {direct.map(e => (
