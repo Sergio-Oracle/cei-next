@@ -567,7 +567,7 @@ export default function ExamPage() {
           if (cancelled) return
           setExam(res); examRef.current = res
           setServerPages(res.preview.pages)
-          setPhase('instructions')
+          startPreview(res)   // directement dans la composition, comme Moodle
           return
         }
         const res = await api.get<ExamData>(`/api/online_exams/${id}/details`)
@@ -711,7 +711,7 @@ export default function ExamPage() {
 
   /* ── Nettoyage ────────────────────────────────────────────────────────── */
   useEffect(() => () => {
-    ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef,heartbeatRef,multiScreenIntervalRef,yoloObjectIntervalRef].forEach(r => { if (r.current) clearInterval(r.current) })
+    ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef,heartbeatRef,multiScreenIntervalRef,yoloObjectIntervalRef,previewTimerRef].forEach(r => { if (r.current) clearInterval(r.current) })
     ;[saveRetryTimerRef,submitRetryTimerRef].forEach(r => { if (r.current) clearTimeout(r.current) })
     camStream.current?.getTracks().forEach(t => t.stop())
     screenStream.current?.getTracks().forEach(t => t.stop())
@@ -2942,17 +2942,29 @@ export default function ExamPage() {
   },[submitting]) // eslint-disable-line
 
   /* ── Prévisualisation enseignant ─────────────────────────────────────── */
-  function startPreview() {
-    if (!exam) return
+  function startPreview(ex: ExamData | null = exam) {
+    if (!ex) return
     examEnterTimeRef.current = Date.now()
-    const end = Date.now() + exam.duration_minutes * 60_000
-    setTimeLeft(exam.duration_minutes * 60)
+    const end = Date.now() + ex.duration_minutes * 60_000
+    setTimeLeft(ex.duration_minutes * 60)
     previewTimerRef.current = setInterval(() => {
       const left = Math.max(0, Math.round((end - Date.now()) / 1000))
       setTimeLeft(left)
       if (left <= 0) { if (previewTimerRef.current) clearInterval(previewTimerRef.current); submitPreview() }
     }, 1000)
     setPhase('exam')
+  }
+
+  // Nouvel essai sans recharger la page : nouvel ordre de questions, réponses vides.
+  async function restartPreview() {
+    try {
+      const res = await api.get<ExamData & { preview: { seed: number; pages: ServerPaginated } }>(`/api/online_exams/${id}/preview`)
+      setExam(res); examRef.current = res
+      setServerPages(res.preview.pages)
+      setAnswers({}); answersRef.current = {}
+      setPreviewResult(null); setShowPart2(false); setQcmIdx(0); setP2PageIdx(0); setShowReview(false)
+      startPreview(res)
+    } catch (e: any) { toastErr(e.message || 'Erreur chargement') }
   }
 
   async function submitPreview(withAi = false) {
@@ -2968,8 +2980,9 @@ export default function ExamPage() {
 
   function closePreview() {
     if (previewTimerRef.current) clearInterval(previewTimerRef.current)
-    window.close()
-    setTimeout(() => router.push('/dashboard'), 300)   // onglet non ouvert par CEI : window.close() sans effet
+    // Ouverte depuis la liste ou la fiche de l'examen (même onglet) : on y revient.
+    if (window.history.length > 1) router.back()
+    else router.push('/dashboard')
   }
 
   function sendMsg() {
@@ -3042,7 +3055,7 @@ export default function ExamPage() {
           )}
         </>)}
         <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-          <button onClick={()=>window.location.reload()} style={{flex:'1 1 200px',padding:'12px',background:'#2563eb',color:'white',border:'none',borderRadius:10,fontWeight:700,fontSize:16,cursor:'pointer'}}>
+          <button onClick={()=>restartPreview()} style={{flex:'1 1 200px',padding:'12px',background:'#2563eb',color:'white',border:'none',borderRadius:10,fontWeight:700,fontSize:16,cursor:'pointer'}}>
             <i className="fas fa-rotate-right" style={{marginRight:8}}/>Recommencer (nouvel ordre)
           </button>
           <button onClick={closePreview} style={{flex:'1 1 200px',padding:'12px',background:'#f1f5f9',color:'#334155',border:'none',borderRadius:10,fontWeight:700,fontSize:16,cursor:'pointer'}}>
@@ -3222,7 +3235,7 @@ export default function ExamPage() {
           <button onClick={()=>router.back()} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:17}}>
             <i className="fas fa-times" style={{marginRight:6}}/>Annuler
           </button>
-          <button onClick={isPreview ? startPreview : doStartExam} disabled={starting}
+          <button onClick={isPreview ? () => startPreview() : doStartExam} disabled={starting}
             style={{flex:2,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:starting?'not-allowed':'pointer',opacity:starting?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:17}}>
             {starting
               ?<><i className="fas fa-spinner fa-spin"/>Démarrage en cours…</>

@@ -348,10 +348,10 @@ export default function ProfessorExamDetailPage() {
           <p>{exam.formation_name ?? 'Examen en ligne'} · {exam.duration_minutes} min</p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <a href={`/exam/${exam.id}?preview=1`} target="_blank" rel="noopener" className="btn btn-secondary"
+          <Link href={`/exam/${exam.id}?preview=1`} className="btn btn-secondary"
             title="Voir et tester l'examen comme un étudiant (rien n'est enregistré)">
             <i className="fa-solid fa-display" /> Prévisualiser
-          </a>
+          </Link>
           {exam.status === 'active' && (
             <Link href={`/proctor/${exam.id}`} className="btn btn-info">
               <i className="fa-solid fa-eye" /> Surveiller
