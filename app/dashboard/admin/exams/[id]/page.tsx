@@ -298,6 +298,7 @@ export default function AdminExamDetailPage() {
           <p>{exam.formation_name ?? 'Examen en ligne'} · {exam.duration_minutes} min · {attempts.length} tentative(s)</p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <a href={`/exam/${id}?preview=1`} target="_blank" rel="noopener" className="btn btn-secondary" title="Voir et tester l'examen comme un étudiant (rien n'est enregistré)"><i className="fas fa-display" /> Prévisualiser</a>
           {exam.status === 'active' && <Link href={`/proctor/${id}`} className="btn btn-info"><i className="fas fa-eye" /> Surveiller</Link>}
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-success" onClick={activate} disabled={acting}><i className="fas fa-play" /> Activer</button>}
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-secondary" onClick={openRescheduleModal} title="Reprogrammer sans recréer l'examen"><i className="fas fa-calendar-days" /> Reprogrammer</button>}

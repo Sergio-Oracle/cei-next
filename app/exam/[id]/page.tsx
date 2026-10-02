@@ -42,6 +42,11 @@ interface ParsedBlock {
   media?: { type: 'image' | 'audio' | 'video'; filename: string }[]
 }
 type Phase = 'loading' | 'instructions' | 'permissions' | 'env_scan' | 'exam' | 'submitted' | 'unsupported'
+interface PreviewResult {
+  score: number; det_score: number; det_max: number; total_max: number; remaining_max: number
+  breakdown: string[]; ai_feedback: string | null; ai_done: boolean; ai_error?: string
+}
+
 interface ServerPaginated {
   questions_per_page: number
   p1_blocks: ParsedBlock[]; p2_items: ParsedBlock[]
@@ -277,6 +282,14 @@ export default function ExamPage() {
   const pageTimerRef     = useRef<ReturnType<typeof setInterval>|null>(null)
   const [phase,        setPhase]        = useState<Phase>('loading')
   const [timeLeft,     setTimeLeft]     = useState(0)
+  // Prévisualisation enseignant (?preview=1, comme « Prévisualiser » dans
+  // Moodle) : même page et même affichage que l'étudiant, mais sans
+  // tentative, sans surveillance et sans rien enregistrer ; la soumission
+  // renvoie seulement la correction (services : /api/online_exams/<id>/preview).
+  const [isPreview] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === '1')
+  const previewTimerRef = useRef<ReturnType<typeof setInterval>|null>(null)
+  const [previewResult, setPreviewResult] = useState<PreviewResult | null>(null)
+  const [previewAiLoading, setPreviewAiLoading] = useState(false)
   // Rappels de fin d'examen (5 min puis 1 min) — un seul déclenchement
   // chacun, indépendamment des changements d'extra_minutes (pause, temps
   // supplémentaire accordé) qui font varier le seuil en cours de route.
@@ -549,6 +562,14 @@ export default function ExamPage() {
     let cancelled = false
     async function load(attempt = 0) {
       try {
+        if (isPreview) {
+          const res = await api.get<ExamData & { preview: { seed: number; pages: ServerPaginated } }>(`/api/online_exams/${id}/preview`)
+          if (cancelled) return
+          setExam(res); examRef.current = res
+          setServerPages(res.preview.pages)
+          setPhase('instructions')
+          return
+        }
         const res = await api.get<ExamData>(`/api/online_exams/${id}/details`)
         if (cancelled) return
         setExam(res); examRef.current = res
@@ -577,7 +598,7 @@ export default function ExamPage() {
           return
         }
         toastErr(e.message || 'Erreur chargement')
-        router.push('/dashboard/student')
+        router.push(isPreview ? '/dashboard' : '/dashboard/student')
       }
     }
     load()
@@ -628,7 +649,7 @@ export default function ExamPage() {
 
   /* ── Pagination façon Moodle calculée côté serveur ───────────────────── */
   useEffect(() => {
-    if (phase !== 'exam') return
+    if (phase !== 'exam' || isPreview) return
     const attId = attemptRef.current
     if (!attId) return
     api.get<ServerPaginated>(`/api/exam_attempts/${attId}/paginated`)
@@ -699,7 +720,7 @@ export default function ExamPage() {
 
   /* ── Anti-fraude ──────────────────────────────────────────────────────── */
   useEffect(() => {
-    if (phase !== 'exam') return
+    if (phase !== 'exam' || isPreview) return
     const onVis = async () => {
       if (breakActiveRef.current) return
       if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
@@ -2876,6 +2897,7 @@ export default function ExamPage() {
   }
 
   const handleSubmit = useCallback(async(auto=false)=>{
+    if(isPreview){ submitPreview(); return }
     const aId=attemptRef.current; if(!aId||submitting||sessionEndedRef.current) return
     sessionEndedRef.current=true; setSubmitting(true)
     ;[timerRef,saveRef,msgPollRef,extraPollRef,heartbeatRef,multiScreenIntervalRef,yoloObjectIntervalRef].forEach(r=>{if(r.current)clearInterval(r.current)})
@@ -2919,6 +2941,37 @@ export default function ExamPage() {
     }
   },[submitting]) // eslint-disable-line
 
+  /* ── Prévisualisation enseignant ─────────────────────────────────────── */
+  function startPreview() {
+    if (!exam) return
+    examEnterTimeRef.current = Date.now()
+    const end = Date.now() + exam.duration_minutes * 60_000
+    setTimeLeft(exam.duration_minutes * 60)
+    previewTimerRef.current = setInterval(() => {
+      const left = Math.max(0, Math.round((end - Date.now()) / 1000))
+      setTimeLeft(left)
+      if (left <= 0) { if (previewTimerRef.current) clearInterval(previewTimerRef.current); submitPreview() }
+    }, 1000)
+    setPhase('exam')
+  }
+
+  async function submitPreview(withAi = false) {
+    if (previewTimerRef.current) { clearInterval(previewTimerRef.current); previewTimerRef.current = null }
+    if (withAi) setPreviewAiLoading(true); else setSubmitting(true)
+    try {
+      const res = await api.aiPost<PreviewResult>(`/api/online_exams/${id}/preview/grade`, { answers: answersRef.current, with_ai: withAi })
+      setPreviewResult(res)
+      setPhase('submitted')
+    } catch (e: any) { toastErr(e.message || 'Erreur de correction') }
+    finally { setSubmitting(false); setPreviewAiLoading(false) }
+  }
+
+  function closePreview() {
+    if (previewTimerRef.current) clearInterval(previewTimerRef.current)
+    window.close()
+    setTimeout(() => router.push('/dashboard'), 300)   // onglet non ouvert par CEI : window.close() sans effet
+  }
+
   function sendMsg() {
     if(!msgText.trim()) return
     const txt=msgText.trim(); setMsgSent(p=>[...p,{text:txt,time:new Date().toLocaleTimeString('fr-FR')}])
@@ -2939,6 +2992,64 @@ export default function ExamPage() {
   if(phase==='loading') return(
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f8fafc'}}>
       <div style={{textAlign:'center'}}><i className="fas fa-spinner fa-spin" style={{fontSize:53,color:'#2563eb',marginBottom:16,display:'block'}}/><p style={{color:'#64748b'}}>Chargement de l'examen…</p></div>
+    </div>
+  )
+
+  if(phase==='submitted'&&isPreview) return(
+    <div style={{minHeight:'100vh',background:'#f1f5f9',padding:'32px 16px',display:'flex',justifyContent:'center'}}>
+      <div style={{background:'white',borderRadius:16,maxWidth:760,width:'100%',padding:'28px 32px',boxShadow:'0 8px 32px rgba(0,0,0,.08)',border:'1px solid #e2e8f0',alignSelf:'flex-start'}}>
+        <div style={{display:'inline-flex',alignItems:'center',gap:8,padding:'4px 12px',borderRadius:20,background:'#ccfbf1',color:'#0f766e',fontSize:14,fontWeight:700,marginBottom:14}}>
+          <i className="fas fa-eye"/> Prévisualisation — rien n&apos;a été enregistré
+        </div>
+        <h2 style={{margin:'0 0 6px',color:'#0f172a'}}>Résultat de votre essai</h2>
+        <p style={{margin:'0 0 20px',color:'#64748b',fontSize:15.5}}>{exam?.title}</p>
+        {previewResult && (<>
+          <div style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:20}}>
+            <div style={{flex:'1 1 180px',background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:12,padding:'14px 18px'}}>
+              <div style={{fontSize:13,color:'#1e40af',fontWeight:600,textTransform:'uppercase'}}>Note {previewResult.ai_done || previewResult.remaining_max<=0.01 ? 'finale' : 'provisoire'}</div>
+              <div style={{fontSize:32,fontWeight:800,color:'#1e3a8a',fontVariantNumeric:'tabular-nums'}}>{previewResult.score.toFixed(2)} / 20</div>
+            </div>
+            <div style={{flex:'1 1 180px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:12,padding:'14px 18px'}}>
+              <div style={{fontSize:13,color:'#475569',fontWeight:600,textTransform:'uppercase'}}>Questions à choix (automatique)</div>
+              <div style={{fontSize:24,fontWeight:700,color:'#0f172a',fontVariantNumeric:'tabular-nums'}}>{previewResult.det_score} / {previewResult.det_max} pts</div>
+            </div>
+          </div>
+          {previewResult.remaining_max>0.01 && !previewResult.ai_done && (
+            <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'12px 16px',marginBottom:18,color:'#92400e',fontSize:15}}>
+              Les questions ouvertes ({previewResult.remaining_max} pts sur {previewResult.total_max}) ne sont pas encore notées : la note ci-dessus ne compte que les questions à choix.
+              <div style={{marginTop:10}}>
+                <button onClick={()=>submitPreview(true)} disabled={previewAiLoading}
+                  style={{padding:'9px 16px',background:'#0d9488',color:'white',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:previewAiLoading?'wait':'pointer'}}>
+                  {previewAiLoading?<><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Correction par l&apos;IA en cours (jusqu&apos;à une minute)…</>:<><i className="fas fa-robot" style={{marginRight:6}}/>Corriger aussi les questions ouvertes par l&apos;IA</>}
+                </button>
+              </div>
+            </div>
+          )}
+          {previewResult.ai_error && <p style={{color:'#b91c1c',fontSize:15}}>Correction IA indisponible : {previewResult.ai_error}</p>}
+          {previewResult.breakdown.length>0 && (
+            <div style={{marginBottom:18}}>
+              <h3 style={{fontSize:17,margin:'0 0 8px'}}>Questions à choix</h3>
+              <div style={{display:'grid',gap:4,fontSize:15,color:'#334155'}}>
+                {previewResult.breakdown.map((l,i)=><div key={i} style={{padding:'6px 10px',background:'#f8fafc',borderRadius:6}}>{l}</div>)}
+              </div>
+            </div>
+          )}
+          {previewResult.ai_feedback && (
+            <div style={{marginBottom:18}}>
+              <h3 style={{fontSize:17,margin:'0 0 8px'}}>Questions ouvertes (correction IA)</h3>
+              <div style={{whiteSpace:'pre-wrap',fontSize:15,color:'#334155',background:'#f8fafc',borderRadius:8,padding:'12px 14px',lineHeight:1.6}}>{previewResult.ai_feedback}</div>
+            </div>
+          )}
+        </>)}
+        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+          <button onClick={()=>window.location.reload()} style={{flex:'1 1 200px',padding:'12px',background:'#2563eb',color:'white',border:'none',borderRadius:10,fontWeight:700,fontSize:16,cursor:'pointer'}}>
+            <i className="fas fa-rotate-right" style={{marginRight:8}}/>Recommencer (nouvel ordre)
+          </button>
+          <button onClick={closePreview} style={{flex:'1 1 200px',padding:'12px',background:'#f1f5f9',color:'#334155',border:'none',borderRadius:10,fontWeight:700,fontSize:16,cursor:'pointer'}}>
+            <i className="fas fa-xmark" style={{marginRight:8}}/>Fermer la prévisualisation
+          </button>
+        </div>
+      </div>
     </div>
   )
 
@@ -3069,6 +3180,12 @@ export default function ExamPage() {
             <p style={{margin:0,color:'#64748b',fontSize:15.5}}>Lisez les conditions avant de démarrer</p>
           </div>
         </div>
+        {isPreview && (
+          <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:10,padding:'12px 14px',marginBottom:18,color:'#115e59',fontSize:15,lineHeight:1.5}}>
+            <strong><i className="fas fa-eye" style={{marginRight:6}}/>Prévisualisation enseignant.</strong> Vous voyez l&apos;examen exactement comme un étudiant.
+            Les vérifications (caméra, identité, plein écran) et la surveillance ne sont pas lancées, et rien n&apos;est enregistré : à la fin, vous voyez seulement la note que vos réponses auraient obtenue.
+          </div>
+        )}
 
         {/* Conditions de surveillance */}
         <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:10,padding:'14px 16px',marginBottom:18}}>
@@ -3105,7 +3222,7 @@ export default function ExamPage() {
           <button onClick={()=>router.back()} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:17}}>
             <i className="fas fa-times" style={{marginRight:6}}/>Annuler
           </button>
-          <button onClick={doStartExam} disabled={starting}
+          <button onClick={isPreview ? startPreview : doStartExam} disabled={starting}
             style={{flex:2,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:starting?'not-allowed':'pointer',opacity:starting?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:17}}>
             {starting
               ?<><i className="fas fa-spinner fa-spin"/>Démarrage en cours…</>
@@ -3443,6 +3560,12 @@ export default function ExamPage() {
           </div>
         )}
 
+        {isPreview && (
+          <div style={{position:'fixed',left:'50%',bottom:14,transform:'translateX(-50%)',zIndex:9997,background:'#0f766e',color:'white',padding:'8px 14px 8px 16px',borderRadius:24,boxShadow:'0 6px 20px rgba(0,0,0,.2)',display:'flex',alignItems:'center',gap:12,fontSize:14.5,fontWeight:600,maxWidth:'calc(100% - 32px)'}}>
+            <span><i className="fas fa-eye" style={{marginRight:6}}/>Prévisualisation — affichage étudiant, sans surveillance, rien n&apos;est enregistré</span>
+            <button onClick={closePreview} style={{background:'rgba(255,255,255,.18)',color:'white',border:'none',borderRadius:16,padding:'4px 12px',fontWeight:600,cursor:'pointer',fontSize:14}}>Quitter</button>
+          </div>
+        )}
         {/* Bannière non bloquante — une coupure réseau n'est pas suspecte,
             l'étudiant continue de composer (réponses en mémoire locale) et
             la sauvegarde reprend automatiquement au retour de connexion. */}
@@ -3480,7 +3603,12 @@ export default function ExamPage() {
             </div>
           </div>
           {/* Caméra locale — ref callback pour attach immédiat */}
-          <div style={{margin:'0 12px 8px',borderRadius:8,overflow:'hidden',background:'#000',boxShadow:'0 2px 8px rgba(0,0,0,.12)',position:'relative',aspectRatio:'4/3'}}>
+          {isPreview && (
+            <div style={{margin:'0 12px 8px',borderRadius:8,background:'#1e293b',aspectRatio:'4/3',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:6,color:'#94a3b8',fontSize:12.5,textAlign:'center',padding:10}}>
+              <i className="fas fa-video-slash" style={{fontSize:22}}/>Caméra de l&apos;étudiant ici<br/>(désactivée en prévisualisation)
+            </div>
+          )}
+          <div style={{margin:'0 12px 8px',borderRadius:8,overflow:'hidden',background:'#000',boxShadow:'0 2px 8px rgba(0,0,0,.12)',position:'relative',aspectRatio:'4/3',display:isPreview?'none':undefined}}>
             <video ref={el=>{videoRef.current=el;if(el&&camStream.current&&el.srcObject!==camStream.current)el.srcObject=camStream.current}}
               autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover',display:'block',transform:'scaleX(-1)'}}/>
             {/* Guide de repositionnement animé — un badge seul en coin est
@@ -3618,7 +3746,7 @@ export default function ExamPage() {
               <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 16px',background:timerColor,color:'white',borderRadius:8,fontSize:24,fontWeight:700,fontVariantNumeric:'tabular-nums'}}>
                 <i className="fas fa-clock" style={{fontSize:19}}/> {fmtTimer(timeLeft)}
               </div>
-              <button onClick={startBreak} disabled={pauseUsedRef.current} title={pauseUsedRef.current?'Pause déjà utilisée pour cet examen':'Pause de 3 minutes (besoin physiologique) — la surveillance est suspendue et le temps est reporté'}
+              <button onClick={startBreak} disabled={pauseUsedRef.current||isPreview} title={pauseUsedRef.current?'Pause déjà utilisée pour cet examen':'Pause de 3 minutes (besoin physiologique) — la surveillance est suspendue et le temps est reporté'}
                 style={{padding:'9px 14px',background:'#f1f5f9',color:pauseUsedRef.current?'#94a3b8':'#334155',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:pauseUsedRef.current?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:7,opacity:pauseUsedRef.current?.6:1}}>
                 <i className="fas fa-pause"/> Pause (3 min)
               </button>

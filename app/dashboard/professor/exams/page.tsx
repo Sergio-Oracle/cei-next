@@ -242,6 +242,12 @@ function ExamCard({
           <i className="fas fa-eye" /> Détails
         </Link>
 
+        {/* Prévisualiser — voir et passer l'examen comme un étudiant, sans rien enregistrer */}
+        <a href={`/exam/${exam.id}?preview=1`} target="_blank" rel="noopener" title="Voir et tester l'examen comme un étudiant (rien n'est enregistré)"
+          style={btn('rgba(13,148,136,.1)', '#0f766e')}>
+          <i className="fas fa-display" /> Prévisualiser
+        </a>
+
         {/* Actions active */}
         {exam.status === 'active' && (
           <>
