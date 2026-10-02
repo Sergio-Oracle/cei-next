@@ -8,7 +8,7 @@ import GroupExamsPlanning, { conflictMessage, useMemberWarnings } from '@/compon
 
 interface Member { id: number; proctor_id: number; proctor_name: string; proctor_email: string; proctor_last_login?: string | null }
 interface SupervisorLink { id: number; supervisor_id: number; supervisor_name: string; supervisor_email: string }
-interface Group { id: number; name: string; created_by?: string; created_at?: string; members: Member[]; ec_ids: number[]; exam_ids?: number[]; supervisors: SupervisorLink[]; vigilance_level?: 'A' | 'B' | 'C' }
+interface Group { id: number; name: string; created_by?: string; created_at?: string; members: Member[]; ec_ids: number[]; exam_ids?: number[]; min_gap_minutes?: number; supervisors: SupervisorLink[]; vigilance_level?: 'A' | 'B' | 'C' }
 
 const VIGILANCE_META: Record<'A' | 'B' | 'C', { label: string; hint: string }> = {
   A: { label: 'Niveau A — Interaction', hint: 'Actif si le surveillant interagit réellement (souris/clavier) sur un onglet visible et au premier plan.' },
@@ -443,7 +443,7 @@ export default function ProctorGroupsPage() {
                 )}
               </div>
 
-              <GroupExamsPlanning groupId={manageGroup.id}
+              <GroupExamsPlanning groupId={manageGroup.id} minGap={manageGroup.min_gap_minutes ?? 30}
                 refreshKey={`${manageGroup.ec_ids.join(',')}|${manageGroup.members.length}`}
                 onGroupChanged={g => { if (g) setManageGroup(g); load() }} />
             </div>

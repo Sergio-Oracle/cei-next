@@ -7,7 +7,7 @@ import GroupExamsPlanning, { conflictMessage, useMemberWarnings } from '@/compon
 
 interface Member { id: number; proctor_id: number; proctor_name: string; proctor_email: string; proctor_last_login?: string | null }
 interface SupervisorLink { id: number; supervisor_id: number; supervisor_name: string; supervisor_email: string }
-interface Group { id: number; name: string; created_by?: string; created_at?: string; members: Member[]; ec_ids: number[]; exam_ids?: number[]; vigilance_level?: 'A' | 'B' | 'C'; supervisors: SupervisorLink[] }
+interface Group { id: number; name: string; created_by?: string; created_at?: string; members: Member[]; ec_ids: number[]; exam_ids?: number[]; min_gap_minutes?: number; vigilance_level?: 'A' | 'B' | 'C'; supervisors: SupervisorLink[] }
 interface Surveillant { id: number; full_name: string; email: string; last_login?: string | null }
 interface Superviseur { id: number; full_name: string; email: string }
 interface EC { id: number; code: string; name: string; ue_code?: string }
@@ -454,7 +454,7 @@ export default function ProfessorProctorGroupsPage() {
                 )}
               </div>
 
-              <GroupExamsPlanning groupId={manageGroup.id}
+              <GroupExamsPlanning groupId={manageGroup.id} minGap={manageGroup.min_gap_minutes ?? 30}
                 refreshKey={`${manageGroup.ec_ids.join(',')}|${manageGroup.members.length}`}
                 onGroupChanged={g => { if (g) setManageGroup(g); load() }} />
             </div>
