@@ -277,6 +277,12 @@ export default function AdminExamsPage() {
                     <i className="fas fa-eye" />Détails
                   </button>
 
+                  {/* Prévisualiser — l'examen tel que l'étudiant le voit, sans rien enregistrer */}
+                  <a href={`/exam/${exam.id}?preview=1`} target="_blank" rel="noopener" title="Voir et tester l'examen comme un étudiant (rien n'est enregistré)"
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: '#0f766e', textDecoration: 'none' }}>
+                    <i className="fas fa-display" />Prévisualiser
+                  </a>
+
                   {/* Copies (clôturé uniquement) */}
                   {isClosed && (
                     <button onClick={() => { setCopiesExamId(exam.id); setCopiesTitle(exam.title) }}
