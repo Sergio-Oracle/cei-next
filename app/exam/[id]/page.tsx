@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import api from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
@@ -286,7 +286,9 @@ export default function ExamPage() {
   // Moodle) : même page et même affichage que l'étudiant, mais sans
   // tentative, sans surveillance et sans rien enregistrer ; la soumission
   // renvoie seulement la correction (services : /api/online_exams/<id>/preview).
-  const [isPreview] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === '1')
+  // useSearchParams (et non window.location) : juste aussi quand on arrive par
+  // un lien interne, où l'adresse n'est pas encore à jour au premier rendu.
+  const isPreview = useSearchParams().get('preview') === '1'
   const previewTimerRef = useRef<ReturnType<typeof setInterval>|null>(null)
   const [previewResult, setPreviewResult] = useState<PreviewResult | null>(null)
   const [previewAiLoading, setPreviewAiLoading] = useState(false)
@@ -603,7 +605,7 @@ export default function ExamPage() {
     }
     load()
     return () => { cancelled = true }
-  }, [id]) // eslint-disable-line
+  }, [id, isPreview]) // eslint-disable-line
 
   /* ── Médias insérés dans le sujet (images/audio) — Notes points 2/15 ───── */
   useEffect(() => {
