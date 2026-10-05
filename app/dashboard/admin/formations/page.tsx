@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -30,7 +30,7 @@ interface Formation {
   id: number; code: string; name: string; level?: string; department?: string
   description?: string; pole_id?: number; pole_code?: string; pole_name?: string
   niveau_id?: number; niveau_code?: string; niveau_name?: string
-  is_active: boolean; semesters: Semester[]
+  is_active: boolean; semesters: Semester[]; semesters_count?: number
 }
 
 type ModalKind =
@@ -116,7 +116,17 @@ function TpeSplitInputs({ form, setForm, inputStyle, labelStyle }: {
 
 export default function AdminFormationsPage() {
   const { success, error } = useToast()
-  const [formations, setFormations] = useState<Formation[]>([])
+  // Liste légère des formations ; la maquette d'une formation (semestres → UE
+  // → EC) n'est chargée qu'à sa sélection, en une requête (/tree), puis gardée
+  // ici. Avant, toute la maquette était chargée en cascade (une requête par
+  // formation, par semestre et par UE) à chaque ouverture de la page.
+  const [formationList, setFormationList] = useState<Formation[]>([])
+  const [trees, setTrees] = useState<Record<number, Semester[]>>({})
+  const treesRef = useRef(trees); treesRef.current = trees
+  const [treeLoading, setTreeLoading] = useState<number | null>(null)
+  const formations = useMemo(() => formationList.map(f => ({ ...f, semesters: trees[f.id] ?? [] })), [formationList, trees])
+  const [maqSel, setMaqSel] = useState<{ pole: number | null; niveau: number | null; formation: number | null }>({ pole: null, niveau: null, formation: null })
+  const selRef = useRef(maqSel); selRef.current = maqSel
   const [poles, setPoles] = useState<Pole[]>([])
   const [niveaux, setNiveaux] = useState<Niveau[]>([])
   const [loading, setLoading] = useState(true)
@@ -310,6 +320,15 @@ export default function AdminFormationsPage() {
     } catch { /* silent */ }
   }, [])
 
+  const loadTree = useCallback(async (fid: number) => {
+    setTreeLoading(fid)
+    try {
+      const res = await api.get<{ semesters: Semester[] }>(`/api/admin/formations/${fid}/tree`)
+      setTrees(t => ({ ...t, [fid]: res.semesters ?? [] }))
+    } catch (e: any) { error(e.message || 'Erreur chargement de la maquette') }
+    finally { setTreeLoading(l => (l === fid ? null : l)) }
+  }, []) // eslint-disable-line
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -321,25 +340,34 @@ export default function AdminFormationsPage() {
       setPoles(Array.isArray(rawPoles) ? rawPoles : [])
       setNiveaux(Array.isArray(rawNiveaux) ? rawNiveaux : [])
       const flist: any[] = Array.isArray(rawForms) ? rawForms : rawForms.formations ?? []
-      const full = await Promise.all(flist.map(async (f: any) => {
-        const rawSem = await api.get<any>(`/api/formations/${f.id}/semesters`)
-        const semList: any[] = Array.isArray(rawSem) ? rawSem : rawSem.semesters ?? []
-        const semesters = await Promise.all(semList.map(async (s: any) => {
-          const rawUe = await api.get<any>(`/api/semesters/${s.id}/ues`)
-          const ueList: any[] = Array.isArray(rawUe) ? rawUe : rawUe.ues ?? []
-          const ues = await Promise.all(ueList.map(async (u: any) => {
-            const rawEc = await api.get<any>(`/api/ues/${u.id}/ecs`)
-            const ecList: any[] = Array.isArray(rawEc) ? rawEc : rawEc.ecs ?? []
-            return { ...u, ecs: ecList }
-          }))
-          return { ...s, ues }
-        }))
-        return { ...f, semesters }
-      }))
-      setFormations(full)
+      setFormationList(flist.map(f => ({ ...f, semesters: [] })))
     } catch { error('Erreur chargement maquette') }
     finally { setLoading(false) }
+    // Après une modification : recharger seulement les maquettes déjà ouvertes.
+    const open = new Set<number>(Object.keys(treesRef.current).map(Number))
+    if (selRef.current.formation) open.add(selRef.current.formation)
+    await Promise.all([...open].map(fid => loadTree(fid)))
   }, []) // eslint-disable-line
+
+  // Dernière sélection mémorisée (lue après le montage : pas d'écart avec le rendu serveur).
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('cei_maquette_sel') || 'null')
+      if (saved && typeof saved === 'object') setMaqSel({ pole: saved.pole ?? null, niveau: saved.niveau ?? null, formation: saved.formation ?? null })
+    } catch {}
+  }, [])
+  useEffect(() => {
+    try { localStorage.setItem('cei_maquette_sel', JSON.stringify(maqSel)) } catch {}
+    if (maqSel.formation && !treesRef.current[maqSel.formation]) loadTree(maqSel.formation)
+  }, [maqSel, loadTree])
+
+  useEffect(() => {
+    if (wizardCtx.formationId && !treesRef.current[wizardCtx.formationId]) loadTree(wizardCtx.formationId)
+  }, [wizardCtx.formationId, loadTree])
+
+  function showFormation(f: Formation) {
+    setMaqSel({ pole: f.pole_id ?? null, niveau: f.niveau_id ?? null, formation: f.id })
+  }
 
   useEffect(() => { load() }, [load])
 
@@ -945,6 +973,8 @@ export default function AdminFormationsPage() {
 
   /* ── Carte Formation (avec ses Semestres/UE/EC) — imbriquée sous son Niveau ── */
   function renderFormationCard(f: Formation) {
+    const open = maqSel.formation === f.id
+    const loaded = !!trees[f.id]
     return (
       <div key={f.id} style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
         {/* Formation header */}
@@ -958,7 +988,7 @@ export default function AdminFormationsPage() {
               {[f.level, f.department].filter(Boolean).join(' | ')}
             </div>
             <div style={{ fontSize:13, opacity: .68, marginTop: 2 }}>
-              <i className="fas fa-book" style={{ marginRight: 4 }} />{f.semesters.length} semestre(s)
+              <i className="fas fa-book" style={{ marginRight: 4 }} />{loaded ? f.semesters.length : (f.semesters_count ?? 0)} semestre(s)
               {(() => {
                 const n = f.semesters.reduce((acc, s) => acc + s.ues.reduce((a2, u) =>
                   a2 + (u.values_confirmed === false ? 1 : 0) + u.ecs.filter(ec => ec.values_confirmed === false).length, 0), 0)
@@ -983,7 +1013,19 @@ export default function AdminFormationsPage() {
           </div>
         </div>
 
-        {/* Semesters */}
+        {/* Semesters — seulement pour la formation sélectionnée */}
+        {!open ? (
+          <div style={{ padding: '12px 22px' }}>
+            <button onClick={() => showFormation(f)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 9, border: '1.5px solid #bfdbfe', background: '#eff6ff', color: '#1d4ed8', cursor: 'pointer', fontSize: 15, fontWeight: 700 }}>
+              <i className="fas fa-folder-open" /> Afficher la maquette
+            </button>
+          </div>
+        ) : !loaded ? (
+          <div style={{ padding: '18px 22px', color: 'var(--text-muted)', fontSize: 15.5 }}>
+            <i className="fas fa-spinner fa-spin" style={{ marginRight: 8 }} />Chargement de la maquette…
+          </div>
+        ) : (
         <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {f.semesters.length === 0 ? (
             <p style={{ color: 'var(--text-muted)', fontSize:15.5, margin: 0 }}>
@@ -1082,6 +1124,7 @@ export default function AdminFormationsPage() {
             </div>
           ))}
         </div>
+        )}
       </div>
     )
   }
@@ -1129,6 +1172,37 @@ export default function AdminFormationsPage() {
             </div>
           ) : (
             <>
+              {/* Sélection : on n'affiche (et ne charge) que ce qu'on choisit */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end', padding: '14px 16px', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 12 }}>
+                {([
+                  ['Pôle', maqSel.pole, poles.map(p => ({ id: p.id, label: `${p.code} — ${p.name}` })),
+                    (v: number | null) => setMaqSel({ pole: v, niveau: null, formation: null })],
+                  ['Niveau', maqSel.niveau, niveaux.filter(n => !maqSel.pole || n.pole_id === maqSel.pole).map(n => ({ id: n.id, label: `${n.code} — ${n.name}` })),
+                    (v: number | null) => setMaqSel(x => ({ ...x, niveau: v, formation: null }))],
+                  ['Formation', maqSel.formation, formationList.filter(f => (!maqSel.pole || f.pole_id === maqSel.pole) && (!maqSel.niveau || f.niveau_id === maqSel.niveau)).map(f => ({ id: f.id, label: `${f.code} — ${f.name}` })),
+                    (v: number | null) => setMaqSel(x => ({ ...x, formation: v }))],
+                ] as const).map(([label, value, options, onChange]) => (
+                  <label key={label} style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 220px', minWidth: 0, fontSize: 14.5, fontWeight: 700, color: 'var(--text-muted)' }}>
+                    {label}
+                    <select className="form-control" value={value ?? ''} onChange={e => onChange(e.target.value ? Number(e.target.value) : null)}
+                      style={{ padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 15.5, background: 'var(--surface)', color: 'var(--text)', fontWeight: 500 }}>
+                      <option value="">{label === 'Pôle' ? 'Tous les pôles' : label === 'Niveau' ? 'Tous les niveaux' : 'Choisir une formation…'}</option>
+                      {options.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+                    </select>
+                  </label>
+                ))}
+                {(maqSel.pole || maqSel.niveau || maqSel.formation) && (
+                  <button onClick={() => setMaqSel({ pole: null, niveau: null, formation: null })}
+                    style={{ padding: '9px 14px', borderRadius: 9, border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer', fontSize: 15, fontWeight: 600 }}>
+                    <i className="fas fa-xmark" style={{ marginRight: 6 }} />Tout afficher
+                  </button>
+                )}
+              </div>
+              {!maqSel.formation && (
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 15 }}>
+                  <i className="fas fa-circle-info" style={{ marginRight: 6 }} />Choisissez une formation (ou cliquez « Afficher la maquette » sur l&apos;une d&apos;elles) pour voir ses semestres, UE et EC.
+                </p>
+              )}
               {poles.length === 0 && formationsSansNiveau.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--text-muted)' }}>
                   <i className="fas fa-inbox" style={{ fontSize: 35, display: 'block', marginBottom: 10 }} />
@@ -1136,7 +1210,7 @@ export default function AdminFormationsPage() {
                 </div>
               )}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 18, alignItems: 'start' }}>
-              {poles.map(p => {
+              {poles.filter(p => !maqSel.pole || p.id === maqSel.pole).map(p => {
                 const pnv = niveaux.filter(n => n.pole_id === p.id)
                 return (
                   <div key={p.id} style={{ border: `1.5px solid ${poleColor(p.code)}40`, borderRadius: 14, overflow: 'hidden' }}>
@@ -1162,7 +1236,7 @@ export default function AdminFormationsPage() {
                       {pnv.length === 0 && quickNiveauPoleId !== p.id && (
                         <span style={{ fontSize:14.5, color: 'var(--text-muted)' }}>Aucun niveau sous ce pôle</span>
                       )}
-                      {pnv.map(n => {
+                      {pnv.filter(n => !maqSel.niveau || n.id === maqSel.niveau).map(n => {
                         const nf = formations.filter(f => f.niveau_id === n.id)
                         return (
                           <div key={n.id} style={{ border: '1px solid #3b82f640', borderRadius: 12, overflow: 'hidden' }}>
@@ -1186,7 +1260,7 @@ export default function AdminFormationsPage() {
                                 <p style={{ color: 'var(--text-muted)', fontSize:15, margin: 0 }}>
                                   Aucune formation sous ce niveau — cliquez &quot;Créer la hiérarchie (pas-à-pas)&quot; en haut
                                 </p>
-                              ) : nf.map(f => renderFormationCard(f))}
+                              ) : nf.filter(f => !maqSel.formation || f.id === maqSel.formation).map(f => renderFormationCard(f))}
                             </div>
                           </div>
                         )
