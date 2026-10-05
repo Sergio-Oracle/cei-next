@@ -107,7 +107,7 @@ function TpeSplitInputs({ form, setForm, inputStyle, labelStyle }: {
     {([['tpe_semi_dirige', 'TPE semi-dirigé (h)'], ['tpe_non_dirige', 'TPE non dirigé (h)']] as const).map(([key, label]) => (
       <div className="form-group" key={key} style={{ marginBottom: 10 }}>
         <label style={labelStyle}>{label}</label>
-        <input type="number" min={0} className="form-control" placeholder="—" autoComplete="off"
+        <input type="number" min={0} step="any" className="form-control" placeholder="—" autoComplete="off"
           value={form[key] ?? ''} onChange={e => set(key, e.target.value)} style={inputStyle} />
       </div>
     ))}
@@ -344,11 +344,11 @@ export default function AdminFormationsPage() {
   useEffect(() => { load() }, [load])
 
   /* ── Field helpers ────────────────────────────────────────────────────────── */
-  const inp = (key: string, label: string, opts?: { type?: string; placeholder?: string; min?: number; max?: number }) => (
+  const inp = (key: string, label: string, opts?: { type?: string; placeholder?: string; min?: number; max?: number; step?: string }) => (
     <div className="form-group" key={key}>
       <label style={{ fontWeight: 600, fontSize:15.5, marginBottom: 6, display: 'block' }}>{label}</label>
       <input type={opts?.type || 'text'} className="form-control" placeholder={opts?.placeholder}
-        min={opts?.min} max={opts?.max} autoComplete="off"
+        min={opts?.min} max={opts?.max} step={opts?.step} autoComplete="off"
         value={form[key] ?? (opts?.type === 'number' ? 0 : '')}
         onChange={e => setForm((p: any) => ({ ...p, [key]: opts?.type === 'number' ? Number(e.target.value) : e.target.value }))}
         style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize:17, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }} />
@@ -507,15 +507,15 @@ export default function AdminFormationsPage() {
         {inp('code', 'Code *', { placeholder: 'Ex: SOCIO1111' })}
         {inp('name', 'Nom *', { placeholder: "Ex: Introduction à la sociologie" })}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
-          {inp('cm', 'CM (h)', { type: 'number', min: 0 })}
-          {inp('td', 'TD (h)', { type: 'number', min: 0 })}
-          {inp('tp', 'TP (h)', { type: 'number', min: 0 })}
+          {inp('cm', 'CM (h)', { type: 'number', min: 0, step: 'any' })}
+          {inp('td', 'TD (h)', { type: 'number', min: 0, step: 'any' })}
+          {inp('tp', 'TP (h)', { type: 'number', min: 0, step: 'any' })}
           <TpeSplitInputs form={form} setForm={setForm}
             labelStyle={{ fontWeight: 600, fontSize:15.5, marginBottom: 6, display: 'block' }}
             inputStyle={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize:17, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }} />
-          {inp('tpe', 'TPE total (h)', { type: 'number', min: 0 })}
-          {inp('projets', 'Projets (h)', { type: 'number', min: 0 })}
-          {inp('vht', 'VHT (h)', { type: 'number', min: 0 })}
+          {inp('tpe', 'TPE total (h)', { type: 'number', min: 0, step: 'any' })}
+          {inp('projets', 'Projets (h)', { type: 'number', min: 0, step: 'any' })}
+          {inp('vht', 'VHT (h)', { type: 'number', min: 0, step: 'any' })}
           {inp('coefficient', 'Coefficient', { type: 'number', min: 1 })}
         </div>
         <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '12px 16px', marginTop: 4 }}>
@@ -536,10 +536,10 @@ export default function AdminFormationsPage() {
 
   /* ── Assistant pas-à-pas : contenu de l'étape courante ────────────────────── */
   function wizardStepBody() {
-    const wInp = (key: string, label: string, opts?: { type?: string; placeholder?: string }) => (
+    const wInp = (key: string, label: string, opts?: { type?: string; placeholder?: string; step?: string }) => (
       <div style={{ marginBottom: 10 }}>
         <label style={{ fontWeight: 600, fontSize:15, marginBottom: 4, display: 'block' }}>{label}</label>
-        <input type={opts?.type || 'text'} placeholder={opts?.placeholder}
+        <input type={opts?.type || 'text'} placeholder={opts?.placeholder} step={opts?.step}
           value={wizardForm[key] ?? (opts?.type === 'number' ? 0 : '')}
           onChange={e => setWizardForm((p: any) => ({ ...p, [key]: opts?.type === 'number' ? Number(e.target.value) : e.target.value }))}
           style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize:16, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }} />
@@ -752,15 +752,15 @@ export default function AdminFormationsPage() {
             {wInp('code', 'Code *', { placeholder: 'Ex: SOCIO1111' })}
             {wInp('name', 'Nom *', { placeholder: "Ex: Introduction à la sociologie" })}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 10 }}>
-              {wInp('cm', 'CM (h)', { type: 'number' })}
-              {wInp('td', 'TD (h)', { type: 'number' })}
-              {wInp('tp', 'TP (h)', { type: 'number' })}
+              {wInp('cm', 'CM (h)', { type: 'number', step: 'any' })}
+              {wInp('td', 'TD (h)', { type: 'number', step: 'any' })}
+              {wInp('tp', 'TP (h)', { type: 'number', step: 'any' })}
               <TpeSplitInputs form={wizardForm} setForm={setWizardForm}
                 labelStyle={{ fontWeight: 600, fontSize:15, marginBottom: 4, display: 'block' }}
                 inputStyle={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize:16, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }} />
-              {wInp('tpe', 'TPE total (h)', { type: 'number' })}
-              {wInp('projets', 'Projets (h)', { type: 'number' })}
-              {wInp('vht', 'VHT (h)', { type: 'number' })}
+              {wInp('tpe', 'TPE total (h)', { type: 'number', step: 'any' })}
+              {wInp('projets', 'Projets (h)', { type: 'number', step: 'any' })}
+              {wInp('vht', 'VHT (h)', { type: 'number', step: 'any' })}
               {wInp('coefficient', 'Coefficient', { type: 'number' })}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
