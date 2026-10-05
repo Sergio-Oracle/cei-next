@@ -15,7 +15,7 @@ interface Niveau {
 }
 interface EC {
   id: number; code: string; name: string
-  coefficient: number; cm?: number; td?: number; tp?: number; tpe?: number; projets?: number; vht?: number
+  coefficient: number; cm?: number; td?: number; tp?: number; tpe?: number; tpe_semi_dirige?: number | null; tpe_non_dirige?: number | null; projets?: number; vht?: number
   cc_percentage?: number; ex_percentage?: number; is_active: boolean; assigned_professor?: string
   values_confirmed?: boolean
 }
@@ -89,6 +89,29 @@ function ToConfirmTag({ what }: { what: string }) {
       <i className="fas fa-circle-exclamation" style={{ marginRight: 4 }} />à confirmer
     </span>
   )
+}
+
+/* TPE semi-dirigé / non dirigé des maquettes officielles. Laissés vides, ils
+   ne changent rien (EC existants qui n'ont que le total) ; dès que l'un est
+   renseigné, le TPE total devient leur somme, comme le fait le serveur. */
+function TpeSplitInputs({ form, setForm, inputStyle, labelStyle }: {
+  form: any; setForm: (fn: (p: any) => any) => void; inputStyle: React.CSSProperties; labelStyle: React.CSSProperties
+}) {
+  const set = (key: 'tpe_semi_dirige' | 'tpe_non_dirige', raw: string) => setForm((p: any) => {
+    const next = { ...p, [key]: raw === '' ? null : Math.max(0, Number(raw)) }
+    if (next.tpe_semi_dirige != null || next.tpe_non_dirige != null)
+      next.tpe = (next.tpe_semi_dirige ?? 0) + (next.tpe_non_dirige ?? 0)
+    return next
+  })
+  return (<>
+    {([['tpe_semi_dirige', 'TPE semi-dirigé (h)'], ['tpe_non_dirige', 'TPE non dirigé (h)']] as const).map(([key, label]) => (
+      <div className="form-group" key={key} style={{ marginBottom: 10 }}>
+        <label style={labelStyle}>{label}</label>
+        <input type="number" min={0} className="form-control" placeholder="—" autoComplete="off"
+          value={form[key] ?? ''} onChange={e => set(key, e.target.value)} style={inputStyle} />
+      </div>
+    ))}
+  </>)
 }
 
 export default function AdminFormationsPage() {
@@ -487,7 +510,10 @@ export default function AdminFormationsPage() {
           {inp('cm', 'CM (h)', { type: 'number', min: 0 })}
           {inp('td', 'TD (h)', { type: 'number', min: 0 })}
           {inp('tp', 'TP (h)', { type: 'number', min: 0 })}
-          {inp('tpe', 'TPE (h)', { type: 'number', min: 0 })}
+          <TpeSplitInputs form={form} setForm={setForm}
+            labelStyle={{ fontWeight: 600, fontSize:15.5, marginBottom: 6, display: 'block' }}
+            inputStyle={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize:17, background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }} />
+          {inp('tpe', 'TPE total (h)', { type: 'number', min: 0 })}
           {inp('projets', 'Projets (h)', { type: 'number', min: 0 })}
           {inp('vht', 'VHT (h)', { type: 'number', min: 0 })}
           {inp('coefficient', 'Coefficient', { type: 'number', min: 1 })}
@@ -729,7 +755,10 @@ export default function AdminFormationsPage() {
               {wInp('cm', 'CM (h)', { type: 'number' })}
               {wInp('td', 'TD (h)', { type: 'number' })}
               {wInp('tp', 'TP (h)', { type: 'number' })}
-              {wInp('tpe', 'TPE (h)', { type: 'number' })}
+              <TpeSplitInputs form={wizardForm} setForm={setWizardForm}
+                labelStyle={{ fontWeight: 600, fontSize:15, marginBottom: 4, display: 'block' }}
+                inputStyle={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize:16, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }} />
+              {wInp('tpe', 'TPE total (h)', { type: 'number' })}
               {wInp('projets', 'Projets (h)', { type: 'number' })}
               {wInp('vht', 'VHT (h)', { type: 'number' })}
               {wInp('coefficient', 'Coefficient', { type: 'number' })}
@@ -1032,7 +1061,7 @@ export default function AdminFormationsPage() {
                                 {(ec.td || 0) > 0 && <span>TD: {ec.td}h</span>}
                                 {(ec.tp || 0) > 0 && <span>TP: {ec.tp}h</span>}
                                 {(ec.projets || 0) > 0 && <span>Projets: {ec.projets}h</span>}
-                                {(ec.tpe || 0) > 0 && <span>TPE: {ec.tpe}h</span>}
+                                {(ec.tpe || 0) > 0 && <span>TPE: {ec.tpe}h{(ec.tpe_semi_dirige != null || ec.tpe_non_dirige != null) && ` (${ec.tpe_semi_dirige ?? 0} semi-dirigé + ${ec.tpe_non_dirige ?? 0} non dirigé)`}</span>}
                                 {(ec.vht || 0) > 0 && <span>VHT: {ec.vht}h</span>}
                                 <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '1px 7px', borderRadius: 8, fontWeight: 700 }}>
                                   CC:{ec.cc_percentage ?? 40}% / EX:{ec.ex_percentage ?? 60}%
