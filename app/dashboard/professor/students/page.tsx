@@ -88,12 +88,12 @@ export default function ProfessorStudentsPage() {
   const filtersOn = !!(q || filterEc || pole || first || last)
 
   const letterRow = (label: string, value: string, set: (v: string) => void) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-      <span style={{ fontSize: 14.5, fontWeight: 700, color: '#64748b', minWidth: 62 }}>{label}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
+      <span style={{ fontSize: 14.5, fontWeight: 700, color: '#64748b', minWidth: 58 }}>{label}</span>
       {['', ...LETTERS].map(l => (
         <button key={l || 'tout'} onClick={() => set(l)} aria-pressed={value === l}
-          style={{ minWidth: l ? 28 : 46, padding: '4px 6px', borderRadius: 6, border: '1px solid ' + (value === l ? '#2563eb' : '#e2e8f0'),
-            background: value === l ? '#2563eb' : 'white', color: value === l ? 'white' : '#334155', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+          style={{ minWidth: l ? 25 : 44, padding: '3px 4px', borderRadius: 6, border: '1px solid ' + (value === l ? '#2563eb' : '#e2e8f0'),
+            background: value === l ? '#2563eb' : 'white', color: value === l ? 'white' : '#334155', fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}>
           {l || 'Tout'}
         </button>
       ))}
