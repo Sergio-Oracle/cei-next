@@ -15,7 +15,7 @@ interface Niveau {
 }
 interface EC {
   id: number; code: string; name: string
-  coefficient: number; cm?: number; td?: number; tp?: number; tpe?: number; vht?: number
+  coefficient: number; cm?: number; td?: number; tp?: number; tpe?: number; projets?: number; vht?: number
   cc_percentage?: number; ex_percentage?: number; is_active: boolean; assigned_professor?: string
   values_confirmed?: boolean
 }
@@ -219,7 +219,7 @@ export default function AdminFormationsPage() {
       await load()
       setWizardCtx(c => ({ ...c, ueId: res.ue.id }))
       setWizardStep('ec'); setWizardCreatingNew(true)
-      setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 })
+      setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, projets: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 })
     } catch (e: any) { error(e.message || 'Erreur') }
     finally { setWizardBusy(false) }
   }
@@ -233,7 +233,7 @@ export default function AdminFormationsPage() {
       await load()
       setWizardEcCount(n => n + 1)
       if (next === 'another_ec') {
-        setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 })
+        setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, projets: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 })
       } else if (next === 'another_ue') {
         setWizardStep('ue'); setWizardCreatingNew(true); setWizardUeMode('manual'); setWizardForm({ credits: 6, ue_type: 'obligatoire' })
       } else {
@@ -488,6 +488,7 @@ export default function AdminFormationsPage() {
           {inp('td', 'TD (h)', { type: 'number', min: 0 })}
           {inp('tp', 'TP (h)', { type: 'number', min: 0 })}
           {inp('tpe', 'TPE (h)', { type: 'number', min: 0 })}
+          {inp('projets', 'Projets (h)', { type: 'number', min: 0 })}
           {inp('vht', 'VHT (h)', { type: 'number', min: 0 })}
           {inp('coefficient', 'Coefficient', { type: 'number', min: 1 })}
         </div>
@@ -698,7 +699,7 @@ export default function AdminFormationsPage() {
               )
             ) : pickOrCreate({
               existing: opts.map(u => ({ id: u.id, label: `${u.code} — ${u.name}` })),
-              onPick: id => { setWizardCtx(c => ({ ...c, ueId: id })); setWizardStep('ec'); setWizardCreatingNew(true); setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 }) },
+              onPick: id => { setWizardCtx(c => ({ ...c, ueId: id })); setWizardStep('ec'); setWizardCreatingNew(true); setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, projets: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 }) },
               createFields: <>
                 {wInp('code', 'Code *', { placeholder: 'Ex: SOCIO111' })}
                 {wInp('name', 'Nom *', { placeholder: "Ex: Sociologie et Anthropologie" })}
@@ -729,6 +730,7 @@ export default function AdminFormationsPage() {
               {wInp('td', 'TD (h)', { type: 'number' })}
               {wInp('tp', 'TP (h)', { type: 'number' })}
               {wInp('tpe', 'TPE (h)', { type: 'number' })}
+              {wInp('projets', 'Projets (h)', { type: 'number' })}
               {wInp('vht', 'VHT (h)', { type: 'number' })}
               {wInp('coefficient', 'Coefficient', { type: 'number' })}
             </div>
@@ -898,7 +900,7 @@ export default function AdminFormationsPage() {
     const defaults: Record<string, any> = {
       create_semester: { number: 1, total_credits: 30 },
       create_ue: { credits: 6, ue_type: 'obligatoire' },
-      create_ec: { cm: 0, td: 0, tp: 0, tpe: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 },
+      create_ec: { cm: 0, td: 0, tp: 0, tpe: 0, projets: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 },
     }
     setForm(defaults[kind] ?? {})
     setModal({ kind, ...extra })
@@ -1029,6 +1031,9 @@ export default function AdminFormationsPage() {
                                 {(ec.cm || 0) > 0 && <span>CM: {ec.cm}h</span>}
                                 {(ec.td || 0) > 0 && <span>TD: {ec.td}h</span>}
                                 {(ec.tp || 0) > 0 && <span>TP: {ec.tp}h</span>}
+                                {(ec.projets || 0) > 0 && <span>Projets: {ec.projets}h</span>}
+                                {(ec.tpe || 0) > 0 && <span>TPE: {ec.tpe}h</span>}
+                                {(ec.vht || 0) > 0 && <span>VHT: {ec.vht}h</span>}
                                 <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '1px 7px', borderRadius: 8, fontWeight: 700 }}>
                                   CC:{ec.cc_percentage ?? 40}% / EX:{ec.ex_percentage ?? 60}%
                                 </span>
