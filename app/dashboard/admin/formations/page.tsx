@@ -1178,9 +1178,9 @@ export default function AdminFormationsPage() {
                   ['Pôle', maqSel.pole, poles.map(p => ({ id: p.id, label: `${p.code} — ${p.name}` })),
                     (v: number | null) => setMaqSel({ pole: v, niveau: null, formation: null })],
                   ['Niveau', maqSel.niveau, niveaux.filter(n => !maqSel.pole || n.pole_id === maqSel.pole).map(n => ({ id: n.id, label: `${n.code} — ${n.name}` })),
-                    (v: number | null) => setMaqSel(x => ({ ...x, niveau: v, formation: null }))],
+                    (v: number | null) => setMaqSel(x => ({ pole: v ? (niveaux.find(n => n.id === v)?.pole_id ?? x.pole) : x.pole, niveau: v, formation: null }))],
                   ['Formation', maqSel.formation, formationList.filter(f => (!maqSel.pole || f.pole_id === maqSel.pole) && (!maqSel.niveau || f.niveau_id === maqSel.niveau)).map(f => ({ id: f.id, label: `${f.code} — ${f.name}` })),
-                    (v: number | null) => setMaqSel(x => ({ ...x, formation: v }))],
+                    (v: number | null) => { const f = formationList.find(ff => ff.id === v); setMaqSel(x => f ? { pole: f.pole_id ?? x.pole, niveau: f.niveau_id ?? x.niveau, formation: f.id } : { ...x, formation: null }) }],
                 ] as const).map(([label, value, options, onChange]) => (
                   <label key={label} style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 220px', minWidth: 0, fontSize: 14.5, fontWeight: 700, color: 'var(--text-muted)' }}>
                     {label}
