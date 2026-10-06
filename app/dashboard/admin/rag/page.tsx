@@ -300,7 +300,7 @@ export default function AdminRagPage() {
                   <input id="rag-name" style={inputStyle} value={form.name} placeholder="Ex : RAGFlow préproduction" onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
                 </label>
                 <label style={{ display: 'grid', gap: 5, fontSize: 14.5, fontWeight: 600 }}>Adresse de l&apos;API
-                  <input id="rag-url" style={inputStyle} value={form.base_url} placeholder="http://127.0.0.1:19380" onChange={e => setForm(f => ({ ...f, base_url: e.target.value }))} />
+                  <input id="rag-url" style={inputStyle} value={form.base_url} placeholder="https://serveur-rag.unchk.sn ou http://127.0.0.1:19380" onChange={e => setForm(f => ({ ...f, base_url: e.target.value }))} />
                 </label>
                 <label style={{ display: 'grid', gap: 5, fontSize: 14.5, fontWeight: 600 }}>Clé API RAGFlow
                   <input id="rag-key" type="password" autoComplete="off" style={inputStyle} value={form.api_key}
@@ -312,6 +312,17 @@ export default function AdminRagPage() {
                 La connexion est vérifiée avant l&apos;enregistrement. La clé est chiffrée et ne sera plus jamais affichée.
                 {!editId && !active && ' Le premier moteur prêt est mis en service automatiquement.'}
               </div>
+              <details style={{ fontSize: 14.5, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '10px 14px' }}>
+                <summary style={{ cursor: 'pointer', fontWeight: 600, color: '#1d4ed8' }}>Où trouver l&apos;adresse et la clé API ? (sans commande)</summary>
+                <ol style={{ margin: '10px 0 4px', paddingLeft: 20, lineHeight: 1.75, color: 'var(--text)' }}>
+                  <li>Ouvrez l&apos;interface web de RAGFlow dans le navigateur et connectez-vous (compte du service, pas un compte personnel : CEI travaille dans l&apos;espace de ce compte).</li>
+                  <li>Cliquez sur l&apos;avatar en haut à droite, puis sur <strong>API</strong> dans le menu de gauche.</li>
+                  <li>Cliquez sur <strong>Clé API</strong> puis <strong>Créer une nouvelle clé</strong>, et copiez la clé (elle commence par <code>ragflow-</code>).</li>
+                  <li><strong>Adresse de l&apos;API</strong> : l&apos;adresse affichée sur cette même page (« Serveur API »). Si RAGFlow tourne sur le même serveur que CEI, préférez <code>http://127.0.0.1:&lt;port&gt;</code> : rien ne passe par le réseau. Sinon, l&apos;adresse web de RAGFlow (ex. <code>https://preprod-cei.unchk.sn:8443</code>).</li>
+                  <li>Collez les deux ici puis « Vérifier et enregistrer ». Pour changer de serveur : ajoutez le nouveau moteur, puis « Basculer sur ce moteur ».</li>
+                </ol>
+                <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>Ne collez jamais la clé dans un message ou une capture d&apos;écran : en cas de fuite, supprimez-la dans RAGFlow et créez-en une autre.</div>
+              </details>
               {formDiagnosis && <DiagnosisBox d={formDiagnosis} />}
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <Button onClick={saveEngine} disabled={saving}>
