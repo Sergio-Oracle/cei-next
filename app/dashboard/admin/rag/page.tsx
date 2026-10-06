@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -29,6 +29,85 @@ interface Engine {
 interface DatasetStatus {
   id: string; name: string; documents: number; chunks: number; embedding_model: string
   running: number; failed: number; failed_docs: { id: string; name: string; error: string }[]
+}
+
+interface DatasetDoc {
+  id: string; name: string; state: 'ready' | 'running' | 'queued' | 'failed'; progress: number; chunks: number; size: number
+  duration: number | null; queue_position: number | null; module: string | null; section: string | null
+  layout: string | null; attempts: number; error: string | null; last_message: string | null; from_moodle: boolean
+}
+interface DatasetDetail { dataset_id: string; ec_code: string | null; ec_name: string | null; counts: Record<string, number>; documents: DatasetDoc[] }
+
+const DOC_STATE: Record<DatasetDoc['state'], [string, string, string]> = {
+  ready: ['Prêt', '#047857', '#d1fae5'], running: ['En cours', '#b45309', '#fef3c7'],
+  queued: ['En file d’attente', '#475569', '#e2e8f0'], failed: ['Échec', '#b91c1c', '#fee2e2'],
+}
+
+function fmtDuration(s: number) {
+  if (s < 60) return `${Math.round(s)} s`
+  if (s < 3600) return `${Math.floor(s / 60)} min ${Math.round(s % 60)} s`
+  return `${Math.floor(s / 3600)} h ${Math.round((s % 3600) / 60)} min`
+}
+
+function DatasetDetails({ engineId, datasetId }: { engineId: number; datasetId: string }) {
+  const [data, setData] = useState<DatasetDetail | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [filter, setFilter] = useState<'all' | DatasetDoc['state']>('all')
+  const load = useCallback(async () => {
+    setLoading(true); setErr(null)
+    try { setData(await api.get<DatasetDetail>(`/api/admin/rag/engines/${engineId}/datasets/${datasetId}/documents`)) }
+    catch (e: any) { setErr(e.message || 'Détail indisponible') }
+    finally { setLoading(false) }
+  }, [engineId, datasetId])
+  useEffect(() => { load() }, [load])
+  if (err) return <div style={{ color: '#b91c1c', fontSize: 14 }}><i className="fas fa-circle-exclamation" /> {err}</div>
+  if (!data) return <div style={{ color: 'var(--text-muted)', fontSize: 14 }}><i className="fas fa-spinner fa-spin" /> Lecture des documents…</div>
+  const docs = data.documents.filter(d => filter === 'all' || d.state === filter)
+  return (
+    <div style={{ display: 'grid', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        {([['all', `Tous (${data.documents.length})`], ...(['failed', 'running', 'queued', 'ready'] as const).filter(k => data.counts[k]).map(k => [k, `${DOC_STATE[k][0]} (${data.counts[k]})`])] as [string, string][]).map(([k, label]) => (
+          <button key={k} type="button" onClick={() => setFilter(k as any)}
+            style={{ fontSize: 13.5, padding: '4px 12px', borderRadius: 99, cursor: 'pointer', border: `1.5px solid ${filter === k ? ACCENT : 'var(--border)'}`, background: filter === k ? '#eff6ff' : 'var(--surface)', color: filter === k ? '#1d4ed8' : 'var(--text)', fontWeight: 600 }}>
+            {label}
+          </button>
+        ))}
+        <button type="button" onClick={load} disabled={loading}
+          style={{ marginLeft: 'auto', fontSize: 13.5, background: 'none', border: 'none', color: ACCENT, fontWeight: 600, cursor: 'pointer' }}>
+          <i className={`fas ${loading ? 'fa-spinner fa-spin' : 'fa-rotate'}`} /> Actualiser
+        </button>
+      </div>
+      <div style={{ display: 'grid', gap: 6, maxHeight: 460, overflowY: 'auto', paddingRight: 2 }}>
+        {docs.map(d => {
+          const [label, color, bg] = DOC_STATE[d.state]
+          return (
+            <div key={d.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '8px 12px', background: 'var(--surface)', display: 'grid', gap: 4 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12.5, fontWeight: 700, padding: '2px 9px', borderRadius: 99, color, background: bg, whiteSpace: 'nowrap' }}>
+                  {label}{d.state === 'running' && d.progress > 0 ? ` · ${Math.round(d.progress * 100)} %` : ''}
+                </span>
+                <strong style={{ fontSize: 14.5, flex: 1, minWidth: 180, wordBreak: 'break-word' }}>{d.name}</strong>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                  {[d.size ? fmtMb(d.size) : null, d.chunks ? `${d.chunks} fragment${d.chunks > 1 ? 's' : ''}` : null,
+                    d.duration ? `indexé en ${fmtDuration(d.duration)}` : null].filter(Boolean).join(' · ')}
+                </span>
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                {d.from_moodle ? [d.section, d.module].filter(Boolean).join(' › ') || 'Cours Moodle' : 'Ajouté directement dans RAGFlow'}
+                {d.layout === 'DeepDOC' && ' · reconnaissance de caractères (document scanné)'}
+                {d.queue_position ? ` · position ${d.queue_position.toLocaleString('fr-FR')} dans la file` : ''}
+                {d.attempts ? ` · relancé ${d.attempts} fois` : ''}
+              </div>
+              {d.state === 'running' && d.last_message && <div style={{ fontSize: 12.5, color: '#b45309' }}>{d.last_message}</div>}
+              {d.error && <div style={{ fontSize: 13, color: '#b91c1c', wordBreak: 'break-word' }}><i className="fas fa-circle-exclamation" style={{ marginRight: 5 }} />{d.error}</div>}
+            </div>
+          )
+        })}
+        {docs.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Aucun document dans cette catégorie.</div>}
+      </div>
+    </div>
+  )
 }
 
 interface RagEc { ec_id: number; ec_code: string; ec_name: string; ready: number; indexing: number; failed: number }
@@ -122,6 +201,7 @@ export default function AdminRagPage() {
   const [confirmReindexAll, setConfirmReindexAll] = useState(false)
 
   const [status, setStatus] = useState<DatasetStatus[] | null>(null)
+  const [openDataset, setOpenDataset] = useState<string | null>(null)
   const [statusLoading, setStatusLoading] = useState(false)
   const [statusError, setStatusError] = useState<string | null>(null)
 
@@ -421,7 +501,7 @@ export default function AdminRagPage() {
                     ['Bases documentaires', status.length, 'var(--text)'],
                     ['Documents', totals.documents, 'var(--text)'],
                     ['Fragments indexés', totals.chunks, 'var(--text)'],
-                    ['En cours d’indexation', totals.running, totals.running ? '#b45309' : 'var(--text)'],
+                    ['En attente ou en cours', totals.running, totals.running ? '#b45309' : 'var(--text)'],
                     ['En échec', totals.failed, totals.failed ? '#b91c1c' : 'var(--text)'],
                   ] as [string, number, string][]).map(([label, n, color]) => (
                     <div key={label} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px' }}>
@@ -437,18 +517,20 @@ export default function AdminRagPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14.5 }}>
                       <thead>
                         <tr style={{ textAlign: 'left', color: 'var(--text-muted)' }}>
-                          {['Base documentaire', 'Documents', 'Fragments', 'En cours', 'En échec', 'Modèle d’embedding'].map(h => (
+                          {['Base documentaire', 'Documents', 'Fragments', 'En attente ou en cours', 'En échec', 'Modèle d’embedding'].map(h => (
                             <th key={h} style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {status.map(d => (
-                          <tr key={d.id}>
+                        {status.map(d => (<React.Fragment key={d.id}>
+                          <tr onClick={() => setOpenDataset(openDataset === d.id ? null : d.id)} title="Cliquer pour voir le détail des documents"
+                            style={{ cursor: 'pointer', background: openDataset === d.id ? '#eff6ff' : undefined }}>
                             <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', fontWeight: 600 }}>
+                              <i className={`fas ${openDataset === d.id ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={{ fontSize: 11, color: ACCENT, marginRight: 8, width: 10 }} />
                               {d.name}
                               {d.failed_docs.length > 0 && (
-                                <details style={{ fontWeight: 400, marginTop: 4 }}>
+                                <details style={{ fontWeight: 400, marginTop: 4 }} onClick={e => e.stopPropagation()}>
                                   <summary style={{ cursor: 'pointer', color: '#b91c1c', fontSize: 13.5 }}>Voir les échecs</summary>
                                   {d.failed_docs.map(f => (
                                     <div key={f.id} style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}><strong>{f.name}</strong> : {f.error || 'erreur inconnue'}</div>
@@ -462,7 +544,12 @@ export default function AdminRagPage() {
                             <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', color: d.failed ? '#b91c1c' : undefined }}>{d.failed}</td>
                             <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 13.5 }}>{(d.embedding_model || '').split('@')[0]}</td>
                           </tr>
-                        ))}
+                          {openDataset === d.id && active && (
+                            <tr><td colSpan={6} style={{ padding: '12px 10px 16px', borderBottom: '1px solid var(--border)', background: 'var(--background)' }}>
+                              <DatasetDetails engineId={active.id} datasetId={d.id} />
+                            </td></tr>
+                          )}
+                        </React.Fragment>))}
                       </tbody>
                     </table>
                   </div>
