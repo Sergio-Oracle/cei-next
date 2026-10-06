@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -22,12 +22,24 @@ interface Diagnosis {
 }
 interface Engine {
   id: number; name: string; base_url: string; key_hint: string; is_active: boolean
+  auto_index: boolean; first_index_at: string | null; auto_index_last_at: string | null
+  auto_index_report: { at: string; changes?: { ec_code: string; sent?: number; removed?: number; errors?: { file: string; error: string }[] }[] } | null
   last_check_at: string | null; last_check_ok: boolean | null; last_check: Diagnosis | null
 }
 interface DatasetStatus {
   id: string; name: string; documents: number; chunks: number; embedding_model: string
   running: number; failed: number; failed_docs: { id: string; name: string; error: string }[]
 }
+
+interface RagEc { ec_id: number; ec_code: string; ec_name: string; ready: number; indexing: number; failed: number }
+interface EcReport {
+  ec_code: string; error?: string; skipped?: string; documents?: number
+  to_add?: string[]; to_update?: string[]; to_retry?: string[]; to_remove?: string[]; unchanged?: number
+  indexing?: number; failed?: number; bytes_to_send?: number
+  sent?: number; removed?: number; retried?: number; errors?: { file: string; error: string }[]
+}
+
+function fmtMb(b: number) { return b < 1024 * 1024 ? `${Math.max(0, Math.round(b / 1024))} Ko` : `${(b / 1024 / 1024).toFixed(1)} Mo` }
 
 const COMPONENT_LABELS: Record<string, string> = {
   db: 'Base de données', doc_engine: 'Moteur documentaire', redis: 'File de tâches (Redis)', storage: 'Stockage des fichiers',
@@ -114,6 +126,65 @@ export default function AdminRagPage() {
   const [statusError, setStatusError] = useState<string | null>(null)
 
   const active = engines.find(e => e.is_active) || null
+
+  /* ── Documents des cours Moodle ── */
+  const [ragEcs, setRagEcs] = useState<RagEc[] | null>(null)
+  const [ecsError, setEcsError] = useState<string | null>(null)
+  const [ecFilter, setEcFilter] = useState('')
+  const [docRun, setDocRun] = useState<null | 'dry' | 'apply'>(null)
+  const [docMode, setDocMode] = useState<null | 'dry' | 'apply'>(null)
+  const [docProgress, setDocProgress] = useState({ done: 0, total: 0, current: '' })
+  const [docResults, setDocResults] = useState<EcReport[]>([])
+  const [confirmDocApply, setConfirmDocApply] = useState(false)
+  const docStop = useRef(false)
+
+  const loadEcs = useCallback(async () => {
+    setEcsError(null)
+    try { setRagEcs((await api.get<{ ecs: RagEc[] }>('/api/admin/rag/ecs')).ecs || []) }
+    catch (e: any) { setRagEcs([]); setEcsError(e.message || 'Cours Moodle indisponibles') }
+  }, [])
+  useEffect(() => { if (active) loadEcs(); else setRagEcs(null) }, [active?.id, loadEcs]) // eslint-disable-line
+
+  const ecTargets = (ragEcs || []).filter(e => !ecFilter.trim() || `${e.ec_code} ${e.ec_name}`.toLowerCase().includes(ecFilter.trim().toLowerCase()))
+
+  async function runDocs(mode: 'dry' | 'apply') {
+    if (!ecTargets.length) return
+    setConfirmDocApply(false); docStop.current = false
+    setDocRun(mode); setDocMode(mode); setDocResults([])
+    const acc: EcReport[] = []
+    for (let i = 0; i < ecTargets.length; i++) {
+      if (docStop.current) break
+      const ec = ecTargets[i]
+      setDocProgress({ done: i, total: ecTargets.length, current: ec.ec_code })
+      try { acc.push(await api.aiPost<EcReport>('/api/admin/rag/sync/ec', { ec_code: ec.ec_code, dry_run: mode === 'dry' })) }
+      catch (e: any) { acc.push({ ec_code: ec.ec_code, error: e.message || 'Erreur' }) }
+      setDocResults([...acc])
+    }
+    setDocProgress(p => ({ ...p, done: acc.length, current: '' }))
+    setDocRun(null)
+    if (docStop.current) error(`Arrêtée après ${acc.length} cours sur ${ecTargets.length}`)
+    else success(mode === 'dry' ? 'Simulation terminée : rien n’a été envoyé' : 'Documents envoyés : l’indexation se poursuit dans RAGFlow')
+    if (mode === 'apply') { loadEcs(); loadEngines(); if (active) loadStatus(active.id) }
+  }
+
+  async function toggleAuto(enabled: boolean) {
+    if (!active) return
+    setBusy('auto')
+    try {
+      await api.post(`/api/admin/rag/engines/${active.id}/auto-index`, { enabled })
+      success(enabled ? 'Indexation automatique activée' : 'Indexation automatique désactivée')
+      await loadEngines()
+    } catch (e: any) { error(e.message || 'Modification impossible') }
+    finally { setBusy(null) }
+  }
+
+  const docTotals = docResults.reduce((t, r) => ({
+    add: t.add + (r.to_add?.length || 0), update: t.update + (r.to_update?.length || 0), retry: t.retry + (r.to_retry?.length || 0),
+    remove: t.remove + (r.to_remove?.length || 0), unchanged: t.unchanged + (r.unchanged || 0), bytes: t.bytes + (r.bytes_to_send || 0),
+    sent: t.sent + (r.sent || 0), errors: t.errors + (r.error ? 1 : 0) + (r.errors?.length || 0), skipped: t.skipped + (r.skipped ? 1 : 0),
+  }), { add: 0, update: 0, retry: 0, remove: 0, unchanged: 0, bytes: 0, sent: 0, errors: 0, skipped: 0 })
+  const ecTotals = (ragEcs || []).reduce((t, e) => ({ ready: t.ready + e.ready, indexing: t.indexing + e.indexing, failed: t.failed + e.failed, withDocs: t.withDocs + (e.ready || e.indexing || e.failed ? 1 : 0) }),
+                                           { ready: 0, indexing: 0, failed: 0, withDocs: 0 })
 
   const loadEngines = useCallback(async () => {
     try {
@@ -386,6 +457,151 @@ export default function AdminRagPage() {
                   </div>
                 )}
               </>
+            )}
+          </div>
+        </section>
+      )}
+      {/* ── Documents des cours Moodle ── */}
+      {active && (
+        <section style={card}>
+          <div style={cardHead}>
+            <h3 style={{ margin: 0, fontSize: 18.5, fontWeight: 700 }}><i className="fas fa-graduation-cap" style={{ color: ACCENT, marginRight: 8 }} />Documents des cours Moodle</h3>
+            <Button variant="ghost" onClick={loadEcs} disabled={!!docRun}><i className="fas fa-rotate" /> Actualiser</Button>
+          </div>
+          <div style={{ padding: '16px 22px', display: 'grid', gap: 14 }}>
+            <p style={{ margin: 0, fontSize: 14.5, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Chaque EC relié à un cours Moodle a sa base documentaire. Ses documents visibles (PDF, Word, texte, chapitres de livre) y sont indexés.
+              Étapes : <strong>simulation</strong> (rien n&apos;est envoyé) → rapport → <strong>indexation réelle</strong> → <strong>indexation automatique</strong> des documents ajoutés, remplacés ou retirés dans Moodle.
+            </p>
+
+            {ecsError ? (
+              <div style={{ color: '#b91c1c', fontSize: 14.5 }}><i className="fas fa-circle-exclamation" /> {ecsError}</div>
+            ) : !ragEcs ? (
+              <div style={{ color: 'var(--text-muted)' }}><i className="fas fa-spinner fa-spin" /> Lecture des cours Moodle…</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
+                {([
+                  ['Cours Moodle reliés', ragEcs.length, 'var(--text)'],
+                  ['Cours avec documents indexés', ecTotals.withDocs, 'var(--text)'],
+                  ['Documents prêts', ecTotals.ready, '#047857'],
+                  ['En cours d’indexation', ecTotals.indexing, ecTotals.indexing ? '#b45309' : 'var(--text)'],
+                  ['En échec', ecTotals.failed, ecTotals.failed ? '#b91c1c' : 'var(--text)'],
+                ] as [string, number, string][]).map(([label, n, color]) => (
+                  <div key={label} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px' }}>
+                    <div style={{ fontSize: 24, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color }}>{n}</div>
+                    <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Indexation automatique */}
+            <div style={{ border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ display: 'grid', gap: 3 }}>
+                <strong style={{ fontSize: 15.5 }}>
+                  <i className={`fas ${active.auto_index ? 'fa-circle-check' : 'fa-circle-pause'}`} style={{ color: active.auto_index ? '#047857' : 'var(--text-muted)', marginRight: 6 }} />
+                  Indexation automatique {active.auto_index ? 'activée' : 'désactivée'}
+                </strong>
+                <span style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>
+                  {active.auto_index
+                    ? `Le service de synchronisation Moodle relit chaque cours environ toutes les 30 minutes.${active.auto_index_last_at ? ` Dernier changement traité : ${new Date(active.auto_index_last_at).toLocaleString('fr-FR')}.` : ''}`
+                    : active.first_index_at ? 'Prête à être activée.' : 'Disponible après une première indexation réelle (simulation puis indexation).'}
+                </span>
+              </div>
+              <Button variant={active.auto_index ? 'ghost' : 'primary'} onClick={() => toggleAuto(!active.auto_index)}
+                disabled={busy === 'auto' || (!active.auto_index && !active.first_index_at)}>
+                <i className={`fas ${busy === 'auto' ? 'fa-spinner fa-spin' : active.auto_index ? 'fa-pause' : 'fa-play'}`} /> {active.auto_index ? 'Désactiver' : 'Activer'}
+              </Button>
+            </div>
+            {active.auto_index && active.auto_index_report?.changes && active.auto_index_report.changes.length > 0 && (
+              <details><summary style={{ cursor: 'pointer', fontSize: 14.5 }}>Derniers changements traités automatiquement ({active.auto_index_report.changes.length})</summary>
+                <div style={{ fontSize: 13.5, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.8 }}>
+                  {active.auto_index_report.changes.map((c, k) => (
+                    <div key={k}><strong>{c.ec_code}</strong> : {c.sent || 0} envoyé(s), {c.removed || 0} retiré(s){c.errors?.length ? `, ${c.errors.length} erreur(s)` : ''}</div>
+                  ))}
+                </div>
+              </details>
+            )}
+
+            {/* Simulation / indexation */}
+            {ragEcs && ragEcs.length > 0 && (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <input style={{ ...inputStyle, maxWidth: 280 }} placeholder="Filtrer les cours (code ou nom)" value={ecFilter} onChange={e => setEcFilter(e.target.value)} disabled={!!docRun} />
+                <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{ecTargets.length} cours</span>
+                {docRun ? (
+                  <Button variant="danger" onClick={() => { docStop.current = true }}><i className="fas fa-stop" /> Arrêter</Button>
+                ) : (
+                  <>
+                    <Button variant="ghost" onClick={() => runDocs('dry')} disabled={!ecTargets.length}><i className="fas fa-flask" /> Simuler</Button>
+                    {confirmDocApply ? (
+                      <>
+                        <Button onClick={() => runDocs('apply')}><i className="fas fa-check" /> Confirmer l&apos;indexation</Button>
+                        <Button variant="ghost" onClick={() => setConfirmDocApply(false)}>Annuler</Button>
+                      </>
+                    ) : (
+                      <Button onClick={() => setConfirmDocApply(true)} disabled={!ecTargets.length || docMode !== 'dry' || !docResults.length}
+                        title={docMode !== 'dry' ? 'Lancez d’abord une simulation' : undefined}>
+                        <i className="fas fa-cloud-arrow-up" /> Indexer
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+            {confirmDocApply && (
+              <div style={{ fontSize: 14.5, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 14px' }}>
+                {docTotals.add + docTotals.update} document(s) ({fmtMb(docTotals.bytes)}) seront téléchargés depuis Moodle et envoyés au moteur, {docTotals.remove} retiré(s).
+                L&apos;indexation se poursuit ensuite dans RAGFlow, sur processeur : comptez quelques minutes par document.
+              </div>
+            )}
+            {(docRun || docResults.length > 0) && (
+              <div style={{ display: 'grid', gap: 10 }}>
+                {docRun && (
+                  <div style={{ fontSize: 14.5 }}>
+                    <i className="fas fa-spinner fa-spin" style={{ color: ACCENT }} /> {docRun === 'dry' ? 'Simulation' : 'Indexation'} : {docProgress.done} / {docProgress.total}{docProgress.current && ` — ${docProgress.current}`}
+                    <div style={{ height: 6, background: 'var(--border)', borderRadius: 99, marginTop: 6, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${docProgress.total ? (docProgress.done / docProgress.total) * 100 : 0}%`, background: ACCENT, transition: 'width .3s' }} />
+                    </div>
+                  </div>
+                )}
+                <div style={{ fontWeight: 700, fontSize: 15.5 }}>{docMode === 'dry' ? 'Rapport de simulation (rien n’a été envoyé)' : 'Bilan de l’indexation'}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+                  {(docMode === 'dry' ? [
+                    ['Documents à indexer', docTotals.add], ['Documents remplacés dans Moodle', docTotals.update], ['Échecs à relancer', docTotals.retry],
+                    ['Documents à retirer', docTotals.remove], ['Déjà à jour', docTotals.unchanged], ['Cours sans documents ni cours Moodle', docTotals.skipped],
+                  ] : [
+                    ['Documents envoyés', docTotals.sent], ['Documents retirés', docResults.reduce((t, r) => t + (r.removed || 0), 0)],
+                    ['Échecs relancés', docResults.reduce((t, r) => t + (r.retried || 0), 0)], ['Erreurs', docTotals.errors],
+                  ] as [string, number][]).map(([label, n]) => (
+                    <div key={label} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px' }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{n}</div>
+                      <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+                {docMode === 'dry' && docTotals.bytes > 0 && <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>Volume à télécharger depuis Moodle : {fmtMb(docTotals.bytes)}</div>}
+                <details>
+                  <summary style={{ cursor: 'pointer', fontSize: 14.5 }}>Détail par cours ({docResults.length})</summary>
+                  <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+                    {docResults.map(r => (
+                      <div key={r.ec_code} style={{ fontSize: 13.5, borderBottom: '1px solid var(--border)', paddingBottom: 6 }}>
+                        <strong>{r.ec_code}</strong>{' '}
+                        {r.error ? <span style={{ color: '#b91c1c' }}>{r.error}</span>
+                          : r.skipped ? <span style={{ color: 'var(--text-muted)' }}>{r.skipped}</span>
+                          : <span style={{ color: 'var(--text-muted)' }}>
+                              {r.documents} document(s) · {docMode === 'dry'
+                                ? `${r.to_add?.length || 0} à indexer, ${r.to_update?.length || 0} remplacé(s), ${r.to_remove?.length || 0} à retirer, ${r.unchanged || 0} à jour`
+                                : `${r.sent || 0} envoyé(s), ${r.removed || 0} retiré(s)`}
+                            </span>}
+                        {[...(r.to_add || []), ...(r.to_update || [])].length > 0 && docMode === 'dry' && (
+                          <div style={{ color: 'var(--text-muted)', marginTop: 2 }}>{[...(r.to_add || []), ...(r.to_update || [])].join(' · ')}</div>
+                        )}
+                        {(r.errors || []).map((e, k) => <div key={k} style={{ color: '#b91c1c' }}>{e.file} : {e.error}</div>)}
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </div>
             )}
           </div>
         </section>

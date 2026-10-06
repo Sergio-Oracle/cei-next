@@ -16,7 +16,13 @@ export interface MoodleEc {
   formation_id: number | null; formation_code: string | null; formation_name: string | null
   pole_id: number | null; pole_name: string | null; student_level: string | null
 }
-export interface MoodleSelection { ec: MoodleEc | null; files: string[] }
+export interface MoodleSelection {
+  ec: MoodleEc | null; files: string[]
+  /** Moteur RAG : chapitre ou thème à cibler dans les documents indexés (facultatif). */
+  focus?: string
+}
+
+interface RagDoc { fileurl: string; status: 'ready' | 'indexing' | 'failed'; chunks: number; error: string | null }
 
 interface Material {
   fileurl: string; filename: string; title: string; extension: string; filesize: number
@@ -39,6 +45,15 @@ function extIcon(ext: string) {
   return { icon: 'fa-file', color: '#94a3b8' }
 }
 
+function RagBadge({ doc }: { doc?: RagDoc }) {
+  const [label, color, bg, title] = !doc
+    ? ['non indexé', 'var(--text-muted)', 'var(--border)', 'Pas encore dans le moteur RAG : lu en texte brut']
+    : doc.status === 'ready' ? ['indexé', '#0f766e', '#ccfbf1', `${doc.chunks} passages indexés`]
+    : doc.status === 'indexing' ? ['indexation…', '#b45309', '#fef3c7', 'Indexation en cours : lu en texte brut en attendant']
+    : ['échec', '#b91c1c', '#fee2e2', doc.error || 'Indexation impossible : lu en texte brut']
+  return <span title={title} style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 99, color, background: bg, whiteSpace: 'nowrap' }}>{label}</span>
+}
+
 export default function MoodleSourcePicker({ value, onChange, onLoaded }: {
   value: MoodleSelection
   onChange: (v: MoodleSelection) => void
@@ -52,6 +67,8 @@ export default function MoodleSourcePicker({ value, onChange, onLoaded }: {
   const [maxMb, setMaxMb] = useState(50)
   const [matLoading, setMatLoading] = useState(false)
   const [matError, setMatError] = useState('')
+  // Moteur RAG : état d'indexation des documents de ce cours (null = pas de moteur en service)
+  const [rag, setRag] = useState<Record<string, RagDoc> | null>(null)
   // Vrai quand l'enseignant vient de cliquer un cours : on coche alors tous
   // les documents exploitables. Faux lors d'une restauration de brouillon,
   // pour garder sa sélection.
@@ -84,6 +101,15 @@ export default function MoodleSourcePicker({ value, onChange, onLoaded }: {
     return () => { cancelled = true }
   }, [ecId]) // eslint-disable-line
 
+  useEffect(() => {
+    if (!ecId) { setRag(null); return }
+    let cancelled = false
+    api.get<{ active: boolean; documents: RagDoc[] }>(`/api/rag/ecs/${ecId}/documents`)
+      .then(r => { if (!cancelled) setRag(r.active ? Object.fromEntries((r.documents || []).map(d => [d.fileurl, d])) : null) })
+      .catch(() => { if (!cancelled) setRag(null) })
+    return () => { cancelled = true }
+  }, [ecId])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!courses) return []
@@ -93,7 +119,11 @@ export default function MoodleSourcePicker({ value, onChange, onLoaded }: {
   }, [courses, query])
 
   const selectedSet = new Set(value.files)
-  const totalBytes = (materials || []).filter(m => selectedSet.has(m.fileurl)).reduce((s, m) => s + (m.filesize || 0), 0)
+  const isIndexed = (url: string) => rag?.[url]?.status === 'ready'
+  // Les documents indexés ne sont pas téléchargés à la génération : seuls les
+  // autres comptent dans le plafond d'extraction.
+  const totalBytes = (materials || []).filter(m => selectedSet.has(m.fileurl) && !isIndexed(m.fileurl)).reduce((s, m) => s + (m.filesize || 0), 0)
+  const indexedSelected = value.files.filter(isIndexed).length
   const overLimit = totalBytes > maxMb * 1024 * 1024
   const supportedCount = (materials || []).filter(m => m.supported).length
 
@@ -196,6 +226,14 @@ export default function MoodleSourcePicker({ value, onChange, onLoaded }: {
                   style={{ background: 'none', border: 'none', color: ACCENT, fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: 14.5 }}>Tout décocher</button>
               </span>
             </div>
+            {rag && (
+              <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.55, background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 10, padding: '10px 12px' }}>
+                <i className="fas fa-book-open-reader" style={{ color: '#0d9488', marginRight: 6 }} />
+                {indexedSelected > 0
+                  ? <><strong style={{ color: '#0f766e' }}>{indexedSelected} document(s) indexé(s)</strong> : l&apos;IA reçoit des passages répartis sur tout leur contenu (et non seulement leur début), numérotés et cités comme sources.</>
+                  : <>Aucun document coché n&apos;est encore indexé : ils seront lus en texte brut, comme avant.</>}
+              </div>
+            )}
             <div style={{ maxHeight: 380, overflowY: 'auto', display: 'grid', gap: 4, border: '1px solid var(--border)', borderRadius: 10, padding: 6 }}>
               {materials.map((m, i) => {
                 const prevModule = i > 0 ? materials[i - 1].module : null
@@ -211,12 +249,21 @@ export default function MoodleSourcePicker({ value, onChange, onLoaded }: {
                       <input type="checkbox" checked={checked} disabled={!m.supported} onChange={() => toggle(m.fileurl)} />
                       <i className={`fas ${icon}`} style={{ color, width: 16, textAlign: 'center' }} />
                       <span style={{ flex: 1, fontSize: 15, color: 'var(--text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title}</span>
+                      {m.supported && rag && <RagBadge doc={rag[m.fileurl]} />}
                       <span style={{ fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{m.supported ? fmtSize(m.filesize) : 'non pris en charge'}</span>
                     </label>
                   </div>
                 )
               })}
             </div>
+            {indexedSelected > 0 && (
+              <label style={{ display: 'grid', gap: 5, fontSize: 14.5, fontWeight: 600 }}>
+                Chapitre ou thème à cibler (facultatif)
+                <input className="form-control" value={value.focus || ''} maxLength={300}
+                  placeholder="Ex : le contrôle de constitutionnalité — laissez vide pour couvrir tout le cours"
+                  onChange={e => onChange({ ...value, focus: e.target.value })} />
+              </label>
+            )}
           </>
         )}
       </div>

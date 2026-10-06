@@ -7,6 +7,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { useSuggestionFlow } from '@/hooks/useSuggestionFlow'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import MoodleSourcePicker, { MoodleSelection } from '@/components/shared/MoodleSourcePicker'
+import RagSourcesList from '@/components/shared/RagSourcesList'
 
 /* ── Types ─────────────────────────────────────────────────────── */
 interface EC {
@@ -368,7 +369,7 @@ export default function ProfessorSuggestionsPage() {
       if (!moodleSel.files.length) { toastErr('Cochez au moins un document du cours'); return }
       setEcId(String(moodleSel.ec.ec_id))
       await generate({ courseFiles: [], difficulty, studentLevel: effectiveLevel, examType: '', qTypes, duration,
-                       moodleEcId: moodleSel.ec.ec_id, moodleFiles: moodleSel.files })
+                       moodleEcId: moodleSel.ec.ec_id, moodleFiles: moodleSel.files, ragFocus: moodleSel.focus })
       return
     }
     if (!courseFiles.length) { toastErr('Sélectionnez au moins un fichier de cours'); return }
@@ -1632,6 +1633,8 @@ export default function ProfessorSuggestionsPage() {
                     </div>
 
                     <p style={{ margin:'0 0 16px', color:'var(--text-muted)', fontSize:17, lineHeight:1.7 }}>{s.description}</p>
+
+                    {result.rag_sources?.length ? <RagSourcesList ids={s.sources} all={result.rag_sources} /> : null}
 
                     {s.key_points?.length > 0 && (
                       <div style={{ background:'var(--background)', borderRadius:10, padding:'12px 16px', marginBottom:12 }}>

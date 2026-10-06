@@ -19,7 +19,12 @@ export interface Suggestion {
   detected_domain?: string
   student_level?: string
   question_types?: string
+  /** Moteur RAG : passages cités ([S1]…) et leur texte, transmis à la génération du sujet complet. */
+  sources?: string[]
+  rag_passages?: { id: string; filename: string; module: string | null; content: string }[]
 }
+
+export interface RagSource { id: string; filename: string; module: string | null; excerpt: string }
 
 export interface SuggestionResult {
   success: boolean
@@ -30,6 +35,7 @@ export interface SuggestionResult {
   course_filename: string
   from_cache?: boolean
   moodle_skipped?: { filename: string; error: string }[]
+  rag_sources?: RagSource[]
 }
 
 export interface QTypes { qcm: boolean; open: boolean; vf: boolean }
@@ -45,6 +51,8 @@ interface GeneratePayload {
   // (re-vérifiées côté serveur, jamais téléchargées par le navigateur).
   moodleEcId?: number
   moodleFiles?: string[]
+  /** Thème à cibler dans les documents indexés (moteur RAG). */
+  ragFocus?: string
 }
 
 export interface UseSuggestionFlowReturn {
@@ -70,7 +78,7 @@ export function useSuggestionFlow(): UseSuggestionFlowReturn {
     setGenerating(false); setGenElapsed(0); setResult(null); setError('')
   }
 
-  async function generate({ courseFiles, difficulty, studentLevel, examType, qTypes, duration, moodleEcId, moodleFiles }: GeneratePayload) {
+  async function generate({ courseFiles, difficulty, studentLevel, examType, qTypes, duration, moodleEcId, moodleFiles, ragFocus }: GeneratePayload) {
     reset()
     setGenerating(true)
     setGenElapsed(0)
@@ -89,6 +97,7 @@ export function useSuggestionFlow(): UseSuggestionFlowReturn {
       if (moodleEcId && moodleFiles?.length) {
         fd.append('moodle_ec_id', String(moodleEcId))
         moodleFiles.forEach(u => fd.append('moodle_files', u))
+        if (ragFocus?.trim()) fd.append('rag_focus', ragFocus.trim())
       }
       fd.append('difficulty', difficulty)
       fd.append('student_level', studentLevel)
