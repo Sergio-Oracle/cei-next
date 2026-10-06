@@ -380,12 +380,16 @@ body.pwa-banner-visible .app-header {
 .sidebar {
     width: 300px;
     min-width: 300px;
-    min-height: calc(100vh - 65px);
+    /* Hauteur bornée à la fenêtre : le menu défile seul (son propre
+       ascenseur) au lieu de suivre la page. */
+    height: calc(100vh - 65px);
     background: white;
     border-right: 1px solid var(--border);
     position: sticky;
     top: 65px;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
     overflow-x: hidden;
     transition: width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1);
     flex-shrink: 0;
@@ -516,6 +520,11 @@ body.pwa-banner-visible .app-header {
 .sidebar.collapsed .nav-divider { display: none; }
 
 /* Indicateur de défilement (gradient en bas de la sidebar) */
+.sidebar::-webkit-scrollbar { width: 8px; }
+.sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.sidebar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+
 .sidebar-scroll-fade {
     position: sticky;
     bottom: 0;
@@ -1668,7 +1677,8 @@ tbody tr:last-child td {
     color: #f1f5f9;
 }
 
-.theme-dark .sidebar           { background: #1e293b; border-right-color: #334155; }
+.theme-dark .sidebar           { background: #1e293b; border-right-color: #334155; scrollbar-color: #475569 transparent; }
+.theme-dark .sidebar::-webkit-scrollbar-thumb { background: #475569; }
 .theme-dark .sidebar-collapse-btn { background: #1e293b; border-color: #334155; }
 .theme-dark .nav-tabs          { background: #1e293b; }
 .theme-dark .nav-tab           { background: transparent; color: #cbd5e1; }
