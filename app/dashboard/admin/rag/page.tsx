@@ -90,7 +90,7 @@ function DatasetDetails({ engineId, datasetId }: { engineId: number; datasetId: 
                 <strong style={{ fontSize: 14.5, flex: 1, minWidth: 180, wordBreak: 'break-word' }}>{d.name}</strong>
                 <span style={{ fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                   {[d.size ? fmtMb(d.size) : null, d.chunks ? `${d.chunks} fragment${d.chunks > 1 ? 's' : ''}` : null,
-                    d.duration ? `indexé en ${fmtDuration(d.duration)}` : null].filter(Boolean).join(' · ')}
+                    d.duration ? `terminé en ${fmtDuration(d.duration)}, attente comprise` : null].filter(Boolean).join(' · ')}
                 </span>
               </div>
               <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
@@ -118,7 +118,7 @@ interface EcReport {
   sent?: number; removed?: number; retried?: number; errors?: { file: string; error: string }[]
 }
 
-function fmtMb(b: number) { return b < 1024 * 1024 ? `${Math.max(0, Math.round(b / 1024))} Ko` : `${(b / 1024 / 1024).toFixed(1)} Mo` }
+function fmtMb(b: number) { return b < 1024 * 1024 ? `${b > 0 ? Math.max(1, Math.round(b / 1024)) : 0} Ko` : `${(b / 1024 / 1024).toFixed(1)} Mo` }
 
 const COMPONENT_LABELS: Record<string, string> = {
   db: 'Base de données', doc_engine: 'Moteur documentaire', redis: 'File de tâches (Redis)', storage: 'Stockage des fichiers',
