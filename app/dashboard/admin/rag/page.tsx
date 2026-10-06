@@ -1,0 +1,395 @@
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+import api from '@/lib/api'
+import { useToast } from '@/contexts/ToastContext'
+
+/* Page Administration → Moteur RAG. Relie CEI à un serveur RAGFlow de façon
+   graphique : adresse + clé API (chiffrée côté serveur), test de connexion,
+   modèles, état de l'indexation, ré-indexation. Un seul moteur en service :
+   changer de serveur = ajouter le nouveau puis le mettre en service, l'ancien
+   reste actif tant que le nouveau n'est pas prêt. */
+
+const ACCENT = '#3b82f6'
+const DANGER = '#ef4444'
+
+interface Diagnosis {
+  ok: boolean; problems?: string[]
+  components?: Record<string, string>
+  models?: { name: string; provider: string; types: string[] }[]
+  default_models?: { type: string; name: string; provider: string }[]
+  datasets?: number; documents?: number; chunks?: number
+}
+interface Engine {
+  id: number; name: string; base_url: string; key_hint: string; is_active: boolean
+  last_check_at: string | null; last_check_ok: boolean | null; last_check: Diagnosis | null
+}
+interface DatasetStatus {
+  id: string; name: string; documents: number; chunks: number; embedding_model: string
+  running: number; failed: number; failed_docs: { id: string; name: string; error: string }[]
+}
+
+const COMPONENT_LABELS: Record<string, string> = {
+  db: 'Base de données', doc_engine: 'Moteur documentaire', redis: 'File de tâches (Redis)', storage: 'Stockage des fichiers',
+}
+const TYPE_LABELS: Record<string, string> = {
+  embedding: 'Embedding', chat: 'Conversation', rerank: 'Reclassement', image2text: 'Vision', speech2text: 'Audio', tts: 'Synthèse vocale', ocr: 'OCR',
+}
+
+const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 15.5, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box' }
+const card: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }
+const cardHead: React.CSSProperties = { padding: '16px 22px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }
+
+function Button({ children, onClick, disabled, variant = 'primary', title }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; variant?: 'primary' | 'ghost' | 'danger'; title?: string }) {
+  const styles: Record<string, React.CSSProperties> = {
+    primary: { background: ACCENT, color: 'white', border: 'none' },
+    ghost:   { background: 'transparent', color: 'var(--text)', border: '1.5px solid var(--border)' },
+    danger:  { background: 'transparent', color: DANGER, border: `1.5px solid ${DANGER}` },
+  }
+  return (
+    <button type="button" title={title} onClick={onClick} disabled={disabled}
+      style={{ ...styles[variant], padding: '8px 16px', borderRadius: 9, fontSize: 15, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? .55 : 1, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+      {children}
+    </button>
+  )
+}
+
+function StatusPill({ e }: { e: Engine }) {
+  let label = 'Non testé', color = 'var(--text-muted)', bg = 'var(--border)'
+  if (e.is_active) { label = 'En service'; color = '#047857'; bg = '#d1fae5' }
+  else if (e.last_check_ok === true) { label = 'Prêt'; color = '#1d4ed8'; bg = '#dbeafe' }
+  else if (e.last_check_ok === false) { label = 'À régler'; color = '#b91c1c'; bg = '#fee2e2' }
+  return <span style={{ fontSize: 13, fontWeight: 700, padding: '3px 10px', borderRadius: 99, color, background: bg, whiteSpace: 'nowrap' }}>{label}</span>
+}
+
+function DiagnosisBox({ d }: { d: Diagnosis }) {
+  const embedding = (d.default_models || []).find(m => m.type === 'embedding')
+  return (
+    <div style={{ fontSize: 14.5, display: 'grid', gap: 8, padding: '12px 14px', borderRadius: 10, background: d.ok ? '#eff6ff' : '#fef2f2', border: `1px solid ${d.ok ? '#bfdbfe' : '#fecaca'}` }}>
+      {d.ok && <div style={{ color: '#1d4ed8', fontWeight: 600 }}><i className="fas fa-check-circle" style={{ marginRight: 6 }} />Moteur prêt pour CEI</div>}
+      {(d.problems || []).map((p, i) => <div key={i} style={{ color: '#b91c1c' }}><i className="fas fa-circle-exclamation" style={{ marginRight: 6 }} />{p}</div>)}
+      {d.components && Object.keys(d.components).length > 0 && (
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+          {Object.entries(d.components).map(([k, v]) => (
+            <span key={k} style={{ color: v === 'ok' ? '#047857' : '#b91c1c' }}>
+              <i className={`fas ${v === 'ok' ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ marginRight: 5 }} />{COMPONENT_LABELS[k] || k}
+            </span>
+          ))}
+        </div>
+      )}
+      {d.models && (
+        <div style={{ color: 'var(--text-muted)' }}>
+          Embedding par défaut : <strong style={{ color: 'var(--text)' }}>{embedding ? `${embedding.name} (${embedding.provider})` : 'aucun'}</strong>
+          {d.models.length > 0 && <> · {d.models.length} modèle{d.models.length > 1 ? 's' : ''} disponible{d.models.length > 1 ? 's' : ''} : {d.models.map(m => `${m.name} [${m.types.map(t => TYPE_LABELS[t] || t).join(', ')}]`).join(' · ')}</>}
+        </div>
+      )}
+      {d.datasets !== undefined && (
+        <div style={{ color: 'var(--text-muted)' }}>
+          {d.datasets} base{d.datasets > 1 ? 's' : ''} documentaire{d.datasets > 1 ? 's' : ''} · {d.documents} document{(d.documents || 0) > 1 ? 's' : ''} · {d.chunks} fragment{(d.chunks || 0) > 1 ? 's' : ''} indexé{(d.chunks || 0) > 1 ? 's' : ''}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const emptyForm = { name: '', base_url: '', api_key: '' }
+
+export default function AdminRagPage() {
+  const { success, error } = useToast()
+  const [engines, setEngines] = useState<Engine[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const [formOpen, setFormOpen] = useState(false)
+  const [editId, setEditId] = useState<number | null>(null)
+  const [form, setForm] = useState(emptyForm)
+  const [saving, setSaving] = useState(false)
+  const [formDiagnosis, setFormDiagnosis] = useState<Diagnosis | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)   // `${action}-${id}`
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
+  const [confirmDeactivate, setConfirmDeactivate] = useState<number | null>(null)
+  const [confirmReindexAll, setConfirmReindexAll] = useState(false)
+
+  const [status, setStatus] = useState<DatasetStatus[] | null>(null)
+  const [statusLoading, setStatusLoading] = useState(false)
+  const [statusError, setStatusError] = useState<string | null>(null)
+
+  const active = engines.find(e => e.is_active) || null
+
+  const loadEngines = useCallback(async () => {
+    try {
+      const res = await api.get<{ engines: Engine[] }>('/api/admin/rag/engines')
+      setEngines(res.engines || [])
+    } catch (e: any) { error(e.message || 'Chargement des moteurs impossible') }
+    finally { setLoading(false) }
+  }, []) // eslint-disable-line
+
+  const loadStatus = useCallback(async (id: number) => {
+    setStatusLoading(true); setStatusError(null)
+    try { setStatus((await api.get<{ datasets: DatasetStatus[] }>(`/api/admin/rag/engines/${id}/status`)).datasets || []) }
+    catch (e: any) { setStatus(null); setStatusError(e.message || 'État indisponible') }
+    finally { setStatusLoading(false) }
+  }, [])
+
+  useEffect(() => { loadEngines() }, [loadEngines])
+  useEffect(() => { if (active) loadStatus(active.id); else setStatus(null) }, [active?.id, loadStatus]) // eslint-disable-line
+
+  function openAdd() { setEditId(null); setForm(emptyForm); setFormDiagnosis(null); setFormOpen(true) }
+  function openEdit(e: Engine) { setEditId(e.id); setForm({ name: e.name, base_url: e.base_url, api_key: '' }); setFormDiagnosis(null); setFormOpen(true) }
+
+  async function saveEngine() {
+    if (!form.name.trim() || !form.base_url.trim() || (!editId && !form.api_key.trim())) {
+      error(editId ? 'Nom et adresse requis' : 'Nom, adresse et clé API requis'); return
+    }
+    setSaving(true); setFormDiagnosis(null)
+    const body: any = { name: form.name.trim(), base_url: form.base_url.trim() }
+    if (form.api_key.trim()) body.api_key = form.api_key.trim()
+    try {
+      const res = editId
+        ? await api.put<{ engine: Engine; diagnosis: Diagnosis | null }>(`/api/admin/rag/engines/${editId}`, body)
+        : await api.post<{ engine: Engine; diagnosis: Diagnosis }>('/api/admin/rag/engines', body)
+      if (res.diagnosis) setFormDiagnosis(res.diagnosis)
+      if (!res.diagnosis || res.diagnosis.ok) setFormOpen(false)
+      success(editId ? 'Moteur modifié' : res.engine.is_active ? 'Moteur ajouté et mis en service' : 'Moteur ajouté')
+      await loadEngines()
+    } catch (e: any) { error(e.message || 'Enregistrement impossible') }
+    finally { setSaving(false) }
+  }
+
+  async function act(action: 'test' | 'activate' | 'deactivate', e: Engine) {
+    setBusy(`${action}-${e.id}`); setConfirmDeactivate(null)
+    try {
+      const res = await api.post<{ diagnosis?: Diagnosis }>(`/api/admin/rag/engines/${e.id}/${action}`)
+      if (action === 'test') res.diagnosis?.ok ? success('Moteur prêt') : error('Le moteur a des problèmes, voir le détail')
+      if (action === 'activate') success(`« ${e.name} » est maintenant en service`)
+      if (action === 'deactivate') success('Moteur retiré du service : CEI n’utilise plus de RAG')
+      await loadEngines()
+    } catch (err: any) { error(err.message || 'Action impossible'); await loadEngines() }
+    finally { setBusy(null) }
+  }
+
+  async function deleteEngine(id: number) {
+    try {
+      await api.delete(`/api/admin/rag/engines/${id}`)
+      success('Moteur supprimé'); setConfirmDelete(null)
+      await loadEngines()
+    } catch (e: any) { error(e.message || 'Suppression impossible') }
+  }
+
+  async function reindex(scope: 'failed' | 'all') {
+    if (!active) return
+    setConfirmReindexAll(false); setBusy(`reindex-${scope}`)
+    try {
+      const r = await api.post<{ documents: number; datasets: number }>(`/api/admin/rag/engines/${active.id}/reindex`, { scope })
+      r.documents ? success(`Indexation relancée : ${r.documents} document(s) dans ${r.datasets} base(s)`) : success('Aucun document à ré-indexer')
+      await loadStatus(active.id)
+    } catch (e: any) { error(e.message || 'Ré-indexation impossible') }
+    finally { setBusy(null) }
+  }
+
+  const totals = (status || []).reduce((t, d) => ({ documents: t.documents + d.documents, chunks: t.chunks + d.chunks, running: t.running + d.running, failed: t.failed + d.failed }),
+                                        { documents: 0, chunks: 0, running: 0, failed: 0 })
+
+  return (
+    <div style={{ display: 'grid', gap: 22 }}>
+      <div>
+        <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <i className="fas fa-book-open-reader" style={{ color: 'var(--primary)' }} /> Moteur RAG
+        </h2>
+        <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: 16.5 }}>
+          Serveur RAGFlow qui indexe les documents de cours pour ancrer la génération des sujets dans la matière réellement enseignée.
+        </p>
+      </div>
+
+      {/* ── État global ── */}
+      {!loading && (
+        <div style={{ ...card, padding: '14px 22px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                      borderColor: active ? '#a7f3d0' : 'var(--border)', background: active ? '#ecfdf5' : 'var(--surface)' }}>
+          <i className={`fas ${active ? 'fa-circle-check' : 'fa-circle-pause'}`} style={{ fontSize: 22, color: active ? '#047857' : 'var(--text-muted)' }} />
+          <div style={{ display: 'grid', gap: 2 }}>
+            <strong style={{ color: active ? '#065f46' : 'var(--text)' }}>{active ? `RAG activé : « ${active.name} » en service` : 'RAG désactivé'}</strong>
+            <span style={{ fontSize: 14, color: active ? '#047857' : 'var(--text-muted)' }}>
+              {active ? 'CEI utilise ce moteur pour retrouver les passages de cours.' : 'Aucun moteur en service : la génération des sujets fonctionne sans RAG. Ajoutez un moteur ou mettez-en un en service.'}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Moteurs ── */}
+      <section style={card}>
+        <div style={cardHead}>
+          <h3 style={{ margin: 0, fontSize: 18.5, fontWeight: 700 }}><i className="fas fa-server" style={{ color: ACCENT, marginRight: 8 }} />Moteurs</h3>
+          {!formOpen && <Button onClick={openAdd}><i className="fas fa-plus" /> Ajouter un moteur</Button>}
+        </div>
+        <div style={{ padding: '16px 22px', display: 'grid', gap: 14 }}>
+          {formOpen && (
+            <div style={{ border: '1.5px solid var(--border)', borderRadius: 12, padding: 16, display: 'grid', gap: 12 }}>
+              <div style={{ fontWeight: 700 }}>{editId ? 'Modifier le moteur' : 'Nouveau moteur'}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+                <label style={{ display: 'grid', gap: 5, fontSize: 14.5, fontWeight: 600 }}>Nom
+                  <input id="rag-name" style={inputStyle} value={form.name} placeholder="Ex : RAGFlow préproduction" onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+                </label>
+                <label style={{ display: 'grid', gap: 5, fontSize: 14.5, fontWeight: 600 }}>Adresse de l&apos;API
+                  <input id="rag-url" style={inputStyle} value={form.base_url} placeholder="http://127.0.0.1:19380" onChange={e => setForm(f => ({ ...f, base_url: e.target.value }))} />
+                </label>
+                <label style={{ display: 'grid', gap: 5, fontSize: 14.5, fontWeight: 600 }}>Clé API RAGFlow
+                  <input id="rag-key" type="password" autoComplete="off" style={inputStyle} value={form.api_key}
+                    placeholder={editId ? 'Laisser vide pour garder la clé actuelle' : 'ragflow-…'}
+                    onChange={e => setForm(f => ({ ...f, api_key: e.target.value }))} />
+                </label>
+              </div>
+              <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>
+                La connexion est vérifiée avant l&apos;enregistrement. La clé est chiffrée et ne sera plus jamais affichée.
+                {!editId && !active && ' Le premier moteur prêt est mis en service automatiquement.'}
+              </div>
+              {formDiagnosis && <DiagnosisBox d={formDiagnosis} />}
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <Button onClick={saveEngine} disabled={saving}>
+                  <i className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-check'}`} /> {saving ? 'Vérification…' : 'Vérifier et enregistrer'}
+                </Button>
+                <Button variant="ghost" onClick={() => { setFormOpen(false); setFormDiagnosis(null) }}>{formDiagnosis && !formDiagnosis.ok ? 'Fermer' : 'Annuler'}</Button>
+              </div>
+            </div>
+          )}
+
+          {loading ? (
+            <div style={{ color: 'var(--text-muted)' }}><i className="fas fa-spinner fa-spin" /> Chargement…</div>
+          ) : engines.length === 0 ? (
+            <div style={{ color: 'var(--text-muted)' }}>Aucun moteur. Ajoutez le serveur RAGFlow avec son adresse et une clé API créée dans RAGFlow.</div>
+          ) : engines.map(e => (
+            <div key={e.id} style={{ border: `1px solid ${e.is_active ? '#a7f3d0' : 'var(--border)'}`, borderRadius: 12, padding: '14px 16px', display: 'grid', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                <div style={{ display: 'grid', gap: 3, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <strong style={{ fontSize: 16.5 }}>{e.name}</strong><StatusPill e={e} />
+                  </div>
+                  <div style={{ fontSize: 14, color: 'var(--text-muted)', wordBreak: 'break-all' }}>{e.base_url} · clé {e.key_hint}</div>
+                  {e.last_check_at && <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Dernier test : {new Date(e.last_check_at).toLocaleString('fr-FR')}</div>}
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <Button variant="ghost" onClick={() => act('test', e)} disabled={busy === `test-${e.id}`}>
+                    <i className={`fas ${busy === `test-${e.id}` ? 'fa-spinner fa-spin' : 'fa-stethoscope'}`} /> Tester
+                  </Button>
+                  <Button variant="ghost" onClick={() => openEdit(e)}><i className="fas fa-pen" /> Modifier</Button>
+                  {e.is_active ? (
+                    confirmDeactivate === e.id ? (
+                      <>
+                        <Button variant="danger" onClick={() => act('deactivate', e)} disabled={busy === `deactivate-${e.id}`}><i className="fas fa-power-off" /> Confirmer : désactiver le RAG</Button>
+                        <Button variant="ghost" onClick={() => setConfirmDeactivate(null)}>Annuler</Button>
+                      </>
+                    ) : (
+                      <Button variant="ghost" onClick={() => setConfirmDeactivate(e.id)}><i className="fas fa-power-off" /> Retirer du service</Button>
+                    )
+                  ) : (
+                    <Button onClick={() => act('activate', e)} disabled={busy === `activate-${e.id}`}
+                      title={active ? `Remplace « ${active.name} », qui reste en service si celui-ci n'est pas prêt` : undefined}>
+                      <i className={`fas ${busy === `activate-${e.id}` ? 'fa-spinner fa-spin' : 'fa-play'}`} /> {active ? 'Basculer sur ce moteur' : 'Mettre en service'}
+                    </Button>
+                  )}
+                  {!e.is_active && (confirmDelete === e.id ? (
+                    <>
+                      <Button variant="danger" onClick={() => deleteEngine(e.id)}><i className="fas fa-trash" /> Confirmer la suppression</Button>
+                      <Button variant="ghost" onClick={() => setConfirmDelete(null)}>Annuler</Button>
+                    </>
+                  ) : (
+                    <Button variant="danger" onClick={() => setConfirmDelete(e.id)} title="Supprimer"><i className="fas fa-trash" /></Button>
+                  ))}
+                </div>
+              </div>
+              {e.last_check && <DiagnosisBox d={e.last_check} />}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Indexation ── */}
+      {active && (
+        <section style={card}>
+          <div style={cardHead}>
+            <h3 style={{ margin: 0, fontSize: 18.5, fontWeight: 700 }}><i className="fas fa-layer-group" style={{ color: ACCENT, marginRight: 8 }} />Indexation des documents</h3>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Button variant="ghost" onClick={() => loadStatus(active.id)} disabled={statusLoading}><i className={`fas ${statusLoading ? 'fa-spinner fa-spin' : 'fa-rotate'}`} /> Actualiser</Button>
+              <Button variant="ghost" onClick={() => reindex('failed')} disabled={!!busy}
+                title="Documents en échec, annulés ou jamais indexés">
+                <i className={`fas ${busy === 'reindex-failed' ? 'fa-spinner fa-spin' : 'fa-wrench'}`} /> Relancer les échecs
+              </Button>
+              {confirmReindexAll ? (
+                <>
+                  <Button variant="danger" onClick={() => reindex('all')} disabled={!!busy}><i className="fas fa-arrows-rotate" /> Confirmer : tout ré-indexer</Button>
+                  <Button variant="ghost" onClick={() => setConfirmReindexAll(false)}>Annuler</Button>
+                </>
+              ) : (
+                <Button variant="ghost" onClick={() => setConfirmReindexAll(true)} disabled={!!busy}><i className="fas fa-arrows-rotate" /> Tout ré-indexer</Button>
+              )}
+            </div>
+          </div>
+          <div style={{ padding: '16px 22px', display: 'grid', gap: 12 }}>
+            {confirmReindexAll && (
+              <div style={{ fontSize: 14.5, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 14px' }}>
+                Tout ré-indexer recalcule chaque fragment de chaque document : plusieurs heures pour un gros volume, pendant lesquelles les documents concernés ne sont pas interrogeables. À réserver à un changement de modèle d&apos;embedding.
+              </div>
+            )}
+            {statusError ? (
+              <div style={{ color: '#b91c1c', fontSize: 14.5 }}><i className="fas fa-circle-exclamation" /> {statusError}</div>
+            ) : !status ? (
+              <div style={{ color: 'var(--text-muted)' }}><i className="fas fa-spinner fa-spin" /> Lecture de l&apos;état…</div>
+            ) : (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
+                  {([
+                    ['Bases documentaires', status.length, 'var(--text)'],
+                    ['Documents', totals.documents, 'var(--text)'],
+                    ['Fragments indexés', totals.chunks, 'var(--text)'],
+                    ['En cours d’indexation', totals.running, totals.running ? '#b45309' : 'var(--text)'],
+                    ['En échec', totals.failed, totals.failed ? '#b91c1c' : 'var(--text)'],
+                  ] as [string, number, string][]).map(([label, n, color]) => (
+                    <div key={label} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px' }}>
+                      <div style={{ fontSize: 24, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color }}>{n}</div>
+                      <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+                {status.length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: 14.5 }}>Aucune base documentaire pour l&apos;instant : elles seront créées par EC lors de l&apos;indexation des documents de cours.</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14.5 }}>
+                      <thead>
+                        <tr style={{ textAlign: 'left', color: 'var(--text-muted)' }}>
+                          {['Base documentaire', 'Documents', 'Fragments', 'En cours', 'En échec', 'Modèle d’embedding'].map(h => (
+                            <th key={h} style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {status.map(d => (
+                          <tr key={d.id}>
+                            <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', fontWeight: 600 }}>
+                              {d.name}
+                              {d.failed_docs.length > 0 && (
+                                <details style={{ fontWeight: 400, marginTop: 4 }}>
+                                  <summary style={{ cursor: 'pointer', color: '#b91c1c', fontSize: 13.5 }}>Voir les échecs</summary>
+                                  {d.failed_docs.map(f => (
+                                    <div key={f.id} style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}><strong>{f.name}</strong> : {f.error || 'erreur inconnue'}</div>
+                                  ))}
+                                </details>
+                              )}
+                            </td>
+                            <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', fontVariantNumeric: 'tabular-nums' }}>{d.documents}</td>
+                            <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', fontVariantNumeric: 'tabular-nums' }}>{d.chunks}</td>
+                            <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', color: d.running ? '#b45309' : undefined }}>{d.running}</td>
+                            <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', color: d.failed ? '#b91c1c' : undefined }}>{d.failed}</td>
+                            <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 13.5 }}>{(d.embedding_model || '').split('@')[0]}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </section>
+      )}
+    </div>
+  )
+}

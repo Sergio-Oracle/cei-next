@@ -39,6 +39,7 @@ const adminNav: NavEntry[] = [
   { label: 'Réclamations',        href: '/dashboard/admin/reclamations',   icon: 'fa-exclamation-triangle' },
   { divider: 'Administration' },
   { label: 'Moodle',              href: '/dashboard/admin/moodle',         icon: 'fa-graduation-cap' },
+  { label: 'Moteur RAG',          href: '/dashboard/admin/rag',            icon: 'fa-book-open-reader' },
   { label: 'Banque questions',    href: '/dashboard/admin/questions',      icon: 'fa-database' },
   { label: 'Analytique',          href: '/dashboard/admin/analytics',      icon: 'fa-chart-bar' },
   { label: 'Sécurité',            href: '/dashboard/admin/security',       icon: 'fa-shield-alt' },
