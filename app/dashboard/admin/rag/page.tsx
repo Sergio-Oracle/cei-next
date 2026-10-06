@@ -318,7 +318,7 @@ export default function AdminRagPage() {
                   <li>Ouvrez l&apos;interface web de RAGFlow dans le navigateur et connectez-vous (compte du service, pas un compte personnel : CEI travaille dans l&apos;espace de ce compte).</li>
                   <li>Cliquez sur l&apos;avatar en haut à droite, puis sur <strong>API</strong> dans le menu de gauche.</li>
                   <li>Cliquez sur <strong>Clé API</strong> puis <strong>Créer une nouvelle clé</strong>, et copiez la clé (elle commence par <code>ragflow-</code>).</li>
-                  <li><strong>Adresse de l&apos;API</strong> : l&apos;adresse affichée sur cette même page (« Serveur API »). Si RAGFlow tourne sur le même serveur que CEI, préférez <code>http://127.0.0.1:&lt;port&gt;</code> : rien ne passe par le réseau. Sinon, l&apos;adresse web de RAGFlow (ex. <code>https://preprod-cei.unchk.sn:8443</code>).</li>
+                  <li><strong>Adresse de l&apos;API</strong> : l&apos;adresse affichée sur cette même page (« Serveur API »). Si RAGFlow tourne sur le même serveur que CEI, préférez <code>http://127.0.0.1:&lt;port&gt;</code> : rien ne passe par le réseau. Sinon, l&apos;adresse web de RAGFlow, de préférence son propre nom de domaine sans numéro de port (ex. <code>https://serveur-rag.unchk.sn</code>).</li>
                   <li>Collez les deux ici puis « Vérifier et enregistrer ». Pour changer de serveur : ajoutez le nouveau moteur, puis « Basculer sur ce moteur ».</li>
                 </ol>
                 <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>Ne collez jamais la clé dans un message ou une capture d&apos;écran : en cas de fuite, supprimez-la dans RAGFlow et créez-en une autre.</div>
