@@ -50,7 +50,9 @@ function InstanceRoles({ inst, onSaved }: { inst: RolesInstance; onSaved: () => 
   const [map, setMap] = useState<RoleMap>(inst.role_map_configured && inst.role_map ? inst.role_map : PROPOSED)
   const [sim, setSim] = useState<{ map: RoleMap; current: Impact; proposed: Impact } | null>(null)
   const [busy, setBusy] = useState<null | 'sim' | 'save'>(null)
-  const simulatedThis = sim && JSON.stringify(sim.map) === JSON.stringify(map)
+  // Comparaison champ par champ : le serveur renvoie les clés dans un autre ordre.
+  const simulatedThis = !!sim && sim.map.editingteacher === map.editingteacher && sim.map.teacher === map.teacher
+    && !!sim.map.no_editor_fallback === !!map.no_editor_fallback
 
   async function simulate() {
     setBusy('sim')
