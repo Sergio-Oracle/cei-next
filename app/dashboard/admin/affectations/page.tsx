@@ -5,7 +5,7 @@ import api from '@/lib/api'
 import { fetchUsersByRole } from '@/lib/fetchUsersByRole'
 import { useToast } from '@/contexts/ToastContext'
 
-interface ECAssignmentRef { id: number; professor_id: number }
+interface ECAssignmentRef { id: number; professor_id: number; kind?: 'responsable' | 'tuteur'; source?: string | null }
 interface EC {
   id: number
   code: string
@@ -75,6 +75,18 @@ export default function AdminAffectationsPage() {
       load()
     } catch (e: any) { error(e.message || 'Erreur affectation') }
     finally { setAssigning(null) }
+  }
+
+  // Type d'affectation : responsable (crée sujets et examens, publie) ou
+  // tuteur (voit et corrige). Fixé ici, il ne suit plus Moodle.
+  async function toggleKind(a: ECAssignmentRef) {
+    if (!a.id || a.id < 0) return
+    const kind = (a.kind || 'responsable') === 'tuteur' ? 'responsable' : 'tuteur'
+    try {
+      await api.put(`/api/admin/ec_assignments/${a.id}`, { kind })
+      success(kind === 'tuteur' ? 'Passé tuteur : ne crée plus ni sujet ni examen sur cet EC' : 'Passé responsable de cet EC')
+      load()
+    } catch (e: any) { error(e.message || 'Modification impossible') }
   }
 
   async function unassign(assignmentId: number) {
@@ -206,7 +218,7 @@ export default function AdminAffectationsPage() {
               </thead>
               <tbody>
                 {ecs.map(ec => {
-                  const assignments = ec.assignments?.length
+                  const assignments: ECAssignmentRef[] = ec.assignments?.length
                     ? ec.assignments
                     : (ec.assigned_professors ?? []).map(pid => ({ id: -1, professor_id: pid }))
 
@@ -242,8 +254,13 @@ export default function AdminAffectationsPage() {
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
                             {assignments.map(a => (
-                              <span key={a.id} className="status-badge success" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                <i className="fas fa-circle-check" /> {profName(a.professor_id) ?? `#${a.professor_id}`}
+                              <span key={a.id} className={`status-badge ${(a.kind || 'responsable') === 'tuteur' ? 'secondary' : 'success'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                <i className={`fas ${(a.kind || 'responsable') === 'tuteur' ? 'fa-user-graduate' : 'fa-circle-check'}`} /> {profName(a.professor_id) ?? `#${a.professor_id}`}
+                                <button onClick={() => toggleKind(a)} disabled={a.id < 0}
+                                  title={`${(a.kind || 'responsable') === 'tuteur' ? 'Tuteur : voit et corrige, ne crée ni sujet ni examen' : 'Responsable : crée sujets et examens, publie'}${a.source === 'moodle' ? ' — rôle venu de Moodle' : ''}. Cliquer pour changer (le rôle ne suivra plus Moodle).`}
+                                  style={{ background: 'rgba(255,255,255,.6)', border: '1px solid currentColor', borderRadius: 99, cursor: 'pointer', color: 'inherit', padding: '0 7px', fontSize: 12, fontWeight: 700, lineHeight: 1.6 }}>
+                                  {(a.kind || 'responsable') === 'tuteur' ? 'tuteur' : 'responsable'}
+                                </button>
                                 <button onClick={() => unassign(a.id)} disabled={unassigning === a.id}
                                   title="Retirer ce professeur de cet EC"
                                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', opacity: .7, padding: 0, marginLeft: 2, lineHeight: 1 }}>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import LtiPanel from './LtiPanel'
+import RolesPanel, { RoleMap } from './RolesPanel'
 
 /* Page Administration → Moodle (phase 2 de la feuille de route CEI–UNCHK).
    Plateformes Moodle ajoutées sans code, correspondance cours ↔ EC, et
@@ -22,6 +23,7 @@ interface Instance {
   lti_template_course?: string | null; webhook_configured?: boolean; webhook_last_at?: string | null
   auto_sync_enabled?: boolean; auto_sync_last_at?: string | null; auto_sync_last_full_at?: string | null
   auto_sync_last_report?: { at: string; kind: string; detail: any } | null
+  role_map?: RoleMap; role_map_configured?: boolean
 }
 
 interface Pole { id: number; code: string; name: string }
@@ -36,7 +38,8 @@ interface Mapping {
 interface CourseResult {
   ec_code: string; ue_code?: string | null; instance?: string; error?: string
   teachers?: { moodle: number; created: number; upgraded: number; assignments_added: number; other_role: { email: string; role: string }[]
-               created_emails: string[]; upgraded_emails: string[]; assignments_removed?: number; removed_emails?: string[] }
+               created_emails: string[]; upgraded_emails: string[]; assignments_removed?: number; removed_emails?: string[]
+               responsables?: number; tuteurs?: number; ignored?: number; no_editor_fallback?: boolean; kind_changed?: number; kind_changed_emails?: string[] }
   students?: { moodle: number; created: number; enrollments_added: number; already_enrolled: number; formation_filled: number; other_role: number
                without_formation: Record<string, string[]>; formations_created: string[]; created_emails: string[]; enrolled_emails: string[]; formation_filled_emails: string[]
                names_updated?: number; formation_changed?: number; formation_changed_emails?: string[]; enrollments_removed?: number; removed_emails?: string[]; removal_suspended?: string | null }
@@ -46,6 +49,7 @@ interface StructureReport {
   instance_id: number; instance: string; error?: string
   formations?: string[]; formations_renamed?: string[]; semesters?: string[]; ues?: string[]; ecs?: string[]
   ue_links?: number; skipped?: { code: string; reason: string }[]
+  off_schema?: { code: string; rule: string; where: string; ue: string | null; formation: string }[]
 }
 
 interface CalendarReport {
@@ -267,7 +271,7 @@ export default function AdminMoodlePage() {
     const tCreated = new Set<string>(), tUpgraded = new Set<string>(), sCreated = new Set<string>()
     const sEnroll = new Set<string>(), sFormation = new Set<string>()
     const otherTeachers = new Map<string, string>(), noFormation: Record<string, Set<string>> = {}, formationsCreated = new Set<string>()
-    let tAssign = 0, otherStudents = 0, errors = 0, tRemoved = 0, names = 0
+    let tAssign = 0, otherStudents = 0, errors = 0, tRemoved = 0, names = 0, kindChanged = 0
     const sRemoved = new Set<string>(), fChanged = new Set<string>(), suspended: string[] = []
     for (const r of results) {
       if (r.error) { errors++; continue }
@@ -280,6 +284,7 @@ export default function AdminMoodlePage() {
       r.students?.formation_filled_emails?.forEach(e => sFormation.add(e))
       r.students?.formations_created?.forEach(c => formationsCreated.add(c))
       tRemoved += r.teachers?.assignments_removed || 0
+      kindChanged += r.teachers?.kind_changed || 0
       names += r.students?.names_updated || 0
       r.students?.removed_emails?.forEach(e => sRemoved.add(`${r.ue_code}|${e}`))
       r.students?.formation_changed_emails?.forEach(e => fChanged.add(e))
@@ -289,7 +294,7 @@ export default function AdminMoodlePage() {
         noFormation[d] = noFormation[d] || new Set(); emails.forEach(e => noFormation[d].add(e))
       }
     }
-    return { tRemoved, names, sRemoved: sRemoved.size, fChanged: fChanged.size, suspended, tCreated: tCreated.size, tUpgraded: tUpgraded.size, tAssign, sCreated: sCreated.size, sEnroll: sEnroll.size,
+    return { kindChanged, tRemoved, names, sRemoved: sRemoved.size, fChanged: fChanged.size, suspended, tCreated: tCreated.size, tUpgraded: tUpgraded.size, tAssign, sCreated: sCreated.size, sEnroll: sEnroll.size,
              sFormation: sFormation.size, otherStudents, errors, otherTeachers, formationsCreated: [...formationsCreated].sort(),
              noFormation: Object.fromEntries(Object.entries(noFormation).map(([d, s]) => [d, s.size])) as Record<string, number> }
   })()
@@ -306,6 +311,7 @@ export default function AdminMoodlePage() {
     [isDry ? 'Noms à mettre à jour' : 'Noms mis à jour', totals.names],
     [isDry ? 'Inscriptions UE à retirer' : 'Inscriptions UE retirées', totals.sRemoved],
     [isDry ? 'Affectations EC à retirer' : 'Affectations EC retirées', totals.tRemoved],
+    [isDry ? 'Rôles à changer (responsable ↔ tuteur)' : 'Rôles changés (responsable ↔ tuteur)', totals.kindChanged],
   ]
 
   /* ── Rendu ── */
@@ -458,6 +464,9 @@ export default function AdminMoodlePage() {
             </section>
           )}
 
+          {/* ── Correspondance des rôles (avant toute synchronisation) ── */}
+          <RolesPanel instances={instances} onChanged={loadInstances} />
+
           {/* ── Maquette depuis Moodle ── */}
           {mapping && (
             <section style={card}>
@@ -472,6 +481,7 @@ export default function AdminMoodlePage() {
               <div style={{ padding: '16px 22px', display: 'grid', gap: 14 }}>
                 <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14.5, color: 'var(--text-muted)', display: 'grid', gap: 4 }}>
                   <li>Les catégories Moodle (Formation › Licence › Semestre › UE) servent à créer les formations, semestres, UE et EC qui manquent dans CEI. À faire avant la synchronisation.</li>
+                  <li>Les cours rangés autrement sont créés aussi : sans niveau (« Hors niveau » si le nom n&apos;indique ni Licence ni Master), sans semestre (« Hors semestre », une UE par sous-catégorie), ou dans une catégorie seule comme TEST (une UE et un EC au nom du cours). Vous pouvez ensuite les déplacer ou les désactiver dans la Maquette.</li>
                   <li>Moodle ne connaît ni crédits, ni coefficients, ni CC/EX : les éléments créés sont marqués « à confirmer » dans la Maquette, et les relevés de notes restent bloqués pour eux jusqu&apos;à l&apos;import de la maquette Excel officielle, qui les complète.</li>
                   <li>Rien n&apos;est supprimé. Les examens, sujets et suggestions fonctionnent dès la création.</li>
                 </ul>
@@ -517,6 +527,17 @@ export default function AdminMoodlePage() {
                             <div style={{ color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.8 }}>{list!.join(' · ')}</div>
                           </details>
                         ))}
+                        {r.off_schema && r.off_schema.length > 0 && (
+                          <details><summary style={{ cursor: 'pointer' }}>Cours rangés hors du schéma habituel ({r.off_schema.length})</summary>
+                            <div style={{ display: 'grid', gap: 4, marginTop: 6 }}>
+                              {r.off_schema.map(x => (
+                                <div key={x.code} style={{ color: 'var(--text-muted)' }}>
+                                  <strong style={{ color: 'var(--text)' }}>{x.code}</strong> — {x.where} → formation {x.formation}, UE {x.ue} <em>({x.rule})</em>
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        )}
                         {r.skipped && r.skipped.length > 0 && (
                           <details><summary style={{ cursor: 'pointer' }}>Cours laissés de côté ({r.skipped.length})</summary>
                             <div style={{ color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.8 }}>{r.skipped.map(x => `${x.code} : ${x.reason}`).join(' · ')}</div>

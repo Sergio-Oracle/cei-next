@@ -15,6 +15,8 @@ export interface MoodleEc {
   instance: string; moodle_course_id: number; moodle_course_name: string
   formation_id: number | null; formation_code: string | null; formation_name: string | null
   pole_id: number | null; pole_name: string | null; student_level: string | null
+  /** Rôle de l'enseignant sur cet EC : un tuteur ne crée ni sujet ni examen. */
+  kind?: 'responsable' | 'tuteur'
 }
 export interface MoodleSelection {
   ec: MoodleEc | null; files: string[]
@@ -176,13 +178,16 @@ export default function MoodleSourcePicker({ value, onChange, onLoaded }: {
               <div style={{ maxHeight: 360, overflowY: 'auto', display: 'grid', gap: 6, paddingRight: 2 }}>
                 {filtered.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 15 }}>Aucun cours ne correspond à « {query} ».</div>}
                 {filtered.map(c => (
-                  <button key={c.ec_id} type="button" onClick={() => pick(c)}
-                    style={{ textAlign: 'left', padding: '10px 14px', borderRadius: 9, border: '1.5px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', display: 'grid', gap: 3 }}>
+                  <button key={c.ec_id} type="button" onClick={() => c.kind !== 'tuteur' && pick(c)} disabled={c.kind === 'tuteur'}
+                    title={c.kind === 'tuteur' ? 'Vous êtes tuteur de cet EC : la création de sujets est réservée à l’enseignant responsable.' : undefined}
+                    style={{ textAlign: 'left', padding: '10px 14px', borderRadius: 9, border: '1.5px solid var(--border)', background: 'var(--surface)', cursor: c.kind === 'tuteur' ? 'not-allowed' : 'pointer', opacity: c.kind === 'tuteur' ? .6 : 1, display: 'grid', gap: 3 }}>
                     <span style={{ fontSize: 15.5, color: 'var(--text)' }}>
                       <strong style={{ fontFamily: 'monospace' }}>{c.ec_code}</strong> — {c.ec_name}
+                      {c.kind === 'tuteur' && <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 99, color: '#475569', background: '#e2e8f0' }}>tuteur</span>}
                     </span>
                     <span style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>
-                      {[c.formation_code, c.student_level, c.instance].filter(Boolean).join(' · ')}
+                      {c.kind === 'tuteur' ? 'Tuteur : la création de sujets est réservée à l’enseignant responsable'
+                        : [c.formation_code, c.student_level, c.instance].filter(Boolean).join(' · ')}
                     </span>
                   </button>
                 ))}
