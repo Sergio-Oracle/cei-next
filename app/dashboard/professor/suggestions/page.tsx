@@ -8,6 +8,7 @@ import { useSuggestionFlow } from '@/hooks/useSuggestionFlow'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import MoodleSourcePicker, { MoodleSelection } from '@/components/shared/MoodleSourcePicker'
 import RagSourcesList from '@/components/shared/RagSourcesList'
+import RagGroundingBanner, { Grounding } from '@/components/shared/RagGroundingBanner'
 
 /* ── Types ─────────────────────────────────────────────────────── */
 interface EC {
@@ -116,6 +117,7 @@ export default function ProfessorSuggestionsPage() {
   const [previewTitle,   setPreviewTitle]   = useState('')
   const [previewContent, setPreviewContent] = useState('')
   const [previewRubric,  setPreviewRubric]  = useState('')
+  const [previewGrounding, setPreviewGrounding] = useState<Grounding | null>(null)
   const [savingSubject,  setSavingSubject]  = useState(false)
   const [createdSubject, setCreatedSubject] = useState<CreatedSubject | null>(null)
 
@@ -410,12 +412,13 @@ export default function ProfessorSuggestionsPage() {
         total_points: totalPoints,
         points_by_type: pointsByType,
       }
-      const data = await api.post<{ success: boolean; title: string; content: string; rubric: string; duplicates?: { similarity: number }[] }>(
+      const data = await api.post<{ success: boolean; title: string; content: string; rubric: string; duplicates?: { similarity: number }[]; grounding?: Grounding | null }>(
         '/api/subjects/generate-full-exam', { suggestion: suggestionWithTypes }
       )
       setPreviewTitle(data.title || s.title)
       setPreviewContent(data.content || '')
       setPreviewRubric(data.rubric || '')
+      setPreviewGrounding(data.grounding ?? null)
       setBankSaveEc(ecId)
       setElimSet(new Set())
       setStep('preview')
@@ -704,6 +707,7 @@ export default function ProfessorSuggestionsPage() {
             <i className="fas fa-robot" style={{ marginRight:4 }} />IA — Modifiable
           </span>
         </div>
+        <RagGroundingBanner g={previewGrounding} />
 
         <div style={{ background:'var(--surface)', borderRadius:12, border:'1px solid var(--border)', overflow:'hidden', boxShadow:'var(--shadow-sm)', marginBottom:14 }}>
           <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, background:'var(--background)' }}>
