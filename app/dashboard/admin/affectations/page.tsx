@@ -77,18 +77,6 @@ export default function AdminAffectationsPage() {
     finally { setAssigning(null) }
   }
 
-  // Type d'affectation : responsable (crée sujets et examens, publie) ou
-  // tuteur (voit et corrige). Fixé ici, il ne suit plus Moodle.
-  async function toggleKind(a: ECAssignmentRef) {
-    if (!a.id || a.id < 0) return
-    const kind = (a.kind || 'responsable') === 'tuteur' ? 'responsable' : 'tuteur'
-    try {
-      await api.put(`/api/admin/ec_assignments/${a.id}`, { kind })
-      success(kind === 'tuteur' ? 'Passé tuteur : ne crée plus ni sujet ni examen sur cet EC' : 'Passé responsable de cet EC')
-      load()
-    } catch (e: any) { error(e.message || 'Modification impossible') }
-  }
-
   async function unassign(assignmentId: number) {
     if (!assignmentId || assignmentId < 0) { error('Affectation introuvable — actualisez la page'); return }
     setUnassigning(assignmentId)
@@ -256,11 +244,12 @@ export default function AdminAffectationsPage() {
                             {assignments.map(a => (
                               <span key={a.id} className={`status-badge ${(a.kind || 'responsable') === 'tuteur' ? 'secondary' : 'success'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                 <i className={`fas ${(a.kind || 'responsable') === 'tuteur' ? 'fa-user-graduate' : 'fa-circle-check'}`} /> {profName(a.professor_id) ?? `#${a.professor_id}`}
-                                <button onClick={() => toggleKind(a)} disabled={a.id < 0}
-                                  title={`${(a.kind || 'responsable') === 'tuteur' ? 'Tuteur : voit et corrige, ne crée ni sujet ni examen' : 'Responsable : crée sujets et examens, publie'}${a.source === 'moodle' ? ' — rôle venu de Moodle' : ''}. Cliquer pour changer (le rôle ne suivra plus Moodle).`}
-                                  style={{ background: 'rgba(255,255,255,.6)', border: '1px solid currentColor', borderRadius: 99, cursor: 'pointer', color: 'inherit', padding: '0 7px', fontSize: 12, fontWeight: 700, lineHeight: 1.6 }}>
+                                <span title={(a.kind || 'responsable') === 'tuteur'
+                                    ? 'Tuteur (non éditeur dans Moodle) : voit et corrige, ne crée ni sujet ni examen'
+                                    : 'Responsable : crée sujets et examens, publie les résultats'}
+                                  style={{ border: '1px solid currentColor', borderRadius: 99, padding: '0 7px', fontSize: 12, fontWeight: 700, lineHeight: 1.6, opacity: .85 }}>
                                   {(a.kind || 'responsable') === 'tuteur' ? 'tuteur' : 'responsable'}
-                                </button>
+                                </span>
                                 <button onClick={() => unassign(a.id)} disabled={unassigning === a.id}
                                   title="Retirer ce professeur de cet EC"
                                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', opacity: .7, padding: 0, marginLeft: 2, lineHeight: 1 }}>
