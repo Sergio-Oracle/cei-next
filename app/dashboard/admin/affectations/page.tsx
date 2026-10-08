@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import api from '@/lib/api'
-import { fetchUsersByRole } from '@/lib/fetchUsersByRole'
 import { useToast } from '@/contexts/ToastContext'
 
 interface ECAssignmentRef { id: number; professor_id: number; kind?: 'responsable' | 'tuteur'; source?: string | null }
@@ -55,13 +54,10 @@ export default function AdminAffectationsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [ecsRes, profList] = await Promise.all([
-        api.get<any>('/api/ecs'),
-        fetchUsersByRole('professor'),
-      ])
-      const ecList: EC[] = Array.isArray(ecsRes) ? ecsRes : ecsRes.ecs ?? []
-      setEcs(ecList)
-      setProfessors(profList)
+      // Un seul appel léger : EC, affectations et noms des professeurs.
+      const res = await api.get<{ ecs: EC[]; professors: Professor[] }>('/api/admin/ec_assignments/overview')
+      setEcs(res.ecs || [])
+      setProfessors(res.professors || [])
     } catch { error('Erreur chargement') }
     finally { setLoading(false) }
   }, []) // eslint-disable-line
