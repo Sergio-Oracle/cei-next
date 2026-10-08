@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import api from '@/lib/api'
 import { fetchUsersByRole } from '@/lib/fetchUsersByRole'
 import { useToast } from '@/contexts/ToastContext'
@@ -44,6 +44,13 @@ export default function AdminAffectationsPage() {
   const [multiModal, setMultiModal] = useState<MultiModal | null>(null)
   const [multiSelected, setMultiSelected] = useState<Set<number>>(new Set())
   const [multiBusy, setMultiBusy] = useState(false)
+  // Performance : la liste des ~250 professeurs n'est construite que pour la
+  // ligne en cours d'affectation (avant : 178 listes, ~44 000 options), et la
+  // table affiche 25 EC à la fois, avec recherche.
+  const [activeRow, setActiveRow] = useState<number | null>(null)
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 25
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -61,8 +68,24 @@ export default function AdminAffectationsPage() {
 
   useEffect(() => { load() }, [load])
 
+  const profById = useMemo(() => new Map(professors.map(p => [p.id, p])), [professors])
   const profName = (id?: number | null) =>
-    id ? (professors.find(p => p.id === id)?.full_name ?? null) : null
+    id ? (profById.get(id)?.full_name ?? null) : null
+  const profOptions = useMemo(() => professors.map(p => (
+    <option key={p.id} value={p.id}>{p.full_name}{p.is_active === false ? ' (inactif)' : ''}</option>
+  )), [professors])
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return ecs
+    return ecs.filter(ec => {
+      const names = (ec.assignments?.map(a => a.professor_id) ?? ec.assigned_professors ?? []).map(id => profById.get(id)?.full_name ?? '')
+      return [ec.code, ec.name, ec.ue_code, ...names].some(v => (v || '').toLowerCase().includes(q))
+    })
+  }, [ecs, query, profById])
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const currentPage = Math.min(page, pageCount)
+  const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   async function assign(ecId: number) {
     const profId = selections[ecId]
@@ -179,8 +202,13 @@ export default function AdminAffectationsPage() {
           <i className="fas fa-list" style={{ color: 'var(--text-muted)', fontSize: 17 }} />
           <h3 style={{ margin: 0 }}>Liste des ECs</h3>
           <span className="status-badge secondary" style={{ marginLeft: 4, fontSize:13, padding: '2px 9px' }}>
-            {ecs.length}
+            {filtered.length !== ecs.length ? `${filtered.length} / ${ecs.length}` : ecs.length}
           </span>
+          <div style={{ marginLeft: 'auto', position: 'relative', minWidth: 260 }}>
+            <i className="fas fa-magnifying-glass" style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 14 }} />
+            <input className="form-control" value={query} placeholder="Rechercher : code, intitulé, UE, professeur"
+              onChange={e => { setQuery(e.target.value); setPage(1) }} style={{ paddingLeft: 32, fontSize: 15 }} />
+          </div>
         </div>
 
         {loading ? (
@@ -205,7 +233,7 @@ export default function AdminAffectationsPage() {
                 </tr>
               </thead>
               <tbody>
-                {ecs.map(ec => {
+                {visible.map(ec => {
                   const assignments: ECAssignmentRef[] = ec.assignments?.length
                     ? ec.assignments
                     : (ec.assigned_professors ?? []).map(pid => ({ id: -1, professor_id: pid }))
@@ -264,16 +292,21 @@ export default function AdminAffectationsPage() {
                       {/* Nouvelle affectation */}
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <select
-                            value={selections[ec.id] ?? ''}
-                            onChange={e => setSelections(prev => ({ ...prev, [ec.id]: e.target.value }))}
-                            className="form-control"
-                            style={{ fontSize:15.5, padding: '7px 10px', minWidth: 200, maxWidth: 240 }}>
-                            <option value="">— Sélectionner un professeur —</option>
-                            {professors.map(p => (
-                              <option key={p.id} value={p.id}>{p.full_name}{p.is_active === false ? ' (inactif)' : ''}</option>
-                            ))}
-                          </select>
+                          {activeRow === ec.id ? (
+                            <select autoFocus
+                              value={selections[ec.id] ?? ''}
+                              onChange={e => setSelections(prev => ({ ...prev, [ec.id]: e.target.value }))}
+                              className="form-control"
+                              style={{ fontSize:15.5, padding: '7px 10px', minWidth: 200, maxWidth: 240 }}>
+                              <option value="">— Sélectionner un professeur —</option>
+                              {profOptions}
+                            </select>
+                          ) : (
+                            <button type="button" className="form-control" onClick={() => setActiveRow(ec.id)}
+                              style={{ fontSize:15.5, padding: '7px 10px', minWidth: 200, maxWidth: 240, textAlign: 'left', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                              — Sélectionner un professeur — <i className="fas fa-chevron-down" style={{ float: 'right', marginTop: 4, fontSize: 12 }} />
+                            </button>
+                          )}
 
                           <button
                             className="btn btn-sm btn-primary"
@@ -297,6 +330,26 @@ export default function AdminAffectationsPage() {
                 })}
               </tbody>
             </table>
+            {filtered.length === 0 && (
+              <div className="empty-message" style={{ padding: '32px 20px' }}>Aucun EC ne correspond à « {query} ».</div>
+            )}
+            {pageCount > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '14px 10px', flexWrap: 'wrap' }}>
+                <button className="btn btn-sm btn-secondary" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}><i className="fas fa-chevron-left" /></button>
+                {Array.from({ length: pageCount }, (_, i) => i + 1)
+                  .filter(n => n === 1 || n === pageCount || Math.abs(n - currentPage) <= 2)
+                  .map((n, i, arr) => (
+                    <span key={n} style={{ display: 'inline-flex', gap: 6 }}>
+                      {i > 0 && n - arr[i - 1] > 1 && <span style={{ color: 'var(--text-muted)', alignSelf: 'center' }}>…</span>}
+                      <button className={`btn btn-sm ${n === currentPage ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setPage(n)} style={{ minWidth: 36 }}>{n}</button>
+                    </span>
+                  ))}
+                <button className="btn btn-sm btn-secondary" disabled={currentPage === pageCount} onClick={() => setPage(currentPage + 1)}><i className="fas fa-chevron-right" /></button>
+                <span style={{ fontSize: 14, color: 'var(--text-muted)', marginLeft: 8 }}>
+                  {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} sur {filtered.length}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
