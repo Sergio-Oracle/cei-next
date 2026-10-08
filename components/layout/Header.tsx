@@ -93,12 +93,8 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
     api.get<{ unread_count?: number }>('/api/notifications')
       .then(res => setUnreadCount(res.unread_count ?? 0))
       .catch(() => {})
-    api.get<any>('/api/auth/me')
-      .then(res => {
-        const u = res.user ?? res
-        setProfileExtra({ is_active: u.is_active, last_login: u.last_login })
-      })
-      .catch(() => {})
+    // Statut et dernière connexion : déjà dans le profil (plus d'appel /api/auth/me en double).
+    setProfileExtra({ is_active: (user as any).is_active, last_login: (user as any).last_login })
   }, [user])
 
   // Long-polling Redis : incrémente le badge dès qu'un événement arrive.

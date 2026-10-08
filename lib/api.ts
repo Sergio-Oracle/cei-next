@@ -52,6 +52,9 @@ function isNetworkError(err: unknown): boolean {
 
 // ── Refresh token ─────────────────────────────────────────────────────────────
 let _refreshing: Promise<string | null> | null = null
+// Profil renvoyé par /api/auth/refresh avec le jeton : évite un appel
+// /api/auth/me séparé au chargement de chaque page.
+let _refreshUser: any = null
 
 async function tryRefresh(): Promise<string | null> {
   if (_refreshing) return _refreshing
@@ -72,6 +75,7 @@ async function tryRefresh(): Promise<string | null> {
         const json = await res.json()
         const token = json.access_token
         if (token) setToken(token, json.expires_in)
+        if (json.user) _refreshUser = json.user
         return token ?? null
       } catch {
         if (attempt === 0) { await sleep(800); continue }
@@ -108,7 +112,13 @@ async function _request<T = any>(
     throw Object.assign(new Error('Pas de connexion internet. Vérifiez votre réseau.'), { offline: true })
   }
 
-  const token = getToken()
+  // Pas encore de jeton mais une restauration de session en cours (chargement
+  // de page) : on l'attend, au lieu de partir sans jeton, d'essuyer un 401 et
+  // de recommencer — un aller-retour réseau de moins pour chaque page.
+  let token = getToken()
+  if (!token && _refreshing && path !== '/api/auth/refresh' && path !== '/api/auth/login') {
+    token = await _refreshing
+  }
   const headers: Record<string, string> = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
   if (!opts.formData && data && !(data instanceof FormData)) {
@@ -223,6 +233,8 @@ export const api = {
   setToken,
   tokenExpiringSoon,
   refresh: tryRefresh,
+  /** Profil reçu avec le dernier jeton (null si l'API ne l'a pas renvoyé). */
+  refreshUser: () => _refreshUser,
 }
 
 export default api
