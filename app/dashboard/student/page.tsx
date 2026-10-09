@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import api from '@/lib/api'
+import api, { serverNow } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import type { StudentPaper, OnlineExam } from '@/types'
@@ -99,7 +99,7 @@ export default function StudentDashboard() {
       if (rExams.status === 'fulfilled') {
         const v = rExams.value
         const list: OnlineExam[] = Array.isArray(v) ? v : (v as any).exams ?? []
-        const now = Date.now()
+        const now = serverNow()   // heure du serveur, pas de l'appareil
         // Garder uniquement les examens réellement accessibles : statut Actif
         // (le professeur a cliqué "Activer") ET dans la fenêtre horaire. Un
         // examen "Planifié" dont l'heure est arrivée mais pas encore activé

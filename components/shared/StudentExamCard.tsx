@@ -1,5 +1,7 @@
 'use client'
 
+import { serverNow } from '@/lib/api'
+
 import Link from 'next/link'
 import type { OnlineExam } from '@/types'
 
@@ -30,7 +32,7 @@ function SecChip({ icon, label, color, bg }: { icon: string; label: string; colo
 }
 
 export default function ExamCard({ exam }: { exam: OnlineExam }) {
-  const now = new Date()
+  const now = new Date(serverNow())   // heure du serveur, pas de l'appareil
   const start = new Date(exam.start_time)
   const end   = new Date(exam.end_time)
 
