@@ -168,9 +168,51 @@ export default function SurveillantDashboard() {
                   )}
                 </div>
 
-                {/* Tableau étudiants */}
-                {exam.my_students && exam.my_students.length > 0 ? (
-                  <div style={{ overflowX: 'auto' }}>
+                {/* Tableau étudiants (paginé) */}
+                <StudentsTable students={exam.my_students || []} />
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const PAGE_SIZE = 20
+
+function StudentsTable({ students }: { students: StudentInfo[] }) {
+  const [page, setPage] = useState(1)
+  const [q, setQ] = useState('')
+  const needle = q.trim().toLowerCase()
+  const filtered = needle
+    ? students.filter(s => (s.student_name || '').toLowerCase().includes(needle) || (s.student_email || '').toLowerCase().includes(needle))
+    : students
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const cur = Math.min(page, pages)
+  const pageItems = filtered.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE)
+
+  if (students.length === 0) {
+    return (
+      <div style={{ padding: '16px 24px', color: 'var(--text-muted)', fontSize:17 }}>
+        <i className="fas fa-info-circle" style={{ marginRight: 8 }} />
+        Aucun étudiant affecté pour cet examen.
+      </div>
+    )
+  }
+  const btn = (disabled: boolean): React.CSSProperties => ({
+    padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)',
+    color: 'var(--text)', fontSize: 14.5, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.45 : 1,
+  })
+  return (
+    <div>
+      {students.length > PAGE_SIZE && (
+        <div style={{ padding: '10px 24px' }}>
+          <input value={q} onChange={e => { setQ(e.target.value); setPage(1) }} placeholder="Rechercher un étudiant (nom ou e-mail)…"
+            style={{ width: '100%', maxWidth: 360, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 15 }} />
+        </div>
+      )}
+      <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ background: '#f8fafc' }}>
@@ -180,7 +222,7 @@ export default function SurveillantDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {exam.my_students.map(student => {
+                      {pageItems.map(student => {
                         const st = attemptLabel(student.status)
                         return (
                           <tr key={student.student_id} style={{ borderTop: '1px solid var(--border)' }}>
@@ -214,16 +256,24 @@ export default function SurveillantDashboard() {
                       })}
                     </tbody>
                   </table>
-                  </div>
-                ) : (
-                  <div style={{ padding: '16px 24px', color: 'var(--text-muted)', fontSize:17 }}>
-                    <i className="fas fa-info-circle" style={{ marginRight: 8 }} />
-                    Aucun étudiant affecté pour cet examen.
-                  </div>
-                )}
-              </div>
-            )
-          })}
+      </div>
+      {filtered.length === 0 && (
+        <div style={{ padding: '16px 24px', color: 'var(--text-muted)', fontSize: 15 }}>Aucun étudiant ne correspond à « {q} ».</div>
+      )}
+      {filtered.length > PAGE_SIZE && (
+        <div style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, borderTop: '1px solid var(--border)' }}>
+          <span style={{ fontSize: 14.5, color: 'var(--text-muted)' }}>
+            {(cur - 1) * PAGE_SIZE + 1}–{Math.min(cur * PAGE_SIZE, filtered.length)} sur {filtered.length}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button style={btn(cur <= 1)} disabled={cur <= 1} onClick={() => setPage(cur - 1)}>
+              <i className="fas fa-chevron-left" /> Précédent
+            </button>
+            <span style={{ fontSize: 14.5, color: 'var(--text)' }}>Page {cur} / {pages}</span>
+            <button style={btn(cur >= pages)} disabled={cur >= pages} onClick={() => setPage(cur + 1)}>
+              Suivant <i className="fas fa-chevron-right" />
+            </button>
+          </div>
         </div>
       )}
     </div>
