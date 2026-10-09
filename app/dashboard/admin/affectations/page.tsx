@@ -166,29 +166,29 @@ export default function AdminAffectationsPage() {
       <div className="page-header">
         <div>
           <h2>
-            <i className="fas fa-link" style={{ marginRight: 10, color: 'var(--primary)' }} />
+            <i className="fas fa-link" style={{ marginRight: 10, color: 'var(--text-muted)' }} />
             Affectations EC aux Professeurs
           </h2>
           <p>Assignez les Éléments Constitutifs aux professeurs responsables</p>
         </div>
-        <button className="btn btn-secondary" onClick={load}>
+        <button className="btn btn-secondary" onClick={load} style={{ background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)' }}>
           <i className="fas fa-rotate" /> Actualiser
         </button>
       </div>
 
       {/* ── Stats ──────────────────────────────────────────────────────────── */}
       <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 24 }}>
-        <div className="stat-card" style={{ borderColor: '#3b82f6' }}>
+        <div className="stat-card">
           <div className="stat-label">
-            <i className="fas fa-layer-group" style={{ color: '#3b82f6' }} /> ECs au total
+            <i className="fas fa-layer-group" style={{ color: 'var(--text-muted)' }} /> ECs au total
           </div>
-          <div className="stat-value" style={{ color: '#3b82f6' }}>{ecs.length}</div>
+          <div className="stat-value">{ecs.length}</div>
         </div>
-        <div className="stat-card" style={{ borderColor: '#10b981' }}>
+        <div className="stat-card">
           <div className="stat-label">
-            <i className="fas fa-circle-check" style={{ color: '#10b981' }} /> ECs assignés
+            <i className="fas fa-circle-check" style={{ color: 'var(--text-muted)' }} /> ECs assignés
           </div>
-          <div className="stat-value" style={{ color: '#10b981' }}>{assignedCount}</div>
+          <div className="stat-value">{assignedCount}</div>
         </div>
       </div>
 
@@ -238,7 +238,7 @@ export default function AdminAffectationsPage() {
                     <tr key={ec.id}>
                       {/* Code EC */}
                       <td>
-                        <span style={{ display: 'inline-block', background: '#dbeafe', color: '#1d4ed8', padding: '3px 10px', borderRadius: 6, fontSize:14.5, fontWeight: 700 }}>
+                        <span style={{ display: 'inline-block', background: 'var(--background)', color: 'var(--text)', border: '1px solid var(--border)', padding: '3px 10px', borderRadius: 6, fontSize:14.5, fontWeight: 700 }}>
                           {ec.code}
                         </span>
                       </td>
@@ -310,7 +310,7 @@ export default function AdminAffectationsPage() {
                             className="btn btn-sm btn-secondary btn-icon-sm"
                             onClick={() => openMulti(ec)}
                             title="Affecter plusieurs professeurs"
-                            style={{ background: '#eff6ff', color: '#2563eb', borderColor: '#bfdbfe' }}>
+                            style={{ background: 'var(--surface)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
                             <i className="fas fa-users" />
                           </button>
                         </div>
@@ -354,7 +354,7 @@ export default function AdminAffectationsPage() {
             {/* Header modal */}
             <div className="card-header">
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <i className="fas fa-users" style={{ color: 'var(--primary)' }} />
+                <i className="fas fa-users" style={{ color: 'var(--text-muted)' }} />
                 Affecter des professeurs
               </h3>
               <p style={{ margin: '4px 0 0', fontSize:15.5, color: 'var(--text-muted)', fontWeight: 400 }}>
@@ -367,7 +367,7 @@ export default function AdminAffectationsPage() {
               {professors.length === 0 ? (
                 <p className="empty-message">Aucun professeur disponible</p>
               ) : professors.every(p => multiModal.assignedIds.includes(p.id)) ? (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, fontSize:15.5, color: '#92400e' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 10, fontSize:15.5, color: 'var(--text-muted)' }}>
                   <i className="fas fa-circle-info" style={{ marginTop: 2 }} />
                   <span>Tous les professeurs disponibles sont déjà affectés à cet EC. Créez d'abord un nouveau compte professeur pour pouvoir en affecter un supplémentaire.</span>
                 </div>
@@ -379,19 +379,19 @@ export default function AdminAffectationsPage() {
                   <label key={p.id} style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '10px 14px', borderRadius: 10, cursor: isAssigned ? 'default' : 'pointer',
-                    background: isAssigned ? '#f0fdf4' : 'var(--background)',
-                    border: `1.5px solid ${isAssigned ? '#bbf7d0' : 'var(--border)'}`,
+                    background: 'var(--background)',
+                    border: '1px solid var(--border)',
                     userSelect: 'none', transition: 'border-color .15s',
                   }}>
                     <input type="checkbox" checked={isChecked} disabled={isAssigned}
                       onChange={() => !isAssigned && toggleMulti(p.id)}
-                      style={{ width: 16, height: 16, accentColor: '#3b82f6', flexShrink: 0, cursor: isAssigned ? 'default' : 'pointer' }} />
+                      style={{ width: 16, height: 16, accentColor: 'var(--primary)', flexShrink: 0, cursor: isAssigned ? 'default' : 'pointer' }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: isAssigned ? 700 : 500, fontSize:17, color: isAssigned ? '#15803d' : 'var(--text)' }}>
+                      <div style={{ fontWeight: isAssigned ? 700 : 500, fontSize:17, color: 'var(--text)' }}>
                         {p.full_name}
                         {p.is_active === false && (
                           <span title="Compte inactif : ce professeur ne peut pas se connecter à CEI tant qu'il n'est pas réactivé (Utilisateurs)."
-                            style={{ marginLeft: 8, fontSize: 12.5, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: '#fef3c7', color: '#92400e', whiteSpace: 'nowrap' }}>
+                            style={{ marginLeft: 8, fontSize: 12.5, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
                             Inactif
                           </span>
                         )}
@@ -407,7 +407,7 @@ export default function AdminAffectationsPage() {
                           onClick={e => { e.preventDefault(); e.stopPropagation(); unassign(multiModal.assignmentIdByProf[p.id]) }}
                           disabled={unassigning === multiModal.assignmentIdByProf[p.id]}
                           title="Retirer ce professeur de cet EC"
-                          style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: 6, padding: '3px 8px', fontSize:13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: 6, padding: '3px 8px', fontSize:13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                           <i className={`fas ${unassigning === multiModal.assignmentIdByProf[p.id] ? 'fa-spinner fa-spin' : 'fa-times'}`} /> Retirer
                         </button>
                       </>
