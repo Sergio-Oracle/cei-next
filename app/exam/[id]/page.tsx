@@ -27,11 +27,19 @@ interface ExamData {
   status: string; questions?: Question[]
   subject_content?: { id: number; title: string; content: string } | string | null
 }
+// Dates du serveur = UTC. Sans « Z » le navigateur les lirait comme l'heure LOCALE de
+// l'appareil : décalage de plusieurs heures sur un appareil réglé sur un autre fuseau.
+function parseUtc(d: string): number {
+  return new Date(/Z$|[+-]\d{2}:?\d{2}$/.test(d) ? d : d + 'Z').getTime()
+}
+
 interface Question {
   id: number; content: string; question_type: string; choices?: string[]; points?: number
 }
 interface Attempt {
   id: number; status: string; started_at: string; extra_minutes?: number; pause_used?: boolean
+  /** Temps écoulé depuis le début, calculé par le serveur (indépendant de l'heure de l'appareil). */
+  elapsed_seconds?: number; server_now?: string
   answers?: Record<string, string> | string
 }
 interface ParsedBlock {
@@ -455,6 +463,18 @@ export default function ExamPage() {
   const breakActiveRef  = useRef(false)
   const [onBreak,       setOnBreak]       = useState(false)
   const [breakResumeAt, setBreakResumeAt] = useState<number|null>(null)
+  // Temps écoulé de la tentative : valeur du serveur + horloge MONOTONE du navigateur
+  // (performance.now). Ni l'heure, ni le fuseau horaire, ni un réglage manuel de
+  // l'appareil ne peuvent plus faire expirer le minuteur ou soumettre trop tôt.
+  const attemptClockRef = useRef<{elapsed:number; at:number}|null>(null)
+  function noteAttemptClock(att: Attempt) {
+    attemptClockRef.current = typeof att.elapsed_seconds === 'number' ? { elapsed: att.elapsed_seconds, at: performance.now() } : null
+  }
+  function elapsedSeconds(att: Attempt|null): number {
+    const c = attemptClockRef.current
+    if (c) return c.elapsed + (performance.now() - c.at) / 1000
+    return att ? Math.max(0, (serverNow() - parseUtc(att.started_at)) / 1000) : 0
+  }
   const pauseUsedRef    = useRef(false)
   const [breakSecondsLeft, setBreakSecondsLeft] = useState(0)
 
@@ -464,7 +484,7 @@ export default function ExamPage() {
   useEffect(() => {
     if (!onBreak || !breakResumeAt) return
     const tick = () => {
-      const left = Math.max(0, Math.round((breakResumeAt - Date.now()) / 1000))
+      const left = Math.max(0, Math.round((breakResumeAt - serverNow()) / 1000))
       setBreakSecondsLeft(left)
       if (left <= 0) endBreak()
     }
@@ -1004,7 +1024,7 @@ export default function ExamPage() {
     setStarting(true)
     try {
       const res = await api.post<{attempt:Attempt}>(`/api/online_exams/${id}/start`,{})
-      const att=res.attempt; setAttempt(att); attemptRef.current=att.id
+      const att=res.attempt; setAttempt(att); noteAttemptClock(att); attemptRef.current=att.id
       extraMinRef.current=att.extra_minutes??0
       if (att.answers) restoreAnswersWithLocalDraft(att.id, att.answers)
       setPhase('permissions')
@@ -1128,7 +1148,7 @@ export default function ExamPage() {
     setSubmittingCode(true)
     try {
       const res = await api.post<{attempt:Attempt}>(`/api/online_exams/${id}/start`, { access_code: pastedCode.trim() })
-      const att=res.attempt; setAttempt(att); attemptRef.current=att.id
+      const att=res.attempt; setAttempt(att); noteAttemptClock(att); attemptRef.current=att.id
       extraMinRef.current=att.extra_minutes??0
       if (att.answers) restoreAnswersWithLocalDraft(att.id, att.answers)
       setCodeRequired(false)
@@ -1453,8 +1473,7 @@ export default function ExamPage() {
     timerRef.current = setInterval(()=>{
       setTimeLeft(()=>{
         const totalNow=(examRef.current?.duration_minutes??0)*60+extraMinRef.current*60
-        const startMs=attempt?new Date(attempt.started_at).getTime():serverNow()
-        const nl=Math.max(0,Math.floor((startMs+totalNow*1000-serverNow())/1000))   // heure du serveur
+        const nl=Math.max(0,Math.floor(totalNow-elapsedSeconds(attempt)))   // temps écoulé donné par le serveur
         if(nl<=300 && !reminder5MinShownRef.current){
           reminder5MinShownRef.current=true
           warning('Il vous reste 5 minutes — pensez à finaliser vos réponses')
@@ -1475,7 +1494,7 @@ export default function ExamPage() {
     document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
     pauseUsedRef.current = attempt.pause_used || false
     const totalSec   = exam.duration_minutes*60+extraMinRef.current*60
-    const elapsedSec = Math.floor((serverNow()-new Date(attempt.started_at).getTime())/1000)   // heure du serveur
+    const elapsedSec = Math.floor(elapsedSeconds(attempt))   // temps écoulé donné par le serveur
     setTimeLeft(Math.max(totalSec-elapsedSec,0))
     startTimerInterval()
     saveRef.current     = setInterval(()=>{const aId=attemptRef.current;if(aId)doAutoSave(aId)},30000)
@@ -1522,7 +1541,7 @@ export default function ExamPage() {
     try {
       const res = await api.post<{resume_at:string; total_extra:number}>(`/api/exam_attempts/${aId}/pause/start`, {})
       extraMinRef.current = res.total_extra
-      const resumeAt = new Date(res.resume_at).getTime()
+      const resumeAt = parseUtc(res.resume_at)
       setBreakResumeAt(resumeAt)
       setOnBreak(true)
       logProctoring(aId,'pause_started','Pause self-service démarrée (3 min)').catch(()=>{})
@@ -2910,20 +2929,27 @@ export default function ExamPage() {
     screenStream.current?.getTracks().forEach(t=>t.stop())
     if(lkRoomRef.current){try{lkRoomRef.current.disconnect()}catch{}}
 
-    async function trySubmit(): Promise<boolean> {
+    // 'ok' = copie enregistrée ; 'final' = le serveur a déjà clos cette tentative (soumission automatique
+    // à l'heure de fin, ou exclusion) : inutile de réessayer, sa copie est celle de la dernière
+    // sauvegarde ; 'retry' = problème de connexion, on réessaie.
+    async function trySubmit(): Promise<'ok'|'final'|'banned'|'retry'> {
+      const verdict = (e: any): 'final'|'banned'|null =>
+        e?.data?.banned ? 'banned' : (e?.data?.already_submitted ? 'final' : null)
       try {
         await api.post(`/api/exam_attempts/${aId}/submit`,{answers:JSON.stringify(answersRef.current)})
-        return true
-      } catch {
-        try{ await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answersRef.current)}); return true }
-        catch { return false }
+        return 'ok'
+      } catch (e: any) {
+        const v = verdict(e); if (v) return v
+        try{ await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answersRef.current)}); return 'ok' }
+        catch (e2: any) { return verdict(e2) ?? 'retry' }
       }
     }
 
-    const ok = await trySubmit()
-    if (ok) {
+    const first = await trySubmit()
+    if (first === 'banned') { triggerBan(); return }
+    if (first === 'ok' || first === 'final') {
       try{ localStorage.removeItem(`cei_exam_draft_${aId}`) }catch{}
-      if(!auto) success('Copie soumise avec succès !')
+      if(!auto) success(first === 'ok' ? 'Copie soumise avec succès !' : 'Votre copie était déjà enregistrée.')
       setPhase('submitted')
     } else {
       // Ni soumission ni sauvegarde n'ont abouti — connexion probablement
@@ -2932,7 +2958,9 @@ export default function ExamPage() {
       // l'étudiant bloqué avec juste un message d'erreur.
       warning('Connexion indisponible — vos réponses restent sauvegardées sur cet appareil, nouvelle tentative automatique en cours…')
       const retry = async () => {
-        if (await trySubmit()) {
+        const r = await trySubmit()
+        if (r === 'banned') { triggerBan(); return }
+        if (r === 'ok' || r === 'final') {
           try{ localStorage.removeItem(`cei_exam_draft_${aId}`) }catch{}
           setPhase('submitted')
           return
