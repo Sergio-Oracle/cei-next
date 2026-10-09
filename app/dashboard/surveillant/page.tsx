@@ -179,7 +179,7 @@ export default function SurveillantDashboard() {
   )
 }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 10
 
 function StudentsTable({ students }: { students: StudentInfo[] }) {
   const [page, setPage] = useState(1)
