@@ -613,7 +613,7 @@ body.pwa-banner-visible .app-header {
     background: white;
     padding: 24px;
     border-radius: var(--radius-md);
-    border: 1px solid var(--border);
+    border: 1px solid #dbe7f7;
     box-shadow: none;
 }
 
@@ -631,7 +631,7 @@ body.pwa-banner-visible .app-header {
 .stat-value {
     font-size: 39.5px;
     font-weight: 700;
-    color: var(--text);
+    color: #1e3a8a;
 }
 
 /* ============================================================================

@@ -166,12 +166,12 @@ export default function AdminAffectationsPage() {
       <div className="page-header">
         <div>
           <h2>
-            <i className="fas fa-link" style={{ marginRight: 10, color: 'var(--text-muted)' }} />
+            <i className="fas fa-link" style={{ marginRight: 10, color: '#1e3a8a' }} />
             Affectations EC aux Professeurs
           </h2>
           <p>Assignez les Éléments Constitutifs aux professeurs responsables</p>
         </div>
-        <button className="btn btn-secondary" onClick={load} style={{ background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)' }}>
+        <button className="btn btn-secondary" onClick={load} style={{ background: 'var(--surface)', color: '#1e3a8a', border: '1px solid #bfdbfe' }}>
           <i className="fas fa-rotate" /> Actualiser
         </button>
       </div>
@@ -180,13 +180,13 @@ export default function AdminAffectationsPage() {
       <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 24 }}>
         <div className="stat-card">
           <div className="stat-label">
-            <i className="fas fa-layer-group" style={{ color: 'var(--text-muted)' }} /> ECs au total
+            <i className="fas fa-layer-group" style={{ color: '#3b82f6' }} /> ECs au total
           </div>
           <div className="stat-value">{ecs.length}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">
-            <i className="fas fa-circle-check" style={{ color: 'var(--text-muted)' }} /> ECs assignés
+            <i className="fas fa-circle-check" style={{ color: '#3b82f6' }} /> ECs assignés
           </div>
           <div className="stat-value">{assignedCount}</div>
         </div>
@@ -238,7 +238,7 @@ export default function AdminAffectationsPage() {
                     <tr key={ec.id}>
                       {/* Code EC */}
                       <td>
-                        <span style={{ display: 'inline-block', background: 'var(--background)', color: 'var(--text)', border: '1px solid var(--border)', padding: '3px 10px', borderRadius: 6, fontSize:14.5, fontWeight: 700 }}>
+                        <span style={{ display: 'inline-block', background: '#eff6ff', color: '#1e3a8a', border: '1px solid #bfdbfe', padding: '3px 10px', borderRadius: 6, fontSize:14.5, fontWeight: 700 }}>
                           {ec.code}
                         </span>
                       </td>
