@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import api from '@/lib/api'
+import api, { serverNow } from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam } from '@/types'
 
@@ -59,7 +59,7 @@ export default function StudentExamsPage() {
       }
 
       // Programmer un refresh au prochain changement d'état
-      const nowMs = Date.now()
+      const nowMs = serverNow()
       const nextMs = exams
         .flatMap((e: OnlineExam) => [new Date(e.start_time).getTime(), new Date(e.end_time).getTime()])
         .filter((t: number) => t > nowMs)
@@ -111,7 +111,7 @@ export default function StudentExamsPage() {
 }
 
 function ExamCard({ exam }: { exam: OnlineExam }) {
-  const now = new Date()
+  const now = new Date(serverNow())   // heure du serveur, pas de l'appareil
   const start = new Date(exam.start_time)
   const end   = new Date(exam.end_time)
 

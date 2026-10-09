@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import api from '@/lib/api'
+import api, { serverNow } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObjects, countPeople } from '@/lib/proctoring-vision'
@@ -1453,8 +1453,8 @@ export default function ExamPage() {
     timerRef.current = setInterval(()=>{
       setTimeLeft(()=>{
         const totalNow=(examRef.current?.duration_minutes??0)*60+extraMinRef.current*60
-        const startMs=attempt?new Date(attempt.started_at).getTime():Date.now()
-        const nl=Math.max(0,Math.floor((startMs+totalNow*1000-Date.now())/1000))
+        const startMs=attempt?new Date(attempt.started_at).getTime():serverNow()
+        const nl=Math.max(0,Math.floor((startMs+totalNow*1000-serverNow())/1000))   // heure du serveur
         if(nl<=300 && !reminder5MinShownRef.current){
           reminder5MinShownRef.current=true
           warning('Il vous reste 5 minutes — pensez à finaliser vos réponses')
@@ -1475,7 +1475,7 @@ export default function ExamPage() {
     document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
     pauseUsedRef.current = attempt.pause_used || false
     const totalSec   = exam.duration_minutes*60+extraMinRef.current*60
-    const elapsedSec = Math.floor((Date.now()-new Date(attempt.started_at).getTime())/1000)
+    const elapsedSec = Math.floor((serverNow()-new Date(attempt.started_at).getTime())/1000)   // heure du serveur
     setTimeLeft(Math.max(totalSec-elapsedSec,0))
     startTimerInterval()
     saveRef.current     = setInterval(()=>{const aId=attemptRef.current;if(aId)doAutoSave(aId)},30000)

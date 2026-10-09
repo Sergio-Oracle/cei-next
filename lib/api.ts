@@ -50,6 +50,22 @@ function isNetworkError(err: unknown): boolean {
   )
 }
 
+// ── Heure du serveur ─────────────────────────────────────────────────────────
+// Ouverture/fermeture d'un examen et minuteur : calculés avec l'heure du
+// serveur, pas celle de l'appareil — un ordinateur ou téléphone mal réglé
+// (mauvais fuseau horaire) voyait tous les examens « terminés » et, une fois
+// dans l'examen, aurait été soumis aussitôt. L'en-tête Date de chaque réponse
+// donne l'heure du serveur (à la seconde) ; on garde l'écart avec l'appareil.
+let _clockOffsetMs = 0
+function noteServerDate(res: Response) {
+  const d = res.headers.get('Date')
+  if (!d) return
+  const server = Date.parse(d)
+  if (!isNaN(server)) _clockOffsetMs = server + 500 - Date.now()   // +500 : l'en-tête est arrondi à la seconde
+}
+/** Heure actuelle selon le serveur (ms). */
+export function serverNow(): number { return Date.now() + _clockOffsetMs }
+
 // ── Refresh token ─────────────────────────────────────────────────────────────
 let _refreshing: Promise<string | null> | null = null
 // Profil renvoyé par /api/auth/refresh avec le jeton : évite un appel
@@ -143,6 +159,7 @@ async function _request<T = any>(
       },
       timeoutMs,
     )
+    noteServerDate(res)
   } catch (err) {
     // Retry sur erreur réseau transitoire (max 2 tentatives, backoff exponentiel)
     if (_attempt < 2 && isNetworkError(err)) {
@@ -233,6 +250,7 @@ export const api = {
   setToken,
   tokenExpiringSoon,
   refresh: tryRefresh,
+  serverNow,
   /** Profil reçu avec le dernier jeton (null si l'API ne l'a pas renvoyé). */
   refreshUser: () => _refreshUser,
 }
