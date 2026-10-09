@@ -22,25 +22,26 @@ function fmtDate(iso: string) {
     ', ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
-const STATUS_META: Record<ExamStatus, { label: string; color: string; bg: string; border: string; borderCard: string }> = {
-  draft:     { label: 'Brouillon', color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1', borderCard: '#94a3b8' },
-  scheduled: { label: 'Planifié',  color: '#d97706', bg: '#fffbeb', border: '#fde68a', borderCard: '#f59e0b' },
-  active:    { label: 'Actif',     color: '#059669', bg: '#f0fdf4', border: '#bbf7d0', borderCard: '#10b981' },
-  closed:    { label: 'Clôturé',   color: '#dc2626', bg: '#fef2f2', border: '#fecaca', borderCard: '#ef4444' },
+const STATUS_META: Record<ExamStatus, { label: string; dot: string }> = {
+  draft:     { label: 'Brouillon', dot: '#94a3b8' },
+  scheduled: { label: 'Planifié',  dot: '#94a3b8' },
+  active:    { label: 'Actif',     dot: '#16a34a' },
+  closed:    { label: 'Clôturé',   dot: '#94a3b8' },
 }
 
 function StatusBadge({ status }: { status: ExamStatus }) {
   const m = STATUS_META[status] ?? STATUS_META.draft
   return (
-    <span style={{ background: m.bg, color: m.color, border: `1px solid ${m.border}`, borderRadius: 99, padding: '3px 10px', fontSize:13, fontWeight: 700 }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: status === 'active' ? 'var(--text)' : 'var(--text-muted)', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: m.dot, display: 'inline-block' }} />
       {m.label}
     </span>
   )
 }
 
-function SecPill({ icon, value, title, color = '#64748b', bg = '#f1f5f9' }: { icon: string; value: string | number; title?: string; color?: string; bg?: string }) {
+function SecPill({ icon, value, title }: { icon: string; value: string | number; title?: string; color?: string; bg?: string }) {
   return (
-    <span title={title} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: bg, color, border: `1px solid ${color}20`, borderRadius: 99, padding: '2px 8px', fontSize:13, fontWeight: 600 }}>
+    <span title={title} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 8px', fontSize:13, fontWeight: 500 }}>
       <i className={`fas ${icon}`} style={{ fontSize: 11 }} />{value}
     </span>
   )
@@ -160,18 +161,18 @@ export default function AdminExamsPage() {
       {/* ── Stats ── */}
       <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
         {[
-          { icon: 'fa-list', label: 'Total',     value: counts.total,     color: '#64748b', bg: '#f8fafc', border: '#e2e8f0' },
-          { icon: 'fa-play', label: 'En cours',  value: counts.active,    color: '#059669', bg: '#f0fdf4', border: '#bbf7d0' },
-          { icon: 'fa-calendar-check', label: 'Planifiés', value: counts.scheduled, color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-          { icon: 'fa-flag-checkered', label: 'Terminés',  value: counts.closed,    color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+          { icon: 'fa-list', label: 'Total',     value: counts.total,     color: '#64748b', bg: 'var(--surface)', border: 'var(--border)' },
+          { icon: 'fa-play', label: 'En cours',  value: counts.active,    color: '#64748b', bg: 'var(--surface)', border: 'var(--border)' },
+          { icon: 'fa-calendar-check', label: 'Planifiés', value: counts.scheduled, color: '#64748b', bg: 'var(--surface)', border: 'var(--border)' },
+          { icon: 'fa-flag-checkered', label: 'Terminés',  value: counts.closed,    color: '#64748b', bg: 'var(--surface)', border: 'var(--border)' },
         ].map(s => (
-          <div key={s.label} style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 14, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ width: 42, height: 42, background: '#fff', border: `1.5px solid ${s.border}`, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div key={s.label} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 12, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 42, height: 42, background: 'var(--background)', border: `1px solid ${s.border}`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <i className={`fas ${s.icon}`} style={{ color: s.color, fontSize: 22 }} />
             </div>
             <div>
-              <div style={{ fontSize:31, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize:14.5, color: s.color, fontWeight: 600, marginTop: 4, opacity: .8 }}>{s.label}</div>
+              <div style={{ fontSize:31, fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize:14.5, color: 'var(--text-muted)', fontWeight: 500, marginTop: 4 }}>{s.label}</div>
             </div>
           </div>
         ))}
@@ -203,7 +204,6 @@ export default function AdminExamsPage() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
           {exams.map(exam => {
-            const meta   = STATUS_META[exam.status as ExamStatus] ?? STATUS_META.draft
             const busy   = actioning === exam.id
             const isDraft     = exam.status === 'draft'
             const isScheduled = exam.status === 'scheduled'
@@ -211,7 +211,7 @@ export default function AdminExamsPage() {
             const isClosed    = exam.status === 'closed'
 
             return (
-              <div key={exam.id} style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', borderLeft: `4px solid ${meta.borderCard}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 8px rgba(0,0,0,.06)', transition: 'box-shadow .2s' }}
+              <div key={exam.id} style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 8px rgba(0,0,0,.06)', transition: 'box-shadow .2s' }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px rgba(0,0,0,.12)'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,.06)'}>
 
@@ -225,7 +225,7 @@ export default function AdminExamsPage() {
                   {/* Subject */}
                   {exam.subject_title && (
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 6 }}>
-                      <i className="fas fa-book" style={{ color: 'var(--primary)', fontSize: 13, marginTop: 3, flexShrink: 0 }} />
+                      <i className="fas fa-book" style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 3, flexShrink: 0 }} />
                       <span style={{ fontSize:14.5, color: 'var(--text-muted)', lineHeight: 1.4 }}>{exam.subject_title}</span>
                     </div>
                   )}
@@ -242,15 +242,15 @@ export default function AdminExamsPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize:14.5 }}>
-                        <i className="fas fa-play" style={{ color: '#10b981', fontSize: 11 }} />
+                        <i className="fas fa-play" style={{ color: 'var(--text-muted)', fontSize: 11 }} />
                         <span style={{ color: 'var(--text)' }}>{exam.start_time ? fmtDate(exam.start_time) : '—'}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize:14.5 }}>
-                        <i className="fas fa-stop" style={{ color: '#ef4444', fontSize: 11 }} />
+                        <i className="fas fa-stop" style={{ color: 'var(--text-muted)', fontSize: 11 }} />
                         <span style={{ color: 'var(--text)' }}>{exam.end_time ? fmtDate(exam.end_time) : '—'}</span>
                       </div>
                     </div>
-                    <div style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 99, padding: '4px 12px', fontSize:15.5, fontWeight: 800, color: 'var(--primary)', flexShrink: 0 }}>
+                    <div style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: 99, padding: '4px 12px', fontSize:15.5, fontWeight: 700, color: 'var(--text)', flexShrink: 0 }}>
                       {fmtDuration(exam.duration_minutes)}
                     </div>
                   </div>
@@ -279,14 +279,14 @@ export default function AdminExamsPage() {
 
                   {/* Prévisualiser — l'examen tel que l'étudiant le voit, sans rien enregistrer */}
                   <Link href={`/exam/${exam.id}?preview=1`} title="Voir et tester l'examen comme un étudiant (rien n'est enregistré)"
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: '#0f766e', textDecoration: 'none' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}>
                     <i className="fas fa-display" />Prévisualiser
                   </Link>
 
                   {/* Copies (clôturé uniquement) */}
                   {isClosed && (
                     <button onClick={() => { setCopiesExamId(exam.id); setCopiesTitle(exam.title) }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: 'var(--text)', cursor: 'pointer' }}>
                       <i className="fas fa-file-lines" />Copies
                     </button>
                   )}
@@ -294,7 +294,7 @@ export default function AdminExamsPage() {
                   {/* Activer (brouillon ou planifié) */}
                   {(isDraft || isScheduled) && (
                     <button onClick={() => activate(exam.id)} disabled={busy}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontSize:14.5, fontWeight: 700, color: '#059669', cursor: busy ? 'not-allowed' : 'pointer' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: 'var(--text)', cursor: busy ? 'not-allowed' : 'pointer' }}>
                       {busy ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-play" />}Activer
                     </button>
                   )}
@@ -302,7 +302,7 @@ export default function AdminExamsPage() {
                   {/* Rallonger (actif ou planifié) */}
                   {(isActive || isScheduled) && (
                     <button onClick={() => { setExtendId(exam.id); setExtendMin('15') }} disabled={busy}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: '#92400e', cursor: busy ? 'not-allowed' : 'pointer' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: 'var(--text)', cursor: busy ? 'not-allowed' : 'pointer' }}>
                       <i className="fas fa-clock" />Rallonger
                     </button>
                   )}
@@ -310,7 +310,7 @@ export default function AdminExamsPage() {
                   {/* Clôturer (actif) */}
                   {isActive && (
                     <button onClick={() => closeExam(exam.id)} disabled={busy}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: '#dc2626', cursor: busy ? 'not-allowed' : 'pointer' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: 'var(--text)', cursor: busy ? 'not-allowed' : 'pointer' }}>
                       <i className="fas fa-flag-checkered" />Clôturer
                     </button>
                   )}
@@ -325,7 +325,7 @@ export default function AdminExamsPage() {
 
                   {/* Supprimer — toujours en dernier, icône seulement */}
                   <button onClick={() => handleDelete(exam.id)} disabled={busy} title="Supprimer"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, padding: 0, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', cursor: busy ? 'not-allowed' : 'pointer', marginLeft: 'auto' }}>
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, padding: 0, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-muted)', cursor: busy ? 'not-allowed' : 'pointer', marginLeft: 'auto' }}>
                     <i className="fas fa-trash" style={{ fontSize: 14 }} />
                   </button>
                 </div>
