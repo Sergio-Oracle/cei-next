@@ -75,6 +75,7 @@ const SHARED: Record<string, string> = {
   student_banned: 'Étudiant exclu',
   network_reconnected: 'Réseau rétabli',
   network_disconnected: 'Réseau coupé',
+  exam_health: "Alerte de santé de l'examen",
   network_quality: 'Qualité du réseau',
   camera_quality: 'Qualité de la caméra',
 }
