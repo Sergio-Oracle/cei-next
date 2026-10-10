@@ -67,6 +67,16 @@ const SHARED: Record<string, string> = {
   proctor_ban: 'Exclusion par le surveillant',
   extra_time: 'Temps supplémentaire accordé',
   unban: 'Débannissement',
+  student_call_request: "Demande d'appel de l'étudiant",
+  call_request: "Demande d'appel",
+  student_message: 'Message étudiant',
+  student_resumed: 'Reprise après déconnexion',
+  student_break: 'Pause demandée par l\'étudiant',
+  student_banned: 'Étudiant exclu',
+  network_reconnected: 'Réseau rétabli',
+  network_disconnected: 'Réseau coupé',
+  network_quality: 'Qualité du réseau',
+  camera_quality: 'Qualité de la caméra',
 }
 
 export function eventLabel(type: string | null | undefined, local?: Record<string, string>): string {
