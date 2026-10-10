@@ -9,6 +9,7 @@ import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam, ExamAttempt, ExamStatus } from '@/types'
 import SecurityReportPanel from '@/components/shared/SecurityReportPanel'
 import StatTile from '@/components/ui/StatTile'
+import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -133,8 +134,8 @@ export default function ProfessorExamDetailPage() {
   // Retour #6 — reprogrammation d'un examen déjà planifié, sans repasser par
   // toutes les étapes de création. Déplacer le début préserve la durée
   // actuelle (l'écart début/fin est recalculé côté serveur à partir de end_time).
-  function parseLocalInput(v: string) { return new Date(v + ':00Z') }
-  function toLocalInput(d: Date) { return d.toISOString().slice(0, 16) }
+  function parseLocalInput(v: string) { return new Date(v) }
+  function toLocalInput(d: Date) { return isoToLocalInput(d) }
 
   function openRescheduleModal() {
     if (!exam) return
@@ -161,8 +162,8 @@ export default function ProfessorExamDetailPage() {
     setRescheduling(true)
     try {
       const res = await api.put<{ success: boolean; exam: OnlineExam }>(`/api/admin/online_exams/${id}`, {
-        start_time: rescheduleForm.start_time,
-        end_time: rescheduleForm.end_time,
+        start_time: localInputToIso(rescheduleForm.start_time),
+        end_time: localInputToIso(rescheduleForm.end_time),
       })
       success('Examen reprogrammé')
       setExam(e => e && res.exam ? { ...e, ...res.exam } : e)

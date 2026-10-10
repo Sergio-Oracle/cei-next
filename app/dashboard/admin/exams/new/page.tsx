@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
 
 interface Subject { id: number; title: string }
 
@@ -64,8 +65,8 @@ export default function NewExamPage() {
     if (!form.start_time || !form.end_time) { error('Renseignez les dates de début et de fin'); return }
 
     // Envoi UTC en ajoutant :00Z à la valeur brute du datetime-local (identique à la plateforme originale)
-    const startTime = form.start_time + ':00Z'
-    const endTime   = form.end_time   + ':00Z'
+    const startTime = localInputToIso(form.start_time)
+    const endTime   = localInputToIso(form.end_time)
     if (startTime >= endTime) { error('La date de fin doit être après la date de début'); return }
 
     setLoading(true)
@@ -87,7 +88,7 @@ export default function NewExamPage() {
         enable_right_click: form.enable_right_click,
         enable_file_download: form.enable_file_download,
         auto_correct:      form.auto_correct,
-        scheduled_correction_at: form.scheduled_correction_at ? form.scheduled_correction_at + ':00Z' : null,
+        scheduled_correction_at: form.scheduled_correction_at ? localInputToIso(form.scheduled_correction_at) : null,
         enable_calculator: form.enable_calculator,
         allow_secondary_camera: form.allow_secondary_camera,
         require_biometric: form.require_biometric,
