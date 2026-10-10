@@ -6,6 +6,7 @@ import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import type { ExamAttempt } from '@/types'
 import { StatsModal, PlagiatModal, BilanModal } from './ExamToolbarModals'
+import { eventLabel } from '@/lib/eventLabels'
 
 /* ── Types locaux ──────────────────────────────────────────────── */
 type RichAttempt = ExamAttempt & {
@@ -764,7 +765,7 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
                         {(data.incidents ?? []).map((inc, i) => (
                           <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
                             <td style={{ padding: '8px 16px', fontSize:13, color: '#64748b', whiteSpace: 'nowrap' }}>{fmt(inc.timestamp)}</td>
-                            <td style={{ padding: '8px 16px', fontSize:14.5, color: '#f59e0b', fontWeight: 600 }}>{INCIDENT_FR[inc.type] ?? inc.type}</td>
+                            <td style={{ padding: '8px 16px', fontSize:14.5, color: '#f59e0b', fontWeight: 600 }}>{eventLabel(inc.type, INCIDENT_FR)}</td>
                           </tr>
                         ))}
                       </tbody>

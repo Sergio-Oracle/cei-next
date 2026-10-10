@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { eventLabel } from '@/lib/eventLabels'
 
 interface Incident {
   id: number | string
@@ -77,7 +78,7 @@ const EVENT_LABELS: Record<string, string> = {
 }
 
 function getLabel(event_type: string): string {
-  return EVENT_LABELS[event_type] || EVENT_LABELS[event_type.toLowerCase()] || event_type.replace(/_/g, ' ')
+  return eventLabel(event_type, EVENT_LABELS)
 }
 
 function timeAgo(dateStr: string): string {
