@@ -6,6 +6,7 @@ import Link from 'next/link'
 import api from '@/lib/api'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
+import { eventLabel } from '@/lib/eventLabels'
 
 interface Incident {
   timestamp: string
@@ -458,7 +459,7 @@ export default function AttemptDetailPage() {
                     </span>
                     <div>
                       <div style={{ fontSize:14.5, fontWeight: 600, color: '#ef4444' }}>
-                        {INCIDENT_LABELS[inc.type] || inc.type}
+                        {eventLabel(inc.type, INCIDENT_LABELS)}
                       </div>
                       {inc.description && (
                         <div style={{ fontSize:13, color: '#64748b', marginTop: 2 }}>{inc.description}</div>

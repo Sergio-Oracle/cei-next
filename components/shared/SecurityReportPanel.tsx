@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import StatTile from '@/components/ui/StatTile'
+import { eventLabel } from '@/lib/eventLabels'
 
 interface EventSummary  { event: string; count: number }
 interface HighRiskAttempt {
@@ -311,7 +312,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
                         <td>
                           <i className={`fas ${EVT_ICONS[e.event] || 'fa-circle'}`}
                             style={{ color: EVT_RISK_COLOR[e.event] || '#94a3b8', marginRight: 8, width: 14, textAlign: 'center' }} />
-                          {EVT_LABELS[e.event] || e.event}
+                          {eventLabel(e.event, EVT_LABELS)}
                         </td>
                         <td style={{ fontWeight: 700, textAlign: 'center' }}>{e.count}</td>
                       </tr>
@@ -334,7 +335,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
                             <td style={{ color: 'var(--text-muted)', fontSize:15.5 }}>
                               <i className={`fas ${EVT_ICONS[e.event] || 'fa-circle'}`}
                                 style={{ color: '#94a3b8', marginRight: 8, width: 14, textAlign: 'center' }} />
-                              {EVT_LABELS[e.event] || e.event}
+                              {eventLabel(e.event, EVT_LABELS)}
                               {e.event === 'face_reference_captured' && (report?.reference_photos?.length ?? 0) > 0 && (
                                 <button onClick={() => setShowRefGallery(true)}
                                   style={{ marginLeft: 10, background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', padding: '2px 9px', borderRadius: 6, fontSize:13, cursor: 'pointer' }}>
@@ -434,7 +435,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
                         <span key={inc.event} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize:14.5,
                           background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: 99, padding: '3px 10px' }}>
                           <i className={`fas ${EVT_ICONS[inc.event] || 'fa-circle'}`} />
-                          {EVT_LABELS[inc.event] || inc.event} × {inc.count}
+                          {eventLabel(inc.event, EVT_LABELS)} × {inc.count}
                         </span>
                       ))}
                     </div>
@@ -505,7 +506,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
           <img src={zoomed.image_url} alt="capture incident"
             style={{ maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 8, boxShadow: '0 12px 40px rgba(0,0,0,.5)' }} />
           <div style={{ marginTop: 14, color: 'rgba(255,255,255,.85)', fontSize:15.5, display: 'flex', gap: 12, alignItems: 'center' }}>
-            {zoomed.event_type && <span>{EVT_LABELS[zoomed.event_type] || zoomed.event_type}</span>}
+            {zoomed.event_type && <span>{eventLabel(zoomed.event_type, EVT_LABELS)}</span>}
             {zoomed.timestamp && <span>{new Date(zoomed.timestamp).toLocaleString('fr-FR')}</span>}
           </div>
         </div>

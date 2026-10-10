@@ -6,6 +6,7 @@ import api from '@/lib/api'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import { initProctoringVision, analyzeFace } from '@/lib/proctoring-vision'
+import { eventLabel } from '@/lib/eventLabels'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 
@@ -2358,7 +2359,7 @@ export default function ProctorMonitorPage() {
                                 {(curSnap.snapshots || []).filter((s: any) => s.image_data || s.image_url).map((snap: any, j: number) => {
                                   const src = snap.image_url || (snap.image_data.startsWith('data:') ? snap.image_data : `data:image/jpeg;base64,${snap.image_data}`)
                                   const ts  = snap.timestamp ? new Date(snap.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''
-                                  const et  = snap.event_type ? (EVENT_LABEL_MAP[snap.event_type] || snap.event_type.replace(/_/g, ' ')) : ''
+                                  const et  = snap.event_type ? (eventLabel(snap.event_type, EVENT_LABEL_MAP)) : ''
                                   let brightness: number | null = null
                                   try { brightness = snap.frame_analysis ? JSON.parse(snap.frame_analysis).brightness ?? null : null } catch {}
                                   const poorLight = brightness !== null && (brightness < 40 || brightness > 235)
@@ -2517,7 +2518,7 @@ export default function ProctorMonitorPage() {
                 <p style={{ color: 'rgba(255,255,255,.35)', fontSize:15.5, textAlign: 'center', padding: 24 }}>Aucun log disponible</p>
               ) : logsPanel.logs.map((log: any, i: number) => {
                 const et = log.event_type || log.type || 'event'
-                const label = EVENT_LABEL_MAP[et] || et.replace(/_/g, ' ')
+                const label = eventLabel(et, EVENT_LABEL_MAP)
                 const meta  = EVENT_ICON_MAP[et]  || { icon: 'circle', color: 'rgba(255,255,255,.4)' }
                 return (
                   <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,.05)', fontSize:14.5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>

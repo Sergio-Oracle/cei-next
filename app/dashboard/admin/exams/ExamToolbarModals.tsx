@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { eventLabel } from '@/lib/eventLabels'
 
 /* ── Backdrop shell ─────────────────────────────────────────────── */
 function Modal({ onClose, maxWidth = 700, children }: { onClose: () => void; maxWidth?: number; children: React.ReactNode }) {
@@ -491,7 +492,7 @@ export function IncidentsModal({ examId, examTitle, onClose }: { examId: number;
                           <td style={{ padding: '10px 12px', fontSize:14.5 }}>
                             <span style={{ color: isHigh ? '#ef4444' : '#f59e0b', fontWeight: 700 }}>
                               <i className={`fas fa-${isHigh ? 'circle-exclamation' : 'triangle-exclamation'}`} style={{ marginRight: 5 }} />
-                              {EVENT_LABELS[inc.event_type] ?? inc.event_type}
+                              {eventLabel(inc.event_type, EVENT_LABELS)}
                             </span>
                           </td>
                           <td style={{ padding: '10px 12px', fontSize:14.5, color: '#64748b' }}>
