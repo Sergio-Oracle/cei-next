@@ -3703,14 +3703,7 @@ export default function ExamPage() {
               </div>
             ))}
           </div>
-          {/* Score risque */}
-          <div style={{padding:'8px 12px',borderBottom:'1px solid #e2e8f0'}}>
-            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6,fontSize:12,fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px',color:'#64748b'}}><i className="fas fa-chart-line"/> Score de risque</div>
-            <div style={{height:20,background:'#f1f5f9',borderRadius:10,overflow:'hidden',position:'relative',border:'2px solid #e2e8f0'}}>
-              <div style={{height:'100%',background:riskScore>=70?'#ef4444':riskScore>=40?'#f59e0b':'#10b981',width:`${Math.min(riskScore,100)}%`,transition:'width .5s,background-color .3s'}}/>
-              <span style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',fontWeight:700,fontSize:13,color:'#0f172a'}}>{riskScore}</span>
-            </div>
-          </div>
+          {/* Le score de risque n'est volontairement pas affiché à l'étudiant (il se sentait pénalisé de le voir augmenter) ; il reste calculé et visible côté surveillant/enseignant. */}
           {/* Alertes */}
           <div style={{flex:1,overflowY:'auto',padding:'8px 12px'}}>
             <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8,fontSize:12,fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px',color:'#64748b'}}><i className="fas fa-exclamation-triangle"/> Alertes système</div>

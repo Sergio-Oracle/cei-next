@@ -399,7 +399,7 @@ export default function LandingPage() {
                 { img: '/screenshots/capture-12.jpg', badge: '9', title: 'Autorisation caméra, micro et écran', desc: "Les trois accès sont vérifiés un par un avant de pouvoir commencer — rien n'est laissé au hasard." },
                 { img: '/screenshots/camera-secondaire-etapes.jpg', badge: '10', title: 'Caméra secondaire par smartphone (en option)', desc: "Si l'examen l'exige, l'étudiant scanne un QR code avec son téléphone pour ajouter un second angle de vue sur son poste de travail — couplage en quelques secondes, sans application à installer." },
                 { img: '/screenshots/capture-13.jpg', badge: '11', title: 'Partage d\'écran complet obligatoire', desc: "Le navigateur impose le choix explicite \"Tout l'écran\" — le partage de fenêtre ou d'onglet seul est refusé par la plateforme." },
-                { img: '/screenshots/capture-14.jpg', badge: '12', title: 'Composition sous surveillance IA en temps réel', desc: "Caméra, micro et écran actifs, score de risque visible, messagerie directe avec l'enseignant — tout est réuni dans une seule interface." },
+                { img: '/screenshots/capture-14.jpg', badge: '12', title: 'Composition sous surveillance IA en temps réel', desc: "Caméra, micro et écran actifs, messagerie directe avec l'enseignant — tout est réuni dans une seule interface." },
               ],
             },
             {
