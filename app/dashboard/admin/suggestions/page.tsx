@@ -6,6 +6,7 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { useSuggestionFlow } from '@/hooks/useSuggestionFlow'
 import SearchableSelect from '@/components/ui/SearchableSelect'
+import { MOODLE_UI } from '@/lib/features'
 import MoodleSourcePicker, { MoodleSelection } from '@/components/shared/MoodleSourcePicker'
 import RagSourcesList from '@/components/shared/RagSourcesList'
 import RagGroundingBanner, { Grounding } from '@/components/shared/RagGroundingBanner'
@@ -164,7 +165,7 @@ export default function AdminSuggestionsPage() {
   const [source,     setSource]     = useState<'upload' | 'moodle'>('upload')
   const [moodleSel,  setMoodleSel]  = useState<MoodleSelection>({ ec: null, files: [] })
   const sourceTouchedRef = useRef(false)
-  const fromMoodle   = source === 'moodle'
+  const fromMoodle   = MOODLE_UI && source === 'moodle'
   const moodleLevel  = fromMoodle ? moodleSel.ec?.student_level ?? null : null
   const effectiveLevel = moodleLevel ?? level
   function changeMoodleSel(v: MoodleSelection) {
@@ -1041,7 +1042,7 @@ export default function AdminSuggestionsPage() {
           <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
             {/* Source des documents (phase 3) */}
-            <div role="tablist" style={{ display:'flex', gap:6, background:'var(--background)', border:'1px solid var(--border)', borderRadius:12, padding:5 }}>
+            {MOODLE_UI && <div role="tablist" style={{ display:'flex', gap:6, background:'var(--background)', border:'1px solid var(--border)', borderRadius:12, padding:5 }}>
               {([['moodle', 'fa-graduation-cap', 'Depuis Moodle'], ['upload', 'fa-upload', 'Téléverser']] as const).map(([k, icon, label]) => (
                 <button key={k} type="button" role="tab" aria-selected={source === k} onClick={() => chooseSource(k)}
                   style={{ flex:1, padding:'10px 14px', borderRadius:9, border:'none', cursor:'pointer', fontSize:15.5, fontWeight:700,
@@ -1050,15 +1051,15 @@ export default function AdminSuggestionsPage() {
                   <i className={`fas ${icon}`} style={{ marginRight:8 }} />{label}
                 </button>
               ))}
-            </div>
+            </div>}
 
             {/* Toujours monté (masqué hors de son onglet) : il détecte au chargement
                 si l'enseignant a des cours Moodle pour ouvrir cet onglet par défaut,
                 et garde le cours choisi quand on change d'onglet. */}
-            <div style={{ display: fromMoodle ? 'block' : 'none' }}>
+            {MOODLE_UI && <div style={{ display: fromMoodle ? 'block' : 'none' }}>
               <MoodleSourcePicker value={moodleSel} onChange={changeMoodleSel}
                 onLoaded={n => { if (n > 0 && !sourceTouchedRef.current) setSource('moodle') }} />
-            </div>
+            </div>}
             {!fromMoodle && (
               <div className="card" style={{ padding:0, overflow:'hidden' }}>
                 <div className="card-header" style={{ background:'var(--primary)', borderBottom:'none' }}>

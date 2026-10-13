@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { MOODLE_UI } from '@/lib/features'
 
 interface NavItem {
   label: string
@@ -154,12 +155,15 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
     localStorage.setItem('sidebar_collapsed', next ? '1' : '0')
   }
 
-  const navItems: NavEntry[] =
+  const roleNav: NavEntry[] =
     user?.role === 'admin'       ? adminNav :
     user?.role === 'professor'   ? professorNav :
     user?.role === 'surveillant' ? surveillantNav :
     user?.role === 'superviseur' ? superviseurNav :
     studentNav
+  // Moodle et Moteur RAG : pas encore validés pour la production (voir lib/features.ts)
+  const navItems: NavEntry[] = MOODLE_UI ? roleNav
+    : roleNav.filter(e => !('href' in e) || !['/dashboard/admin/moodle', '/dashboard/admin/rag'].includes(e.href))
 
   return (
     <>

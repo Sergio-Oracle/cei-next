@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { MOODLE_UI } from '@/lib/features'
 
 /* Page Administration → Moteur RAG. Relie CEI à un serveur RAGFlow de façon
    graphique : adresse + clé API (chiffrée côté serveur), test de connexion,
@@ -185,7 +186,7 @@ function DiagnosisBox({ d }: { d: Diagnosis }) {
 
 const emptyForm = { name: '', base_url: '', api_key: '' }
 
-export default function AdminRagPage() {
+function AdminRagPageInner() {
   const { success, error } = useToast()
   const [engines, setEngines] = useState<Engine[]>([])
   const [loading, setLoading] = useState(true)
@@ -706,4 +707,11 @@ export default function AdminRagPage() {
       )}
     </div>
   )
+}
+
+
+/* Hors production tant que le serveur n'a pas ces fonctions (lib/features.ts) : retour au tableau de bord. */
+export default function AdminRagPage() {
+  useEffect(() => { if (!MOODLE_UI) window.location.replace('/dashboard/admin') }, [])
+  return MOODLE_UI ? <AdminRagPageInner /> : null
 }

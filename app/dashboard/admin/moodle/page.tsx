@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import LtiPanel from './LtiPanel'
+import { MOODLE_UI } from '@/lib/features'
 
 /* Page Administration → Moodle (phase 2 de la feuille de route CEI–UNCHK).
    Plateformes Moodle ajoutées sans code, correspondance cours ↔ EC, et
@@ -95,7 +96,7 @@ function DiagnosisBox({ d }: { d: Diagnosis }) {
 
 const emptyForm = { name: '', base_url: '', token: '', pole_id: '' as string }
 
-export default function AdminMoodlePage() {
+function AdminMoodlePageInner() {
   const { success, error } = useToast()
   const [instances, setInstances] = useState<Instance[]>([])
   const [poles, setPoles] = useState<Pole[]>([])
@@ -754,4 +755,11 @@ export default function AdminMoodlePage() {
       )}
     </div>
   )
+}
+
+
+/* Hors production tant que le serveur n'a pas ces fonctions (lib/features.ts) : retour au tableau de bord. */
+export default function AdminMoodlePage() {
+  useEffect(() => { if (!MOODLE_UI) window.location.replace('/dashboard/admin') }, [])
+  return MOODLE_UI ? <AdminMoodlePageInner /> : null
 }

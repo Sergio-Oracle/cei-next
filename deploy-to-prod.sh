@@ -25,7 +25,8 @@ PROD_KEY="$HOME/.ssh/id_ed25519_unchk"
 PROD_PATH="/home/serge/projet-cei/cei-next"
 
 echo "== Build (NEXT_PUBLIC_API_URL=$PROD_API_URL, en dur, ignore .env.local) =="
-NEXT_PUBLIC_API_URL="$PROD_API_URL" npm run build
+# Moodle / Moteur RAG : serveur prod sans ces routes -> interface masquée (lib/features.ts)
+NEXT_PUBLIC_MOODLE_UI=0 NEXT_PUBLIC_API_URL="$PROD_API_URL" npm run build
 
 echo "== Garde-fou : vérifier qu'aucune URL de dev n'a fui dans le build =="
 if grep -rl "dev-cei.ddns.net" .next/static/ >/dev/null 2>&1; then
