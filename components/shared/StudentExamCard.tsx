@@ -41,7 +41,7 @@ export default function ExamCard({ exam }: { exam: OnlineExam }) {
   // Le serveur n'autorise l'accès que si le statut est strictement "active"
   // (le professeur a cliqué "Activer") — "scheduled" avec l'heure déjà
   // arrivée ne suffit pas, sinon le bouton "Composer" mène à une erreur.
-  const canCompose = now >= start && now <= end && exam.status === 'active'
+  const canCompose = now >= start && now <= end && exam.status === 'active' && !exam.wave_missing
 
   const att = exam.my_attempt
 
@@ -91,6 +91,12 @@ export default function ExamCard({ exam }: { exam: OnlineExam }) {
         </span>
       )
     }
+  } else if (exam.wave_missing) {
+    actionNode = (
+      <span style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 14px', fontSize:15.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
+        <i className="fas fa-user-clock" /> Aucune vague attribuée — contactez votre enseignant
+      </span>
+    )
   } else if (canCompose) {
     actionNode = (
       <Link href={`/exam/${exam.id}`} style={{ ...btnStyle('#059669', 'white'), flex: 1, textAlign: 'center' }}>
@@ -142,6 +148,13 @@ export default function ExamCard({ exam }: { exam: OnlineExam }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--text-muted)', fontSize:15.5, marginBottom: 12 }}>
             <i className="fas fa-book" style={{ color: '#3b82f6', width: 13 }} />
             <span>{exam.subject_title}</span>
+          </div>
+        )}
+
+        {/* Vague (examen organisé par groupes successifs) */}
+        {exam.wave && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eff6ff', color: '#1d4ed8', borderRadius: 99, padding: '4px 12px', fontSize:14, fontWeight: 700, marginBottom: 10 }}>
+            <i className="fas fa-layer-group" /> {exam.wave.name} — votre créneau
           </div>
         )}
 

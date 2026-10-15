@@ -107,7 +107,7 @@ export default function StudentDashboard() {
         // "Examen non disponible actuellement" alors que la bannière promet
         // un accès immédiat.
         const active = list.filter(e => {
-          if (e.status !== 'active') return false
+          if (e.status !== 'active' || e.wave_missing) return false
           const start = new Date(e.start_time).getTime()
           const end   = new Date(e.end_time).getTime()
           return now >= start && now <= end

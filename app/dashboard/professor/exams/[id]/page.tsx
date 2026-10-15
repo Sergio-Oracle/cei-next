@@ -8,6 +8,7 @@ import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam, ExamAttempt, ExamStatus } from '@/types'
 import SecurityReportPanel from '@/components/shared/SecurityReportPanel'
+import ExamWavesPanel from '@/components/exam/ExamWavesPanel'
 import StatTile from '@/components/ui/StatTile'
 import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
 
@@ -482,6 +483,9 @@ export default function ProfessorExamDetailPage() {
           </div>
         </div>
       </div>
+
+      <ExamWavesPanel examId={Number(id)} durationMinutes={exam.duration_minutes} locked={exam.status === 'closed'} />
+
 
       {/* Rapport de sécurité — propre à cet examen (mêmes stats/tableaux que
           la page globale "Sécurité", filtrés sur cet examen uniquement) */}

@@ -136,6 +136,9 @@ export interface OnlineExam {
   created_at: string
   attempts_count?: number
   enrolled_count?: number
+  // Examen par vagues : créneau de l'étudiant (start_time/end_time sont déjà ceux de sa vague)
+  wave?: { id: number; position: number; name: string; start_time: string; end_time: string } | null
+  wave_missing?: boolean
   my_student_count?: number
   formation_id?: number
   formation_name?: string
