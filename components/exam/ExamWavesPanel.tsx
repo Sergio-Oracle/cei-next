@@ -78,6 +78,19 @@ export default function ExamWavesPanel({ examId, durationMinutes, locked }: {
     } catch (e: any) { error(e?.message || 'Rattachement impossible') } finally { setBusy(false) }
   }
 
+  async function extendWave(w: Wave) {
+    const raw = prompt(`Prolonger « ${w.name} » de combien de minutes ? Les étudiants qui composent reçoivent le même temps en plus.`, '15')
+    if (!raw) return
+    const minutes = parseInt(raw, 10)
+    if (isNaN(minutes) || minutes <= 0 || minutes > 300) { error('Nombre de minutes invalide (1–300)'); return }
+    setBusy(true)
+    try {
+      await api.post(`/api/online_exams/${examId}/extend`, { extra_minutes: minutes, wave_id: w.id })
+      success(`${w.name} : +${minutes} min`)
+      await load()
+    } catch (e: any) { error(e?.message || 'Prolongation impossible') } finally { setBusy(false) }
+  }
+
   async function removeAll() {
     if (!confirm('Supprimer toutes les vagues ? L’examen retrouvera une seule fenêtre.')) return
     setBusy(true)
@@ -96,6 +109,10 @@ export default function ExamWavesPanel({ examId, durationMinutes, locked }: {
           Chaque étudiant ne voit et ne peut démarrer l’examen que pendant le créneau de sa vague.
           {sum.eligible > 0 && <> {sum.eligible.toLocaleString('fr-FR')} étudiant(s) inscrit(s).</>}
         </p>
+        <p style={{ marginTop: 0, color: 'var(--text-muted)', fontSize: 14 }}>
+          Un étudiant inscrit après la création des vagues est rattaché automatiquement à la vague non commencée la moins remplie.
+          Les surveillants se partagent les étudiants vague par vague. Définissez les vagues avant d’activer l’examen.
+        </p>
 
         {sum.enabled && (
           <>
@@ -113,6 +130,8 @@ export default function ExamWavesPanel({ examId, durationMinutes, locked }: {
                       <td style={{ textAlign: 'right' }}>
                         {!locked && <button className="btn btn-secondary" onClick={() => setEdit({ id: w.id, name: w.name, start: isoToLocalInput(w.start_time), end: isoToLocalInput(w.end_time) })}>
                           <i className="fas fa-pen" /> Modifier</button>}
+                        {!locked && new Date(w.end_time) > new Date() && <button className="btn btn-secondary" style={{ marginLeft: 8 }} disabled={busy} onClick={() => extendWave(w)}>
+                          <i className="fas fa-clock" /> Prolonger</button>}
                       </td>
                     </tr>
                   ))}
@@ -122,7 +141,7 @@ export default function ExamWavesPanel({ examId, durationMinutes, locked }: {
 
             {sum.unassigned > 0 && (
               <div style={{ margin: '16px 0', padding: 14, border: '1px solid var(--warning)', borderRadius: 10 }}>
-                <strong>{sum.unassigned} étudiant(s) inscrit(s) n’ont aucune vague</strong> (inscrits après la création des vagues) : ils ne pourront pas démarrer l’examen.
+                <strong>{sum.unassigned} étudiant(s) inscrit(s) n’ont aucune vague</strong> (toutes les vagues sont terminées ou ces étudiants ont été inscrits trop tard) : ils ne peuvent pas démarrer l’examen tant qu’ils ne sont pas rattachés.
                 <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
                   <select className="form-control" style={{ maxWidth: 260 }} value={targetWave} onChange={e => setTargetWave(e.target.value)}>
                     <option value="">Rattacher à la vague…</option>

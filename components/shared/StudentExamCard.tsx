@@ -94,7 +94,7 @@ export default function ExamCard({ exam }: { exam: OnlineExam }) {
   } else if (exam.wave_missing) {
     actionNode = (
       <span style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 14px', fontSize:15.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
-        <i className="fas fa-user-clock" /> Aucune vague attribuée — contactez votre enseignant
+        <i className="fas fa-user-clock" /> Aucune vague disponible pour vous — contactez votre enseignant
       </span>
     )
   } else if (canCompose) {
