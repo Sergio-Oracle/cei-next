@@ -111,7 +111,7 @@ export default function ExamWavesPanel({ examId, durationMinutes, locked }: {
         </p>
         <p style={{ marginTop: 0, color: 'var(--text-muted)', fontSize: 14 }}>
           Un étudiant inscrit après la création des vagues est rattaché automatiquement à la vague non commencée la moins remplie.
-          Les surveillants se partagent les étudiants vague par vague. Définissez les vagues avant d’activer l’examen.
+          Chaque étudiant reçoit son créneau par notification et par e-mail (dès que l’examen lui est visible, sinon à l’activation), et à chaque changement. Les surveillants se partagent les étudiants vague par vague. Définissez les vagues avant d’activer l’examen.
         </p>
 
         {sum.enabled && (
