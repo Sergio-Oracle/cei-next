@@ -46,8 +46,9 @@ const adminNav: NavEntry[] = [
   { label: 'Sécurité',            href: '/dashboard/admin/security',       icon: 'fa-shield-alt' },
 ]
 
-// Responsable d'examen : tout l'espace administrateur SAUF la gestion des utilisateurs.
-const managerNav: NavEntry[] = adminNav.filter(e => !('href' in e) || e.href !== '/dashboard/admin/users')
+// Responsable d'examen : tout l'espace administrateur ; la page Utilisateurs reste en lecture seule
+// (le serveur refuse toute création, modification ou suppression de compte).
+const managerNav: NavEntry[] = adminNav
 
 const professorNav: NavEntry[] = [
   { label: 'Dashboard',            href: '/dashboard/professor',                icon: 'fa-chart-line',    exact: true },

@@ -41,8 +41,11 @@ function initials(name: string) {
   return name.split(' ').slice(0, 2).map(w => w.charAt(0)).join('').toUpperCase() || '?'
 }
 
-function AdminUsersInner() {
+export default function AdminUsersPage() {
   const { success, error } = useToast()
+  const { user: me } = useAuth()
+  // Responsable d'examen : il CONSULTE les comptes (listes, étudiants compris) mais ne les gère pas.
+  const readOnly = me?.role === 'responsable_examen'
 
   const [search, setSearch]       = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -316,10 +319,11 @@ function AdminUsersInner() {
         <div>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, margin: 0 }}>
             <i className="fas fa-users" style={{ color: 'var(--primary)' }} />
-            Gestion des Utilisateurs
+            {readOnly ? 'Utilisateurs' : 'Gestion des Utilisateurs'}
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize:17, marginTop: 4 }}>Gérez les comptes admins, professeurs et étudiants</p>
+          <p style={{ color: 'var(--text-muted)', fontSize:17, marginTop: 4 }}>{readOnly ? 'Consultation des comptes (lecture seule)' : 'Gérez les comptes admins, professeurs et étudiants'}</p>
         </div>
+        {!readOnly && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => openCreate('student')} style={btnStyle('#10b981')}>
             <i className="fas fa-graduation-cap" /> Étudiant
@@ -345,6 +349,7 @@ function AdminUsersInner() {
             <i className="fas fa-file-import" /> Import CSV
           </button>
         </div>
+        )}
       </div>
 
       {/* Stats cards */}
@@ -445,6 +450,7 @@ function AdminUsersInner() {
                   {u.is_active ? 'Actif' : 'Inactif'}
                 </span>
               </td>
+              {!readOnly && (
               <td>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <button onClick={() => openEdit(u)}
@@ -466,6 +472,7 @@ function AdminUsersInner() {
                   )}
                 </div>
               </td>
+              )}
             </tr>
           )
 
@@ -477,7 +484,7 @@ function AdminUsersInner() {
                 {isStudent && !showPoleColumnStyle && <th>PÔLE</th>}
                 {isStudent && <th>NIVEAU</th>}
                 <th>STATUT</th>
-                <th>ACTIONS</th>
+                {!readOnly && <th>ACTIONS</th>}
               </tr>
             </thead>
           )
@@ -895,19 +902,4 @@ function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClos
       </div>
     </div>
   )
-}
-
-/* La gestion des utilisateurs est réservée à l'administrateur (le responsable d'examen n'y a pas accès). */
-export default function AdminUsersPage() {
-  const { user } = useAuth()
-  if (user && user.role !== 'admin') {
-    return (
-      <div className="card" style={{ padding: 32, textAlign: 'center' }}>
-        <i className="fas fa-lock" style={{ fontSize: 28, color: 'var(--text-muted)' }} />
-        <h3 style={{ marginTop: 12 }}>Accès réservé aux administrateurs</h3>
-        <p style={{ color: 'var(--text-muted)' }}>La gestion des utilisateurs n'est pas disponible pour votre rôle.</p>
-      </div>
-    )
-  }
-  return <AdminUsersInner />
 }
