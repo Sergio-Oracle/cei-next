@@ -318,6 +318,7 @@ export default function ProctorMonitorPage() {
   const [studentMsgs, setStudentMsgs]       = useState<any[]>([])
   const [studentMsgsModal, setStudentMsgsModal] = useState(false)
   const lastMsgTsRef = useRef<string | null>(null)
+  const seenStudentMsgIdsRef = useRef<Set<number>>(new Set())
   const [newMsgCount, setNewMsgCount]       = useState(0)
 
   /* modal enregistrements */
@@ -419,8 +420,18 @@ export default function ProctorMonitorPage() {
       if (myRole === 'surveillant' && myAttemptIds.size > 0) {
         newMsgs = newMsgs.filter((m: any) => myAttemptIds.has(m.attempt_id))
       }
+      // Un message déjà affiché (même identifiant serveur) ne l'est jamais deux fois : ni doublon dans la
+      // liste, ni nouveau bip/toast de « demande d'appel » à chaque interrogation.
       if (newMsgs.length > 0) {
-        lastMsgTsRef.current = newMsgs[0].timestamp
+        if (!lastMsgTsRef.current || newMsgs[0].timestamp > lastMsgTsRef.current) lastMsgTsRef.current = newMsgs[0].timestamp
+        newMsgs = newMsgs.filter((m: any) => {
+          if (m.log_id == null) return true
+          if (seenStudentMsgIdsRef.current.has(m.log_id)) return false
+          seenStudentMsgIdsRef.current.add(m.log_id)
+          return true
+        })
+      }
+      if (newMsgs.length > 0) {
         setStudentMsgs(prev => [...newMsgs, ...prev].slice(0, 100))
         setNewMsgCount(prev => prev + newMsgs.length)
         // Une demande d'appel est plus urgente qu'un simple message — l'étudiant

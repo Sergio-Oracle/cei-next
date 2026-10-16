@@ -432,6 +432,9 @@ export default function ExamPage() {
   const privateTeacherVidRef= useRef<HTMLVideoElement|null>(null)
   const privateTeacherAudRef= useRef<HTMLAudioElement|null>(null)
   const lastMsgTsRef    = useRef<string|null>(null)
+  // Messages de l'enseignant déjà traités (par identifiant serveur) : un appel, un avertissement ou une
+  // fin d'appel n'est JAMAIS rejoué, quoi que renvoie le serveur (filet côté client).
+  const seenTeacherMsgIdsRef = useRef<Set<number>>(new Set())
   // Correctif latence (Phase X, point E) — un même message enseignant peut
   // désormais arriver par DEUX canaux (push LiveKit quasi instantané +
   // polling HTTP 8s en filet de sécurité) : dédup légère pour ne pas
@@ -2095,10 +2098,18 @@ export default function ExamPage() {
     if(sessionEndedRef.current) return
     try {
       const since=lastMsgTsRef.current?`?since=${encodeURIComponent(lastMsgTsRef.current)}`:''
-      const res=await api.get<{banned?:boolean;risk_score?:number;messages?:{type:string;message?:string;timestamp:string}[]}>(`/api/exam_attempts/${aId}/pending_messages${since}`)
+      const res=await api.get<{banned?:boolean;risk_score?:number;messages?:{id?:number;type:string;message?:string;timestamp:string}[]}>(`/api/exam_attempts/${aId}/pending_messages${since}`)
       if(res.banned){triggerBan();return}
       if(res.risk_score!=null) setRiskScore(res.risk_score)
-      for(const msg of res.messages??[]){lastMsgTsRef.current=msg.timestamp;handleTeacherMessage(msg)}
+      for(const msg of res.messages??[]){
+        // le repère n'avance que vers l'avant
+        if(msg.timestamp&&(!lastMsgTsRef.current||msg.timestamp>lastMsgTsRef.current)) lastMsgTsRef.current=msg.timestamp
+        if(msg.id!=null){
+          if(seenTeacherMsgIdsRef.current.has(msg.id)) continue
+          seenTeacherMsgIdsRef.current.add(msg.id)
+        }
+        handleTeacherMessage(msg)
+      }
     } catch {}
   }
 
