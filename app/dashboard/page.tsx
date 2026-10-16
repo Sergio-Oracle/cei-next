@@ -10,7 +10,7 @@ export default function DashboardRoot() {
 
   useEffect(() => {
     if (!user) return
-    if (user.role === 'admin')       router.replace('/dashboard/admin')
+    if (user.role === 'admin' || user.role === 'responsable_examen') router.replace('/dashboard/admin')
     else if (user.role === 'professor')   router.replace('/dashboard/professor')
     else if (user.role === 'student')     router.replace('/dashboard/student')
     else if (user.role === 'surveillant') router.replace('/dashboard/surveillant')

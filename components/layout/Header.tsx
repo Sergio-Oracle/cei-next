@@ -15,12 +15,14 @@ import AnswerBiometricCallModal from '@/components/exam/AnswerBiometricCallModal
 
 const roleLabel: Record<string, string> = {
   admin: 'Administrateur',
+  responsable_examen: "Responsable d'examen",
   professor: 'Professeur',
   student: 'Étudiant',
   surveillant: 'Surveillant',
 }
 const roleColor: Record<string, string> = {
   admin: '#ef4444',
+  responsable_examen: '#0d9488',
   professor: '#3b82f6',
   student: '#10b981',
   surveillant: '#f59e0b',

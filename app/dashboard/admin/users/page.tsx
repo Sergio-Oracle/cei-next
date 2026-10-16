@@ -3,19 +3,21 @@
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { useAuth } from '@/contexts/AuthContext'
 import type { User, UserRole } from '@/types'
 import Pager from '@/components/ui/Pager'
 
 /* ── Couleurs & icônes par rôle ─────────────────────────────────────────── */
 const ROLE_META: Record<string, { label: string; plural: string; color: string; bg: string; icon: string }> = {
   admin:       { label: 'Admin',        plural: 'Administrateurs', color: '#eab308', bg: '#fef9c3', icon: 'fa-crown' },
+  responsable_examen: { label: "Responsable d'examen", plural: "Responsables d'examen", color: '#0d9488', bg: '#ccfbf1', icon: 'fa-user-gear' },
   professor:   { label: 'Professeur',   plural: 'Professeurs',     color: '#10b981', bg: '#d1fae5', icon: 'fa-chalkboard-teacher' },
   superviseur: { label: 'Superviseur',  plural: 'Superviseurs',    color: '#0891b2', bg: '#cffafe', icon: 'fa-user-shield' },
   surveillant: { label: 'Surveillant',  plural: 'Surveillants',    color: '#f59e0b', bg: '#fef3c7', icon: 'fa-eye' },
   student:     { label: 'Étudiant',     plural: 'Étudiants',       color: '#3b82f6', bg: '#dbeafe', icon: 'fa-graduation-cap' },
 }
 
-const SECTION_ORDER = ['admin', 'professor', 'superviseur', 'surveillant', 'student']
+const SECTION_ORDER = ['admin', 'responsable_examen', 'professor', 'superviseur', 'surveillant', 'student']
 const PAGE_SIZE = 50
 
 interface Pole { id: number; code: string; name: string }
@@ -39,7 +41,7 @@ function initials(name: string) {
   return name.split(' ').slice(0, 2).map(w => w.charAt(0)).join('').toUpperCase() || '?'
 }
 
-export default function AdminUsersPage() {
+function AdminUsersInner() {
   const { success, error } = useToast()
 
   const [search, setSearch]       = useState('')
@@ -328,6 +330,9 @@ export default function AdminUsersPage() {
           <button onClick={() => openCreate('surveillant')} style={btnStyle('#f59e0b')}>
             <i className="fas fa-eye" /> Surveillant
           </button>
+          <button onClick={() => openCreate('responsable_examen')} style={btnStyle('#0d9488')}>
+            <i className="fas fa-user-gear" /> Responsable d'examen
+          </button>
           <button onClick={() => openCreate('superviseur')} style={btnStyle('#0891b2')}>
             <i className="fas fa-user-shield" /> Superviseur
           </button>
@@ -596,6 +601,7 @@ export default function AdminUsersPage() {
                 <option value="professor">Professeur</option>
                 <option value="surveillant">Surveillant</option>
                 <option value="superviseur">Superviseur</option>
+                <option value="responsable_examen">Responsable d'examen</option>
                 <option value="admin">Administrateur</option>
               </select>
             )}
@@ -889,4 +895,19 @@ function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClos
       </div>
     </div>
   )
+}
+
+/* La gestion des utilisateurs est réservée à l'administrateur (le responsable d'examen n'y a pas accès). */
+export default function AdminUsersPage() {
+  const { user } = useAuth()
+  if (user && user.role !== 'admin') {
+    return (
+      <div className="card" style={{ padding: 32, textAlign: 'center' }}>
+        <i className="fas fa-lock" style={{ fontSize: 28, color: 'var(--text-muted)' }} />
+        <h3 style={{ marginTop: 12 }}>Accès réservé aux administrateurs</h3>
+        <p style={{ color: 'var(--text-muted)' }}>La gestion des utilisateurs n'est pas disponible pour votre rôle.</p>
+      </div>
+    )
+  }
+  return <AdminUsersInner />
 }

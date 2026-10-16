@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { useAuth } from '@/contexts/AuthContext'
 import type { AdminStats } from '@/types'
 
 export default function AdminDashboard() {
   const { error } = useToast()
+  const { user } = useAuth()
   const [stats, setStats]   = useState<AdminStats | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -64,7 +66,7 @@ export default function AdminDashboard() {
           <div className="card-header"><h3><i className="fa-solid fa-bolt" style={{ marginRight: 8, color: 'var(--warning)' }} />Actions rapides</h3></div>
           <div style={{ padding: '8px 0' }}>
             {[
-              { href: '/dashboard/admin/users', icon: 'fa-user-plus', label: 'Ajouter un utilisateur', desc: 'Créer un compte étudiant, professeur ou surveillant' },
+              ...(user?.role === 'admin' ? [{ href: '/dashboard/admin/users', icon: 'fa-user-plus', label: 'Ajouter un utilisateur', desc: 'Créer un compte étudiant, professeur ou surveillant' }] : []),
               { href: '/dashboard/admin/exams', icon: 'fa-plus-circle', label: 'Nouvel examen en ligne', desc: 'Créer et planifier un examen surveillé' },
               { href: '/dashboard/admin/subjects', icon: 'fa-file-circle-plus', label: 'Nouveau sujet', desc: 'Uploader ou générer un sujet avec l\'IA' },
               { href: '/dashboard/admin/formations', icon: 'fa-building-columns', label: 'Gérer les formations', desc: 'Maquette pédagogique Pôle → Niveau → Formation → Semestre → UE → EC' },

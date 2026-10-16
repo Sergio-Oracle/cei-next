@@ -1,5 +1,5 @@
 // ── Utilisateurs ─────────────────────────────────────────────────────────────
-export type UserRole = 'admin' | 'professor' | 'student' | 'surveillant' | 'superviseur'
+export type UserRole = 'admin' | 'responsable_examen' | 'professor' | 'student' | 'surveillant' | 'superviseur'
 
 export interface User {
   id: number

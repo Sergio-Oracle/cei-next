@@ -46,6 +46,9 @@ const adminNav: NavEntry[] = [
   { label: 'Sécurité',            href: '/dashboard/admin/security',       icon: 'fa-shield-alt' },
 ]
 
+// Responsable d'examen : tout l'espace administrateur SAUF la gestion des utilisateurs.
+const managerNav: NavEntry[] = adminNav.filter(e => !('href' in e) || e.href !== '/dashboard/admin/users')
+
 const professorNav: NavEntry[] = [
   { label: 'Dashboard',            href: '/dashboard/professor',                icon: 'fa-chart-line',    exact: true },
   { divider: 'Sujets & Examens' },
@@ -157,6 +160,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
 
   const roleNav: NavEntry[] =
     user?.role === 'admin'       ? adminNav :
+    user?.role === 'responsable_examen' ? managerNav :
     user?.role === 'professor'   ? professorNav :
     user?.role === 'surveillant' ? surveillantNav :
     user?.role === 'superviseur' ? superviseurNav :

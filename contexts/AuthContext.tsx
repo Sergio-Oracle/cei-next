@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (mounted.current) { setToken(t); setUser(res.user) }
     cacheUser(res.user)
     const role = res.user.role
-    if      (role === 'admin')       router.push('/dashboard/admin')
+    if      (role === 'admin' || role === 'responsable_examen') router.push('/dashboard/admin')
     else if (role === 'professor')   router.push('/dashboard/professor')
     else if (role === 'student')     router.push('/dashboard/student')
     else if (role === 'surveillant') router.push('/dashboard/surveillant')

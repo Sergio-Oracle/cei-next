@@ -15,10 +15,10 @@ function broadcastTheme(dark: boolean) {
 }
 
 const roleLabels: Record<string, string> = {
-  admin: 'Administrateur', professor: 'Professeur', student: 'Étudiant', surveillant: 'Surveillant'
+  admin: 'Administrateur', responsable_examen: "Responsable d'examen", professor: 'Professeur', student: 'Étudiant', surveillant: 'Surveillant'
 }
 const roleColors: Record<string, string> = {
-  admin: '#ef4444', professor: '#3b82f6', student: '#10b981', surveillant: '#f59e0b'
+  admin: '#ef4444', responsable_examen: '#0d9488', professor: '#3b82f6', student: '#10b981', surveillant: '#f59e0b'
 }
 
 interface FullProfile {
