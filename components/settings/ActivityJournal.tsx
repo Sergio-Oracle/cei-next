@@ -3,8 +3,8 @@
 /**
  * Journal d'activité des comptes à privilèges (administrateurs et responsables d'examen).
  *
- * Fonction DISCRÈTE : aucune entrée de menu, aucun lien. Elle n'est proposée que dans Paramètres, après un geste
- * connu du seul propriétaire, et le serveur répond « introuvable » à tout autre compte — voir routes/audit.py.
+ * Fonction DISCRÈTE : le bouton des Paramètres n'existe que pour le propriétaire et les personnes qu'il a
+ * autorisées ; le serveur répond « introuvable » à tout autre compte — voir routes/audit.py.
  */
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import api from '@/lib/api'
@@ -60,6 +60,93 @@ function statusChip(code: number) {
   return { text: `Échec (${code})`, color: '#b45309', bg: '#fef3c7' }
 }
 
+interface Person { id: number; name: string; email: string; role: string; granted_at?: string; granted_by?: string }
+const ROLE_NAME: Record<string, string> = { admin: 'Administrateur', responsable_examen: "Responsable d'examen", professor: 'Professeur', surveillant: 'Surveillant', superviseur: 'Superviseur' }
+
+/** Réservé au propriétaire : qui d'autre peut consulter le journal. L'effet d'un retrait est immédiat. */
+function AccessPanel() {
+  const { success, error } = useToast()
+  const [open, setOpen] = useState(false)
+  const [owners, setOwners] = useState<Person[]>([])
+  const [grants, setGrants] = useState<Person[]>([])
+  const [q, setQ] = useState('')
+  const [found, setFound] = useState<Person[]>([])
+  const [busy, setBusy] = useState(false)
+
+  const load = useCallback(async () => {
+    try {
+      const r = await api.get<{ owners: Person[]; grants: Person[] }>('/api/audit/grants')
+      setOwners(r.owners); setGrants(r.grants)
+    } catch (e: any) { error(e?.message || 'Chargement impossible') }
+  }, [error])
+  useEffect(() => { if (open) load() }, [open, load])
+  useEffect(() => {
+    if (!open || q.trim().length < 2) { setFound([]); return }
+    const t = setTimeout(async () => {
+      try { setFound((await api.get<{ candidates: Person[] }>(`/api/audit/candidates?q=${encodeURIComponent(q.trim())}`)).candidates) } catch { setFound([]) }
+    }, 300)
+    return () => clearTimeout(t)
+  }, [q, open, grants])
+
+  async function grant(p: Person) {
+    setBusy(true)
+    try { await api.post('/api/audit/grants', { user_id: p.id }); success(`${p.name} peut maintenant consulter le journal`); setQ(''); await load() }
+    catch (e: any) { error(e?.message || 'Opération impossible') } finally { setBusy(false) }
+  }
+  async function revoke(p: Person) {
+    if (!confirm(`Retirer l'accès au journal à ${p.name} ? Son bouton disparaît immédiatement.`)) return
+    setBusy(true)
+    try { await api.delete(`/api/audit/grants/${p.id}`); success(`Accès retiré à ${p.name}`); await load() }
+    catch (e: any) { error(e?.message || 'Opération impossible') } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="card" style={{ marginBottom: 20, padding: 0 }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', textAlign: 'left' }}>
+        <i className="fas fa-user-lock" style={{ color: 'var(--primary)' }} />
+        <strong style={{ fontSize: 16 }}>Accès au journal</strong>
+        <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>— vous décidez qui peut le consulter</span>
+        <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} style={{ marginLeft: 'auto', color: 'var(--text-muted)' }} />
+      </button>
+      {open && (
+        <div style={{ padding: '4px 18px 18px', borderTop: '1px solid var(--border)' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '12px 0' }}>
+            Une personne autorisée voit le bouton « Journal d&apos;activité » dans ses Paramètres et consulte toutes les traces. Elle ne peut pas donner l&apos;accès à d&apos;autres. Ses ouvertures du journal sont elles-mêmes tracées.
+          </p>
+          {owners.map(o => (
+            <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ flex: 1 }}><strong>{o.name}</strong> <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>{o.email}</span></div>
+              <span style={{ fontSize: 13, fontWeight: 700, padding: '2px 10px', borderRadius: 10, background: '#dbeafe', color: '#1d4ed8' }}>Propriétaire</span>
+            </div>
+          ))}
+          {grants.map(g => (
+            <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <strong>{g.name}</strong> <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>{g.email} · {ROLE_NAME[g.role] || g.role}</span>
+                <div style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Autorisé{g.granted_by ? ` par ${g.granted_by}` : ''}{g.granted_at ? ` le ${new Date(g.granted_at).toLocaleDateString('fr-FR')}` : ''}</div>
+              </div>
+              <button disabled={busy} onClick={() => revoke(g)} className="btn" style={{ color: '#b91c1c', background: 'transparent', border: '1px solid #fca5a5' }}><i className="fas fa-user-minus" /> Retirer</button>
+            </div>
+          ))}
+          {grants.length === 0 && <div style={{ padding: '10px 0', color: 'var(--text-muted)', fontSize: 14 }}>Personne d&apos;autre n&apos;a accès pour le moment.</div>}
+          <div style={{ marginTop: 14 }}>
+            <label style={{ fontSize: 14, fontWeight: 600 }}>Autoriser une personne</label>
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder="Tapez un nom ou une adresse e-mail (2 lettres minimum)…"
+              style={{ width: '100%', marginTop: 6, padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 15 }} />
+            {found.map(p => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ flex: 1 }}><strong>{p.name}</strong> <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>{p.email} · {ROLE_NAME[p.role] || p.role}</span></div>
+                <button disabled={busy} onClick={() => grant(p)} className="btn btn-primary"><i className="fas fa-user-plus" /> Autoriser</button>
+              </div>
+            ))}
+            {q.trim().length >= 2 && found.length === 0 && <div style={{ padding: '8px 4px', color: 'var(--text-muted)', fontSize: 14 }}>Aucune personne trouvée (les étudiants ne peuvent pas être autorisés).</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ActivityJournal() {
   const { error } = useToast()
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -77,6 +164,7 @@ export default function ActivityJournal() {
   const [failures, setFailures] = useState(false)
   const [live, setLive] = useState(true)
   const [open, setOpen] = useState<number | null>(null)
+  const [isOwner, setIsOwner] = useState(false)
 
   const qs = useMemo(() => {
     const p = new URLSearchParams()
@@ -106,6 +194,7 @@ export default function ActivityJournal() {
     finally { setLoading(false) }
   }, [qs, page, error])
 
+  useEffect(() => { api.get<{ owner: boolean }>('/api/audit/access').then(r => setIsOwner(!!r.owner)).catch(() => {}) }, [])
   useEffect(() => { loadAccounts() }, [loadAccounts])
   useEffect(() => { setPage(1) }, [qs])
   useEffect(() => { loadRows() }, [loadRows])
@@ -141,6 +230,8 @@ export default function ActivityJournal() {
           <input type="checkbox" checked={live} onChange={e => setLive(e.target.checked)} /> Actualisation automatique
         </label>
       </div>
+
+      {isOwner && <AccessPanel />}
 
       {/* Comptes */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>

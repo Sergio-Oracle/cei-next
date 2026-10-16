@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
@@ -27,27 +27,13 @@ const roleColors: Record<string, string> = {
 
 interface FullProfile {
   full_name: string; email: string; role: string;
-  is_active?: boolean; last_login?: string; formation_name?: string; niveau?: string;
+  is_active?: boolean; last_login?: string; formation_name?: string; niveau?: string; audit_access?: boolean;
 }
 
 export default function SettingsPage() {
   const { user } = useAuth()
   const { success, error } = useToast()
   const [tab, setTab] = useState<Tab>('profil')
-
-  /* Fonction discrète (journal d'activité des comptes à privilèges) : aucune entrée visible. Cinq clics rapides
-     sur la pastille du profil la révèlent — et seulement si le serveur reconnaît le propriétaire (sinon 404,
-     rien ne se passe). */
-  const [auditUnlocked, setAuditUnlocked] = useState(false)
-  const secretClicks = useRef<number[]>([])
-  async function secretClick() {
-    if (user?.role !== 'admin') return
-    const now = Date.now()
-    secretClicks.current = [...secretClicks.current.filter(t => now - t < 4000), now]
-    if (secretClicks.current.length < 5) return
-    secretClicks.current = []
-    try { await api.get('/api/audit/access'); setAuditUnlocked(true); setTab('journal') } catch { /* silence : fonction inexistante pour ce compte */ }
-  }
 
   /* Profil complet depuis API */
   const [profile, setProfile]   = useState<FullProfile | null>(null)
@@ -182,7 +168,8 @@ export default function SettingsPage() {
     { key: 'securite',      label: 'Sécurité',      icon: 'fa-lock' },
     { key: 'apparence',     label: 'Apparence',     icon: 'fa-paint-brush' },
     { key: 'accessibilite', label: 'Accessibilité', icon: 'fa-universal-access' },
-    ...(auditUnlocked ? [{ key: 'journal' as Tab, label: 'Journal', icon: 'fa-clipboard-list' }] : []),
+    // Bouton réservé au propriétaire du journal et aux personnes qu'il a autorisées (clé fournie par le serveur)
+    ...(profile?.audit_access ? [{ key: 'journal' as Tab, label: "Journal d'activité", icon: 'fa-clipboard-list' }] : []),
   ]
 
   return (
@@ -219,7 +206,7 @@ export default function SettingsPage() {
             <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               {/* Carte avatar */}
               <div className="card" style={{ width: 240, flexShrink: 0, textAlign: 'center', padding: 28 }}>
-                <div onClick={secretClick} style={{ width: 80, height: 80, borderRadius: '50%', background: roleColors[profile?.role || user?.role || ''] || 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize:35, color: 'white', fontWeight: 700 }}>
+                <div style={{ width: 80, height: 80, borderRadius: '50%', background: roleColors[profile?.role || user?.role || ''] || 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize:35, color: 'white', fontWeight: 700 }}>
                   {(profile?.full_name || user?.full_name || 'U').charAt(0).toUpperCase()}
                 </div>
                 <h3 style={{ marginBottom: 4, fontSize:19 }}>{profile?.full_name || user?.full_name}</h3>
@@ -461,7 +448,7 @@ export default function SettingsPage() {
           )}
 
           {/* ── Accessibilité ────────────────────────────────────────────── */}
-          {tab === 'journal' && auditUnlocked && <ActivityJournal />}
+          {tab === 'journal' && profile?.audit_access && <ActivityJournal />}
 
           {tab === 'accessibilite' && (
             <div className="card">
