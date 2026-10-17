@@ -189,12 +189,9 @@ export default function LoginPage() {
         setSessionConflict(null)
         // Venu de l'activité « CEI » de Moodle : même passage que sans conflit,
         // pour garder le retour vers Moodle.
-        const qs = new URLSearchParams(window.location.search)
-        const back = qs.get('lti_back')
-        const ltiTo = qs.get('lti_to')   // lien « Rejoindre CEI » du calendrier Moodle
+        const back = new URLSearchParams(window.location.search).get('lti_back')
         if (back) {
-          const to = ltiTo && /^\/exam\/\d{1,9}$/.test(ltiTo) ? ltiTo : '/dashboard'
-          window.location.replace(`/lti/enter?${new URLSearchParams({ to, back, k: String(Date.now()) })}`)
+          window.location.replace(`/lti/enter?${new URLSearchParams({ to: '/dashboard', back, k: String(Date.now()) })}`)
           return
         }
         router.push('/dashboard')
