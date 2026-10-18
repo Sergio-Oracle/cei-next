@@ -18,7 +18,7 @@ const ROLE_META: Record<string, { label: string; plural: string; color: string; 
 }
 
 const SECTION_ORDER = ['admin', 'responsable_examen', 'professor', 'superviseur', 'surveillant', 'student']
-const PAGE_SIZE = 50
+const PAGE_SIZE = 10
 
 interface Pole { id: number; code: string; name: string }
 interface Niveau { id: number; code: string; name: string; pole_id?: number }

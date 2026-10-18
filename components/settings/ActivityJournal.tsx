@@ -10,6 +10,8 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import Pager from '@/components/ui/Pager'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 interface Account {
   id: number; name: string; email: string; role: string; is_active: boolean
@@ -152,6 +154,7 @@ export default function ActivityJournal() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [onlineCount, setOnlineCount] = useState(0)
   const [rows, setRows] = useState<Row[]>([])
+  const rows_pg = useProgressive(rows)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pages, setPages] = useState(1)
@@ -306,7 +309,7 @@ export default function ActivityJournal() {
             <tbody>
               {loading && rows.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 28 }}><i className="fas fa-spinner fa-spin" /></td></tr>}
               {!loading && rows.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 28, color: 'var(--text-muted)' }}>Aucune trace pour ces critères.</td></tr>}
-              {rows.map(r => {
+              {rows_pg.shown.map(r => {
                 const k = KIND[r.kind] || KIND.other
                 const st = statusChip(r.status_code)
                 const hasDetails = r.details && Object.keys(r.details).length > 0
@@ -344,6 +347,7 @@ export default function ActivityJournal() {
               })}
             </tbody>
           </table>
+          <ShowMore pg={rows_pg} label="événements" />
         </div>
         <Pager page={page} totalPages={pages} onChange={setPage} loading={loading} />
       </div>

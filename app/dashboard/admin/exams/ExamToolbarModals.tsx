@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { eventLabel } from '@/lib/eventLabels'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 /* ── Backdrop shell ─────────────────────────────────────────────── */
 function Modal({ onClose, maxWidth = 700, children }: { onClose: () => void; maxWidth?: number; children: React.ReactNode }) {
@@ -281,6 +283,7 @@ export function BilanModal({ examId, examTitle, onClose }: { examId: number; exa
   }
 
   const attempts = data?.attempts ?? []
+  const attempts_pg = useProgressive(attempts)
 
   const statusLabel: Record<string, string> = { submitted: 'Soumis', auto_submitted: 'Auto-soumis', in_progress: 'En cours', banned: 'Exclu', not_started: 'Absent' }
   const statusColor: Record<string, string> = { submitted: '#2563eb', auto_submitted: '#2563eb', in_progress: '#f59e0b', banned: '#ef4444', not_started: '#94a3b8' }
@@ -302,7 +305,7 @@ export function BilanModal({ examId, examTitle, onClose }: { examId: number; exa
               <tbody>
                 {attempts.length === 0
                   ? <tr><td colSpan={8} style={{ textAlign: 'center', padding: 24, color: '#94a3b8' }}>Aucun participant</td></tr>
-                  : attempts.map(a => {
+                  : attempts_pg.shown.map(a => {
                     const sc = statusColor[a.status] ?? '#94a3b8'
                     const sl = statusLabel[a.status]  ?? a.status
                     const riskColor = a.risk_score >= 70 ? '#ef4444' : a.risk_score >= 40 ? '#f59e0b' : '#10b981'
@@ -349,6 +352,7 @@ export function BilanModal({ examId, examTitle, onClose }: { examId: number; exa
                 }
               </tbody>
             </table>
+            <ShowMore pg={attempts_pg} label="tentatives" />
           </div>
         )}
       </div>

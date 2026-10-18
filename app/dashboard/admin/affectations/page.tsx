@@ -49,7 +49,7 @@ export default function AdminAffectationsPage() {
   const [activeRow, setActiveRow] = useState<number | null>(null)
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
-  const PAGE_SIZE = 25
+  const PAGE_SIZE = 10
 
   const load = useCallback(async () => {
     setLoading(true)

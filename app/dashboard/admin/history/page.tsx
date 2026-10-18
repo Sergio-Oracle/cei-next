@@ -7,6 +7,8 @@ import type { OnlineExam } from '@/types'
 import ExamDetailModal from '../exams/ExamDetailModal'
 import ExamCopiesModal from '../exams/ExamCopiesModal'
 import { IncidentsModal } from '../exams/ExamToolbarModals'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 /* ── History-specific type returned by /api/admin/exams_history ── */
 interface HistoryExam {
@@ -38,6 +40,7 @@ function initials(name?: string) {
 export default function AdminHistoryPage() {
   const { error, success }        = useToast()
   const [exams, setExams]         = useState<HistoryExam[]>([])
+  const exams_pg = useProgressive(exams)
   const [loading, setLoading]     = useState(true)
 
   /* Detail modal */
@@ -129,7 +132,7 @@ export default function AdminHistoryPage() {
                   <h3 style={{ color: 'var(--text)', margin: '0 0 8px' }}>Aucun examen terminé</h3>
                   <p style={{ color: 'var(--text-muted)', margin: 0 }}>L'historique s'alimentera automatiquement dès qu'un examen sera clôturé.</p>
                 </td></tr>
-              ) : exams.map(exam => {
+              ) : exams_pg.shown.map(exam => {
                 const sc       = exam.average_score
                 const scColor  = sc >= 10 ? '#10b981' : '#ef4444'
                 const scBg     = sc >= 10 ? '#dcfce7'  : '#fee2e2'
@@ -206,6 +209,7 @@ export default function AdminHistoryPage() {
               })}
             </tbody>
           </table>
+          <ShowMore pg={exams_pg} label="examens" />
         </div>
       </div>
 

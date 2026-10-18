@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { eventLabel } from '@/lib/eventLabels'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 interface Incident {
   id: number | string
@@ -162,6 +164,7 @@ export default function ProfessorNotificationsPage() {
   }
 
   const visible = incidents.filter(inc => filterSeverity === 'all' || inc.severity === filterSeverity)
+  const visible_pg = useProgressive(visible)
 
   const highCount   = incidents.filter(i => i.severity === 'high').length
   const mediumCount = incidents.filter(i => i.severity === 'medium').length
@@ -301,7 +304,7 @@ export default function ProfessorNotificationsPage() {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((inc, idx) => {
+                {visible_pg.shown.map((inc, idx) => {
                   const sev = SEV_CFG[inc.severity] ?? SEV_CFG.medium
                   const label = getLabel(inc.event_type)
                   const snap = inc.snapshot_data
@@ -384,6 +387,7 @@ export default function ProfessorNotificationsPage() {
                 })}
               </tbody>
             </table>
+            <ShowMore pg={visible_pg} label="incidents" />
           </div>
         )}
 

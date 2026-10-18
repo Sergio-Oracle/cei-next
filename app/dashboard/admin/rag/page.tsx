@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { MOODLE_UI } from '@/lib/features'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 /* Page Administration → Moteur RAG. Relie CEI à un serveur RAGFlow de façon
    graphique : adresse + clé API (chiffrée côté serveur), test de connexion,
@@ -62,6 +64,7 @@ function DatasetDetails({ engineId, datasetId }: { engineId: number; datasetId: 
     finally { setLoading(false) }
   }, [engineId, datasetId])
   useEffect(() => { load() }, [load])
+  const docs_pg = useProgressive((data?.documents ?? []).filter(d => filter === 'all' || d.state === filter))
   if (err) return <div style={{ color: '#b91c1c', fontSize: 14 }}><i className="fas fa-circle-exclamation" /> {err}</div>
   if (!data) return <div style={{ color: 'var(--text-muted)', fontSize: 14 }}><i className="fas fa-spinner fa-spin" /> Lecture des documents…</div>
   const docs = data.documents.filter(d => filter === 'all' || d.state === filter)
@@ -80,7 +83,7 @@ function DatasetDetails({ engineId, datasetId }: { engineId: number; datasetId: 
         </button>
       </div>
       <div style={{ display: 'grid', gap: 6, maxHeight: 460, overflowY: 'auto', paddingRight: 2 }}>
-        {docs.map(d => {
+        {docs_pg.shown.map(d => {
           const [label, color, bg] = DOC_STATE[d.state]
           return (
             <div key={d.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '8px 12px', background: 'var(--surface)', display: 'grid', gap: 4 }}>
@@ -105,6 +108,7 @@ function DatasetDetails({ engineId, datasetId }: { engineId: number; datasetId: 
             </div>
           )
         })}
+        <div style={{ gridColumn: '1 / -1' }}><ShowMore pg={docs_pg} label="documents" /></div>
         {docs.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Aucun document dans cette catégorie.</div>}
       </div>
     </div>

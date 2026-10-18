@@ -55,7 +55,7 @@ interface EnrollModal {
   enrolledUeIds: Set<number>
 }
 
-const PAGE_SIZE = 50
+const PAGE_SIZE = 10
 
 interface ListState {
   students: Student[]

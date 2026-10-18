@@ -11,6 +11,8 @@ import SecurityReportPanel from '@/components/shared/SecurityReportPanel'
 import ExamWavesPanel from '@/components/exam/ExamWavesPanel'
 import StatTile from '@/components/ui/StatTile'
 import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 function SBadge({ s }: { s: string }) {
   const m: Record<string, [string, string]> = {
@@ -39,6 +41,7 @@ export default function AdminExamDetailPage() {
 
   const [exam, setExam]       = useState<OnlineExam | null>(null)
   const [attempts, setAttempts] = useState<AttemptEx[]>([])
+  const attempts_pg = useProgressive(attempts)
   const [loading, setLoading] = useState(true)
   const [acting, setActing]   = useState(false)
 
@@ -419,7 +422,7 @@ export default function AdminExamDetailPage() {
             <tbody>
               {attempts.length === 0
                 ? <tr><td colSpan={8} className="empty-message">Aucune tentative</td></tr>
-                : attempts.map(a => (
+                : attempts_pg.shown.map(a => (
                   <tr key={a.id}>
                     <td>
                       <div style={{ fontWeight: 600 }}>{a.student_name ?? `Étudiant #${a.student_id}`}</div>
@@ -483,6 +486,7 @@ export default function AdminExamDetailPage() {
                 ))}
             </tbody>
           </table>
+          <ShowMore pg={attempts_pg} label="tentatives" />
         </div>
       </div>
 

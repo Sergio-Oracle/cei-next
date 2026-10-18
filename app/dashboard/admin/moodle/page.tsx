@@ -5,6 +5,8 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import LtiPanel from './LtiPanel'
 import { MOODLE_UI } from '@/lib/features'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 /* Page Administration → Moodle (phase 2 de la feuille de route CEI–UNCHK).
    Plateformes Moodle ajoutées sans code, correspondance cours ↔ EC, et
@@ -118,6 +120,7 @@ function AdminMoodlePageInner() {
   const [running, setRunning] = useState<null | 'dry' | 'apply'>(null)
   const [progress, setProgress] = useState({ done: 0, total: 0, current: '' })
   const [results, setResults] = useState<CourseResult[]>([])
+  const results_pg = useProgressive(results)
   const [lastMode, setLastMode] = useState<null | 'dry' | 'apply'>(null)
   const [confirmApply, setConfirmApply] = useState(false)
   const [structRunning, setStructRunning] = useState<null | 'dry' | 'apply'>(null)
@@ -650,7 +653,7 @@ function AdminMoodlePageInner() {
                           </tr>
                         </thead>
                         <tbody>
-                          {results.map(r => (
+                          {results_pg.shown.map(r => (
                             <tr key={r.ec_code} style={{ borderTop: '1px solid var(--border)' }}>
                               <td style={{ padding: '7px 12px', fontFamily: 'monospace', fontWeight: 700 }}>{r.ec_code}</td>
                               <td style={{ padding: '7px 12px', color: 'var(--text-muted)' }}>{r.instance}</td>
@@ -673,6 +676,7 @@ function AdminMoodlePageInner() {
                           ))}
                         </tbody>
                       </table>
+                      <ShowMore pg={results_pg} label="cours" />
                     </div>
                   </>
                 )}

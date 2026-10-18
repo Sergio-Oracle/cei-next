@@ -5,10 +5,13 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 import type { GradeTranscript } from '@/types'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 export default function AdminTranscriptsPage() {
   const { success, error } = useToast()
   const [transcripts, setTranscripts] = useState<GradeTranscript[]>([])
+  const transcripts_pg = useProgressive(transcripts)
   const [loading, setLoading] = useState(true)
   const [actioning, setActioning] = useState<number | null>(null)
   const [showGenModal, setShowGenModal] = useState(false)
@@ -102,7 +105,7 @@ export default function AdminTranscriptsPage() {
                 </td></tr>
               ) : transcripts.length === 0 ? (
                 <tr><td colSpan={7} className="empty-message">Aucun relevé de notes</td></tr>
-              ) : transcripts.map(t => (
+              ) : transcripts_pg.shown.map(t => (
                 <tr key={t.id}>
                   <td>{t.student_name ?? `Étudiant #${t.student_id}`}</td>
                   <td>{t.semester_name ?? `S${t.semester_id}`}</td>
@@ -140,6 +143,7 @@ export default function AdminTranscriptsPage() {
               ))}
             </tbody>
           </table>
+          <ShowMore pg={transcripts_pg} label="relevés" />
         </div>
       </div>
 

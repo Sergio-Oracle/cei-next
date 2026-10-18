@@ -8,6 +8,8 @@ import PaperDetailModal from '@/components/papers/PaperDetailModal'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 import type { RestitutionExample, ExampleLabel } from '@/types'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 interface CorrectedPaper {
   id: number
@@ -121,6 +123,7 @@ export default function CorrectedPage() {
     }
     return true
   })
+  const visible_pg = useProgressive(visible)
 
   const avgScore = papers.length
     ? (papers.reduce((s, p) => s + (p.score ?? 0), 0) / papers.filter(p => p.score != null).length || 0).toFixed(1)
@@ -213,7 +216,7 @@ export default function CorrectedPage() {
               </tr>
             </thead>
             <tbody>
-              {visible.map((paper, i) => {
+              {visible_pg.shown.map((paper, i) => {
                 const isOnline    = paper.type === 'online'
                 const scoreNum    = paper.score ?? null
                 const scoreGood   = scoreNum != null && scoreNum >= 10
@@ -307,6 +310,7 @@ export default function CorrectedPage() {
               })}
             </tbody>
           </table>
+          <ShowMore pg={visible_pg} label="copies" />
           </div>
         )}
 

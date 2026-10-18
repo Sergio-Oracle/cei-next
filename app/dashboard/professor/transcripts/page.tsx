@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 interface Transcript {
   id:               number
@@ -178,6 +180,7 @@ export default function ProfessorTranscriptsPage() {
     t.student_name.toLowerCase().includes(search.toLowerCase()) ||
     (t.formation_name ?? '').toLowerCase().includes(search.toLowerCase())
   )
+  const filtered_pg = useProgressive(filtered)
 
   /* Semesters uniques pour le bulk zip */
   const semMap: Record<number, string> = {}
@@ -259,7 +262,7 @@ export default function ProfessorTranscriptsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(t => {
+                {filtered_pg.shown.map(t => {
                   const gColor = gpaColor(t.gpa)
                   return (
                     <tr key={t.id}>
@@ -310,6 +313,7 @@ export default function ProfessorTranscriptsPage() {
                 })}
               </tbody>
             </table>
+            <ShowMore pg={filtered_pg} label="relevés" />
           </div>
         )}
       </div>

@@ -6,10 +6,13 @@ import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 import type { StudentPaper } from '@/types'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 export default function StudentPapersPage() {
   const { success, error } = useToast()
   const [papers, setPapers] = useState<StudentPaper[]>([])
+  const papers_pg = useProgressive(papers)
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<StudentPaper | null>(null)
   const [showReclamation, setShowReclamation] = useState(false)
@@ -77,7 +80,7 @@ export default function StudentPapersPage() {
                 <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40 }}><i className="fa-solid fa-spinner spin" /></td></tr>
               ) : papers.length === 0 ? (
                 <tr><td colSpan={6} className="empty-message">Aucune copie corrigée</td></tr>
-              ) : papers.map(p => (
+              ) : papers_pg.shown.map(p => (
                 <tr key={p.id}>
                   <td><div style={{ fontWeight: 600 }}>{p.subject_title ?? `Sujet #${p.subject_id}`}</div></td>
                   <td>{p.grade ?? '—'}</td>
@@ -114,6 +117,7 @@ export default function StudentPapersPage() {
               ))}
             </tbody>
           </table>
+          <ShowMore pg={papers_pg} label="copies" />
         </div>
       </div>
 

@@ -5,11 +5,14 @@ import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import type { Subject } from '@/types'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 export default function ProfessorSubjectsPage() {
   const { success, error } = useToast()
   const router = useRouter()
   const [subjects, setSubjects] = useState<Subject[]>([])
+  const subjects_pg = useProgressive(subjects)
   const [loading, setLoading] = useState(true)
 
   const [previewSubject, setPreviewSubject] = useState<Subject | null>(null)
@@ -179,7 +182,7 @@ export default function ProfessorSubjectsPage() {
                     </div>
                   </td>
                 </tr>
-              ) : subjects.map(s => {
+              ) : subjects_pg.shown.map(s => {
                 const dateStr  = s.created_at
                   ? new Date(s.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
                   : '—'
@@ -221,6 +224,7 @@ export default function ProfessorSubjectsPage() {
               })}
             </tbody>
           </table>
+          <ShowMore pg={subjects_pg} label="sujets" />
         </div>
       </div>
 

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 interface ECInfo {
   ec_code: string
@@ -226,6 +228,7 @@ function Pagination({ page, pages, onPage }: { page: number; pages: number; onPa
 }
 
 function StudentsTable({ students, showPoleColumn }: { students: Student[]; showPoleColumn: boolean }) {
+  const students_pg = useProgressive(students)
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -237,7 +240,7 @@ function StudentsTable({ students, showPoleColumn }: { students: Student[]; show
           </tr>
         </thead>
         <tbody>
-          {students.map((s, i) => {
+          {students_pg.shown.map((s, i) => {
             const initials = (s.full_name || s.email || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
             return (
               <tr key={s.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}
@@ -275,6 +278,7 @@ function StudentsTable({ students, showPoleColumn }: { students: Student[]; show
           })}
         </tbody>
       </table>
+      <ShowMore pg={students_pg} label="étudiants" />
     </div>
   )
 }

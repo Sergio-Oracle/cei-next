@@ -5,6 +5,8 @@ import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam, ExamStatus } from '@/types'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string; bar: string; icon: string }> = {
   draft:     { label: 'Brouillon', color: '#64748b', bg: '#f1f5f9', bar: '#cbd5e1', icon: 'fa-edit' },
@@ -32,6 +34,7 @@ function SecChip({ icon, label, color, bg }: { icon: string; label: string; colo
 export default function ProfessorExamsPage() {
   const { success, error } = useToast()
   const [exams, setExams]           = useState<OnlineExam[]>([])
+  const exams_pg = useProgressive(exams)
   const [loading, setLoading]       = useState(true)
   const [actioning, setActioning]   = useState<number | null>(null)
 
@@ -145,11 +148,12 @@ export default function ProfessorExamsPage() {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
-              {exams.map(exam => (
+              {exams_pg.shown.map(exam => (
                 <ExamCard key={exam.id} exam={exam} actioning={actioning}
                   onActivate={activate} onClose={closeExam} onExtend={extend}
                   onDelete={deleteExam} />
               ))}
+              <div style={{ gridColumn: "1 / -1" }}><ShowMore pg={exams_pg} label="examens" /></div>
             </div>
           )}
         </>

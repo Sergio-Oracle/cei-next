@@ -5,6 +5,8 @@ import api from '@/lib/api'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 interface OnlineResult {
   attempt_id: number
@@ -24,6 +26,7 @@ interface OnlineResult {
 export default function StudentResultsPage() {
   const { success, error } = useToast()
   const [results, setResults] = useState<OnlineResult[]>([])
+  const results_pg = useProgressive(results)
   const [loading, setLoading] = useState(true)
   const [viewItem, setViewItem] = useState<OnlineResult | null>(null)
   const [showReclamation, setShowReclamation] = useState(false)
@@ -119,7 +122,7 @@ export default function StudentResultsPage() {
                 <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40 }}><i className="fa-solid fa-spinner spin" /> Chargement...</td></tr>
               ) : results.length === 0 ? (
                 <tr><td colSpan={7} className="empty-message">Aucun résultat disponible</td></tr>
-              ) : results.map(r => {
+              ) : results_pg.shown.map(r => {
                 const si = statusInfo(r)
                 return (
                   <tr key={r.attempt_id}>
@@ -165,6 +168,7 @@ export default function StudentResultsPage() {
               })}
             </tbody>
           </table>
+          <ShowMore pg={results_pg} label="résultats" />
         </div>
       </div>
 

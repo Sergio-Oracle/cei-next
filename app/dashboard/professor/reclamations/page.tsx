@@ -6,6 +6,8 @@ import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 import type { Reclamation, ReclamationStatus } from '@/types'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 const AI_STEPS = [
   { at: 0,  label: 'Lecture de la réclamation et du barème…' },
@@ -35,6 +37,7 @@ function StatusBadge({ status }: { status: ReclamationStatus }) {
 export default function ProfessorReclamationsPage() {
   const { success, error } = useToast()
   const [reclamations, setReclamations] = useState<Reclamation[]>([])
+  const reclamations_pg = useProgressive(reclamations)
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Reclamation | null>(null)
   const [response, setResponse] = useState('')
@@ -182,7 +185,7 @@ export default function ProfessorReclamationsPage() {
                 <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40 }}><i className="fa-solid fa-spinner spin" /></td></tr>
               ) : reclamations.length === 0 ? (
                 <tr><td colSpan={6} className="empty-message">Aucune réclamation</td></tr>
-              ) : reclamations.map(r => {
+              ) : reclamations_pg.shown.map(r => {
                 const hasProposal = !!r.ia_proposed_status && r.status === 'pending'
                 return (
                 <tr key={r.id}>
@@ -215,6 +218,7 @@ export default function ProfessorReclamationsPage() {
               )})}
             </tbody>
           </table>
+          <ShowMore pg={reclamations_pg} label="réclamations" />
         </div>
       </div>
 

@@ -7,6 +7,8 @@ import { useToast } from '@/contexts/ToastContext'
 import type { ExamAttempt } from '@/types'
 import { StatsModal, PlagiatModal, BilanModal } from './ExamToolbarModals'
 import { eventLabel } from '@/lib/eventLabels'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 /* ── Types locaux ──────────────────────────────────────────────── */
 type RichAttempt = ExamAttempt & {
@@ -284,7 +286,9 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
   }
 
   const inProgress = attempts.filter(a => a.status === 'in_progress')
+  const inProgress_pg = useProgressive(inProgress)
   const done       = attempts.filter(a => a.status === 'submitted' || a.status === 'auto_submitted')
+  const done_pg = useProgressive(done)
   const banned     = attempts.filter(a => a.status === 'banned')
   const hasToDo    = done.some(a => a.needs_correction)
 
@@ -369,7 +373,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                       <tbody>
                         {inProgress.length === 0
                           ? <tr><td colSpan={5} style={{ padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize:15.5 }}>Aucun étudiant en cours</td></tr>
-                          : inProgress.map(a => (
+                          : inProgress_pg.shown.map(a => (
                             <tr key={a.id}>
                               <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
                                 <strong>{a.student_name || 'N/A'}</strong>
@@ -405,6 +409,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                         }
                       </tbody>
                     </table>
+                    <ShowMore pg={inProgress_pg} label="tentatives" />
                   </div>
                 </Section>
 
@@ -420,7 +425,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                       <tbody>
                         {done.length === 0
                           ? <tr><td colSpan={5} style={{ padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize:15.5 }}>Aucune copie soumise</td></tr>
-                          : done.map(a => {
+                          : done_pg.shown.map(a => {
                             const isAuto = a.status === 'auto_submitted'
                             const busy   = acting === a.id
                             return (
@@ -477,6 +482,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                         }
                       </tbody>
                     </table>
+                    <ShowMore pg={done_pg} label="copies" />
                   </div>
                 </Section>
 

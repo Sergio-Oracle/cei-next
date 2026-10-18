@@ -7,6 +7,8 @@ import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam } from '@/types'
 import ExamDetailModal from './ExamDetailModal'
 import ExamCopiesModal from './ExamCopiesModal'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 /* ── Helpers ───────────────────────────────────────────────────── */
 type ExamStatus = 'draft' | 'scheduled' | 'active' | 'closed'
@@ -51,6 +53,7 @@ function SecPill({ icon, value, title }: { icon: string; value: string | number;
 export default function AdminExamsPage() {
   const { success, error } = useToast()
   const [exams,    setExams]    = useState<OnlineExam[]>([])
+  const exams_pg = useProgressive(exams)
   const [loading,  setLoading]  = useState(true)
   const [actioning, setActioning] = useState<number | null>(null)
 
@@ -203,7 +206,7 @@ export default function AdminExamsPage() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
-          {exams.map(exam => {
+          {exams_pg.shown.map(exam => {
             const busy   = actioning === exam.id
             const isDraft     = exam.status === 'draft'
             const isScheduled = exam.status === 'scheduled'
@@ -332,6 +335,7 @@ export default function AdminExamsPage() {
               </div>
             )
           })}
+          <div style={{ gridColumn: "1 / -1" }}><ShowMore pg={exams_pg} label="examens" /></div>
         </div>
       )}
 

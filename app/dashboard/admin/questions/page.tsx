@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 interface Question {
   id: number
@@ -290,6 +292,7 @@ export default function AdminQuestionsPage() {
     if (filterSearch && !`${q.title} ${q.content}`.toLowerCase().includes(filterSearch.toLowerCase())) return false
     return true
   })
+  const filtered_pg = useProgressive(filtered)
 
   const hasFilter = filterPole || filterForm || filterSem || filterUe || filterEc || filterType || filterTag || filterSearch
 
@@ -711,7 +714,7 @@ export default function AdminQuestionsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(q => {
+                {filtered_pg.shown.map(q => {
                   const st = typeSt(q.question_type)
                   const isSelected = selected.has(q.id)
                   const isHidden = q.status === 'hidden'
@@ -796,6 +799,7 @@ export default function AdminQuestionsPage() {
                 })}
               </tbody>
             </table>
+            <ShowMore pg={filtered_pg} label="questions" />
           </div>
         )}
       </div>

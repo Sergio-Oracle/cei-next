@@ -11,6 +11,8 @@ import SecurityReportPanel from '@/components/shared/SecurityReportPanel'
 import ExamWavesPanel from '@/components/exam/ExamWavesPanel'
 import StatTile from '@/components/ui/StatTile'
 import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -40,6 +42,7 @@ export default function ProfessorExamDetailPage() {
   const { success, error } = useToast()
   const [exam, setExam] = useState<OnlineExam | null>(null)
   const [attempts, setAttempts] = useState<AttemptWithMeta[]>([])
+  const attempts_pg = useProgressive(attempts)
   const [attemptsPage, setAttemptsPage] = useState(1)
   const [attemptsTotalPages, setAttemptsTotalPages] = useState(1)
   const [attemptsTotal, setAttemptsTotal] = useState(0)
@@ -540,7 +543,7 @@ export default function ProfessorExamDetailPage() {
             <tbody>
               {attempts.length === 0 ? (
                 <tr><td colSpan={8} className="empty-message">Aucune tentative</td></tr>
-              ) : attempts.map(a => (
+              ) : attempts_pg.shown.map(a => (
                 <tr key={a.id} style={{ background: a.needs_correction ? '#fffbeb' : undefined }}>
                   <td>
                     <div style={{ fontWeight: 600 }}>{a.student_name ?? `Étudiant #${a.student_id}`}</div>
@@ -604,6 +607,7 @@ export default function ProfessorExamDetailPage() {
               ))}
             </tbody>
           </table>
+          <ShowMore pg={attempts_pg} label="tentatives" />
         </div>
         {attemptsTotalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, padding: '14px 0' }}>

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import PaperDetailModal from '@/components/papers/PaperDetailModal'
 import { useToast } from '@/contexts/ToastContext'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 
 interface CorrectedPaper {
   id: number
@@ -79,6 +81,7 @@ export default function AdminPapersPage() {
       (p.professor_name?.toLowerCase().includes(q) ?? false)
     )
   })
+  const visible_pg = useProgressive(visible)
 
   const total   = papers.length
   const online  = papers.filter(p => p.type === 'online').length
@@ -170,7 +173,7 @@ export default function AdminPapersPage() {
               </tr>
             </thead>
             <tbody>
-              {visible.map((p, i) => {
+              {visible_pg.shown.map((p, i) => {
                 const isOnline  = p.type === 'online'
                 const scoreNum  = p.score ?? null
                 const scoreGood = scoreNum != null && scoreNum >= 10
@@ -230,6 +233,7 @@ export default function AdminPapersPage() {
               })}
             </tbody>
           </table>
+          <ShowMore pg={visible_pg} label="copies" />
           </div>
         )}
 
