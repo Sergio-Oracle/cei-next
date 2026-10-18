@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import PaperDetailModal from '@/components/papers/PaperDetailModal'
 import { useToast } from '@/contexts/ToastContext'
 
 interface CorrectedPaper {
@@ -30,6 +31,7 @@ export default function AdminPapersPage() {
   const [search, setSearch]   = useState('')
   const [filterType, setFilterType] = useState<'all' | 'online' | 'paper'>('all')
   const [pdfBusy, setPdfBusy] = useState<number | null>(null)
+  const [detailPaper, setDetailPaper] = useState<CorrectedPaper | null>(null)
 
   useEffect(() => { load() }, [])
 
@@ -60,10 +62,10 @@ export default function AdminPapersPage() {
   }
 
   function openDetail(paper: CorrectedPaper) {
-    const attemptId = paper.attempt_id || (paper.type === 'online' ? paper.id : null)
-    if (attemptId) {
-      router.push(`/dashboard/professor/attempts/${attemptId}`)
-    }
+    // Tout ce qui n'est pas un examen en ligne est une copie papier (le champ type peut être absent)
+    if (paper.type !== 'online') { setDetailPaper(paper); return }
+    const attemptId = paper.attempt_id || paper.id
+    router.push(`/dashboard/professor/attempts/${attemptId}`)
   }
 
   const visible = papers.filter(p => {
@@ -252,6 +254,13 @@ export default function AdminPapersPage() {
           </div>
         )}
       </div>
+      {detailPaper && (
+        <PaperDetailModal
+          paperId={detailPaper.paper_id || detailPaper.id}
+          onClose={() => setDetailPaper(null)}
+          onPdf={() => downloadPdf(detailPaper)}
+        />
+      )}
     </div>
   )
 }

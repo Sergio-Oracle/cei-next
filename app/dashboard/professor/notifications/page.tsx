@@ -16,6 +16,15 @@ interface Incident {
   details?: string
 }
 
+interface AlertItem {
+  id: string
+  type?: string
+  title?: string
+  message?: string
+  created_at?: string
+  is_read: boolean
+}
+
 interface IncidentsResponse {
   incidents: Incident[]
   unread_count: number
@@ -104,16 +113,31 @@ export default function ProfessorNotificationsPage() {
   const [lightboxSrc,    setLightboxSrc]    = useState<string | null>(null)
   const [dismissing,     setDismissing]     = useState<string | null>(null)
   const [clearingAll,    setClearingAll]    = useState(false)
+  // Alertes de la cloche (fraude, seuils, examen sans surveillant…) : toujours listées ici,
+  // pour que la page montre au moins tout ce que la cloche signale.
+  const [alerts,         setAlerts]         = useState<AlertItem[]>([])
 
   useEffect(() => { load() }, [])
 
   async function load() {
     setLoading(true)
     try {
-      const res = await api.get<IncidentsResponse>('/api/professor/recent_incidents')
+      const [res, bell] = await Promise.all([
+        api.get<IncidentsResponse>('/api/professor/recent_incidents').catch(() => ({ incidents: [] } as any)),
+        api.get<any>('/api/notifications').catch(() => ({ notifications: [] })),
+      ])
       setIncidents(res.incidents ?? [])
+      setAlerts(Array.isArray(bell) ? bell : (bell.notifications ?? []))
     } catch { setIncidents([]) }
     finally { setLoading(false) }
+  }
+
+  async function markAlertsRead() {
+    try {
+      await api.put('/api/notifications/mark-read', {})
+      setAlerts(prev => prev.map(a => ({ ...a, is_read: true })))
+      window.dispatchEvent(new CustomEvent('cei:notifications-read'))
+    } catch { toastErr("Échec — les alertes n'ont pas été marquées comme lues") }
   }
 
   async function dismiss(id: number | string) {
@@ -169,6 +193,34 @@ export default function ProfessorNotificationsPage() {
           </button>
         </div>
       </div>
+
+      {/* Alertes de la cloche */}
+      {alerts.length > 0 && (
+        <div style={{ background: 'white', border: '1px solid #dbe7f7', borderRadius: 12, marginBottom: 24, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #dbe7f7' }}>
+            <div style={{ fontWeight: 700, fontSize: 17, color: '#1e3a8a' }}>
+              <i className="fas fa-bell" style={{ color: '#2563eb', marginRight: 8 }} />
+              Alertes ({alerts.filter(a => !a.is_read).length} non lue(s))
+            </div>
+            {alerts.some(a => !a.is_read) && (
+              <button onClick={markAlertsRead}
+                style={{ padding: '7px 14px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #dbe7f7', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>
+                <i className="fas fa-check-double" style={{ marginRight: 6 }} />Tout marquer comme lu
+              </button>
+            )}
+          </div>
+          {alerts.slice(0, 30).map(a => (
+            <div key={a.id} style={{ display: 'flex', gap: 12, padding: '12px 18px', borderBottom: '1px solid #f1f5f9', background: a.is_read ? 'transparent' : '#f5f9ff' }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', marginTop: 8, flexShrink: 0, background: a.is_read ? 'transparent' : '#2563eb' }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {a.title && <div style={{ fontWeight: 600, fontSize: 16, color: '#0f172a' }}>{a.title}</div>}
+                {a.message && <div style={{ fontSize: 15, color: '#475569' }}>{a.message}</div>}
+                {a.created_at && <div style={{ fontSize: 13.5, color: '#94a3b8', marginTop: 3 }}>{new Date(a.created_at).toLocaleString('fr-FR')}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Cartes stats */}
       <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
