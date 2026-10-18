@@ -145,10 +145,10 @@ export default function CorrectedPage() {
       {/* Statistiques */}
       <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
-          { icon: 'fa-clipboard-check', label: 'Total copies', value: stats.total, color: '#2563eb', bg: '#dbeafe' },
-          { icon: 'fa-desktop',    label: 'En ligne',      value: stats.online, color: '#10b981', bg: '#d1fae5' },
-          { icon: 'fa-file-pdf',   label: 'Sur papier',    value: stats.paper,  color: '#0891b2', bg: '#e0f2fe' },
-          { icon: 'fa-chart-line', label: 'Moy. générale', value: avgScore,     color: '#f59e0b', bg: '#fef3c7' },
+          { icon: 'fa-clipboard-check', label: 'Total copies', value: stats.total, color: '#2563eb', bg: '#eff6ff' },
+          { icon: 'fa-desktop',    label: 'En ligne',      value: stats.online, color: '#2563eb', bg: '#eff6ff' },
+          { icon: 'fa-file-pdf',   label: 'Sur papier',    value: stats.paper,  color: '#2563eb', bg: '#eff6ff' },
+          { icon: 'fa-chart-line', label: 'Moy. générale', value: avgScore,     color: '#2563eb', bg: '#eff6ff' },
         ].map(({ icon, label, value, color, bg }) => (
           <div key={label} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: 18, display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 44, height: 44, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

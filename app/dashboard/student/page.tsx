@@ -319,10 +319,10 @@ export default function StudentDashboard() {
           {/* ── Liens rapides ────────────────────────────────────────────────── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
             {[
-              { href: '/dashboard/student/results',       icon: 'fa-chart-line',           label: 'Mes résultats',   color: '#3b82f6' },
-              { href: '/dashboard/student/papers',        icon: 'fa-file-alt',             label: 'Mes copies',      color: '#3b82f6' },
-              { href: '/dashboard/student/transcripts',   icon: 'fa-scroll',               label: 'Relevés de notes', color: '#10b981' },
-              { href: '/dashboard/student/reclamations',  icon: 'fa-exclamation-triangle', label: 'Réclamations',    color: '#f59e0b' },
+              { href: '/dashboard/student/results',       icon: 'fa-chart-line',           label: 'Mes résultats',   color: '#2563eb' },
+              { href: '/dashboard/student/papers',        icon: 'fa-file-alt',             label: 'Mes copies',      color: '#2563eb' },
+              { href: '/dashboard/student/transcripts',   icon: 'fa-scroll',               label: 'Relevés de notes', color: '#2563eb' },
+              { href: '/dashboard/student/reclamations',  icon: 'fa-exclamation-triangle', label: 'Réclamations',    color: '#2563eb' },
             ].map(a => (
               <Link key={a.href} href={a.href} style={{ textDecoration: 'none' }}>
                 <div style={{ background: 'var(--surface)', border: `1px solid var(--border)`, borderRadius: 14, padding: '20px 14px', textAlign: 'center', cursor: 'pointer', transition: 'box-shadow .2s, transform .2s' }}
@@ -344,10 +344,10 @@ function StatTile({ icon, label, value, color, sm }: {
   icon: string; label: string; value: string | number; color: string; sm?: boolean
 }) {
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 16px', textAlign: 'center' }}>
-      <div style={{ fontSize: sm ? 20 : 28, fontWeight: 800, color }}>{value}</div>
+    <div style={{ background: 'var(--surface)', border: '1px solid #dbe7f7', borderRadius: 14, padding: '18px 16px', textAlign: 'center' }}>
+      <div style={{ fontSize: sm ? 20 : 28, fontWeight: 800, color: '#1e3a8a' }}>{value}</div>
       <div style={{ fontSize: sm ? 11 : 12, color: '#64748b', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-        <i className={`fas ${icon}`} /> {label}
+        <i className={`fas ${icon}`} style={{ color: '#2563eb' }} /> {label}
       </div>
     </div>
   )

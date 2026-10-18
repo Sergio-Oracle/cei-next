@@ -4,9 +4,9 @@ import Link from 'next/link'
 
 const QUICK_LINKS = [
   { href: '/dashboard/student/exams',        icon: 'fas fa-laptop-code',  label: 'Mes Examens',  sub: 'Voir les examens actifs',   color: '#2563eb', bg: '#eff6ff', bd: '#bfdbfe' },
-  { href: '/dashboard/student/papers',        icon: 'fas fa-file-alt',     label: 'Mes Copies',   sub: 'Résultats & corrections',   color: '#059669', bg: '#ecfdf5', bd: '#a7f3d0' },
-  { href: '/dashboard/student/transcripts',   icon: 'fas fa-award',        label: 'Mes Relevés',  sub: 'Télécharger PDF',           color: '#d97706', bg: '#fffbeb', bd: '#fde68a' },
-  { href: '/dashboard/student/reclamations',  icon: 'fas fa-comment-dots', label: 'Réclamations', sub: 'Contester une note',        color: '#dc2626', bg: '#fff1f2', bd: '#fecdd3' },
+  { href: '/dashboard/student/papers',        icon: 'fas fa-file-alt',     label: 'Mes Copies',   sub: 'Résultats & corrections',   color: '#2563eb', bg: '#eff6ff', bd: '#bfdbfe' },
+  { href: '/dashboard/student/transcripts',   icon: 'fas fa-award',        label: 'Mes Relevés',  sub: 'Télécharger PDF',           color: '#2563eb', bg: '#eff6ff', bd: '#bfdbfe' },
+  { href: '/dashboard/student/reclamations',  icon: 'fas fa-comment-dots', label: 'Réclamations', sub: 'Contester une note',        color: '#2563eb', bg: '#eff6ff', bd: '#bfdbfe' },
 ]
 
 const CATEGORIES = [

@@ -86,17 +86,17 @@ export default function StudentResultsPage() {
 
       {/* Stats */}
       <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 24 }}>
-        <div className="stat-card" style={{ borderColor: '#3b82f6' }}>
-          <div className="stat-label"><i className="fa-solid fa-clipboard-check" style={{ color: '#3b82f6' }} /> Évaluations</div>
-          <div className="stat-value" style={{ color: '#3b82f6' }}>{results.length}</div>
+        <div className="stat-card">
+          <div className="stat-label"><i className="fa-solid fa-clipboard-check" style={{ color: '#2563eb' }} /> Évaluations</div>
+          <div className="stat-value">{results.length}</div>
         </div>
-        <div className="stat-card" style={{ borderColor: '#10b981' }}>
-          <div className="stat-label"><i className="fa-solid fa-star" style={{ color: '#10b981' }} /> Moyenne générale</div>
-          <div className="stat-value" style={{ color: '#10b981' }}>{avgScore != null ? `${avgScore.toFixed(1)}/20` : '—'}</div>
+        <div className="stat-card">
+          <div className="stat-label"><i className="fa-solid fa-star" style={{ color: '#2563eb' }} /> Moyenne générale</div>
+          <div className="stat-value">{avgScore != null ? `${avgScore.toFixed(1)}/20` : '—'}</div>
         </div>
-        <div className="stat-card" style={{ borderColor: '#3b82f6' }}>
-          <div className="stat-label"><i className="fa-solid fa-trophy" style={{ color: '#3b82f6' }} /> Admis</div>
-          <div className="stat-value" style={{ color: '#3b82f6' }}>{scoredResults.filter(r => (r.score ?? 0) >= 10).length}</div>
+        <div className="stat-card">
+          <div className="stat-label"><i className="fa-solid fa-trophy" style={{ color: '#2563eb' }} /> Admis</div>
+          <div className="stat-value">{scoredResults.filter(r => (r.score ?? 0) >= 10).length}</div>
         </div>
       </div>
 

@@ -78,17 +78,17 @@ export default function ProfessorDashboard() {
       {/* ── Actions rapides ──────────────────────────────────────────── */}
       <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', marginBottom: 28 }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <i className="fas fa-rocket" style={{ color: '#f59e0b' }} />
+          <i className="fas fa-rocket" style={{ color: '#2563eb' }} />
           <h3 style={{ margin: 0, fontSize:18, fontWeight: 700, color: 'var(--text)' }}>Actions Rapides</h3>
         </div>
         <div style={{ padding: '20px', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
           <Link href="/dashboard/professor/create-subject"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#3b82f6', color: 'white', borderRadius: 10, fontSize:17, fontWeight: 600, textDecoration: 'none' }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#2563eb', color: 'white', borderRadius: 10, fontSize:17, fontWeight: 600, textDecoration: 'none' }}>
             <i className="fas fa-plus-circle" style={{ fontSize: 19 }} />
             Créer un Sujet
           </Link>
           <Link href="/dashboard/professor/papers"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#10b981', color: 'white', borderRadius: 10, fontSize:17, fontWeight: 600, textDecoration: 'none' }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 22px', background: '#2563eb', color: 'white', borderRadius: 10, fontSize:17, fontWeight: 600, textDecoration: 'none' }}>
             <i className="fas fa-pencil-alt" style={{ fontSize: 19 }} />
             Corriger des Copies
           </Link>
@@ -114,25 +114,25 @@ export default function ProfessorDashboard() {
 }
 
 const QUICK_LINKS = [
-  { href: '/dashboard/professor/exams',         icon: 'fa-laptop-code',  label: 'Examens en Ligne',   color: '#3b82f6' },
-  { href: '/dashboard/professor/subjects',      icon: 'fa-book',         label: 'Mes Sujets',          color: '#3b82f6' },
-  { href: '/dashboard/professor/questions',     icon: 'fa-database',     label: 'Banque Questions',    color: '#0891b2' },
-  { href: '/dashboard/professor/analytics',     icon: 'fa-chart-bar',    label: 'Résultats',           color: '#10b981' },
-  { href: '/dashboard/professor/reclamations',  icon: 'fa-exclamation-triangle', label: 'Réclamations', color: '#f59e0b' },
-  { href: '/dashboard/professor/notifications', icon: 'fa-bell',         label: 'Notifications',       color: '#64748b' },
+  { href: '/dashboard/professor/exams',         icon: 'fa-laptop-code',  label: 'Examens en Ligne',   color: '#2563eb' },
+  { href: '/dashboard/professor/subjects',      icon: 'fa-book',         label: 'Mes Sujets',          color: '#2563eb' },
+  { href: '/dashboard/professor/questions',     icon: 'fa-database',     label: 'Banque Questions',    color: '#2563eb' },
+  { href: '/dashboard/professor/analytics',     icon: 'fa-chart-bar',    label: 'Résultats',           color: '#2563eb' },
+  { href: '/dashboard/professor/reclamations',  icon: 'fa-exclamation-triangle', label: 'Réclamations', color: '#2563eb' },
+  { href: '/dashboard/professor/notifications', icon: 'fa-bell',         label: 'Notifications',       color: '#2563eb' },
 ]
 
 function StatTile({ icon, label, value, color, href }: { icon: string; label: string; value: string | number; color: string; href: string }) {
   return (
     <Link href={href} style={{ textDecoration: 'none' }}>
-      <div style={{ background: 'var(--surface)', border: `1px solid var(--border)`, borderRadius: 14, padding: '22px 20px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', transition: 'box-shadow .2s, transform .2s', borderTop: `4px solid ${color}` }}
+      <div style={{ background: 'var(--surface)', border: '1px solid #dbe7f7', borderRadius: 14, padding: '22px 20px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', transition: 'box-shadow .2s, transform .2s', borderTop: '4px solid #2563eb' }}
         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(0,0,0,.1)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}>
-        <div style={{ width: 48, height: 48, background: `${color}15`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <i className={`fas ${icon}`} style={{ color, fontSize: 24 }} />
+        <div style={{ width: 48, height: 48, background: '#eff6ff', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <i className={`fas ${icon}`} style={{ color: '#2563eb', fontSize: 24 }} />
         </div>
         <div>
-          <div style={{ fontSize:35, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
+          <div style={{ fontSize:35, fontWeight: 800, color: '#1e3a8a', lineHeight: 1 }}>{value}</div>
           <div style={{ fontSize:15.5, color: '#64748b', marginTop: 4 }}>{label}</div>
         </div>
       </div>

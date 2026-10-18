@@ -21,14 +21,14 @@ export default function AdminDashboard() {
   }, [])
 
   const cards = stats ? [
-    { label: 'Utilisateurs',    value: stats.total_users,           icon: 'fa-users',              color: '#3b82f6' },
-    { label: 'Étudiants',       value: stats.total_students,        icon: 'fa-graduation-cap',     color: '#10b981' },
-    { label: 'Professeurs',     value: stats.total_professors,      icon: 'fa-chalkboard-teacher', color: '#3b82f6' },
-    { label: 'Surveillants',    value: stats.total_surveillants,    icon: 'fa-eye',                color: '#f59e0b' },
-    { label: 'Surveillants actifs', value: stats.active_surveillants ?? 0, icon: 'fa-circle-check',  color: '#10b981' },
-    { label: 'Sujets',          value: stats.total_subjects,        icon: 'fa-file-lines',         color: '#06b6d4' },
-    { label: 'Copies totales',  value: stats.total_papers,          icon: 'fa-copy',               color: '#0891b2' },
-    { label: 'Réclamations',    value: stats.pending_reclamations,  icon: 'fa-triangle-exclamation',color: '#dc2626' },
+    { label: 'Utilisateurs',    value: stats.total_users,           icon: 'fa-users',              color: '#2563eb' },
+    { label: 'Étudiants',       value: stats.total_students,        icon: 'fa-graduation-cap',     color: '#2563eb' },
+    { label: 'Professeurs',     value: stats.total_professors,      icon: 'fa-chalkboard-teacher', color: '#2563eb' },
+    { label: 'Surveillants',    value: stats.total_surveillants,    icon: 'fa-eye',                color: '#2563eb' },
+    { label: 'Surveillants actifs', value: stats.active_surveillants ?? 0, icon: 'fa-circle-check',  color: '#2563eb' },
+    { label: 'Sujets',          value: stats.total_subjects,        icon: 'fa-file-lines',         color: '#2563eb' },
+    { label: 'Copies totales',  value: stats.total_papers,          icon: 'fa-copy',               color: '#2563eb' },
+    { label: 'Réclamations',    value: stats.pending_reclamations,  icon: 'fa-triangle-exclamation',color: '#2563eb' },
     { label: 'Copies corrigées',value: stats.total_corrected_papers,icon: 'fa-check-circle',       color: '#ef4444' },
   ] : []
 
@@ -49,12 +49,12 @@ export default function AdminDashboard() {
               </div>
             ))
           : cards.map((c, i) => (
-              <div key={i} className="stat-card" style={{ borderColor: c.color }}>
+              <div key={i} className="stat-card">
                 <div className="stat-label">
-                  <i className={`fa-solid ${c.icon}`} style={{ color: c.color }} />
+                  <i className={`fa-solid ${c.icon}`} style={{ color: '#2563eb' }} />
                   {c.label}
                 </div>
-                <div className="stat-value" style={{ color: c.color }}>{c.value?.toLocaleString()}</div>
+                <div className="stat-value">{c.value?.toLocaleString()}</div>
               </div>
             ))
         }

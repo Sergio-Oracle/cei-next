@@ -120,17 +120,17 @@ export default function AdminAnalyticsPage() {
             </p>
             <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
               {[
-                { icon: 'fa-users',              label: 'Total utilisateurs',  value: dash.total_users ?? 0,              color: '#2563eb', bg: '#dbeafe' },
-                { icon: 'fa-user-graduate',       label: 'Étudiants',          value: dash.total_students ?? 0,           color: '#0ea5e9', bg: '#e0f2fe' },
-                { icon: 'fa-chalkboard-teacher',  label: 'Professeurs',        value: dash.total_professors ?? 0,         color: '#10b981', bg: '#d1fae5' },
-                { icon: 'fa-eye',                 label: 'Surveillants',       value: dash.total_surveillants ?? 0,       color: '#f59e0b', bg: '#fef3c7' },
+                { icon: 'fa-users',              label: 'Total utilisateurs',  value: dash.total_users ?? 0,              color: '#2563eb', bg: '#eff6ff' },
+                { icon: 'fa-user-graduate',       label: 'Étudiants',          value: dash.total_students ?? 0,           color: '#2563eb', bg: '#eff6ff' },
+                { icon: 'fa-chalkboard-teacher',  label: 'Professeurs',        value: dash.total_professors ?? 0,         color: '#2563eb', bg: '#eff6ff' },
+                { icon: 'fa-eye',                 label: 'Surveillants',       value: dash.total_surveillants ?? 0,       color: '#2563eb', bg: '#eff6ff' },
               ].map(({ icon, label, value, color, bg }) => (
                 <div key={label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 9, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <i className={`fas ${icon}`} style={{ color, fontSize: 19 }} />
                   </div>
                   <div>
-                    <p style={{ margin: 0, fontSize:24, fontWeight: 800, color }}>{value}</p>
+                    <p style={{ margin: 0, fontSize:24, fontWeight: 800, color: '#1e3a8a' }}>{value}</p>
                     <p style={{ margin: 0, fontSize:13, color: '#64748b' }}>{label}</p>
                   </div>
                 </div>
@@ -145,17 +145,17 @@ export default function AdminAnalyticsPage() {
             </p>
             <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
               {[
-                { icon: 'fa-file-alt',          label: 'Sujets créés',        value: dash.total_subjects ?? 0,            color: '#0f766e', bg: '#f0fdfa' },
-                { icon: 'fa-file',              label: 'Copies totales',      value: dash.total_papers ?? 0,              color: '#0891b2', bg: '#e0f2fe' },
-                { icon: 'fa-clipboard-check',   label: 'Copies corrigées',   value: dash.total_corrected_papers ?? 0,    color: '#10b981', bg: '#d1fae5' },
-                { icon: 'fa-exclamation-triangle', label: 'Réclamations en attente', value: dash.pending_reclamations ?? 0, color: '#ef4444', bg: '#fee2e2' },
+                { icon: 'fa-file-alt',          label: 'Sujets créés',        value: dash.total_subjects ?? 0,            color: '#2563eb', bg: '#eff6ff' },
+                { icon: 'fa-file',              label: 'Copies totales',      value: dash.total_papers ?? 0,              color: '#2563eb', bg: '#eff6ff' },
+                { icon: 'fa-clipboard-check',   label: 'Copies corrigées',   value: dash.total_corrected_papers ?? 0,    color: '#2563eb', bg: '#eff6ff' },
+                { icon: 'fa-exclamation-triangle', label: 'Réclamations en attente', value: dash.pending_reclamations ?? 0, color: '#2563eb', bg: '#eff6ff' },
               ].map(({ icon, label, value, color, bg }) => (
                 <div key={label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 9, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <i className={`fas ${icon}`} style={{ color, fontSize: 19 }} />
                   </div>
                   <div>
-                    <p style={{ margin: 0, fontSize:24, fontWeight: 800, color }}>{value}</p>
+                    <p style={{ margin: 0, fontSize:24, fontWeight: 800, color: '#1e3a8a' }}>{value}</p>
                     <p style={{ margin: 0, fontSize:13, color: '#64748b' }}>{label}</p>
                   </div>
                 </div>
@@ -184,18 +184,18 @@ export default function AdminAnalyticsPage() {
               </p>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
                 {[
-                  { icon: 'fa-laptop-code',    label: 'Examens',          value: exams.total_exams ?? 0,      color: '#2563eb', bg: '#dbeafe' },
-                  { icon: 'fa-users',           label: 'Tentatives',       value: exams.total_attempts ?? 0,   color: '#0ea5e9', bg: '#e0f2fe' },
-                  { icon: 'fa-paper-plane',     label: 'Soumissions',      value: exams.total_submitted ?? 0,  color: '#2563eb', bg: '#dbeafe' },
-                  { icon: 'fa-clipboard-check', label: 'Corrigées',        value: exams.total_corrected ?? 0,  color: '#10b981', bg: '#d1fae5' },
-                  { icon: 'fa-star',            label: 'Moyenne globale',  value: exams.overall_avg != null ? `${fmtScore(exams.overall_avg)}/20` : '—', color: scoreColor(exams.overall_avg), bg: '#fef3c7' },
-                  { icon: 'fa-trophy',          label: 'Taux réussite',    value: exams.overall_pass_rate != null ? `${exams.overall_pass_rate}%` : '—', color: exams.overall_pass_rate != null && exams.overall_pass_rate >= 50 ? '#10b981' : '#f59e0b', bg: '#d1fae5' },
+                  { icon: 'fa-laptop-code',    label: 'Examens',          value: exams.total_exams ?? 0,      color: '#2563eb', bg: '#eff6ff' },
+                  { icon: 'fa-users',           label: 'Tentatives',       value: exams.total_attempts ?? 0,   color: '#2563eb', bg: '#eff6ff' },
+                  { icon: 'fa-paper-plane',     label: 'Soumissions',      value: exams.total_submitted ?? 0,  color: '#2563eb', bg: '#eff6ff' },
+                  { icon: 'fa-clipboard-check', label: 'Corrigées',        value: exams.total_corrected ?? 0,  color: '#2563eb', bg: '#eff6ff' },
+                  { icon: 'fa-star',            label: 'Moyenne globale',  value: exams.overall_avg != null ? `${fmtScore(exams.overall_avg)}/20` : '—', color: '#2563eb', bg: '#eff6ff' },
+                  { icon: 'fa-trophy',          label: 'Taux réussite',    value: exams.overall_pass_rate != null ? `${exams.overall_pass_rate}%` : '—', color: '#2563eb', bg: '#eff6ff' },
                 ].map(({ icon, label, value, color, bg }) => (
                   <div key={label} style={{ flex: '1 1 130px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px' }}>
                     <div style={{ width: 36, height: 36, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
                       <i className={`fas ${icon}`} style={{ color, fontSize: 17 }} />
                     </div>
-                    <div style={{ fontSize:24, fontWeight: 800, color }}>{value}</div>
+                    <div style={{ fontSize:24, fontWeight: 800, color: '#1e3a8a' }}>{value}</div>
                     <div style={{ fontSize:13, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 2 }}>{label}</div>
                   </div>
                 ))}
@@ -240,7 +240,7 @@ export default function AdminAnalyticsPage() {
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
                       <i className={`fas ${icon}`} style={{ color, fontSize: 16 }} />
                     </div>
-                    <div style={{ fontSize:24, fontWeight: 800, color }}>{value}</div>
+                    <div style={{ fontSize:24, fontWeight: 800, color: '#1e3a8a' }}>{value}</div>
                     <div style={{ fontSize:13, color: 'var(--text)', fontWeight: 600, marginTop: 2 }}>{label}</div>
                     <div style={{ fontSize:12.5, color: '#94a3b8', marginTop: 3, lineHeight: 1.4 }}>{caption}</div>
                   </div>

@@ -173,9 +173,9 @@ export default function ProfessorNotificationsPage() {
       {/* Cartes stats */}
       <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
-          { icon: 'fa-triangle-exclamation', label: 'Total incidents',  value: incidents.length, color: '#2563eb', bg: '#dbeafe' },
-          { icon: 'fa-circle-exclamation',   label: 'Haute sévérité',   value: highCount,        color: '#dc2626', bg: '#fee2e2' },
-          { icon: 'fa-circle-info',          label: 'Sévérité moyenne', value: mediumCount,      color: '#f59e0b', bg: '#fef3c7' },
+          { icon: 'fa-triangle-exclamation', label: 'Total incidents',  value: incidents.length, color: '#2563eb', bg: '#eff6ff' },
+          { icon: 'fa-circle-exclamation',   label: 'Haute sévérité',   value: highCount,        color: '#2563eb', bg: '#eff6ff' },
+          { icon: 'fa-circle-info',          label: 'Sévérité moyenne', value: mediumCount,      color: '#2563eb', bg: '#eff6ff' },
         ].map(({ icon, label, value, color, bg }) => (
           <div key={label} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: 18, display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 44, height: 44, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

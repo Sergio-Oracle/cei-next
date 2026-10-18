@@ -282,12 +282,12 @@ function StudentsTable({ students }: { students: StudentInfo[] }) {
 
 function StatTile({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) {
   return (
-    <div style={{ background: 'var(--surface)', border: `2px solid ${color}22`, borderRadius: 14, padding: '20px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-      <div style={{ width: 44, height: 44, background: `${color}15`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <i className={`fas ${icon}`} style={{ color, fontSize: 22 }} />
+    <div style={{ background: 'var(--surface)', border: '1px solid #dbe7f7', borderRadius: 14, padding: '20px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div style={{ width: 44, height: 44, background: '#eff6ff', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <i className={`fas ${icon}`} style={{ color: '#2563eb', fontSize: 22 }} />
       </div>
       <div>
-        <div style={{ fontSize:31, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
+        <div style={{ fontSize:31, fontWeight: 800, color: '#1e3a8a', lineHeight: 1 }}>{value}</div>
         <div style={{ fontSize:14.5, color: '#64748b', marginTop: 3 }}>{label}</div>
       </div>
     </div>

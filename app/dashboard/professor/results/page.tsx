@@ -160,11 +160,11 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
 
   const kpis = [
     { icon: 'fa-users',          color: '#2563eb', label: 'Étudiants', value: String(st.totalStudents) },
-    { icon: 'fa-chart-line',     color: '#10b981', label: 'Moyenne',   value: st.averageScore  != null ? st.averageScore.toFixed(1)  + '/20' : '—' },
-    { icon: 'fa-sort-amount-up', color: '#f59e0b', label: 'Médiane',   value: st.medianScore   != null ? String(st.medianScore)      + '/20' : '—' },
-    { icon: 'fa-arrow-down',     color: '#ef4444', label: 'Min',       value: st.minScore      != null ? String(st.minScore)         + '/20' : '—' },
-    { icon: 'fa-arrow-up',       color: '#3b82f6', label: 'Max',       value: st.maxScore      != null ? String(st.maxScore)         + '/20' : '—' },
-    { icon: 'fa-percentage',     color: '#059669', label: 'Réussite',  value: st.passRate      != null ? String(st.passRate)         + '%'   : '—' },
+    { icon: 'fa-chart-line',     color: '#2563eb', label: 'Moyenne',   value: st.averageScore  != null ? st.averageScore.toFixed(1)  + '/20' : '—' },
+    { icon: 'fa-sort-amount-up', color: '#2563eb', label: 'Médiane',   value: st.medianScore   != null ? String(st.medianScore)      + '/20' : '—' },
+    { icon: 'fa-arrow-down',     color: '#2563eb', label: 'Min',       value: st.minScore      != null ? String(st.minScore)         + '/20' : '—' },
+    { icon: 'fa-arrow-up',       color: '#2563eb', label: 'Max',       value: st.maxScore      != null ? String(st.maxScore)         + '/20' : '—' },
+    { icon: 'fa-percentage',     color: '#2563eb', label: 'Réussite',  value: st.passRate      != null ? String(st.passRate)         + '%'   : '—' },
   ]
 
   return (

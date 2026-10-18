@@ -81,18 +81,18 @@ export default function ProfessorAnalyticsPage() {
           {/* ── KPI Cards ── */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
             {[
-              { icon: 'fa-laptop-code',     label: 'Examens',          value: data.total_exams ?? 0,      color: '#2563eb', bg: '#dbeafe' },
-              { icon: 'fa-users',            label: 'Tentatives',       value: data.total_attempts ?? 0,   color: '#0ea5e9', bg: '#e0f2fe' },
-              { icon: 'fa-paper-plane',      label: 'Soumissions',      value: data.total_submitted ?? 0,  color: '#2563eb', bg: '#dbeafe' },
-              { icon: 'fa-clipboard-check',  label: 'Copies corrigées', value: data.total_corrected ?? 0,  color: '#10b981', bg: '#d1fae5' },
-              { icon: 'fa-star',             label: 'Moyenne globale',  value: data.overall_avg != null ? `${fmtScore(data.overall_avg)}/20` : '—', color: sc(data.overall_avg), bg: '#fef3c7' },
-              { icon: 'fa-trophy',           label: 'Taux de réussite', value: data.overall_pass_rate != null ? `${data.overall_pass_rate}%` : '—', color: passRate >= 50 ? '#10b981' : '#f59e0b', bg: '#d1fae5' },
+              { icon: 'fa-laptop-code',     label: 'Examens',          value: data.total_exams ?? 0,      color: '#2563eb', bg: '#eff6ff' },
+              { icon: 'fa-users',            label: 'Tentatives',       value: data.total_attempts ?? 0,   color: '#2563eb', bg: '#eff6ff' },
+              { icon: 'fa-paper-plane',      label: 'Soumissions',      value: data.total_submitted ?? 0,  color: '#2563eb', bg: '#eff6ff' },
+              { icon: 'fa-clipboard-check',  label: 'Copies corrigées', value: data.total_corrected ?? 0,  color: '#2563eb', bg: '#eff6ff' },
+              { icon: 'fa-star',             label: 'Moyenne globale',  value: data.overall_avg != null ? `${fmtScore(data.overall_avg)}/20` : '—', color: '#2563eb', bg: '#eff6ff' },
+              { icon: 'fa-trophy',           label: 'Taux de réussite', value: data.overall_pass_rate != null ? `${data.overall_pass_rate}%` : '—', color: '#2563eb', bg: '#eff6ff' },
             ].map(({ icon, label, value, color, bg }) => (
               <div key={label} style={{ flex: '1 1 130px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px' }}>
                 <div style={{ width: 36, height: 36, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
                   <i className={`fas ${icon}`} style={{ color, fontSize: 17 }} />
                 </div>
-                <div style={{ fontSize:24, fontWeight: 800, color }}>{value}</div>
+                <div style={{ fontSize:24, fontWeight: 800, color: '#1e3a8a' }}>{value}</div>
                 <div style={{ fontSize:13, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 2 }}>{label}</div>
               </div>
             ))}
@@ -135,7 +135,7 @@ export default function ProfessorAnalyticsPage() {
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
                       <i className={`fas ${icon}`} style={{ color, fontSize: 16 }} />
                     </div>
-                    <div style={{ fontSize:24, fontWeight: 800, color }}>{value}</div>
+                    <div style={{ fontSize:24, fontWeight: 800, color: '#1e3a8a' }}>{value}</div>
                     <div style={{ fontSize:13, color: 'var(--text)', fontWeight: 600, marginTop: 2 }}>{label}</div>
                     <div style={{ fontSize:12.5, color: '#94a3b8', marginTop: 3, lineHeight: 1.4 }}>{caption}</div>
                   </div>

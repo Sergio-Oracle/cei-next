@@ -438,17 +438,17 @@ export default function AdminEnrollmentsPage() {
 
       {/* Stats */}
       <div className="grid" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
-        <div className="stat-card" style={{ borderColor: '#3b82f6' }}>
-          <div className="stat-label"><i className="fas fa-users" style={{ color: '#3b82f6' }} /> Étudiants</div>
-          <div className="stat-value" style={{ color: '#3b82f6' }}>{stats.total_students}</div>
+        <div className="stat-card">
+          <div className="stat-label"><i className="fas fa-users" style={{ color: '#2563eb' }} /> Étudiants</div>
+          <div className="stat-value">{stats.total_students}</div>
         </div>
-        <div className="stat-card" style={{ borderColor: '#10b981' }}>
-          <div className="stat-label"><i className="fas fa-layer-group" style={{ color: '#10b981' }} /> UEs disponibles</div>
-          <div className="stat-value" style={{ color: '#10b981' }}>{stats.total_ues}</div>
+        <div className="stat-card">
+          <div className="stat-label"><i className="fas fa-layer-group" style={{ color: '#2563eb' }} /> UEs disponibles</div>
+          <div className="stat-value">{stats.total_ues}</div>
         </div>
-        <div className="stat-card" style={{ borderColor: '#f59e0b' }}>
-          <div className="stat-label"><i className="fas fa-user-check" style={{ color: '#f59e0b' }} /> Étudiants inscrits</div>
-          <div className="stat-value" style={{ color: '#f59e0b' }}>{stats.enrolled_count}</div>
+        <div className="stat-card">
+          <div className="stat-label"><i className="fas fa-user-check" style={{ color: '#2563eb' }} /> Étudiants inscrits</div>
+          <div className="stat-value">{stats.enrolled_count}</div>
         </div>
       </div>
 

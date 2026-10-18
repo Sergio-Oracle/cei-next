@@ -103,10 +103,10 @@ export default function AdminPapersPage() {
       {/* Stats */}
       <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
-          { icon: 'fa-clipboard-check', label: 'Total copies',   value: loading ? '…' : total,    color: '#2563eb', bg: '#dbeafe' },
-          { icon: 'fa-desktop',    label: 'En ligne',        value: loading ? '…' : online,   color: '#10b981', bg: '#d1fae5' },
-          { icon: 'fa-file-pdf',   label: 'Sur papier',      value: loading ? '…' : paper,    color: '#0891b2', bg: '#e0f2fe' },
-          { icon: 'fa-chart-line', label: 'Moy. générale',   value: loading ? '…' : avgScore, color: '#f59e0b', bg: '#fef3c7' },
+          { icon: 'fa-clipboard-check', label: 'Total copies',   value: loading ? '…' : total,    color: '#2563eb', bg: '#eff6ff' },
+          { icon: 'fa-desktop',    label: 'En ligne',        value: loading ? '…' : online,   color: '#2563eb', bg: '#eff6ff' },
+          { icon: 'fa-file-pdf',   label: 'Sur papier',      value: loading ? '…' : paper,    color: '#2563eb', bg: '#eff6ff' },
+          { icon: 'fa-chart-line', label: 'Moy. générale',   value: loading ? '…' : avgScore, color: '#2563eb', bg: '#eff6ff' },
         ].map(({ icon, label, value, color, bg }) => (
           <div key={label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 18, display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 44, height: 44, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

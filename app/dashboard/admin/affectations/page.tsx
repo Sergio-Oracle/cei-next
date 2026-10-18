@@ -180,13 +180,13 @@ export default function AdminAffectationsPage() {
       <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 24 }}>
         <div className="stat-card">
           <div className="stat-label">
-            <i className="fas fa-layer-group" style={{ color: '#3b82f6' }} /> ECs au total
+            <i className="fas fa-layer-group" style={{ color: '#2563eb' }} /> ECs au total
           </div>
           <div className="stat-value">{ecs.length}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">
-            <i className="fas fa-circle-check" style={{ color: '#3b82f6' }} /> ECs assignés
+            <i className="fas fa-circle-check" style={{ color: '#2563eb' }} /> ECs assignés
           </div>
           <div className="stat-value">{assignedCount}</div>
         </div>
