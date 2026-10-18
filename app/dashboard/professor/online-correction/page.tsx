@@ -6,6 +6,7 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 import { fmtScore } from '@/lib/format'
+import Progressive from '@/components/ui/Progressive'
 
 interface Attempt {
   id: number
@@ -225,6 +226,7 @@ export default function OnlineCorrectionPage() {
 
             {/* Attempts table */}
             <div style={{ overflowX: 'auto' }}>
+              <Progressive items={exam.attempts} label="tentatives">{(shown) => (
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
@@ -242,7 +244,7 @@ export default function OnlineCorrectionPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {exam.attempts.map((attempt, i) => {
+                  {shown.map((attempt, i) => {
                     const sb = STATUS_BADGE[attempt.status] ?? { label: attempt.status, bg: '#f1f5f9', color: '#475569' }
                     return (
                       <tr key={attempt.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa', borderBottom: '1px solid #f1f5f9' }}
@@ -295,6 +297,7 @@ export default function OnlineCorrectionPage() {
                   })}
                 </tbody>
               </table>
+              )}</Progressive>
             </div>
           </div>
         )

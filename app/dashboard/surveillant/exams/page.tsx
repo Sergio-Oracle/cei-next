@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import Progressive from '@/components/ui/Progressive'
 
 interface StudentInfo {
   student_name:  string
@@ -120,6 +121,7 @@ export default function SurveillantExamsPage() {
 
             {/* Tableau étudiants */}
             {students.length > 0 ? (
+              <Progressive items={students} label="étudiants">{(shown) => (
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: 'var(--background)' }}>
@@ -129,7 +131,7 @@ export default function SurveillantExamsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {students.map((s, idx) => {
+                  {shown.map((s, idx) => {
                     const [sl, sc2, sbg] = STUDENT_STATUS[s.status] ?? ['—', '#94a3b8', '#f1f5f9']
                     const riskColor = s.risk_score >= 70 ? '#ef4444' : s.risk_score >= 40 ? '#f59e0b' : '#10b981'
                     return (
@@ -149,6 +151,7 @@ export default function SurveillantExamsPage() {
                   })}
                 </tbody>
               </table>
+              )}</Progressive>
             ) : (
               <p style={{ padding: '16px 20px', color: 'var(--text-muted)', fontSize:15.5 }}>Aucun étudiant assigné.</p>
             )}
