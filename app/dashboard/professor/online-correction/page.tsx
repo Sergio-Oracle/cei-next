@@ -30,6 +30,7 @@ interface CorrectionResult {
   student_name: string
   score: number | null
   success: boolean
+  reason?: string   // cause réelle de l'échec renvoyée par le serveur
 }
 
 const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
@@ -137,8 +138,8 @@ export default function OnlineCorrectionPage() {
       try {
         const res = await api.aiPost<{ success: boolean; attempt: { score: number } }>(`/api/exam_attempts/${attempt.id}/correct`, {})
         items.push({ student_name: attempt.student_name, score: res.attempt.score, success: true })
-      } catch {
-        items.push({ student_name: attempt.student_name, score: null, success: false })
+      } catch (e: any) {
+        items.push({ student_name: attempt.student_name, score: null, success: false, reason: e?.message || 'Erreur de correction' })
       }
     }
     stopTimer()
@@ -354,13 +355,14 @@ export default function OnlineCorrectionPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto' }}>
             {resultModal.items.map((it, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: 'var(--background)', borderRadius: 8, fontSize:15.5 }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <i className={`fa-solid ${it.success ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ color: it.success ? '#10b981' : '#ef4444' }} />
-                  {it.student_name}
+                <span style={{ display: 'flex', alignItems: 'flex-start', gap: 8, minWidth: 0 }}>
+                  <i className={`fa-solid ${it.success ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ color: it.success ? '#10b981' : '#ef4444', marginTop: 3 }} />
+                  <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                    <span>{it.student_name}</span>
+                    {!it.success && <span style={{ color: '#b91c1c', fontSize:13.5 }}>{it.reason || 'Échec de la correction'}</span>}
+                  </span>
                 </span>
-                {it.success
-                  ? <strong style={{ color: (it.score ?? 0) >= 10 ? '#10b981' : '#ef4444' }}>{fmtScore(it.score ?? 0)}/20</strong>
-                  : <span style={{ color: '#ef4444', fontSize:14.5 }}>Échec</span>}
+                {it.success && <strong style={{ color: (it.score ?? 0) >= 10 ? '#10b981' : '#ef4444' }}>{fmtScore(it.score ?? 0)}/20</strong>}
               </div>
             ))}
           </div>
