@@ -162,7 +162,7 @@ function paginateBlocks(blocks: ParsedBlock[], perPage: number): ParsedBlock[][]
 function parseExamBlocks(raw: string): ParsedBlock[] {
   const VF_RE = /\bvrai\s*[\/|ou]\s*faux\b|\bV\s*[\/|]\s*F\b/i
   const strip = (s: string) => s.trim().replace(/^[*_]{1,2}\s*/,'').replace(/\s*[*_]{1,2}$/,'').trim()
-  const Q_RE  = /^(?:(?:Question|Q)\.?\s+)?(\d{1,2})(?!\s*\.\s*\d)(?:\s*[.:)–—-]|\.\s+|\s{2,})\s*(.+)/i
+  const Q_RE  = /^(?:(?:Question|Q)\.?\s+)?(\d{1,2})(?!\s*\.\s*\d)(?:\s*[.:)–—-]|\.\s+|\s{2,}|\s+(?=\[(?:QCM_MULTI|QCM|VF|OUVERT|SUBOPEN|APPARIEMENT|CODE)\]))\s*(.+)/i  // « Question 1 [QCM] » accepté
   const TYPE_MARKER = /\[(QCM_MULTI|QCM|VF|OUVERT|SUBOPEN|APPARIEMENT|CODE|OUVERT[ES]*)\]/i
   // Marqueur de niveau de difficulté par question (ex: [Facile]/[Moyen]/[Difficile]) —
   // visible pour l'enseignant dans l'aperçu brut avant publication, mais jamais
