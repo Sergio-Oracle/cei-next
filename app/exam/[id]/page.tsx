@@ -219,7 +219,7 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       const c = getC(lines[i])
       if (c) { choices.push(c); i++ }
       else if (choices.length === 0) { extraLines.push(lines[i]); i++ }
-      else break
+      else { choices[choices.length - 1].text = (choices[choices.length - 1].text + ' ' + lines[i].trim()).trim(); i++ }  // suite d'une proposition coupée (PDF)
     }
     let type: ParsedBlock['type']
     if (q.markerType) {
