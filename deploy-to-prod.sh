@@ -18,6 +18,19 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Garde-fou (incident du 19/10/2026) : les lecteurs de sujet du serveur et du navigateur doivent lire les mêmes questions.
+echo "== Garde-fou : lecteurs de sujet (serveur = navigateur) =="
+if [ -x ../cei-api-v2/.venv-base/bin/python ]; then
+  if ! (cd ../cei-api-v2 && .venv-base/bin/python scripts/test_parseur_sujets.py > /tmp/test_parseur_sujets.log 2>&1); then
+    tail -25 /tmp/test_parseur_sujets.log
+    echo "ERREUR : le test des lecteurs de sujet échoue — déploiement refusé." >&2
+    exit 1
+  fi
+  tail -1 /tmp/test_parseur_sujets.log
+else
+  echo "(test des lecteurs de sujet ignoré : environnement Python local introuvable)"
+fi
+
 PROD_API_URL="https://cei.unchk.sn"
 PROD_HOST="serge@196.207.246.205"   # thieboudiene, nouveau réseau depuis le 30/09 (avant : 102.36.139.24)
 PROD_PORT="3120"
