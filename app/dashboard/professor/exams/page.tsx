@@ -7,6 +7,7 @@ import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam, ExamStatus } from '@/types'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { activateExam } from '@/lib/activateExam'
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string; bar: string; icon: string }> = {
   draft:     { label: 'Brouillon', color: '#64748b', bg: '#f1f5f9', bar: '#cbd5e1', icon: 'fa-edit' },
@@ -52,7 +53,7 @@ export default function ProfessorExamsPage() {
   async function activate(id: number) {
     setActioning(id)
     try {
-      await api.post(`/api/online_exams/${id}/activate`)
+      await activateExam(id)
       success('Examen activé')
       setExams(prev => prev.map(e => e.id === id ? { ...e, status: 'active' as ExamStatus } : e))
     } catch (e: any) { error(e.message || 'Erreur') }

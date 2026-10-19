@@ -9,6 +9,7 @@ import ExamDetailModal from './ExamDetailModal'
 import ExamCopiesModal from './ExamCopiesModal'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { activateExam } from '@/lib/activateExam'
 
 /* ── Helpers ───────────────────────────────────────────────────── */
 type ExamStatus = 'draft' | 'scheduled' | 'active' | 'closed'
@@ -93,7 +94,7 @@ export default function AdminExamsPage() {
   async function activate(id: number) {
     setActioning(id)
     try {
-      await api.post(`/api/online_exams/${id}/activate`, {})
+      await activateExam(id)
       success('Examen activé — les étudiants peuvent maintenant le rejoindre')
       setExams(prev => prev.map(e => e.id === id ? { ...e, status: 'active' as ExamStatus } : e))
     } catch (e: any) { error(e.message || 'Erreur lors de l\'activation') }

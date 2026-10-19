@@ -159,6 +159,21 @@ function paginateBlocks(blocks: ParsedBlock[], perPage: number): ParsedBlock[][]
 }
 
 /* ── Parser contenu brut (porté de l'ancienne plateforme) ─────────────────── */
+/* Énoncé extrait d'un PDF : les retours à la ligne « durs » coupent les phrases en plein milieu.
+   On recolle une ligne à la précédente tant que celle-ci ne se termine pas par une ponctuation
+   de fin de phrase, et on garde un retour à la ligne avant une puce ou un tiret de liste. */
+function joinWrappedLines(lines: string[]): string[] {
+  const out: string[] = []
+  for (const raw of lines) {
+    const l = raw.trim(); if (!l) continue
+    const prev = out[out.length - 1]
+    const startsList = /^([-–—•*]|\d+[.)]\s|[a-z][.)]\s)/i.test(l)
+    if (prev !== undefined && !startsList && !/[.:;?!»)]$/.test(prev)) out[out.length - 1] = prev + ' ' + l
+    else out.push(l)
+  }
+  return out
+}
+
 function parseExamBlocks(raw: string): ParsedBlock[] {
   const VF_RE = /\bvrai\s*[\/|ou]\s*faux\b|\bV\s*[\/|]\s*F\b/i
   const strip = (s: string) => s.trim().replace(/^[*_]{1,2}\s*/,'').replace(/\s*[*_]{1,2}$/,'').trim()
@@ -3805,6 +3820,16 @@ export default function ExamPage() {
           </div>
 
           <div style={{flex:1,padding:24,maxWidth:900,width:'100%',margin:'0 auto'}}>
+            {/* Filet de sécurité : aucune question reconnue → l'étudiant voit au moins le sujet complet */}
+            {structuredQs.length===0&&!hasParsed&&(()=>{
+              const raw=exam.subject_content?(typeof exam.subject_content==='object'?exam.subject_content.content:(exam.subject_content as string)):''
+              return raw&&raw.trim()?(
+                <div style={{background:'white',borderRadius:12,border:'1px solid #dbe7f7',padding:24,marginBottom:24}}>
+                  <h2 style={{margin:'0 0 12px',fontSize:19,fontWeight:700,color:'#1e3a8a'}}><i className="fas fa-file-lines" style={{marginRight:8,color:'#2563eb'}}/> Sujet</h2>
+                  <div style={{whiteSpace:'pre-wrap',fontSize:16,lineHeight:1.6,color:'#0f172a'}}>{raw}</div>
+                </div>
+              ):null
+            })()}
             {/* Zone réponses */}
             <div style={{background:'white',borderRadius:12,border:'1px solid #e2e8f0',padding:24,marginBottom:24}}>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
@@ -4219,7 +4244,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:Pa
         <span style={{width:34,height:34,borderRadius:'50%',background:isOpen?'#065f46':'#1e40af',color:'#fff',fontWeight:800,fontSize:18,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{block.num}</span>
         <div style={{flex:1}}>
           <div style={{fontWeight:700,fontSize:18,color:'#0f172a',lineHeight:1.5}}>{block.text}</div>
-          {block.extraLines&&block.extraLines.filter(l=>l.trim()).length>0&&<div style={{fontSize:17,color:'#475569',marginTop:6}}>{block.extraLines.filter(l=>l.trim()).map((l,i)=><span key={i}>{l}<br/></span>)}</div>}
+          {block.extraLines&&block.extraLines.filter(l=>l.trim()).length>0&&<div style={{fontSize:17,color:'#475569',marginTop:6}}>{joinWrappedLines(block.extraLines).map((l,i)=><div key={i} style={{marginTop:i?4:0}}>{l}</div>)}</div>}
         </div>
         <span style={{padding:'2px 8px',borderRadius:99,fontSize:13,fontWeight:700,flexShrink:0,background:isOpen?'#ecfdf5':'#eff6ff',color:isOpen?'#065f46':'#1e40af'}}>
           {TYPE_LABEL[block.type]??'Ouvert'}

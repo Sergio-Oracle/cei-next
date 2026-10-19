@@ -13,6 +13,8 @@ import StatTile from '@/components/ui/StatTile'
 import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { activateExam } from '@/lib/activateExam'
+import SubjectCheckBanner from '@/components/exam/SubjectCheckBanner'
 
 function SBadge({ s }: { s: string }) {
   const m: Record<string, [string, string]> = {
@@ -85,7 +87,7 @@ export default function AdminExamDetailPage() {
 
   async function activate() {
     setActing(true)
-    try { await api.post(`/api/online_exams/${id}/activate`); success('Activé'); setExam(e => e && { ...e, status: 'active' as ExamStatus }) }
+    try { await activateExam(id); success('Activé'); setExam(e => e && { ...e, status: 'active' as ExamStatus }) }
     catch (e: any) { error(e.message) } finally { setActing(false) }
   }
   async function close() {
@@ -294,6 +296,7 @@ export default function AdminExamDetailPage() {
   return (
     <div>
       {/* Header */}
+      <SubjectCheckBanner examId={id} />
       <div className="page-header">
         <div>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

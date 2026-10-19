@@ -13,6 +13,8 @@ import StatTile from '@/components/ui/StatTile'
 import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { activateExam } from '@/lib/activateExam'
+import SubjectCheckBanner from '@/components/exam/SubjectCheckBanner'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -119,7 +121,7 @@ export default function ProfessorExamDetailPage() {
   async function handleActivate() {
     setActioning(true)
     try {
-      await api.post(`/api/online_exams/${id}/activate`)
+      await activateExam(id)
       success('Examen activé')
       setExam(e => e ? { ...e, status: 'active' as ExamStatus } : e)
     } catch (e: any) { error(e.message) } finally { setActioning(false) }
@@ -343,6 +345,7 @@ export default function ProfessorExamDetailPage() {
   return (
     <div>
       {/* Header */}
+      <SubjectCheckBanner examId={id} />
       <div className="page-header">
         <div>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
