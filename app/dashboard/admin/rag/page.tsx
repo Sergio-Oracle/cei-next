@@ -158,7 +158,7 @@ function StatusPill({ e }: { e: Engine }) {
   return <span style={{ fontSize: 13, fontWeight: 700, padding: '3px 10px', borderRadius: 99, color, background: bg, whiteSpace: 'nowrap' }}>{label}</span>
 }
 
-function DiagnosisBox({ d }: { d: Diagnosis }) {
+function DiagnosisBox({ d, live, checkedAt }: { d: Diagnosis; live?: { datasets: number; documents: number; chunks: number } | null; checkedAt?: string | null }) {
   const embedding = (d.default_models || []).find(m => m.type === 'embedding')
   return (
     <div style={{ fontSize: 14.5, display: 'grid', gap: 8, padding: '12px 14px', borderRadius: 10, background: d.ok ? '#eff6ff' : '#fef2f2', border: `1px solid ${d.ok ? '#bfdbfe' : '#fecaca'}` }}>
@@ -179,9 +179,17 @@ function DiagnosisBox({ d }: { d: Diagnosis }) {
           {d.models.length > 0 && <> · {d.models.length} modèle{d.models.length > 1 ? 's' : ''} disponible{d.models.length > 1 ? 's' : ''} : {d.models.map(m => `${m.name} [${m.types.map(t => TYPE_LABELS[t] || t).join(', ')}]`).join(' · ')}</>}
         </div>
       )}
-      {d.datasets !== undefined && (
+      {/* Chiffres EN DIRECT (RAGFlow interrogé à chaque affichage). Jamais ceux du dernier test : ils vieillissent
+          (10 596 fragments affichés le 20/10 alors que le moteur en comptait 14 925). */}
+      {live ? (
         <div style={{ color: 'var(--text-muted)' }}>
-          {d.datasets} base{d.datasets > 1 ? 's' : ''} documentaire{d.datasets > 1 ? 's' : ''} · {d.documents} document{(d.documents || 0) > 1 ? 's' : ''} · {d.chunks} fragment{(d.chunks || 0) > 1 ? 's' : ''} indexé{(d.chunks || 0) > 1 ? 's' : ''}
+          {live.datasets} base{live.datasets > 1 ? 's' : ''} documentaire{live.datasets > 1 ? 's' : ''} · {live.documents} document{live.documents > 1 ? 's' : ''} · {live.chunks} fragment{live.chunks > 1 ? 's' : ''} indexé{live.chunks > 1 ? 's' : ''}
+          <span style={{ marginLeft: 8, color: '#047857', fontWeight: 600 }}><i className="fas fa-circle" style={{ fontSize: 7, marginRight: 4, verticalAlign: 'middle' }} />en direct</span>
+        </div>
+      ) : (
+        <div style={{ color: 'var(--text-muted)' }}>
+          Les volumes (bases, documents, fragments) s'affichent en direct une fois le moteur mis en service
+          {checkedAt ? ` — aucun chiffre ancien n'est conservé ici.` : '.'}
         </div>
       )}
     </div>
@@ -206,6 +214,7 @@ function AdminRagPageInner() {
   const [confirmReindexAll, setConfirmReindexAll] = useState(false)
 
   const [status, setStatus] = useState<DatasetStatus[] | null>(null)
+  const [ledger, setLedger] = useState<{ ready: number; indexing: number; failed: number; no_text: number } | null>(null)
   const [openDataset, setOpenDataset] = useState<string | null>(null)
   const [statusLoading, setStatusLoading] = useState(false)
   const [statusError, setStatusError] = useState<string | null>(null)
@@ -281,13 +290,19 @@ function AdminRagPageInner() {
 
   const loadStatus = useCallback(async (id: number) => {
     setStatusLoading(true); setStatusError(null)
-    try { setStatus((await api.get<{ datasets: DatasetStatus[] }>(`/api/admin/rag/engines/${id}/status`)).datasets || []) }
+    try { const r = await api.get<{ datasets: DatasetStatus[]; ledger?: { ready: number; indexing: number; failed: number; no_text: number } }>(`/api/admin/rag/engines/${id}/status`); setStatus(r.datasets || []); setLedger(r.ledger || null) }
     catch (e: any) { setStatus(null); setStatusError(e.message || 'État indisponible') }
     finally { setStatusLoading(false) }
   }, [])
 
   useEffect(() => { loadEngines() }, [loadEngines])
   useEffect(() => { if (active) loadStatus(active.id); else setStatus(null) }, [active?.id, loadStatus]) // eslint-disable-line
+  // Chiffres toujours à jour : relecture du moteur chaque minute tant que la page est ouverte et visible.
+  useEffect(() => {
+    if (!active) return
+    const t = setInterval(() => { if (document.visibilityState === 'visible') loadStatus(active.id) }, 60_000)
+    return () => clearInterval(t)
+  }, [active?.id, loadStatus]) // eslint-disable-line
 
   function openAdd() { setEditId(null); setForm(emptyForm); setFormDiagnosis(null); setFormOpen(true) }
   function openEdit(e: Engine) { setEditId(e.id); setForm({ name: e.name, base_url: e.base_url, api_key: '' }); setFormDiagnosis(null); setFormOpen(true) }
@@ -462,7 +477,7 @@ function AdminRagPageInner() {
                   ))}
                 </div>
               </div>
-              {e.last_check && <DiagnosisBox d={e.last_check} />}
+              {e.last_check && <DiagnosisBox d={e.last_check} checkedAt={e.last_check_at} live={active && e.id === active.id && status ? { datasets: status.length, documents: totals.documents, chunks: totals.chunks } : null} />}
             </div>
           ))}
         </div>
@@ -507,11 +522,16 @@ function AdminRagPageInner() {
                     ['Documents', totals.documents, 'var(--text)'],
                     ['Fragments indexés', totals.chunks, 'var(--text)'],
                     ['En attente ou en cours', totals.running, totals.running ? '#b45309' : 'var(--text)'],
-                    ['En échec', totals.failed, totals.failed ? '#b91c1c' : 'var(--text)'],
+                    ['En échec', ledger ? ledger.failed : totals.failed, (ledger ? ledger.failed : totals.failed) ? '#b91c1c' : 'var(--text)'],
                   ] as [string, number, string][]).map(([label, n, color]) => (
                     <div key={label} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px' }}>
                       <div style={{ fontSize: 24, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color }}>{n}</div>
                       <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>{label}</div>
+                      {label === 'En échec' && ledger && ledger.failed > 0 && (
+                        <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                          dont {ledger.no_text} sans texte exploitable, {ledger.failed - ledger.no_text} autre(s) cause(s) (moteur surchargé…)
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
