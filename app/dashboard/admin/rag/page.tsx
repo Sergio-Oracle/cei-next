@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
-import { MOODLE_UI } from '@/lib/features'
+import { MOODLE_UI, RAG_UI } from '@/lib/features'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
 
@@ -736,6 +736,7 @@ function AdminRagPageInner() {
 
 /* Hors production tant que le serveur n'a pas ces fonctions (lib/features.ts) : retour au tableau de bord. */
 export default function AdminRagPage() {
-  useEffect(() => { if (!MOODLE_UI) window.location.replace('/dashboard/admin') }, [])
-  return MOODLE_UI ? <AdminRagPageInner /> : null
+  const open = MOODLE_UI && RAG_UI
+  useEffect(() => { if (!open) window.location.replace('/dashboard/admin') }, [open])
+  return open ? <AdminRagPageInner /> : null
 }
