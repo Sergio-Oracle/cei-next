@@ -38,9 +38,9 @@ PROD_KEY="$HOME/.ssh/id_ed25519_unchk"
 PROD_PATH="/home/serge/projet-cei/cei-next"
 
 echo "== Build (NEXT_PUBLIC_API_URL=$PROD_API_URL, en dur, ignore .env.local) =="
-# Interface Moodle active depuis l'intégration du 21/10/2026 (module Moodle déployé sur le serveur de production) ;
-# Moteur RAG masqué tant que son serveur dédié n'est pas livré (lib/features.ts)
-NEXT_PUBLIC_MOODLE_UI=1 NEXT_PUBLIC_RAG_UI=0 NEXT_PUBLIC_API_URL="$PROD_API_URL" npm run build
+# Production = préproduction (exigence du 21/10/2026) : aucun interrupteur d'interface, Moodle et Moteur RAG visibles
+# comme sur la préproduction ; seule l'adresse de l'API change.
+NEXT_PUBLIC_API_URL="$PROD_API_URL" npm run build
 
 echo "== Garde-fou : vérifier qu'aucune URL de dev n'a fui dans le build =="
 if grep -rl "dev-cei.ddns.net" .next/static/ >/dev/null 2>&1; then
