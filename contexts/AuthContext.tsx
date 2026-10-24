@@ -66,20 +66,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // en keepalive, pour qu'elle survive au départ de la page.
     const moodle = getLtiReturn()
     if (moodle) {
-      // Déconnexion unique : on demande d'abord l'adresse de fin de session
-      // Keycloak (avant la révocation, qui invaliderait le jeton), puis on y
-      // va — Keycloak déconnecte alors aussi Moodle. Repli : retour à Moodle.
-      const leave = (dest: string) => {
-        api.postBeacon('/api/auth/logout')   // lit le jeton : avant tout nettoyage
-        localStorage.removeItem('user')
-        clearAuthCookie()
-        navigator.serviceWorker?.controller?.postMessage('CLEAR_PAGE_CACHE')
-        clearLtiReturn()
-        window.location.replace(dest)
-      }
-      api.post('/api/auth/oidc/logout-url', {})
-        .then((r: any) => leave(r?.url || moodle))
-        .catch(() => leave(moodle))
+      api.postBeacon('/api/auth/logout')   // lit le jeton : avant tout nettoyage
+      localStorage.removeItem('user')
+      clearAuthCookie()
+      navigator.serviceWorker?.controller?.postMessage('CLEAR_PAGE_CACHE')
+      clearLtiReturn()
+      window.location.replace(moodle)
       return
     }
     // Révoque le refresh token côté serveur (blocklist) — best-effort : on ne
