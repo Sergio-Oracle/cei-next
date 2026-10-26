@@ -154,7 +154,7 @@ export default function OnlineCorrectionPage() {
       const blob = await api.blob(`/api/online_exams/${examId}/export-csv`)
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
-      a.download = `resultats_${examTitle.replace(/\s+/g, '_')}.csv`
+      a.download = `resultats_${examTitle.replace(/\s+/g, '_')}.xlsx`
       a.click()
       URL.revokeObjectURL(a.href)
     } catch { error('Impossible de générer le CSV') }
@@ -220,7 +220,7 @@ export default function OnlineCorrectionPage() {
                 )}
                 <button onClick={() => exportCSV(exam.id, exam.title)}
                   style={{ padding: '8px 14px', background: '#0f766e', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize:15.5, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <i className="fas fa-file-csv" />Export CSV
+                  <i className="fas fa-file-excel" />Export Excel
                 </button>
               </div>
             </div>

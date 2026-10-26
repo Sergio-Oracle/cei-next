@@ -285,7 +285,7 @@ export default function ProfessorExamDetailPage() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `examen_${id}_notes.csv`
+      a.download = `examen_${id}_notes.xlsx`
       a.click()
       URL.revokeObjectURL(url)
     } catch (e: any) { error(e.message || 'Erreur export') } finally { setDownloading(false) }
@@ -403,7 +403,7 @@ export default function ProfessorExamDetailPage() {
           <button className="btn btn-secondary" onClick={downloadCsv} disabled={downloading}>
             {downloading
               ? <><i className="fa-solid fa-spinner spin" /> Export...</>
-              : <><i className="fa-solid fa-file-csv" /> Export CSV</>}
+              : <><i className="fa-solid fa-file-excel" /> Export Excel</>}
           </button>
           <button className="btn btn-secondary" onClick={downloadSecurityReport} disabled={downloadingSecurity}
             title="Rapport de sécurité agrégé (risques, incidents) pour cet examen">

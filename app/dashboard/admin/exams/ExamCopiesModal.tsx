@@ -279,9 +279,9 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
     try {
       const blob = await api.blob(`/api/online_exams/${examId}/export-csv`)
       const url = URL.createObjectURL(blob)
-      Object.assign(document.createElement('a'), { href: url, download: `examen_${examId}_resultats.csv` }).click()
+      Object.assign(document.createElement('a'), { href: url, download: `examen_${examId}_resultats.xlsx` }).click()
       URL.revokeObjectURL(url)
-    } catch { error('Erreur export CSV') }
+    } catch { error('Erreur export Excel') }
     finally { setCsvDownloading(false) }
   }
 
@@ -346,7 +346,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
             {!loading && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
                 <ToolBtn icon="fa-chart-bar"       label="Statistiques" bg="#eff6ff" color="#2563eb" onClick={() => setShowStats(true)} />
-                <ToolBtn icon="fa-file-csv"         label={csvDownloading ? 'Export…' : 'Export CSV'}   bg="#d1fae5" color="#059669" onClick={exportCsv} />
+                <ToolBtn icon="fa-file-excel"         label={csvDownloading ? 'Export…' : 'Export Excel'}   bg="#d1fae5" color="#059669" onClick={exportCsv} />
                 <ToolBtn icon="fa-magnifying-glass" label="Plagiat"      bg="#fee2e2" color="#ef4444" onClick={() => setShowPlagiat(true)} />
                 <ToolBtn icon="fa-list-check"       label="Bilan"        bg="#e0f2fe" color="#0369a1" onClick={() => setShowBilan(true)} />
               </div>

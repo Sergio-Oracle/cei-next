@@ -237,7 +237,7 @@ export default function AdminExamDetailPage() {
     try {
       const blob = await api.blob(`/api/online_exams/${id}/export-csv`)
       const url = URL.createObjectURL(blob)
-      Object.assign(document.createElement('a'), { href: url, download: `examen_${id}.csv` }).click()
+      Object.assign(document.createElement('a'), { href: url, download: `examen_${id}.xlsx` }).click()
       URL.revokeObjectURL(url)
     } catch (e: any) { error(e.message) } finally { setDownloading(false) }
   }
@@ -327,7 +327,7 @@ export default function AdminExamDetailPage() {
 
           <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)', margin: '0 2px' }} />
 
-          <button className="btn btn-secondary" onClick={downloadCsv} disabled={downloading}><i className="fas fa-file-csv" /> CSV</button>
+          <button className="btn btn-secondary" onClick={downloadCsv} disabled={downloading}><i className="fas fa-file-excel" /> Excel</button>
           <button className="btn btn-secondary" onClick={downloadPdf}><i className="fas fa-file-pdf" /> PDF Bilan</button>
           <button className="btn btn-secondary" onClick={downloadSecurityReport} disabled={downloadingSecurity}
             title="Rapport de sécurité agrégé (risques, incidents) pour cet examen">

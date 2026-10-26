@@ -83,8 +83,8 @@ export function StatsModal({ examId, examTitle, onClose }: { examId: number; exa
     setDlCsv(true)
     try {
       const blob = await api.blob(`/api/online_exams/${examId}/export-csv`)
-      await triggerDownload(blob, `examen_${examId}_resultats.csv`)
-    } catch { error('Erreur export CSV') }
+      await triggerDownload(blob, `examen_${examId}_resultats.xlsx`)
+    } catch { error('Erreur export Excel') }
     finally { setDlCsv(false) }
   }
 
@@ -154,7 +154,7 @@ export function StatsModal({ examId, examTitle, onClose }: { examId: number; exa
       <ModalFooter onClose={onClose}>
         <button onClick={downloadCsv} disabled={dlCsv}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#d1fae5', border: 'none', borderRadius: 8, fontSize:15.5, fontWeight: 600, color: '#059669', cursor: dlCsv ? 'not-allowed' : 'pointer', opacity: dlCsv ? .7 : 1 }}>
-          <i className={`fas ${dlCsv ? 'fa-spinner fa-spin' : 'fa-file-csv'}`} />{dlCsv ? 'Export…' : 'Export CSV'}
+          <i className={`fas ${dlCsv ? 'fa-spinner fa-spin' : 'fa-file-excel'}`} />{dlCsv ? 'Export…' : 'Export Excel'}
         </button>
       </ModalFooter>
     </Modal>
