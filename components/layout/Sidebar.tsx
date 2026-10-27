@@ -48,7 +48,18 @@ const adminNav: NavEntry[] = [
 
 // Responsable d'examen : tout l'espace administrateur ; la page Utilisateurs reste en lecture seule
 // (le serveur refuse toute création, modification ou suppression de compte).
-const managerNav: NavEntry[] = adminNav
+const managerNav: NavEntry[] = [
+  ...adminNav,
+  // Le responsable d'examen peut aussi tout faire à la place d'un enseignant qui n'a pas le temps (voir le guide).
+  { divider: 'À la place d\'un enseignant' },
+  { label: 'Corriger Examens en Ligne', href: '/dashboard/professor/online-correction', icon: 'fa-check-double' },
+  { label: 'Corriger Copies',           href: '/dashboard/professor/papers',            icon: 'fa-pencil-alt' },
+  { label: 'Restitution',               href: '/dashboard/professor/restitution',       icon: 'fa-people-group' },
+  { label: 'Résultats',                 href: '/dashboard/professor/results',           icon: 'fa-chart-pie' },
+  { label: 'Notifications',             href: '/dashboard/professor/notifications',     icon: 'fa-bell' },
+  { divider: 'Aide' },
+  { label: 'Guide Responsable',         href: '/guide-responsable-examen',              icon: 'fa-book-open' },
+]
 
 const professorNav: NavEntry[] = [
   { label: 'Dashboard',            href: '/dashboard/professor',                icon: 'fa-chart-line',    exact: true },

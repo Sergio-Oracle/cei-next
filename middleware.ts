@@ -41,6 +41,7 @@ const PUBLIC_PREFIXES = [
   '/guide-enseignant',
   '/guide-surveillant',
   '/guide-superviseur',
+  '/guide-responsable-examen',
 ]
 
 export function middleware(request: NextRequest) {
