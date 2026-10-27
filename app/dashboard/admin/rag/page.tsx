@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import api from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { MOODLE_UI, RAG_UI } from '@/lib/features'
 import { useProgressive } from '@/lib/useProgressive'
@@ -736,7 +737,9 @@ function AdminRagPageInner() {
 
 /* Hors production tant que le serveur n'a pas ces fonctions (lib/features.ts) : retour au tableau de bord. */
 export default function AdminRagPage() {
-  const open = MOODLE_UI && RAG_UI
-  useEffect(() => { if (!open) window.location.replace('/dashboard/admin') }, [open])
+  const { user } = useAuth()
+  // Réglage réservé à l'administrateur : le responsable d'examen est renvoyé au tableau de bord.
+  const open = MOODLE_UI && RAG_UI && user?.role === 'admin'
+  useEffect(() => { if (user && !open) window.location.replace('/dashboard/admin') }, [open, user])
   return open ? <AdminRagPageInner /> : null
 }

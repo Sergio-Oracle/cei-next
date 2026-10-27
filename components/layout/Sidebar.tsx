@@ -48,8 +48,10 @@ const adminNav: NavEntry[] = [
 
 // Responsable d'examen : tout l'espace administrateur ; la page Utilisateurs reste en lecture seule
 // (le serveur refuse toute création, modification ou suppression de compte).
+// Moodle et Moteur RAG (réglages de connexion) restent réservés à l'administrateur.
+const ADMIN_ONLY_HREFS = ['/dashboard/admin/moodle', '/dashboard/admin/rag']
 const managerNav: NavEntry[] = [
-  ...adminNav,
+  ...adminNav.filter(e => !('href' in e) || !ADMIN_ONLY_HREFS.includes(e.href)),
   // Le responsable d'examen peut aussi tout faire à la place d'un enseignant qui n'a pas le temps (voir le guide).
   { divider: 'À la place d\'un enseignant' },
   { label: 'Corriger Examens en Ligne', href: '/dashboard/professor/online-correction', icon: 'fa-check-double' },

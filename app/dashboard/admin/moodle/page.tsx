@@ -5,6 +5,7 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import LtiPanel from './LtiPanel'
 import { MOODLE_UI } from '@/lib/features'
+import { useAuth } from '@/contexts/AuthContext'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
 
@@ -764,6 +765,9 @@ function AdminMoodlePageInner() {
 
 /* Hors production tant que le serveur n'a pas ces fonctions (lib/features.ts) : retour au tableau de bord. */
 export default function AdminMoodlePage() {
-  useEffect(() => { if (!MOODLE_UI) window.location.replace('/dashboard/admin') }, [])
-  return MOODLE_UI ? <AdminMoodlePageInner /> : null
+  const { user } = useAuth()
+  // Réglage réservé à l'administrateur : le responsable d'examen est renvoyé au tableau de bord.
+  const open = MOODLE_UI && user?.role === 'admin'
+  useEffect(() => { if (user && !open) window.location.replace('/dashboard/admin') }, [open, user])
+  return open ? <AdminMoodlePageInner /> : null
 }
