@@ -15,7 +15,11 @@ export interface CreatedSubject {
   created_at?: string | null
 }
 
-export interface QTypes { qcm: boolean; open: boolean; vf: boolean }
+export interface QTypes {
+  qcm: boolean; open: boolean; vf: boolean
+  /** Types ajoutés pour couvrir ceux de Moodle (voir backend services/question_types.py). */
+  association: boolean; tri: boolean; ordre: boolean; trous: boolean; court: boolean; numerique: boolean
+}
 
 interface UploadPayload {
   title: string
@@ -67,6 +71,8 @@ export function useSubjectUpload(
   async function upload({ title, ecId, qTypes, files, rubricMode = 'ai', totalPoints = 20 }: UploadPayload) {
     const labelMap: Record<keyof QTypes, string> = {
       qcm: 'QCM', open: 'Questions ouvertes', vf: 'Vrai/Faux',
+      association: 'Association', tri: 'Classement (tri)', ordre: 'Remise en ordre', trous: 'Texte à trous',
+      court: 'Réponse courte', numerique: 'Réponse numérique',
     }
     const selectedTypes = (Object.keys(qTypes) as (keyof QTypes)[])
       .filter(k => qTypes[k])

@@ -55,6 +55,7 @@ function extractQuestionBlocks(content: string): { num: string; title: string; r
 // global du formulaire de génération (qui peut mélanger plusieurs types).
 const MARKER_TO_BANK_TYPE: Record<string, string> = {
   QCM: 'qcm', QCM_MULTI: 'qcm_multi', VF: 'vf', APPARIEMENT: 'appariement', CODE: 'code', OUVERT: 'open', SUBOPEN: 'subopen',
+  ASSOCIATION: 'association', TRI: 'tri', ORDRE: 'ordre', TROUS: 'trous', COURT: 'court', NUMERIQUE: 'numerique',
 }
 function detectBlockType(raw: string): string {
   const m = raw.match(/\[(QCM_MULTI|QCM|VF|APPARIEMENT|CODE|OUVERT|SUBOPEN)\]/)
@@ -177,7 +178,7 @@ export default function ProfessorSuggestionsPage() {
     sourceTouchedRef.current = true
     setSource(src)
   }
-  const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false, appariement: false, code: false, subopen: false })
+  const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false, appariement: false, code: false, subopen: false, association: false, tri: false, ordre: false, trous: false, court: false, numerique: false })
   // QCM = un seul type sélectionnable avec un sous-réglage "une seule / plusieurs
   // réponses" — même mécanisme que le type "Choix multiple" de Moodle
   // (answerhowmany), au lieu de deux boutons QCM / QCM multiple indépendants.
@@ -385,7 +386,7 @@ export default function ProfessorSuggestionsPage() {
     // choisi avant de lancer une génération coûteuse (mieux vaut bloquer ici
     // que de laisser le backend improviser une répartition différente de
     // celle affichée à l'enseignant).
-    const selectedKeysForCheck = (['qcm','open','vf','appariement','code','subopen'] as const).filter(k => qTypes[k])
+    const selectedKeysForCheck = (['qcm','open','vf','appariement','code','subopen','association','tri','ordre','trous','court','numerique'] as const).filter(k => qTypes[k])
     if (selectedKeysForCheck.length > 1) {
       const sum = selectedKeysForCheck.reduce((s2,k) => s2 + (pointsByType[k] || 0), 0)
       if (sum !== totalPoints) { toastErr(`La répartition du barème (${sum} pts) ne correspond pas au total (${totalPoints} pts) — ajustez avant de générer.`); return }
@@ -399,7 +400,7 @@ export default function ProfessorSuggestionsPage() {
     setCreating(i); setGenFull(true); setGenFullElapsed(0)
     genFullTimer.current = setInterval(() => setGenFullElapsed(x => x + 1), 1000)
     try {
-      const qMap: Record<string, string> = { qcm: qcmSingle ? 'QCM (une seule réponse)' : 'QCM (plusieurs réponses)', open:'Questions ouvertes', vf:'Vrai/Faux', appariement:'Appariement', code:'Maths et programmation', subopen:'Questions dépendantes (sous-questions liées)' }
+      const qMap: Record<string, string> = { qcm: qcmSingle ? 'QCM (une seule réponse)' : 'QCM (plusieurs réponses)', open:'Questions ouvertes', vf:'Vrai/Faux', appariement:'Appariement', code:'Maths et programmation', subopen:'Questions dépendantes (sous-questions liées)', association:'Association', tri:'Classement (tri)', ordre:'Remise en ordre', trous:'Texte à trous', court:'Réponse courte', numerique:'Réponse numérique' }
       const selectedTypes = Object.entries(qTypes).filter(([,v])=>v).map(([k])=>qMap[k])
       const selectedBloom = Object.entries(bloom).filter(([,v])=>v).map(([k])=>k)
       const suggestionWithTypes = {
@@ -886,6 +887,12 @@ export default function ProfessorSuggestionsPage() {
                     <option value="VF">Vrai / Faux</option>
                     <option value="OUVERT">Question ouverte</option>
                     <option value="APPARIEMENT">Appariement</option>
+                    <option value="ASSOCIATION">Association (avec leurres)</option>
+                    <option value="TRI">Classement (tri)</option>
+                    <option value="ORDRE">Remise en ordre</option>
+                    <option value="TROUS">Texte à trous</option>
+                    <option value="COURT">Réponse courte</option>
+                    <option value="NUMERIQUE">Réponse numérique</option>
                     <option value="CODE">Maths et programmation</option>
                   </select>
                 </div>
@@ -1239,6 +1246,12 @@ export default function ProfessorSuggestionsPage() {
                         ['appariement','Appariement','fa-link','#db2777','#fdf2f8','#fbcfe8'],
                         ['code','Maths / Programmation','fa-code','#ea580c','#fff7ed','#fed7aa'],
                         ['subopen','Sous-questions liées','fa-diagram-project','#0d9488','#f0fdfa','#99f6e4'],
+                        ['association','Association','fa-link','#b45309','#fffbeb','#fde68a'],
+                        ['tri','Classement (tri)','fa-layer-group','#0f766e','#f0fdfa','#99f6e4'],
+                        ['ordre','Remise en ordre','fa-arrow-down-1-9','var(--primary)','#eff6ff','#dbeafe'],
+                        ['trous','Texte à trous','fa-ellipsis','#475569','#f8fafc','#e2e8f0'],
+                        ['court','Réponse courte','fa-i-cursor','#10b981','#f0fdf4','#bbf7d0'],
+                        ['numerique','Réponse numérique','fa-calculator','#0369a1','#e0f2fe','#bae6fd'],
                       ] as const).map(([k,label,icon,color,bg,border]) => (
                         <button key={k} type="button" onClick={() => setQTypes(p => ({...p,[k]:!p[k]}))}
                           style={{ display:'flex', alignItems:'center', gap:9, padding:'10px 18px', border:`1.5px solid ${qTypes[k]?border:'var(--border)'}`, borderRadius:10, cursor:'pointer', background:qTypes[k]?bg:'var(--surface)', transition:'all .15s', fontWeight:qTypes[k]?700:400, fontSize:15.5, color:qTypes[k]?color:'var(--text)' }}>
@@ -1288,8 +1301,8 @@ export default function ProfessorSuggestionsPage() {
                     <span style={{ fontSize:15.5, color:'var(--text-muted)' }}>points</span>
                   </div>
                   {(() => {
-                    const TYPE_LABELS: Record<string, string> = { qcm:'QCM', open:'Questions ouvertes', vf:'Vrai / Faux', appariement:'Appariement', code:'Maths / Programmation', subopen:'Sous-questions liées' }
-                    const selectedKeys = (['qcm','open','vf','appariement','code','subopen'] as const).filter(k => qTypes[k])
+                    const TYPE_LABELS: Record<string, string> = { qcm:'QCM', open:'Questions ouvertes', vf:'Vrai / Faux', appariement:'Appariement', code:'Maths / Programmation', subopen:'Sous-questions liées', association:'Association', tri:'Classement (tri)', ordre:'Remise en ordre', trous:'Texte à trous', court:'Réponse courte', numerique:'Réponse numérique' }
+                    const selectedKeys = (['qcm','open','vf','appariement','code','subopen','association','tri','ordre','trous','court','numerique'] as const).filter(k => qTypes[k])
                     const sum = selectedKeys.reduce((s,k) => s + (pointsByType[k] || 0), 0)
                     const ok = sum === totalPoints
                     return selectedKeys.length > 1 ? (

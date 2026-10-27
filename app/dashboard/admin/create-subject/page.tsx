@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
-import { useSubjectUpload } from '@/hooks/useSubjectUpload'
+import { useSubjectUpload, type QTypes } from '@/hooks/useSubjectUpload'
 import { useQuestionBank, BankQuestion } from '@/hooks/useQuestionBank'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 
@@ -53,7 +53,7 @@ export default function AdminCreateSubjectPage() {
   const [filterFormation, setFilterFormation] = useState('')
   const [filterLevel,     setFilterLevel]     = useState('')
   const [files,           setFiles]           = useState<File[]>([])
-  const [qTypes, setQTypes] = useState({ qcm: true, open: true, vf: false })
+  const [qTypes, setQTypes] = useState<QTypes>({ qcm: true, open: true, vf: false, association: false, tri: false, ordre: false, trous: false, court: false, numerique: false })
   // Atelier CEI 7/08 — le barème n'est plus laissé entièrement à l'IA :
   // l'enseignant choisit le total ET peut rédiger le barème lui-même
   // (mode manuel = squelette vierge à compléter, plutôt que généré par l'IA).
@@ -545,7 +545,9 @@ export default function AdminCreateSubjectPage() {
                   <i className="fas fa-list-check" style={{ color:'var(--primary)', width:14 }} />Types de questions présents dans le document
                 </label>
                 <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-                  {([['qcm','QCM','fa-circle-question','#1d4ed8','#dbeafe','#bfdbfe'],['open','Questions ouvertes','fa-pen-line','#0369a1','#e0f2fe','#7dd3fc'],['vf','Vrai / Faux','fa-toggle-on','#15803d','#dcfce7','#86efac']] as const).map(([k,label,icon,color,bg,border])=>(
+                  {([['qcm','QCM','fa-circle-question','#1d4ed8','#dbeafe','#bfdbfe'],['open','Questions ouvertes','fa-pen-line','#0369a1','#e0f2fe','#7dd3fc'],['vf','Vrai / Faux','fa-toggle-on','#15803d','#dcfce7','#86efac'],
+                    ['association','Association','fa-link','#b45309','#fef3c7','#fcd34d'],['tri','Classement (tri)','fa-layer-group','#0f766e','#ccfbf1','#5eead4'],['ordre','Remise en ordre','fa-arrow-down-1-9','#1d4ed8','#dbeafe','#bfdbfe'],
+                    ['trous','Texte à trous','fa-ellipsis','#475569','#f1f5f9','#cbd5e1'],['court','Réponse courte','fa-i-cursor','#15803d','#dcfce7','#86efac'],['numerique','Réponse numérique','fa-calculator','#0369a1','#e0f2fe','#7dd3fc']] as const).map(([k,label,icon,color,bg,border])=>(
                     <button key={k} type="button" onClick={()=>setQTypes(p=>({...p,[k]:!p[k]}))}
                       style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 16px', border:`1.5px solid ${qTypes[k]?border:'var(--border)'}`, borderRadius:10, cursor:'pointer', background:qTypes[k]?bg:'var(--surface)', transition:'all .15s', fontWeight:qTypes[k]?700:400, fontSize:15.5, color:qTypes[k]?color:'var(--text)' }}>
                       <i className={`fas ${icon}`} style={{ fontSize:17, color:qTypes[k]?color:'var(--text-muted)' }} />{label}
@@ -555,7 +557,7 @@ export default function AdminCreateSubjectPage() {
                 </div>
                 <p style={{ margin:'8px 0 0', fontSize:14, color:'var(--text-muted)' }}>
                   <i className="fas fa-circle-info" style={{ marginRight:4 }} />
-                  Sert à reconnaître chaque question dans votre fichier (un type non coché ne sera pas détecté même s'il est présent) et à donner à l'IA le bon format de barème pour la noter correctement.
+                  Sert à reconnaître chaque question dans votre fichier (un type non coché ne sera pas détecté même s'il est présent) et à donner à l'IA le bon format de barème pour la noter correctement. Les épreuves découpées en parties numérotées (I. QCM, II. Vrai ou faux, III. Association, IV. Tri, V. Cas pratique…) sont reconnues automatiquement. Pour un autre document, écrivez la balise dans le titre de la question (ex. « [ASSOCIATION] », « [TRI] », « [COURT] »). Si vous déposez aussi le corrigé (nom de fichier contenant « corrigé »), le barème en recopie les réponses sans jamais l'afficher aux étudiants.
                 </p>
               </div>
 
