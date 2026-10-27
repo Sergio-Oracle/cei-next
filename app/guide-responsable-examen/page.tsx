@@ -15,44 +15,44 @@ export default function GuideResponsableExamen() {
         .hero-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); padding:6px 16px; border-radius:99px; font-size:13px; font-weight:600; margin-bottom:20px; }
         .content-wrap { max-width:900px; margin:0 auto; padding:48px 24px 80px; }
         .toc { background:white; border-radius:14px; border:1px solid #e2e8f0; padding:24px 28px; margin-bottom:40px; }
-        .toc h3 { font-size:14px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:14px; }
+        .toc h3 { font-size:15px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:14px; }
         .toc-list { list-style:none; display:flex; flex-direction:column; gap:6px; }
-        .toc-list a { color:#b45309; text-decoration:none; font-size:14px; font-weight:500; display:flex; align-items:center; gap:8px; }
+        .toc-list a { color:#b45309; text-decoration:none; font-size:16px; font-weight:500; display:flex; align-items:center; gap:8px; }
         .toc-list a:hover { text-decoration:underline; }
         .toc-list a i { width:18px; text-align:center; font-size:13px; color:#94a3b8; }
         .section { background:white; border-radius:16px; border:1px solid #e2e8f0; margin-bottom:32px; overflow:hidden; }
         .section-header { background:#fffbeb; border-bottom:1px solid #fde68a; padding:20px 28px; display:flex; align-items:center; gap:14px; }
         .section-icon { width:48px; height:48px; background:#b45309; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; color:white; flex-shrink:0; }
-        .section-header h2 { font-size:1.15rem; font-weight:700; color:#92400e; margin:0; }
+        .section-header h2 { font-size:1.4rem; font-weight:700; color:#92400e; margin:0; }
         .section-body { padding:28px; }
         .steps { display:flex; flex-direction:column; gap:20px; }
         .step { display:flex; gap:16px; align-items:flex-start; }
         .step-num { width:36px; height:36px; background:#b45309; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; margin-top:2px; }
-        .step-content h4 { font-size:15px; font-weight:700; color:#0f172a; margin-bottom:6px; }
-        .step-content p { font-size:14px; color:#475569; line-height:1.65; }
+        .step-content h4 { font-size:18px; font-weight:700; color:#0f172a; margin-bottom:6px; }
+        .step-content p { font-size:16px; color:#475569; line-height:1.65; }
         .step-content ul { margin-top:8px; padding-left:18px; }
-        .step-content li { font-size:13px; color:#64748b; margin-bottom:4px; }
-        .tip { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:8px; padding:14px 16px; margin-top:14px; font-size:13px; color:#92400e; display:flex; align-items:flex-start; gap:10px; }
+        .step-content li { font-size:15.5px; color:#64748b; margin-bottom:4px; }
+        .tip { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:8px; padding:14px 16px; margin-top:14px; font-size:15.5px; color:#92400e; display:flex; align-items:flex-start; gap:10px; }
         .tip i { color:#b45309; margin-top:2px; flex-shrink:0; }
-        .info { background:#eff6ff; border:1px solid #bfdbfe; border-left:4px solid #2563eb; border-radius:8px; padding:14px 16px; margin-top:14px; font-size:13px; color:#1e40af; display:flex; align-items:flex-start; gap:10px; }
+        .info { background:#eff6ff; border:1px solid #bfdbfe; border-left:4px solid #2563eb; border-radius:8px; padding:14px 16px; margin-top:14px; font-size:15.5px; color:#1e40af; display:flex; align-items:flex-start; gap:10px; }
         .info i { color:#2563eb; margin-top:2px; flex-shrink:0; }
         .feature-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; margin-top:16px; }
         .feature-item { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; }
         .feature-item i { color:#b45309; font-size:18px; margin-bottom:10px; display:block; }
-        .feature-item h5 { font-size:13px; font-weight:700; color:#0f172a; margin-bottom:6px; }
-        .feature-item p { font-size:12px; color:#64748b; line-height:1.5; }
+        .feature-item h5 { font-size:16px; font-weight:700; color:#0f172a; margin-bottom:6px; }
+        .feature-item p { font-size:14.5px; color:#64748b; line-height:1.5; }
         .status-row { display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:8px; margin-bottom:8px; }
         .status-dot { width:14px; height:14px; border-radius:50%; flex-shrink:0; }
-        .status-row p { font-size:13px; color:#475569; margin:0; }
+        .status-row p { font-size:15.5px; color:#475569; margin:0; }
         .guide-img { display:block; width:100%; max-width:720px; margin:18px auto 6px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,.08); }
-        footer.doc-footer { background:#1e293b; color:rgba(255,255,255,.7); text-align:center; padding:32px; font-size:13px; }
+        footer.doc-footer { background:#1e293b; color:rgba(255,255,255,.7); text-align:center; padding:32px; font-size:15px; }
         footer.doc-footer a { color:#fbbf24; text-decoration:none; font-weight:600; }
         @media(max-width:640px) { .hero-doc h1 { font-size:1.8rem; } .content-wrap { padding:24px 16px 60px; } }
       `}</style>
 
       <div className="topbar">
         <div className="topbar-brand"><i className="fas fa-graduation-cap" /> Centre d&apos;Examen Intelligent</div>
-        <a href="/" className="btn-back"><i className="fas fa-arrow-left" /> Retour à l&apos;accueil</a>
+        <a href="/dashboard/admin" className="btn-back"><i className="fas fa-arrow-left" /> Retour au tableau de bord</a>
       </div>
 
       <div className="hero-doc">
@@ -140,7 +140,7 @@ export default function GuideResponsableExamen() {
       </div>
 
       <footer className="doc-footer">
-        <p>Une question ? Écrivez à <a href="mailto:visioplus@unchk.edu.sn">visioplus@unchk.edu.sn</a> · <a href="/">Retour à CEI</a></p>
+        <p>Une question ? Écrivez à <a href="mailto:visioplus@unchk.edu.sn">visioplus@unchk.edu.sn</a> · <a href="/dashboard/admin">Retour au tableau de bord</a></p>
       </footer>
     </>
   )
