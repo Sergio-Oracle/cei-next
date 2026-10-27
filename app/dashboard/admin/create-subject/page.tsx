@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { AI_TIMEOUT_MS } from '@/lib/api'
 import { useSubjectUpload, type QTypes } from '@/hooks/useSubjectUpload'
 import { useQuestionBank, BankQuestion } from '@/hooks/useQuestionBank'
 import SearchableSelect from '@/components/ui/SearchableSelect'
@@ -53,7 +54,9 @@ export default function AdminCreateSubjectPage() {
   const [filterFormation, setFilterFormation] = useState('')
   const [filterLevel,     setFilterLevel]     = useState('')
   const [files,           setFiles]           = useState<File[]>([])
-  const [qTypes, setQTypes] = useState<QTypes>({ qcm: true, open: true, vf: false, association: false, tri: false, ordre: false, trous: false, court: false, numerique: false })
+  const [mediaMarker, setMediaMarker] = useState('')
+  const [mediaBusy, setMediaBusy] = useState(false)
+  const [qTypes, setQTypes] = useState<QTypes>({ qcm: true, open: true, vf: false, association: false, tri: false, ordre: false, trous: false, court: false, numerique: false, cloze: false, calculee: false, zones: false })
   // Atelier CEI 7/08 — le barème n'est plus laissé entièrement à l'IA :
   // l'enseignant choisit le total ET peut rédiger le barème lui-même
   // (mode manuel = squelette vierge à compléter, plutôt que généré par l'IA).
@@ -348,6 +351,35 @@ export default function AdminCreateSubjectPage() {
           <div>
             <div style={{ fontWeight:700, fontSize:18 }}>{created.title}</div>
             {created.created_at && <div style={{ fontSize:14.5, color:'var(--text-muted)' }}>Créé le {new Date(created.created_at).toLocaleString('fr-FR')}</div>}
+            {created.normalization && created.normalization.length>0 && (
+              <div style={{ marginTop:8, fontSize:14.5, color:'#065f46', background:'#ecfdf5', border:'1px solid #a7f3d0', borderRadius:8, padding:'8px 12px', lineHeight:1.6 }}>
+                <i className="fas fa-wand-magic-sparkles" style={{ marginRight:6 }}/>
+                Épreuve reconnue automatiquement : {created.normalization[0].questions} question(s)
+                {' — '}{Object.entries(created.normalization[0].counts).map(([k,v])=>`${v} ${({qcm:'QCM',vf:'vrai/faux',association:'association',tri:'tri',open:'ouverte(s)'} as Record<string,string>)[k]??k}`).join(', ')}.
+                {created.rubric_source==='corrigé' && <> Barème écrit <b>directement depuis votre corrigé</b> (sans IA).</>}
+                {created.has_corrige && created.rubric_source!=='corrigé' && <> Corrigé lu par l'IA : <b>vérifiez le barème ci-dessous</b>{created.corrige_warnings && created.corrige_warnings.length>0 ? ` (${created.corrige_warnings.length} point(s) à contrôler : ${created.corrige_warnings.slice(0,2).join(' ; ')})` : ''}.</>}
+                {!created.has_corrige && <> Aucun corrigé fourni : barème proposé par l'IA, à vérifier.</>}
+                {created.normalization[0].warnings.length>0 && <div style={{ color:'#b45309' }}>À contrôler : {created.normalization[0].warnings.join(' ; ')}</div>}
+              </div>
+            )}
+            <div style={{ marginTop:8, fontSize:14.5, color:'var(--text-muted)', lineHeight:1.6 }}>
+              <i className="fas fa-image" style={{ marginRight:6 }}/>Une question utilise une image (ex. « Placer sur l&apos;image ») ?{' '}
+              <label style={{ color:'var(--primary)', fontWeight:700, cursor:'pointer' }}>
+                {mediaBusy ? 'Envoi…' : 'Ajouter une image, un son ou une vidéo'}
+                <input type="file" accept="image/*,audio/*,video/*" hidden disabled={mediaBusy} onChange={async e => {
+                  const f = e.target.files?.[0]; e.target.value = ''; if (!f) return
+                  const kind = f.type.startsWith('audio') ? 'audio' : f.type.startsWith('video') ? 'video' : 'image'
+                  setMediaBusy(true)
+                  try {
+                    const fd = new FormData(); fd.append('file', f); fd.append('media_type', kind); fd.append('subject_id', String(created.id))
+                    const r = await api.upload<{ media: { marker: string } }>('/api/subjects/upload_media', fd, 'POST', { timeoutMs: AI_TIMEOUT_MS })
+                    setMediaMarker(r.media.marker)
+                  } catch (err: any) { setMediaMarker('Erreur : ' + (err.message || 'envoi impossible')) }
+                  finally { setMediaBusy(false) }
+                }}/>
+              </label>
+              {mediaMarker && <div>Copiez <b style={{ fontFamily:'monospace', background:'var(--background)', padding:'1px 6px', borderRadius:4 }}>{mediaMarker}</b> sous le titre de la question dans le texte du sujet ci-dessous.</div>}
+            </div>
           </div>
           <span style={{ marginLeft:'auto', background:'#dcfce7', color:'#15803d', padding:'2px 10px', borderRadius:99, fontSize:13, fontWeight:700 }}>
             <i className="fas fa-robot" style={{ marginRight:4 }} />IA — Modifiable
@@ -547,7 +579,8 @@ export default function AdminCreateSubjectPage() {
                 <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
                   {([['qcm','QCM','fa-circle-question','#1d4ed8','#dbeafe','#bfdbfe'],['open','Questions ouvertes','fa-pen-line','#0369a1','#e0f2fe','#7dd3fc'],['vf','Vrai / Faux','fa-toggle-on','#15803d','#dcfce7','#86efac'],
                     ['association','Association','fa-link','#b45309','#fef3c7','#fcd34d'],['tri','Classement (tri)','fa-layer-group','#0f766e','#ccfbf1','#5eead4'],['ordre','Remise en ordre','fa-arrow-down-1-9','#1d4ed8','#dbeafe','#bfdbfe'],
-                    ['trous','Texte à trous','fa-ellipsis','#475569','#f1f5f9','#cbd5e1'],['court','Réponse courte','fa-i-cursor','#15803d','#dcfce7','#86efac'],['numerique','Réponse numérique','fa-calculator','#0369a1','#e0f2fe','#7dd3fc']] as const).map(([k,label,icon,color,bg,border])=>(
+                    ['trous','Texte à trous','fa-ellipsis','#475569','#f1f5f9','#cbd5e1'],['court','Réponse courte','fa-i-cursor','#15803d','#dcfce7','#86efac'],['numerique','Réponse numérique','fa-calculator','#0369a1','#e0f2fe','#7dd3fc'],
+                    ['cloze','Champs à compléter','fa-keyboard','#15803d','#dcfce7','#86efac'],['calculee','Calcul à variables','fa-square-root-variable','#b45309','#fef3c7','#fcd34d'],['zones','Placer sur image','fa-location-dot','#0f766e','#ccfbf1','#5eead4']] as const).map(([k,label,icon,color,bg,border])=>(
                     <button key={k} type="button" onClick={()=>setQTypes(p=>({...p,[k]:!p[k]}))}
                       style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 16px', border:`1.5px solid ${qTypes[k]?border:'var(--border)'}`, borderRadius:10, cursor:'pointer', background:qTypes[k]?bg:'var(--surface)', transition:'all .15s', fontWeight:qTypes[k]?700:400, fontSize:15.5, color:qTypes[k]?color:'var(--text)' }}>
                       <i className={`fas ${icon}`} style={{ fontSize:17, color:qTypes[k]?color:'var(--text-muted)' }} />{label}

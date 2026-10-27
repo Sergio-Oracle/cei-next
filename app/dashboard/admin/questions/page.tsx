@@ -35,6 +35,8 @@ const TYPE_LABEL: Record<string, string> = {
   subopen:     'Semi-ouvert',
   appariement: 'Appariement',
   code:        'Maths / Code',
+  association: 'Association', tri: 'Classement', ordre: 'Remise en ordre', trous: 'Texte à trous',
+  court: 'Réponse courte', numerique: 'Numérique', cloze: 'Champs à compléter', calculee: 'Calcul à variables', zones: 'Placer sur image',
 }
 const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
   open:        { bg: '#f1f5f9', color: '#475569' },
@@ -44,6 +46,9 @@ const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
   subopen:     { bg: '#fff7ed', color: '#c2410c' },
   appariement: { bg: '#fdf2f8', color: '#be185d' },
   code:        { bg: '#fff7ed', color: '#c2410c' },
+  association: { bg: '#fef3c7', color: '#b45309' }, tri: { bg: '#ccfbf1', color: '#0f766e' }, ordre: { bg: '#dbeafe', color: '#1d4ed8' },
+  trous: { bg: '#f1f5f9', color: '#475569' }, court: { bg: '#dcfce7', color: '#15803d' }, numerique: { bg: '#e0f2fe', color: '#0369a1' },
+  cloze: { bg: '#dcfce7', color: '#15803d' }, calculee: { bg: '#fef3c7', color: '#b45309' }, zones: { bg: '#ccfbf1', color: '#0f766e' },
 }
 
 const poleColor = (_code?: string | null) => '#3b82f6'

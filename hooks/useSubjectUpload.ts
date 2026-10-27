@@ -13,12 +13,17 @@ export interface CreatedSubject {
   content?: string
   rubric?: string
   created_at?: string | null
+  /** Origine du barème : 'corrigé' (écrit sans IA depuis le corrigé fourni), 'ia' ou 'manuel'. */
+  rubric_source?: 'corrigé' | 'ia' | 'manuel'
+  has_corrige?: boolean
+  corrige_warnings?: string[]
+  normalization?: { counts: Record<string, number>; warnings: string[]; questions?: number }[]
 }
 
 export interface QTypes {
   qcm: boolean; open: boolean; vf: boolean
   /** Types ajoutés pour couvrir ceux de Moodle (voir backend services/question_types.py). */
-  association: boolean; tri: boolean; ordre: boolean; trous: boolean; court: boolean; numerique: boolean
+  association: boolean; tri: boolean; ordre: boolean; trous: boolean; court: boolean; numerique: boolean; cloze: boolean; calculee: boolean; zones: boolean
 }
 
 interface UploadPayload {
@@ -72,7 +77,7 @@ export function useSubjectUpload(
     const labelMap: Record<keyof QTypes, string> = {
       qcm: 'QCM', open: 'Questions ouvertes', vf: 'Vrai/Faux',
       association: 'Association', tri: 'Classement (tri)', ordre: 'Remise en ordre', trous: 'Texte à trous',
-      court: 'Réponse courte', numerique: 'Réponse numérique',
+      court: 'Réponse courte', numerique: 'Réponse numérique', cloze: 'Champs à compléter (cloze)', calculee: 'Calcul à variables', zones: 'Placer sur image',
     }
     const selectedTypes = (Object.keys(qTypes) as (keyof QTypes)[])
       .filter(k => qTypes[k])

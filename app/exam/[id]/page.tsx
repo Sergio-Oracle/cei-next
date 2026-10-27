@@ -44,11 +44,12 @@ interface Attempt {
 }
 interface ParsedBlock {
   type: 'text' | 'section' | 'description' | 'qcm' | 'qcm_multi' | 'vf' | 'open' | 'subopen' | 'appariement' | 'code'
-       | 'association' | 'tri' | 'ordre' | 'trous' | 'court' | 'numerique'
+       | 'association' | 'tri' | 'ordre' | 'trous' | 'cloze' | 'zones' | 'court' | 'numerique' | 'calculee'
   content?: string; title?: string; num?: string; text?: string
   /** Types « grille » (association, tri, ordre, trous) : éléments à placer et propositions possibles. */
-  items?: { text: string; letter?: string; gap?: number }[]
+  items?: { text: string; letter?: string; gap?: number; kind?: string; options?: string[]; zone?: number }[]
   options?: { letter: string; text: string }[]
+  vars_line?: string
   extraLines?: string[]; choices?: { letter: string; text: string }[]
   pairs?: { left: string; right: string }[]
   media?: { type: 'image' | 'audio' | 'video'; filename: string }[]
@@ -164,8 +165,8 @@ function paginateBlocks(blocks: ParsedBlock[], perPage: number): ParsedBlock[][]
 
 /* Groupes de types : p1 = notés automatiquement (Partie 1), p2 = rédaction (Partie 2). Les types ajoutés pour
    couvrir ceux de Moodle (association, tri, ordre, trous, réponse courte, numérique) sont notés automatiquement. */
-const GRID_TYPES = ['association', 'tri', 'ordre', 'trous']
-const P1_TYPES = ['qcm', 'qcm_multi', 'vf', 'appariement', ...GRID_TYPES, 'court', 'numerique']
+const GRID_TYPES = ['association', 'tri', 'ordre', 'trous', 'cloze', 'zones']
+const P1_TYPES = ['qcm', 'qcm_multi', 'vf', 'appariement', ...GRID_TYPES, 'court', 'numerique', 'calculee']
 const P2_TYPES = ['section', 'description', 'open', 'subopen', 'code']
 const isGridType = (t: string) => GRID_TYPES.includes(t)
 /** Réponse complète (tous les éléments renseignés) / au moins une réponse, pour n'importe quel type. */
@@ -199,8 +200,8 @@ function joinWrappedLines(lines: string[]): string[] {
 function parseExamBlocks(raw: string): ParsedBlock[] {
   const VF_RE = /\bvrai\s*[\/|ou]\s*faux\b|\bV\s*[\/|]\s*F\b/i
   const strip = (s: string) => s.trim().replace(/^[*_]{1,2}\s*/,'').replace(/\s*[*_]{1,2}$/,'').trim()
-  const Q_RE  = /^(?:(?:Question|Q)\.?\s+)?(\d{1,2})(?!\s*\.\s*\d)(?:\s*[.:)–—-]|\.\s+|\s{2,}|\s+(?=\[(?:QCM_MULTI|QCM|VF|OUVERT|SUBOPEN|APPARIEMENT|CODE|ASSOCIATION|TRI|ORDRE|TROUS|COURT|NUMERIQUE)\]))\s*(.+)/i  // « Question 1 [QCM] » accepté
-  const TYPE_MARKER = /\[(QCM_MULTI|QCM|VF|OUVERT|SUBOPEN|APPARIEMENT|CODE|ASSOCIATION|TRI|ORDRE|TROUS|COURT|NUMERIQUE|OUVERT[ES]*)\]/i
+  const Q_RE  = /^(?:(?:Question|Q)\.?\s+)?(\d{1,2})(?!\s*\.\s*\d)(?:\s*[.:)–—-]|\.\s+|\s{2,}|\s+(?=\[(?:QCM_MULTI|QCM|VF|OUVERT|SUBOPEN|APPARIEMENT|CODE|ASSOCIATION|TRI|ORDRE|TROUS|CLOZE|ZONES|COURT|NUMERIQUE|CALCULEE)\]))\s*(.+)/i  // « Question 1 [QCM] » accepté
+  const TYPE_MARKER = /\[(QCM_MULTI|QCM|VF|OUVERT|SUBOPEN|APPARIEMENT|CODE|ASSOCIATION|TRI|ORDRE|TROUS|CLOZE|ZONES|COURT|NUMERIQUE|CALCULEE|OUVERT[ES]*)\]/i
   // Marqueur de niveau de difficulté par question (ex: [Facile]/[Moyen]/[Difficile]) —
   // visible pour l'enseignant dans l'aperçu brut avant publication, mais jamais
   // affiché à l'étudiant pendant l'examen, au même titre que TYPE_MARKER.
@@ -219,7 +220,10 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
   const CATS_RE = /^\s*Cat[ée]gories?\s*:\s*(.+)$/i
   const GAP_RE = /\{(\d{1,2})\}/g
   const DESC_RE = /^\s*\[DESCRIPTION\]\s*(.*)$/i
-  const GRID = ['ASSOCIATION', 'TRI', 'ORDRE', 'TROUS']
+  const GRID = ['ASSOCIATION', 'TRI', 'ORDRE', 'TROUS', 'CLOZE', 'ZONES']
+  const LABELS_RE = /^\s*[ÉE]tiquettes?\s*:\s*(.+)$/i
+  const VARS_RE = /^\s*Variables?\s*:\s*(.+)$/i
+  const CLOZE_ITEM_RE = /^\s*(\d{1,2})\s+(COURT|NUM|CHOIX)\b(?:\s*:\s*(.+))?$/i
   const PAIR_RE = /^(?:\(?([A-Fa-f])\)?)\s*[.):\s-]\s+(.+?)\s*(?:→|->)\s*(.+)/
   const getPair = (l: string) => { const m = strip(l).match(PAIR_RE); return m ? { left: strip(m[2]), right: strip(m[3]) } : null }
   const isSep  = (l: string) => !l.trim() || /^[-=*─═▬]{3,}$/.test(l.trim())
@@ -253,7 +257,8 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
     const q = getQ(lines[i]); if (!q) { i++; continue }
     const isPairMode = q.markerType === 'APPARIEMENT'
     const isGrid = !!q.markerType && GRID.includes(q.markerType)
-    const isTextQ = q.markerType === 'COURT' || q.markerType === 'NUMERIQUE'
+    const isTextQ = q.markerType === 'COURT' || q.markerType === 'NUMERIQUE' || q.markerType === 'CALCULEE'
+    let varsLine = ''
     i++
     const extraLines: string[] = []; const choices: { letter: string; text: string }[] = []
     const pairs: { left: string; right: string }[] = []
@@ -263,10 +268,16 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       if (isSect(lines[i]) && !isQ(lines[i])) break
       if (isQ(lines[i]) && !isC(lines[i])) break
       if (DESC_RE.test(lines[i])) break
-      if (isTextQ) { extraLines.push(lines[i]); i++; continue }
+      if (isTextQ) {
+        const vm = q.markerType === 'CALCULEE' ? strip(lines[i]).match(VARS_RE) : null
+        if (vm) varsLine = vm[1].trim(); else extraLines.push(lines[i])
+        i++; continue
+      }
       if (isGrid) {
         const cm = strip(lines[i]).match(CATS_RE)
         if (cm) { gCats = cm[1].split('|').map(c => c.trim()).filter(Boolean); i++; continue }
+        const lm = q.markerType === 'ZONES' ? strip(lines[i]).match(LABELS_RE) : null
+        if (lm) { lm[1].split('|').map(t => t.trim()).filter(Boolean).forEach(t => gItems.push(t)); i++; continue }
         const im = strip(lines[i]).match(ITEM_RE)
         if (im && q.markerType !== 'ORDRE') { gItems.push(im[1].trim()); i++; continue }
         const wm = strip(lines[i]).match(C_WIDE)
@@ -299,6 +310,9 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       else if (q.markerType === 'TRI') type = 'tri'
       else if (q.markerType === 'ORDRE') type = 'ordre'
       else if (q.markerType === 'TROUS') type = 'trous'
+      else if (q.markerType === 'CLOZE') type = 'cloze'
+      else if (q.markerType === 'ZONES') type = 'zones'
+      else if (q.markerType === 'CALCULEE') type = 'calculee'
       else if (q.markerType === 'COURT') type = 'court'
       else if (q.markerType === 'NUMERIQUE') type = 'numerique'
       else type = 'open'
@@ -321,6 +335,7 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       return true
     })
     const blk: ParsedBlock = { type, num: q.num, text: q.text, extraLines: cleanExtraLines, choices, pairs: pairs.length ? pairs : undefined, media: media.length ? media : undefined }
+    if (varsLine) blk.vars_line = varsLine
     if (isGrid) {
       if (q.markerType === 'ORDRE') {
         blk.items = choices.map(c => ({ text: c.text, letter: c.letter }))
@@ -329,6 +344,14 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
         const gaps = Array.from(new Set(Array.from([q.text, ...cleanExtraLines].join(' ').matchAll(GAP_RE)).map(m => parseInt(m[1], 10)))).sort((a, b) => a - b)
         blk.items = gaps.map(g => ({ text: 'Trou ' + g, gap: g }))
         blk.options = choices.map(c => ({ letter: c.letter, text: c.text }))
+      } else if (q.markerType === 'CLOZE') {
+        blk.items = gItems.map(t => { const m = t.match(CLOZE_ITEM_RE); if (!m) return null
+          const kind = m[2].toLowerCase(); return { text: 'Champ ' + m[1], gap: parseInt(m[1], 10), kind, options: kind === 'choix' ? (m[3] || '').split('|').map(o => o.trim()).filter(Boolean) : [] } })
+          .filter((x): x is NonNullable<typeof x> => !!x)
+        blk.options = []
+      } else if (q.markerType === 'ZONES') {
+        blk.items = gItems.map((t, k) => ({ text: t, zone: k + 1 }))
+        blk.options = []
       } else if (q.markerType === 'TRI') {
         blk.items = gItems.map(t => ({ text: t }))
         blk.options = gCats.map((t, k) => ({ letter: String.fromCharCode(65 + k), text: t }))
@@ -388,6 +411,7 @@ export default function ExamPage() {
   // un lien interne, où l'adresse n'est pas encore à jour au premier rendu.
   const isPreview = useSearchParams().get('preview') === '1'
   const previewTimerRef = useRef<ReturnType<typeof setInterval>|null>(null)
+  const previewSeedRef = useRef<number|null>(null)
   const [previewResult, setPreviewResult] = useState<PreviewResult | null>(null)
   const [previewAiLoading, setPreviewAiLoading] = useState(false)
   // Rappels de fin d'examen (5 min puis 1 min) — un seul déclenchement
@@ -681,7 +705,7 @@ export default function ExamPage() {
           const res = await api.get<ExamData & { preview: { seed: number; pages: ServerPaginated } }>(`/api/online_exams/${id}/preview`)
           if (cancelled) return
           setExam(res); examRef.current = res
-          setServerPages(res.preview.pages)
+          setServerPages(res.preview.pages); previewSeedRef.current = res.preview.seed
           startPreview(res)   // directement dans la composition, comme Moodle
           return
         }
@@ -3090,7 +3114,7 @@ export default function ExamPage() {
     try {
       const res = await api.get<ExamData & { preview: { seed: number; pages: ServerPaginated } }>(`/api/online_exams/${id}/preview`)
       setExam(res); examRef.current = res
-      setServerPages(res.preview.pages)
+      setServerPages(res.preview.pages); previewSeedRef.current = res.preview.seed
       setAnswers({}); answersRef.current = {}
       setPreviewResult(null); setShowPart2(false); setQcmIdx(0); setP2PageIdx(0); setShowReview(false)
       startPreview(res)
@@ -3101,7 +3125,7 @@ export default function ExamPage() {
     if (previewTimerRef.current) { clearInterval(previewTimerRef.current); previewTimerRef.current = null }
     if (withAi) setPreviewAiLoading(true); else setSubmitting(true)
     try {
-      const res = await api.aiPost<PreviewResult>(`/api/online_exams/${id}/preview/grade`, { answers: answersRef.current, with_ai: withAi })
+      const res = await api.aiPost<PreviewResult>(`/api/online_exams/${id}/preview/grade`, { answers: answersRef.current, with_ai: withAi, seed: previewSeedRef.current })
       setPreviewResult(res)
       setPhase('submitted')
     } catch (e: any) { toastErr(e.message || 'Erreur de correction') }
@@ -3658,7 +3682,7 @@ export default function ExamPage() {
     }
 
     function checkAutoAdvance(justKey:string, blockType:string) {
-      if(blockType==='qcm_multi'||blockType==='appariement'||isGridType(blockType)||blockType==='court'||blockType==='numerique') return
+      if(blockType==='qcm_multi'||blockType==='appariement'||isGridType(blockType)||blockType==='court'||blockType==='numerique'||blockType==='calculee') return
       const currentBlocks=p1Pages[qcmIdx]??p1Blocks
       const allDone=currentBlocks.every(b=>{
         const k=`pq_${b.num}`
@@ -4309,8 +4333,9 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:Pa
   )
   const answered=block.type==='subopen'?block.choices?.some(c=>(answers[`${key}_${c.letter}`]??'').trim()!==''):answeredAll(block,answers)
   const TYPE_LABEL:Record<string,string>={vf:'V/F',qcm:'QCU',qcm_multi:'QCM',subopen:'Structuré',appariement:'Appariement',code:'Code / Maths',
-    association:'Association',tri:'Classement',ordre:'Ordre',trous:'Texte à trous',court:'Réponse courte',numerique:'Numérique'}
+    association:'Association',tri:'Classement',ordre:'Ordre',trous:'Texte à trous',court:'Réponse courte',numerique:'Numérique',cloze:'Champs à compléter',zones:'Placer sur l\'image',calculee:'Calcul'}
   // Texte à trous : {1} {2}… sont montrés comme (1) (2)… dans l'énoncé
+  const [activeZone,setActiveZone]=useState(0)
   const showGaps=(t:string)=>block.type==='trous'?t.replace(/\{(\d{1,2})\}/g,'($1)'):t
   return(
     <div style={{border:`2px solid ${answered?'#10b981':'#e2e8f0'}`,borderRadius:16,padding:'22px 24px',background:'#fff',boxShadow:'0 2px 8px rgba(0,0,0,.05)',marginBottom:16,transition:'border-color .2s'}}>
@@ -4318,13 +4343,13 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:Pa
         <span style={{width:34,height:34,borderRadius:'50%',background:isOpen?'#065f46':'#1e40af',color:'#fff',fontWeight:800,fontSize:18,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{block.num}</span>
         <div style={{flex:1}}>
           <div style={{fontWeight:700,fontSize:18,color:'#0f172a',lineHeight:1.5}}>{showGaps(block.text??'')}</div>
-          {block.extraLines&&block.extraLines.filter(l=>l.trim()).length>0&&<div style={{fontSize:17,color:'#475569',marginTop:6}}>{joinWrappedLines(block.extraLines).map((l,i)=><div key={i} style={{marginTop:i?4:0}}>{showGaps(l)}</div>)}</div>}
+          {block.extraLines&&block.extraLines.filter(l=>l.trim()&&!(block.type==='cloze'&&/\{\d+\}/.test(l))).length>0&&<div style={{fontSize:17,color:'#475569',marginTop:6}}>{joinWrappedLines(block.extraLines.filter(l=>!(block.type==='cloze'&&/\{\d+\}/.test(l)))).map((l,i)=><div key={i} style={{marginTop:i?4:0}}>{showGaps(l)}</div>)}</div>}
         </div>
         <span style={{padding:'2px 8px',borderRadius:99,fontSize:13,fontWeight:700,flexShrink:0,background:isOpen?'#ecfdf5':'#eff6ff',color:isOpen?'#065f46':'#1e40af'}}>
           {TYPE_LABEL[block.type]??'Ouvert'}
         </span>
       </div>
-      {block.media&&block.media.length>0&&(
+      {block.media&&block.media.length>0&&block.type!=='zones'&&(
         <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:16}}>
           {block.media.map((m,i)=>{
             const url=mediaMap?.[m.filename]
@@ -4411,7 +4436,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:Pa
           })}
         </div>
       )}
-      {isGridType(block.type)&&block.items&&block.options&&(
+      {isGridType(block.type)&&block.type!=='cloze'&&block.type!=='zones'&&block.items&&block.options&&(
         <div style={{display:'flex',flexDirection:'column',gap:10}}>
           {(block.type==='association'||block.type==='trous')&&(
             <div style={{border:'1.5px solid #dbeafe',borderRadius:10,background:'#eff6ff',padding:'12px 16px',display:'flex',flexDirection:'column',gap:6}}>
@@ -4439,10 +4464,58 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:Pa
           })}
         </div>
       )}
-      {(block.type==='court'||block.type==='numerique')&&(
+      {block.type==='cloze'&&block.items&&(
+        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+          {[block.text??'',...(block.extraLines??[])].filter(l=>/\{\d+\}/.test(l)).map((line,li)=>(
+            <div key={li} style={{fontSize:18,lineHeight:2.2,color:'#1e293b'}}>
+              {line.split(/(\{\d+\})/).map((seg,si)=>{
+                const m=seg.match(/^\{(\d+)\}$/); if(!m) return <span key={si}>{seg}</span>
+                const gi=(block.items??[]).findIndex(it=>it.gap===parseInt(m[1],10)); if(gi<0) return <span key={si}>{seg}</span>
+                const it=block.items![gi]; const sk=`${key}_${gi}`; const sv=answers[sk]??''
+                const bd=`1.5px solid ${sv.trim()?'#10b981':'#cbd5e1'}`
+                return it.kind==='choix'
+                  ? <select key={si} value={sv} onChange={e=>setAnswers(p=>({...p,[sk]:e.target.value}))} style={{margin:'0 6px',padding:'6px 10px',border:bd,borderRadius:8,fontSize:17,background:'#fff'}}>
+                      <option value="">({it.gap}) — choisir —</option>
+                      {(it.options??[]).map((o,oi)=><option key={oi} value={String.fromCharCode(65+oi)}>{o}</option>)}
+                    </select>
+                  : <input key={si} value={sv} onChange={e=>setAnswers(p=>({...p,[sk]:e.target.value}))} inputMode={it.kind==='num'?'decimal':'text'} autoComplete="off" spellCheck={false}
+                      placeholder={`(${it.gap})`} style={{margin:'0 6px',padding:'6px 10px',border:bd,borderRadius:8,fontSize:17,width:it.kind==='num'?110:170,outline:'none'}}/>
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+      {block.type==='zones'&&block.items&&(()=>{
+        const img=block.media?.find(m=>m.type==='image'); const url=img?mediaMap?.[img.filename]:undefined
+        const place=(e:React.MouseEvent<HTMLDivElement>)=>{
+          const r=e.currentTarget.getBoundingClientRect(); if(!r.width||!r.height) return
+          const x=Math.max(0,Math.min(100,((e.clientX-r.left)/r.width)*100)), y=Math.max(0,Math.min(100,((e.clientY-r.top)/r.height)*100))
+          setAnswers(p=>({...p,[`${key}_${activeZone}`]:`${x.toFixed(1)},${y.toFixed(1)}`}))
+          const nextEmpty=block.items!.findIndex((_,j)=>j!==activeZone&&!(answers[`${key}_${j}`]??'').trim()); if(nextEmpty>=0) setActiveZone(nextEmpty)
+        }
+        return(
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div style={{fontSize:14.5,color:'#64748b'}}><i className="fas fa-info-circle"/> Choisissez une étiquette, puis cliquez sur l&apos;image à l&apos;endroit qui lui correspond. Un nouveau clic déplace l&apos;étiquette.</div>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              {block.items.map((it,i)=>{const placed=(answers[`${key}_${i}`]??'').trim()!=='';const act=i===activeZone
+                return <button key={i} type="button" onClick={()=>setActiveZone(i)} style={{padding:'8px 14px',borderRadius:10,border:`2px solid ${act?'#1e40af':placed?'#10b981':'#cbd5e1'}`,background:act?'#dbeafe':placed?'#ecfdf5':'#fff',fontSize:16,fontWeight:700,color:'#0f172a',cursor:'pointer'}}>
+                  <span style={{display:'inline-block',width:24,height:24,lineHeight:'24px',borderRadius:'50%',background:act?'#1e40af':'#64748b',color:'#fff',textAlign:'center',fontSize:14,marginRight:8}}>{i+1}</span>{it.text}{placed&&<i className="fas fa-check" style={{marginLeft:8,color:'#10b981'}}/>}
+                </button>})}
+            </div>
+            {url?(
+              <div onClick={place} style={{position:'relative',cursor:'crosshair',borderRadius:10,overflow:'hidden',border:'1px solid #e2e8f0',maxWidth:'100%',userSelect:'none'}}>
+                <img src={url} alt="" draggable={false} style={{display:'block',width:'100%',height:'auto'}}/>
+                {block.items.map((it,i)=>{const v=(answers[`${key}_${i}`]??'').split(',');if(v.length<2||!v[0].trim()) return null
+                  return <span key={i} style={{position:'absolute',left:`${parseFloat(v[0])}%`,top:`${parseFloat(v[1])}%`,transform:'translate(-50%,-50%)',width:28,height:28,lineHeight:'28px',borderRadius:'50%',background:i===activeZone?'#1e40af':'#059669',color:'#fff',textAlign:'center',fontWeight:800,fontSize:15,boxShadow:'0 0 0 3px #fff, 0 2px 6px rgba(0,0,0,.35)',pointerEvents:'none'}}>{i+1}</span>})}
+              </div>
+            ):<div style={{padding:16,border:'1.5px dashed #f59e0b',borderRadius:10,background:'#fffbeb',color:'#92400e',fontSize:15.5}}>L&apos;image de cette question n&apos;est pas disponible : prévenez le surveillant.</div>}
+          </div>
+        )
+      })()}
+      {(block.type==='court'||block.type==='numerique'||block.type==='calculee')&&(
         <input value={answers[key]??''} onChange={e=>setAnswers(p=>({...p,[key]:e.target.value}))}
-          inputMode={block.type==='numerique'?'decimal':'text'} autoComplete="off" spellCheck={false}
-          placeholder={block.type==='numerique'?'Votre valeur (ex : 12,5)…':'Votre réponse…'}
+          inputMode={block.type==='court'?'text':'decimal'} autoComplete="off" spellCheck={false}
+          placeholder={block.type==='court'?'Votre réponse…':'Votre valeur (ex : 12,5)…'}
           style={{width:'100%',padding:'12px 14px',border:`1.5px solid ${(answers[key]??'').trim()?'#10b981':'#e2e8f0'}`,borderRadius:10,fontSize:18,color:'#0f172a',outline:'none',boxSizing:'border-box',background:'#fff'}}/>
       )}
       {block.type==='code'&&(
