@@ -54,6 +54,7 @@ export default function ProfessorCreateSubjectPage() {
   const [filterFormation, setFilterFormation] = useState('')
   const [filterLevel,     setFilterLevel]     = useState('')
   const [files,           setFiles]           = useState<File[]>([])
+  const [finishing, setFinishing] = useState(false)
   const [mediaMarker, setMediaMarker] = useState('')
   const [mediaBusy, setMediaBusy] = useState(false)
   const [qTypes, setQTypes] = useState<QTypes>({ qcm: true, open: true, vf: false, association: false, tri: false, ordre: false, trous: false, court: false, numerique: false, cloze: false, calculee: false, zones: false })
@@ -100,6 +101,34 @@ export default function ProfessorCreateSubjectPage() {
     (msg) => toastErr(msg),
     (dups) => toastErr(`${dups.length} question(s) du document ressemble(nt) fortement à des questions déjà présentes dans la banque (${dups[0].similarity}% similaire)`),
   )
+
+  /* ── Terminer / Annuler : le sujet est enregistré dès le dépôt (brouillon sans perte) ; Terminer enregistre aussi les
+        modifications du texte et du barème, Annuler le supprime. ── */
+  const dirty = !!created && (editContent !== (created.content ?? '') || editRubric !== (created.rubric ?? ''))
+  useEffect(() => {
+    if (!dirty) return
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [dirty])
+  function resetForm() { setCreated(null); setTitle(''); setFiles([]); setEcId(''); setEditContent(''); setEditRubric(''); setMediaMarker('') }
+  async function handleFinish() {
+    if (!created) return
+    setFinishing(true)
+    try {
+      if (dirty) await api.put(`/api/subjects/${created.id}`, { title: created.title, content: editContent, rubric: editRubric })
+      toastOk(dirty ? 'Sujet enregistré avec vos modifications' : 'Sujet enregistré')
+      router.push('/dashboard/professor/subjects')
+    } catch (e: any) { toastErr(e.message || "Enregistrement impossible") }
+    finally { setFinishing(false) }
+  }
+  async function handleCancelSubject() {
+    if (!created) return
+    if (!window.confirm('Annuler ce sujet ? Il sera supprimé définitivement, avec son barème.')) return
+    try { await api.delete(`/api/subjects/${created.id}`); toastOk('Sujet annulé et supprimé'); resetForm() }
+    catch (e: any) { toastErr(e.message || 'Suppression impossible') }
+  }
+
 
   const { questions: bankQ, loading: bankLoading, saveQuestion, deleteQuestion, refresh: refreshBank } = useQuestionBank()
 
@@ -428,7 +457,7 @@ export default function ProfessorCreateSubjectPage() {
 
         <div style={{ padding:12, background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, marginBottom:18, fontSize:15.5, color:'#92400e' }}>
           <i className="fas fa-info-circle" style={{ marginRight:6 }} />
-          <strong>Information :</strong> Ce sujet et son barème sont enregistrés. Vous pouvez les modifier et les sauvegarder dans la banque de questions pour les réutiliser.
+          <strong>Information :</strong> Le sujet est déjà enregistré automatiquement (brouillon, rien n&apos;est perdu). Modifiez-le si besoin puis cliquez sur <b>Terminer</b> pour valider vos modifications, ou sur <b>Annuler</b> pour le supprimer. Vous pouvez aussi le sauvegarder dans la banque de questions.
         </div>
 
         <div style={{ display:'flex', gap:10, justifyContent:'flex-end', flexWrap:'wrap' }}>
@@ -445,8 +474,11 @@ export default function ProfessorCreateSubjectPage() {
           <button onClick={openBankModal} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bfdbfe', background:'#eff6ff', color:'var(--primary)', borderRadius:8, fontSize:15.5, fontWeight:600, cursor:'pointer' }}>
             <i className="fas fa-database" /> Banque
           </button>
-          <button onClick={() => router.push('/dashboard/professor/subjects')} className="btn btn-primary" style={{ fontSize:15.5 }}>
-            <i className="fas fa-save" /> Terminer
+          <button onClick={handleCancelSubject} disabled={finishing} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #fecaca', background:'#fef2f2', color:'#b91c1c', borderRadius:8, fontSize:15.5, fontWeight:600, cursor:'pointer' }}>
+            <i className="fas fa-trash" /> Annuler
+          </button>
+          <button onClick={handleFinish} disabled={finishing} className="btn btn-primary" style={{ fontSize:15.5 }}>
+            <i className={`fas ${finishing ? 'fa-spinner fa-spin' : 'fa-save'}`} /> Terminer{dirty ? ' (enregistrer les modifications)' : ''}
           </button>
         </div>
       </div>
