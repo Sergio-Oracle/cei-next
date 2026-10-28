@@ -92,8 +92,18 @@ export default function OnlineCorrectionPage() {
       const withAttempts = await Promise.all(
         relevant.map(async (exam: any) => {
           try {
-            const res = await api.get<{ attempts: Attempt[]; total: number }>(`/api/online_exams/${exam.id}/attempts?limit=200`)
-            return { ...exam, attempts: Array.isArray(res?.attempts) ? res.attempts : [] }
+            // Le serveur plafonne à 200 copies par page : on charge toutes les pages,
+            // sinon un examen de 1 499 copies n'en montrait que 200.
+            const attempts: Attempt[] = []
+            let total = 0
+            for (let page = 1; page <= 50; page++) {
+              const res = await api.get<{ attempts: Attempt[]; total: number }>(`/api/online_exams/${exam.id}/attempts?limit=200&page=${page}`)
+              const got = Array.isArray(res?.attempts) ? res.attempts : []
+              attempts.push(...got)
+              total = res?.total ?? attempts.length
+              if (got.length === 0 || attempts.length >= total) break
+            }
+            return { ...exam, attempts }
           } catch { return { ...exam, attempts: [] } }
         })
       )

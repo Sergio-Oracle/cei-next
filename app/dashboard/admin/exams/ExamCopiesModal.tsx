@@ -10,6 +10,21 @@ import { eventLabel } from '@/lib/eventLabels'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
 
+/* Le serveur plafonne /attempts à 200 copies par page : charge toutes les pages
+   (sinon un examen de 1 499 copies n'en montrait que 200). */
+async function fetchAllAttempts<T = any>(examId: number | string): Promise<T[]> {
+  const out: T[] = []
+  for (let page = 1; page <= 50; page++) {
+    const res = await api.get<any>(`/api/online_exams/${examId}/attempts?limit=200&page=${page}`)
+    const got: T[] = Array.isArray(res) ? res : (res?.attempts ?? [])
+    out.push(...got)
+    const total = Array.isArray(res) ? out.length : (res?.total ?? out.length)
+    if (got.length === 0 || out.length >= total) break
+  }
+  return out
+}
+
+
 /* ── Types locaux ──────────────────────────────────────────────── */
 type RichAttempt = ExamAttempt & {
   student_email?: string
@@ -236,8 +251,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
       // tableau brut — ce composant attendait encore un tableau brut,
       // cassant silencieusement l'affichage des copies. limit=200 (max
       // autorisé) pour couvrir les gros examens.
-      const res = await api.get<{ attempts: RichAttempt[]; total: number }>(`/api/online_exams/${examId}/attempts?limit=200`)
-      setAttempts(Array.isArray(res?.attempts) ? res.attempts : [])
+      setAttempts(await fetchAllAttempts<RichAttempt>(examId))
     }
     catch { error('Erreur de chargement des copies') }
     finally { setLoading(false) }
