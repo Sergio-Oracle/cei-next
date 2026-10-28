@@ -1614,7 +1614,7 @@ export default function ExamPage() {
     setTimeLeft(Math.max(totalSec-elapsedSec,0))
     startTimerInterval()
     saveRef.current     = setInterval(()=>{const aId=attemptRef.current;if(aId)doAutoSave(aId)},30000)
-    msgPollRef.current  = setInterval(()=>pollTeacherMessages(attempt.id),8000)
+    msgPollRef.current  = setInterval(()=>pollTeacherMessages(attempt.id),30000)
     extraPollRef.current= setInterval(()=>pollExtraTime(attempt.id),30000)
     // Heartbeat léger — alimente ExamAttempt.last_seen_at côté serveur pour
     // le badge "hors ligne" du surveillant. Volontairement silencieux en cas
