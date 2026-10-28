@@ -54,7 +54,7 @@ export default function SurveillantCalendarPage() {
                   </div>
                 </div>
                 {isActive && (
-                  <Link href={`/proctor/${exam.id}`} className="btn btn-success">
+                  <Link href={`/proctor/monitor/${exam.id}`} className="btn btn-success">
                     <i className="fas fa-eye" /> Accéder
                   </Link>
                 )}

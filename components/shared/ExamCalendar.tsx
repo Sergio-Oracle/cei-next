@@ -124,7 +124,7 @@ export default function ExamCalendar({ apiPath = '/api/online_exams', role = 'ad
                 </div>
                 <span style={{ fontSize:14.5, fontWeight: 600, padding: '4px 10px', borderRadius: 99, background: st.bg, color: st.color }}>{st.label}</span>
                 {role === 'professor' && exam.status === 'active' && (
-                  <Link href={`/proctor/${exam.id}`} className="btn btn-success btn-sm">
+                  <Link href={`/proctor/monitor/${exam.id}`} className="btn btn-success btn-sm">
                     <i className="fas fa-eye" /> Surveiller
                   </Link>
                 )}
@@ -204,7 +204,7 @@ export default function ExamCalendar({ apiPath = '/api/online_exams', role = 'ad
                         {e.attempts_count != null && <div><i className="fas fa-users" style={{ marginRight: 6 }} />{e.attempts_count} participant(s)</div>}
                       </div>
                       {e.status === 'active' && (
-                        <Link href={`/proctor/${e.id}`} className="btn btn-success" style={{ marginTop: 10, fontSize:14.5, padding: '5px 12px', display: 'inline-flex' }}>
+                        <Link href={`/proctor/monitor/${e.id}`} className="btn btn-success" style={{ marginTop: 10, fontSize:14.5, padding: '5px 12px', display: 'inline-flex' }}>
                           <i className="fas fa-eye" /> Surveiller
                         </Link>
                       )}

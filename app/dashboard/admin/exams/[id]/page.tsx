@@ -307,7 +307,7 @@ export default function AdminExamDetailPage() {
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <Link href={`/exam/${id}?preview=1`} className="btn btn-secondary" title="Voir et tester l'examen comme un étudiant (rien n'est enregistré)"><i className="fas fa-display" /> Prévisualiser</Link>
-          {exam.status === 'active' && <Link href={`/proctor/${id}`} className="btn btn-info"><i className="fas fa-eye" /> Surveiller</Link>}
+          {exam.status === 'active' && <Link href={`/proctor/monitor/${id}`} className="btn btn-info"><i className="fas fa-eye" /> Surveiller</Link>}
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-success" onClick={activate} disabled={acting}><i className="fas fa-play" /> Activer</button>}
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-secondary" onClick={openRescheduleModal} title="Reprogrammer sans recréer l'examen"><i className="fas fa-calendar-days" /> Reprogrammer</button>}
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-secondary" onClick={openCompositionModal} title="Pagination et ordre aléatoire des questions"><i className="fas fa-random" /> Composition</button>}

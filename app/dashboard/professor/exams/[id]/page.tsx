@@ -361,7 +361,7 @@ export default function ProfessorExamDetailPage() {
             <i className="fa-solid fa-display" /> Prévisualiser
           </Link>
           {exam.status === 'active' && (
-            <Link href={`/proctor/${exam.id}`} className="btn btn-info">
+            <Link href={`/proctor/monitor/${exam.id}`} className="btn btn-info">
               <i className="fa-solid fa-eye" /> Surveiller
             </Link>
           )}
