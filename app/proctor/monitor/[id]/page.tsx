@@ -354,8 +354,6 @@ export default function ProctorMonitorPage() {
   const roomRef         = useRef<any>(null)
   const videoTracksRef  = useRef<Map<string, any>>(new Map())
   const screenTracksRef = useRef<Map<string, any>>(new Map())
-  const screenPubsRef = useRef<Map<string, any>>(new Map())
-  const screenModalIdRef = useRef<string | null>(null)
   const [proctorStatus, setProctorStatus] = useState<Map<string, {online:boolean;camOn:boolean;micOn:boolean}>>(new Map())
   const myLocalCamRef   = useRef<any>(null)
   const myLocalMicRef   = useRef<any>(null)
@@ -620,37 +618,8 @@ export default function ProctorMonitorPage() {
       const tok = await api.get<{ ws_url: string; token: string }>(`/api/online_exams/${id}/proctor_token`)
       if (!tok.ws_url || !tok.token) return
       const LK   = window.LivekitClient
-      // autoSubscribe désactivé : un surveillant ne reçoit plus automatiquement
-      // l'écran et le micro de chacun de ses étudiants (centaines de flux en
-      // permanence → saturation CPU/mémoire du SFU). Caméras + flux des
-      // surveillants/enseignants : toujours ; écran : à la demande (modal).
-      const room = new LK.Room({ adaptiveStream: true, dynacast: true, autoSubscribe: false })
+      const room = new LK.Room({ adaptiveStream: true, dynacast: true })
       roomRef.current = room
-      const isScreenPub = (pub: any) => pub.source === LK.Track.Source?.ScreenShare || pub.trackName === 'screen'
-      const wantPub = (pub: any, ident: string) => {
-        if (ident.startsWith('proctor-') || ident.startsWith('teacher-')) return true
-        if (!ident.startsWith('student-')) return false
-        return pub.kind === 'video' && !isScreenPub(pub)
-      }
-      const syncSubs = (p: any) => {
-        const ident = p.identity
-        p.trackPublications.forEach((pub: any) => {
-          if (isScreenPub(pub) && ident.startsWith('student-') && !ident.endsWith('-phone')) {
-            screenPubsRef.current.set(ident, pub)
-            setScreenSet(prev => new Set(prev).add(ident))
-            if (screenModalIdRef.current === ident) { try { pub.setSubscribed(true) } catch {} }
-          } else if (wantPub(pub, ident) && !pub.isSubscribed) {
-            try { pub.setSubscribed(true) } catch {}
-          }
-        })
-      }
-      room.on(LK.RoomEvent.TrackPublished, (_pub: any, participant: any) => syncSubs(participant))
-      room.on(LK.RoomEvent.TrackUnpublished, (pub: any, participant: any) => {
-        if (isScreenPub(pub)) {
-          screenPubsRef.current.delete(participant.identity)
-          setScreenSet(prev => { const n = new Set(prev); n.delete(participant.identity); return n })
-        }
-      })
 
       // Alertes en direct (bruit prolongé, changement d'onglet/focus,
       // plusieurs écrans) diffusées par la page d'examen de l'étudiant sur
@@ -709,7 +678,6 @@ export default function ProctorMonitorPage() {
           if (isScreen) {
             screenTracksRef.current.set(identity, track)
             setScreenSet(prev => new Set(prev).add(identity))
-            if (screenModalIdRef.current === identity && screenVideoRef.current) { try { track.attach(screenVideoRef.current) } catch {} }
           } else {
             videoTracksRef.current.set(identity, track)
             setData(prev => {
@@ -747,6 +715,7 @@ export default function ProctorMonitorPage() {
         if (track.kind === 'video') {
           if (isScreen) {
             screenTracksRef.current.delete(identity)
+            setScreenSet(prev => { const n = new Set(prev); n.delete(identity); return n })
           } else {
             videoTracksRef.current.delete(identity)
             const el = document.getElementById(`video-${identity}`) as HTMLVideoElement | null
@@ -759,7 +728,6 @@ export default function ProctorMonitorPage() {
 
       room.on(LK.RoomEvent.ParticipantConnected, (participant: any) => {
         const ident = participant.identity
-        syncSubs(participant)
         if (ident.startsWith('proctor-') || ident.startsWith('teacher-')) {
           setProctorStatus(prev => {
             const next = new Map(prev)
@@ -818,7 +786,6 @@ export default function ProctorMonitorPage() {
       })
 
       await room.connect(tok.ws_url, tok.token)
-      room.remoteParticipants.forEach((p: any) => syncSubs(p))
 
       /* participants déjà présents au moment de la connexion */
       const alreadyLive: string[] = []
@@ -1097,18 +1064,8 @@ export default function ProctorMonitorPage() {
   }
 
   function openScreenView(s: Student) {
-    screenModalIdRef.current = s.livekit_identity
-    try { screenPubsRef.current.get(s.livekit_identity)?.setSubscribed(true) } catch {}
     setScreenModal({ attemptId: s.attempt_id, name: s.student_name, identity: s.livekit_identity })
   }
-
-  /* se désabonne de l'écran dès que le modal se ferme */
-  useEffect(() => {
-    if (screenModal) return
-    const ident = screenModalIdRef.current
-    screenModalIdRef.current = null
-    if (ident) { try { screenPubsRef.current.get(ident)?.setSubscribed(false) } catch {} }
-  }, [screenModal])
 
   /* attach screen track when modal opens */
   useEffect(() => {
