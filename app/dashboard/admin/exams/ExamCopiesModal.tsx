@@ -239,6 +239,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
   const [showPlagiat, setShowPlagiat] = useState(false)
   const [showBilan,  setShowBilan]  = useState(false)
   const [correctingAll, setCorrectingAll] = useState(false)
+  const [corrProgress, setCorrProgress] = useState('')
   const [csvDownloading, setCsvDownloading] = useState(false)
 
   useEffect(() => { load() }, [])  // eslint-disable-line
@@ -340,6 +341,27 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                   <button onClick={async () => {
                     if (!confirm('Corriger automatiquement TOUTES les tentatives soumises avec l\'IA ?')) return
                     setCorrectingAll(true)
+                    try {
+                      // Service de correction parallèle : toutes les copies sont confiées d'un coup, la page suit l'avancement.
+                      const lot = await api.post<{ worker_alive: boolean; queued: number; to_correct?: number }>(`/api/online_exams/${examId}/correct_all`, {})
+                      if (lot.worker_alive) {
+                        for (;;) {
+                          try {
+                            const p = await api.get<{ total: number; corrected: number; in_queue: number; failed: number }>(`/api/online_exams/${examId}/correction_progress`)
+                            setCorrProgress(`${p.corrected}/${p.total}`)
+                            if (p.in_queue === 0) {
+                              success(`Correction terminée : ${p.corrected} copie(s) corrigée(s) sur ${p.total}${p.failed > 0 ? `, ${p.failed} en échec` : ''}`)
+                              break
+                            }
+                          } catch { /* coupure passagère : la correction continue côté serveur, on relit plus tard */ }
+                          await new Promise(r => setTimeout(r, 3000))
+                        }
+                        setCorrProgress('')
+                        setCorrectingAll(false)
+                        load()
+                        return
+                      }
+                    } catch { /* service indisponible : correction copie par copie, comme avant */ }
                     let ok = 0, ko = 0
                     for (const a of done.filter(x => x.needs_correction)) {
                       try { await api.post(`/api/exam_attempts/${a.id}/correct`, {}); ok++ }
@@ -350,7 +372,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                     load()
                   }} disabled={correctingAll}
                   style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontSize:14.5, fontWeight: 700, color: '#059669', cursor: correctingAll ? 'not-allowed' : 'pointer' }}>
-                    {correctingAll ? <><i className="fas fa-spinner fa-spin" />Correction…</> : <><i className="fas fa-wand-magic-sparkles" />Tout corriger (IA)</>}
+                    {correctingAll ? <><i className="fas fa-spinner fa-spin" />Correction{corrProgress ? ` ${corrProgress}` : '…'}</> : <><i className="fas fa-wand-magic-sparkles" />Tout corriger (IA)</>}
                   </button>
                 )}
               </div>
