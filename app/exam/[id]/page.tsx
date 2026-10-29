@@ -3013,10 +3013,22 @@ export default function ExamPage() {
   async function pollExtraTime(aId:number) {
     if(sessionEndedRef.current) return
     try {
-      const res=await api.get<{extra_minutes?:number}>(`/api/exam_attempts/${aId}/subject`)
+      const res=await api.get<{extra_minutes?:number; duration_minutes?:number}>(`/api/exam_attempts/${aId}/subject`)
       const ne=res.extra_minutes??0
       if(ne>extraMinRef.current){const added=ne-extraMinRef.current;extraMinRef.current=ne;success(`+${added} minute${added>1?'s':''} accordée${added>1?'s':''} par le surveillant`)}
-    } catch {}
+      // Durée de l'examen prolongée par l'enseignant en cours d'épreuve : prise en compte sans recharger la page.
+      const nd=res.duration_minutes??0
+      const cur=examRef.current
+      if(cur && nd>cur.duration_minutes){
+        const added=nd-cur.duration_minutes
+        examRef.current={...cur,duration_minutes:nd}
+        setExam(examRef.current)
+        success(`L'examen est prolongé de ${added} minute${added>1?'s':''}`)
+      }
+    } catch (e:any) {
+      // Le serveur a clos cette copie (heure de fin atteinte) : on termine ici, sans attendre le minuteur local.
+      if(e?.data?.already_submitted||e?.data?.banned) handleSubmit(true)
+    }
   }
 
   async function doAutoSave(aId:number) {
