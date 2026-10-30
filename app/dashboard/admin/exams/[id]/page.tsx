@@ -6,6 +6,7 @@ import Link from 'next/link'
 import api from '@/lib/api'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
+import { recomputeGrades, publishWithGradeCheck } from '@/lib/gradeCheck'
 import type { OnlineExam, ExamAttempt, ExamStatus } from '@/types'
 import SecurityReportPanel from '@/components/shared/SecurityReportPanel'
 import ExamWavesPanel from '@/components/exam/ExamWavesPanel'
@@ -77,6 +78,7 @@ export default function AdminExamDetailPage() {
   const [downloadingSecurity, setDownloadingSecurity] = useState(false)
   const [importingGrades, setImportingGrades] = useState(false)
   const [publishing, setPublishing] = useState(false)
+  const [rechecking, setRechecking] = useState(false)
   const gradesFileRef = useRef<HTMLInputElement | null>(null)
   const [rescheduleModal, setRescheduleModal] = useState(false)
   const [rescheduleForm, setRescheduleForm] = useState({ start_time: '', end_time: '' })
@@ -191,9 +193,12 @@ export default function AdminExamDetailPage() {
     if (!confirm(msg)) return
     setPublishing(true)
     try {
-      const res = await api.put<{ success: boolean; results_published: boolean }>(`/api/online_exams/${id}/publish-results`, { published: next })
-      setExam(e => e ? { ...e, results_published: res.results_published } : e)
-      success(res.results_published ? 'Résultats publiés' : 'Résultats dépubliés')
+      const published = next
+        ? await publishWithGradeCheck(id, { success, error })          // vérifie les notes avant que les étudiants les voient
+        : (await api.put<{ success: boolean; results_published: boolean }>(`/api/online_exams/${id}/publish-results`, { published: false })).results_published
+      if (published === null) return
+      setExam(e => e ? { ...e, results_published: published } : e)
+      success(published ? 'Résultats publiés' : 'Résultats dépubliés')
     } catch (e: any) { error(e.message) } finally { setPublishing(false) }
   }
 
@@ -327,6 +332,14 @@ export default function AdminExamDetailPage() {
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-secondary" onClick={openRescheduleModal} title="Reprogrammer sans recréer l'examen"><i className="fas fa-calendar-days" /> Reprogrammer</button>}
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-secondary" onClick={openCompositionModal} title="Pagination et ordre aléatoire des questions"><i className="fas fa-random" /> Composition</button>}
           {exam.status === 'active' && <button className="btn btn-warning" onClick={close} disabled={acting}><i className="fas fa-stop" /> Clôturer</button>}
+          <button
+            className="btn btn-secondary"
+            onClick={async () => { setRechecking(true); try { await recomputeGrades(id, { success, error }); await load?.() } finally { setRechecking(false) } }}
+            disabled={rechecking}
+            title="Vérifie que chaque note correspond au calcul actuel et la recalcule si besoin — à faire avant de publier les résultats"
+          >
+            {rechecking ? <><i className="fa-solid fa-spinner spin" /> ...</> : <><i className="fa-solid fa-calculator" /> Recalculer les notes</>}
+          </button>
           <button
             className={exam.results_published ? 'btn btn-secondary' : 'btn btn-success'}
             onClick={handlePublishResults}
