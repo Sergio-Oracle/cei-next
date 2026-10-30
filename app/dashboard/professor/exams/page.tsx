@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import ExamSettingsModal from '@/components/shared/ExamSettingsModal'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import type { OnlineExam, ExamStatus } from '@/types'
@@ -35,6 +36,7 @@ function SecChip({ icon, label, color, bg }: { icon: string; label: string; colo
 export default function ProfessorExamsPage() {
   const { success, error } = useToast()
   const [exams, setExams]           = useState<OnlineExam[]>([])
+  const [settingsId, setSettingsId] = useState<number | null>(null)
   const exams_pg = useProgressive(exams)
   const [loading, setLoading]       = useState(true)
   const [actioning, setActioning]   = useState<number | null>(null)
@@ -121,6 +123,8 @@ export default function ProfessorExamsPage() {
         </Link>
       </div>
 
+      {settingsId !== null && <ExamSettingsModal examId={settingsId} onClose={() => setSettingsId(null)} onSaved={() => { setSettingsId(null); load() }} />}
+
       {loading ? (
         <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: 35 }} />
@@ -152,7 +156,7 @@ export default function ProfessorExamsPage() {
               {exams_pg.shown.map(exam => (
                 <ExamCard key={exam.id} exam={exam} actioning={actioning}
                   onActivate={activate} onClose={closeExam} onExtend={extend}
-                  onDelete={deleteExam} />
+                  onDelete={deleteExam} onSettings={setSettingsId} />
               ))}
               <div style={{ gridColumn: "1 / -1" }}><ShowMore pg={exams_pg} label="examens" /></div>
             </div>
@@ -165,7 +169,7 @@ export default function ProfessorExamsPage() {
 
 /* ── Carte examen ─────────────────────────────────────────────────────────── */
 function ExamCard({
-  exam, actioning, onActivate, onClose, onExtend, onDelete,
+  exam, actioning, onActivate, onClose, onExtend, onDelete, onSettings,
 }: {
   exam: OnlineExam
   actioning: number | null
@@ -173,6 +177,7 @@ function ExamCard({
   onClose:    (id: number) => void
   onExtend:   (id: number) => void
   onDelete:   (id: number, title: string) => void
+  onSettings: (id: number) => void
 }) {
   const now   = new Date()
   const start = new Date(exam.start_time)
@@ -262,6 +267,9 @@ function ExamCard({
             <button onClick={() => onExtend(exam.id)} disabled={busy} style={btn('rgba(16,185,129,.1)', '#059669')}>
               {busy ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-clock" />} Rallonger
             </button>
+            <button onClick={() => onSettings(exam.id)} style={btn('rgba(59,130,246,.1)', '#3b82f6')}>
+              <i className="fas fa-sliders" /> Paramètres
+            </button>
             <button onClick={() => onClose(exam.id)} disabled={busy} style={btn('rgba(239,68,68,.15)', '#ef4444')}>
               {busy ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-stop-circle" />} Clôturer
             </button>
@@ -277,9 +285,9 @@ function ExamCard({
             <button onClick={() => onExtend(exam.id)} disabled={busy} style={btn('rgba(16,185,129,.1)', '#059669')}>
               {busy ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-clock" />} Rallonger
             </button>
-            <Link href={`/dashboard/professor/exams/${exam.id}`} style={btn('rgba(59,130,246,.1)', '#3b82f6')}>
-              <i className="fas fa-pencil-alt" /> Éditer
-            </Link>
+            <button onClick={() => onSettings(exam.id)} style={btn('rgba(59,130,246,.1)', '#3b82f6')}>
+              <i className="fas fa-sliders" /> Paramètres
+            </button>
           </>
         )}
 

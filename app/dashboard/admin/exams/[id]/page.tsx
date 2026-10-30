@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
+import ExamSettingsModal from '@/components/shared/ExamSettingsModal'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import { recomputeGrades, publishWithGradeCheck } from '@/lib/gradeCheck'
@@ -84,6 +85,7 @@ export default function AdminExamDetailPage() {
   const [rescheduleForm, setRescheduleForm] = useState({ start_time: '', end_time: '' })
   const [rescheduling, setRescheduling] = useState(false)
   const [compositionModal, setCompositionModal] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [compositionForm, setCompositionForm] = useState({ questions_per_page: 5, randomize_questions: false })
   const [savingComposition, setSavingComposition] = useState(false)
 
@@ -315,6 +317,7 @@ export default function AdminExamDetailPage() {
 
   return (
     <div>
+      {settingsOpen && <ExamSettingsModal examId={Number(id)} onClose={() => setSettingsOpen(false)} onSaved={() => { setSettingsOpen(false); load() }} />}
       {/* Header */}
       <SubjectCheckBanner examId={id} />
       <div className="page-header">
@@ -329,6 +332,7 @@ export default function AdminExamDetailPage() {
           <Link href={`/exam/${id}?preview=1`} className="btn btn-secondary" title="Voir et tester l'examen comme un étudiant (rien n'est enregistré)"><i className="fas fa-display" /> Prévisualiser</Link>
           {exam.status === 'active' && <Link href={`/proctor/monitor/${id}`} className="btn btn-info"><i className="fas fa-eye" /> Surveiller</Link>}
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-success" onClick={activate} disabled={acting}><i className="fas fa-play" /> Activer</button>}
+          {(exam.status === 'draft' || exam.status === 'scheduled' || exam.status === 'active') && <button className="btn btn-primary" onClick={() => setSettingsOpen(true)} title="Modifier tous les réglages de l'examen"><i className="fas fa-sliders" /> Paramètres</button>}
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-secondary" onClick={openRescheduleModal} title="Reprogrammer sans recréer l'examen"><i className="fas fa-calendar-days" /> Reprogrammer</button>}
           {(exam.status === 'draft' || exam.status === 'scheduled') && <button className="btn btn-secondary" onClick={openCompositionModal} title="Pagination et ordre aléatoire des questions"><i className="fas fa-random" /> Composition</button>}
           {exam.status === 'active' && <button className="btn btn-warning" onClick={close} disabled={acting}><i className="fas fa-stop" /> Clôturer</button>}

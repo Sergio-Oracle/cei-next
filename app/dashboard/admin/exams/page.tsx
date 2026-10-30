@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import ExamSettingsModal from '@/components/shared/ExamSettingsModal'
 import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
@@ -54,6 +55,7 @@ function SecPill({ icon, value, title }: { icon: string; value: string | number;
 export default function AdminExamsPage() {
   const { success, error } = useToast()
   const [exams,    setExams]    = useState<OnlineExam[]>([])
+  const [settingsId, setSettingsId] = useState<number | null>(null)
   const exams_pg = useProgressive(exams)
   const [loading,  setLoading]  = useState(true)
   const [actioning, setActioning] = useState<number | null>(null)
@@ -147,6 +149,7 @@ export default function AdminExamsPage() {
   return (
     <div>
       {/* ── Header ── */}
+      {settingsId !== null && <ExamSettingsModal examId={settingsId} onClose={() => setSettingsId(null)} onSaved={() => { setSettingsId(null); load() }} />}
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 44, height: 44, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -319,12 +322,12 @@ export default function AdminExamsPage() {
                     </button>
                   )}
 
-                  {/* Éditer (brouillon ou planifié) */}
-                  {(isDraft || isScheduled) && (
-                    <Link href={`/dashboard/admin/exams/${exam.id}?tab=edit`}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>
-                      <i className="fas fa-pencil" />Éditer
-                    </Link>
+                  {/* Paramètres : modifiables Planifié ET En cours (les règles de verrouillage viennent du serveur) */}
+                  {(isDraft || isScheduled || isActive) && (
+                    <button type="button" onClick={() => setSettingsId(exam.id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: 'var(--text)', cursor: 'pointer' }}>
+                      <i className="fas fa-sliders" />Paramètres
+                    </button>
                   )}
 
                   {/* Supprimer — toujours en dernier, icône seulement */}

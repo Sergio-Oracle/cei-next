@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
+import ExamSettingsModal from '@/components/shared/ExamSettingsModal'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import { recomputeGrades, publishWithGradeCheck } from '@/lib/gradeCheck'
@@ -69,6 +70,7 @@ export default function ProfessorExamDetailPage() {
   const [rescheduleForm, setRescheduleForm] = useState({ start_time: '', end_time: '' })
   const [rescheduling, setRescheduling] = useState(false)
   const [compositionModal, setCompositionModal] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [compositionForm, setCompositionForm] = useState({ questions_per_page: 5, randomize_questions: false })
   const [savingComposition, setSavingComposition] = useState(false)
   const [extraModal, setExtraModal]   = useState<AttemptWithMeta | null>(null)
@@ -349,6 +351,7 @@ export default function ProfessorExamDetailPage() {
 
   return (
     <div>
+      {settingsOpen && <ExamSettingsModal examId={Number(id)} onClose={() => setSettingsOpen(false)} onSaved={() => { setSettingsOpen(false); load() }} />}
       {/* Header */}
       <SubjectCheckBanner examId={id} />
       <div className="page-header">
@@ -373,6 +376,11 @@ export default function ProfessorExamDetailPage() {
           {(exam.status === 'draft' || exam.status === 'scheduled') && (
             <button className="btn btn-success" onClick={handleActivate} disabled={actioning}>
               <i className="fa-solid fa-play" /> Activer
+            </button>
+          )}
+          {(exam.status === 'draft' || exam.status === 'scheduled' || exam.status === 'active') && (
+            <button className="btn btn-primary" onClick={() => setSettingsOpen(true)} title="Modifier tous les réglages de l'examen">
+              <i className="fa-solid fa-sliders" /> Paramètres
             </button>
           )}
           {(exam.status === 'draft' || exam.status === 'scheduled') && (
