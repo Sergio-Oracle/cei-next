@@ -406,6 +406,9 @@ export default function ProfessorCreateSubjectPage() {
                 <i className="fas fa-list-check" style={{ marginRight:6 }}/>
                 Types de questions reconnus dans votre document : {Object.entries(created.detection.counts).map(([k,v])=>`${v} ${({qcm:'QCM',qcm_multi:'QCM à réponses multiples',vf:'vrai/faux',association:'association',tri:'classement',ordre:'remise en ordre',trous:'texte à trous',cloze:'champs à compléter',court:'réponse courte',numerique:'réponse numérique',calculee:'calcul à variables',zones:'placement sur image',open:'ouverte(s)',subopen:'sous-questions liées',code:'code',appariement:'appariement'} as Record<string,string>)[k]??k}`).join(', ')}.
                 {created.detection.warnings.length>0 && <div style={{ color:'#b45309' }}>À contrôler : {created.detection.warnings.join(' ; ')}</div>}
+                {created.detection.lost_lines && created.detection.lost_lines.length>0 && <div style={{ color:'#b91c1c' }}><b>Texte de votre document absent du sujet reconstruit :</b> {created.detection.lost_lines.map(l=>`« ${l} »`).join(' ; ')}</div>}
+                {created.detection.review && created.detection.review.issues.length>0 && <div style={{ color:'#b45309' }}><b>Relecture par l&apos;IA — à vérifier :</b> {created.detection.review.issues.map(i=>`${i.question ? i.question + ' : ' : ''}${i.probleme}`).join(' ; ')}</div>}
+                {created.detection.review && created.detection.review.ok===true && (!created.detection.lost_lines || created.detection.lost_lines.length===0) && <div style={{ color:'#047857' }}><i className="fas fa-circle-check" style={{ marginRight:4 }}/>Relecture complète par l&apos;IA : le sujet reconstruit est fidèle à votre document.</div>}
                 <div style={{ color:'#475569' }}>Vérifiez l&apos;aperçu ci-dessous : si un type ne correspond pas, modifiez le sujet avant de l&apos;enregistrer.</div>
               </div>
             )}
@@ -624,7 +627,7 @@ export default function ProfessorCreateSubjectPage() {
               <div style={{ marginBottom:22 }}>
                 <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:15.5, fontWeight:600, marginBottom:10 }}
                   title="Détermine comment le document est analysé et noté">
-                  <i className="fas fa-list-check" style={{ color:'var(--primary)', width:14 }} />Types de questions présents dans le document
+                  <i className="fas fa-list-check" style={{ color:'var(--primary)', width:14 }} />Types de questions présents dans le document (facultatif)
                 </label>
                 <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
                   {([['qcm','QCM','fa-circle-question','#1d4ed8','#dbeafe','#bfdbfe'],['open','Questions ouvertes','fa-pen-line','#0369a1','#e0f2fe','#7dd3fc'],['vf','Vrai / Faux','fa-toggle-on','#15803d','#dcfce7','#86efac'],
@@ -640,8 +643,7 @@ export default function ProfessorCreateSubjectPage() {
                 </div>
                 <p style={{ margin:'8px 0 0', fontSize:14, color:'var(--text-muted)' }}>
                   <i className="fas fa-circle-info" style={{ marginRight:4 }} />
-                  Sert à reconnaître chaque question dans votre fichier (un type non coché ne sera pas détecté même s'il est présent) et à donner à l'IA le bon format de barème pour la noter correctement. Les épreuves découpées en parties numérotées (I. QCM, II. Vrai ou faux, III. Association, IV. Tri, V. Cas pratique…) sont reconnues automatiquement. Pour un autre document, écrivez la balise dans le titre de la question (ex. « [ASSOCIATION] », « [TRI] », « [COURT] »). Si vous déposez aussi le corrigé (nom de fichier contenant « corrigé »), le barème en recopie les réponses sans jamais l'afficher aux étudiants.
-                </p>
+                  Facultatif : ces cases guident la lecture, mais ne limitent plus rien. Même si vous ne cochez rien, la plateforme lit le fichier complet (Word, PDF ou texte), reconnaît le type de chaque question d'après sa structure et reproduit le sujet tel qu'il est. L'encadré après l'import indique ce qui a été trouvé. Si vous déposez aussi le corrigé (nom de fichier contenant « corrigé »), le barème en recopie les réponses sans jamais les afficher aux étudiants.</p>
               </div>
 
               {/* Barème — Atelier CEI 7/08 : l'enseignant garde la main, l'IA ne

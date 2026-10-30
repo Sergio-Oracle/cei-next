@@ -50,6 +50,9 @@ interface ParsedBlock {
   items?: { text: string; letter?: string; gap?: number; kind?: string; options?: string[]; zone?: number }[]
   options?: { letter: string; text: string }[]
   vars_line?: string
+  /** Réponse rédigée avec fichier joint (« Fichier : oui|obligatoire ») ; appariement aléatoire (« Tirage : N », appliqué par le serveur). */
+  upload?: 'allowed' | 'required'
+  draw?: number
   /** Mots croisés (type « cloze » à grille) : position de chaque mot, un mot = un champ. */
   grid?: { k: number; num: number; dir: 'H' | 'V'; row: number; col: number; len: number }[]
   extraLines?: string[]; choices?: { letter: string; text: string }[]
@@ -343,9 +346,12 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
     const extraLines: string[] = []; const choices: { letter: string; text: string }[] = []
     const pairs: { left: string; right: string }[] = []
     const gItems: string[] = []; let gCats: string[] = []; let gGrid: ParsedBlock['grid']
+    let uploadMode: ParsedBlock['upload']; let drawN: number | undefined
     while (i < lines.length) {
       if (isSep(lines[i])) { i++; if (choices.length >= 2 || pairs.length >= 2 || gItems.length >= 2) break; continue }
       if (isSect(lines[i]) && !isQ(lines[i])) break
+      { const um = strip(lines[i]).match(/^\s*(?:Fichier|Pi[èe]ce\s+jointe|D[ée]p[ôo]t)\s*:\s*(oui|obligatoire|facultatif|autoris[ée])\s*$/i); if (um) { uploadMode = um[1].toLowerCase() === 'obligatoire' ? 'required' : 'allowed'; i++; continue } }
+      { const tm = q.markerType === 'APPARIEMENT' ? strip(lines[i]).match(/^\s*Tirage\s*:\s*(\d{1,2})\b/i) : null; if (tm) { drawN = parseInt(tm[1], 10); i++; continue } }
       if (isQ(lines[i]) && !isC(lines[i])) break
       if (DESC_RE.test(lines[i])) break
       if (isTextQ) {
@@ -417,6 +423,8 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       return true
     })
     const blk: ParsedBlock = { type, num: q.num, text: q.text, extraLines: cleanExtraLines, choices, pairs: pairs.length ? pairs : undefined, media: media.length ? media : undefined }
+    if (uploadMode && (type === 'open' || type === 'subopen' || type === 'code')) blk.upload = uploadMode
+    if (drawN) blk.draw = drawN
     if (varsLine) blk.vars_line = varsLine
     if (isGrid) {
       if (q.markerType === 'ORDRE') {
@@ -4084,7 +4092,7 @@ export default function ExamPage() {
                           </div>
                         </div>
                       )}
-                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} onAnswer={checkAutoAdvance} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>)}
+                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} onAnswer={checkAutoAdvance} attemptId={attemptRef.current} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>)}
                       {p1Pages.length<=1&&p2Blocks.length>0&&(
                         <button onClick={confirmAndLockQcm} style={{marginTop:8,background:'#10b981',border:'none',color:'#fff',borderRadius:8,padding:'10px 18px',cursor:'pointer',fontSize:15.5,fontWeight:600}}>
                           <i className="fas fa-arrow-right"/> Passer aux questions ouvertes
@@ -4109,7 +4117,7 @@ export default function ExamPage() {
                           {(b.text??'').split(/\n+/).filter(l=>l.trim()).map((l,li)=><p key={li} style={{margin:li?'8px 0 0':0,fontSize:17,lineHeight:1.65}}>{l}</p>)}
                         </div>
                         if(b.type==='section') return <div key={i} style={{margin:'18px 0 10px',padding:'10px 16px',background:'#f1f5f9',borderRadius:8,fontWeight:700,fontSize:17,color:'#334155',borderLeft:'4px solid #94a3b8'}}><i className="fas fa-layer-group" style={{color:'#64748b',marginRight:8}}/>{b.title}</div>
-                        return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>
+                        return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>
                       })}
                       {p2Pages.length>1&&(
                         <div style={{display:'flex',alignItems:'center',gap:10,marginTop:16}}>
@@ -4410,10 +4418,55 @@ function SQ({q,idx,answers,setAnswers}:{q:Question;idx:number;answers:Record<str
   )
 }
 
+/** Fichier(s) joint(s) à une réponse rédigée (« Fichier : oui »). Le fichier part sur le serveur tout de suite ; la liste est gardée dans la copie (pq_<n>_files). */
+function AttachmentBox({ attemptId, num, answers, setAnswers, required }: {
+  attemptId: number | null; num: string; answers: Record<string, string>
+  setAnswers: React.Dispatch<React.SetStateAction<Record<string, string>>>; required: boolean
+}) {
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const k = `pq_${num}_files`
+  let files: { key: string; name: string; size: number }[] = []
+  try { files = JSON.parse(answers[k] || '[]') } catch { files = [] }
+  const save = (next: typeof files) => setAnswers(p => ({ ...p, [k]: next.length ? JSON.stringify(next) : '' }))
+  async function pick(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; e.target.value = ''
+    if (!f) return
+    if (!attemptId) { setErr("L'envoi de fichier n'est pas disponible en prévisualisation."); return }
+    setBusy(true); setErr('')
+    try {
+      const fd = new FormData(); fd.append('file', f); fd.append('num', String(num))
+      const r = await api.upload<{ file: { key: string; name: string; size: number } }>(`/api/exam_attempts/${attemptId}/attachments`, fd, 'POST', { timeoutMs: 120000 })
+      save([...files, r.file])
+    } catch (ex: any) { setErr(ex?.message || "Envoi impossible, réessayez") } finally { setBusy(false) }
+  }
+  const kb = (n: number) => n > 1048576 ? `${(n / 1048576).toFixed(1)} Mo` : `${Math.max(1, Math.round(n / 1024))} Ko`
+  return (
+    <div style={{ marginTop: 12, padding: '12px 14px', border: `1.5px dashed ${files.length ? '#10b981' : required ? '#f59e0b' : '#cbd5e1'}`, borderRadius: 10, background: files.length ? '#f0fdf4' : '#f8fafc' }}>
+      <div style={{ fontSize: 15.5, fontWeight: 700, color: '#334155', marginBottom: 8 }}>
+        <i className="fas fa-paperclip" style={{ marginRight: 6 }} />Fichier joint {required ? <span style={{ color: '#b45309' }}>(attendu pour cette question)</span> : <span style={{ color: '#64748b', fontWeight: 500 }}>(facultatif)</span>}
+      </div>
+      {files.map((f, i) => (
+        <div key={f.key} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15.5, color: '#0f172a', padding: '4px 0' }}>
+          <i className="fas fa-file" style={{ color: '#059669' }} /><span style={{ flex: 1, wordBreak: 'break-all' }}>{f.name}</span><span style={{ color: '#64748b' }}>{kb(f.size)}</span>
+          <button type="button" onClick={() => save(files.filter((_, j) => j !== i))} style={{ border: 'none', background: 'transparent', color: '#b91c1c', cursor: 'pointer', fontSize: 15 }} aria-label="Retirer ce fichier"><i className="fas fa-xmark" /></button>
+        </div>
+      ))}
+      <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 8, background: busy ? '#cbd5e1' : '#1d4ed8', color: '#fff', fontWeight: 600, fontSize: 15.5, cursor: busy ? 'wait' : 'pointer', marginTop: 6 }}>
+        <i className={`fas ${busy ? 'fa-spinner fa-spin' : 'fa-upload'}`} />{busy ? 'Envoi en cours…' : files.length ? 'Ajouter un autre fichier' : 'Choisir un fichier'}
+        <input type="file" onChange={pick} disabled={busy} style={{ display: 'none' }} />
+      </label>
+      <div style={{ fontSize: 13.5, color: '#64748b', marginTop: 6 }}>PDF, Word, Excel, PowerPoint, images, texte, code ou ZIP · 10 Mo maximum · 5 fichiers par question.</div>
+      {err && <div style={{ fontSize: 14.5, color: '#b91c1c', marginTop: 6 }}>{err}</div>}
+    </div>
+  )
+}
+
 /* Question parsée (contenu brut) */
-function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:(key:string,blockType:string)=>void;mediaMap?:Record<string,string>;blockDownload?:boolean}) {
+function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}:{attemptId?:number|null;block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:(key:string,blockType:string)=>void;mediaMap?:Record<string,string>;blockDownload?:boolean}) {
   const isOpen=block.type==='open'||block.type==='subopen'||block.type==='code'
   const key=`pq_${block.num}`
+  const [armed,setArmed]=useState<string|null>(null)   // proposition « prise en main » (toucher puis toucher la ligne : repli du glisser-déposer sur écran tactile)
   // Mélange stable (par instance de bloc) des choix de droite de l'appariement,
   // indépendamment de l'ordre des items de gauche — façon Moodle (shufflestems +
   // choices mélangés séparément) — sinon la bonne réponse est toujours au même
@@ -4422,7 +4475,8 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:Pa
     () => block.type==='appariement' && block.pairs ? fisherYates(block.pairs.map(p=>p.right)) : [],
     [block]
   )
-  const answered=block.type==='subopen'?block.choices?.some(c=>(answers[`${key}_${c.letter}`]??'').trim()!==''):answeredAll(block,answers)
+  const hasFiles=!!block.upload&&(answers[`${key}_files`]??'')!==''
+  const answered=hasFiles||(block.type==='subopen'?block.choices?.some(c=>(answers[`${key}_${c.letter}`]??'').trim()!==''):answeredAll(block,answers))
   const TYPE_LABEL:Record<string,string>={vf:'V/F',qcm:'QCU',qcm_multi:'QCM',subopen:'Structuré',appariement:'Appariement',code:'Code / Maths',
     association:'Association',tri:'Classement',ordre:'Ordre',trous:'Texte à trous',court:'Réponse courte',numerique:'Numérique',cloze:'Champs à compléter',zones:'Placer sur l\'image',calculee:'Calcul'}
   // Texte à trous : {1} {2}… sont montrés comme (1) (2)… dans l'énoncé
@@ -4509,10 +4563,18 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:Pa
       )}
       {block.type==='appariement'&&block.pairs&&(
         <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          <div style={{border:'1.5px solid #dbeafe',borderRadius:10,background:'#eff6ff',padding:'10px 14px',display:'flex',flexWrap:'wrap',gap:8,alignItems:'center'}}>
+            <span style={{fontSize:14.5,fontWeight:700,color:'#1e40af'}}>Réponses — glissez-en une sur la ligne voulue (ou touchez-la puis touchez la ligne) :</span>
+            {shuffledRights.map((r,j)=>(
+              <span key={j} draggable onDragStart={e=>{e.dataTransfer.setData('text/plain',r);e.dataTransfer.effectAllowed='move'}} onClick={()=>setArmed(a=>a===r?null:r)}
+                style={{padding:'6px 12px',border:`1.5px solid ${armed===r?'#1d4ed8':'#bfdbfe'}`,borderRadius:8,background:armed===r?'#dbeafe':'#fff',fontSize:16.5,cursor:'grab',userSelect:'none'}}><i className="fas fa-grip-vertical" style={{color:'#94a3b8',marginRight:6}}/>{r}</span>))}
+          </div>
           {block.pairs.map((pr,i)=>{
             const sk=`${key}_${i}`;const sv=answers[sk]??''
+            const place=(v:string)=>{setAnswers(p=>({...p,[sk]:v}));setArmed(null)}
             return(
-              <div key={i} style={{display:'flex',alignItems:'center',gap:12}}>
+              <div key={i} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();const v=e.dataTransfer.getData('text/plain');if(v&&shuffledRights.includes(v)) place(v)}}
+                onClick={()=>{if(armed) place(armed)}} style={{display:'flex',alignItems:'center',gap:12,borderRadius:10,outline:armed?'2px dashed #93c5fd':'none',outlineOffset:2}}>
                 <div style={{flex:1,padding:'12px 16px',border:'1.5px solid #e2e8f0',borderRadius:10,background:'#f8fafc',fontSize:17,color:'#0f172a',fontWeight:600}}>{pr.left}</div>
                 <i className="fas fa-arrow-right" style={{color:'#94a3b8',flexShrink:0}}/>
                 {/* Pas d'avance automatique : l'appariement comporte plusieurs
@@ -4529,18 +4591,47 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:Pa
       )}
       {isGridType(block.type)&&block.type!=='cloze'&&block.type!=='zones'&&block.items&&block.options&&(
         <div style={{display:'flex',flexDirection:'column',gap:10}}>
-          {(block.type==='association'||block.type==='trous')&&(
+          {(block.type==='association'||block.type==='trous'||block.type==='tri')&&(
             <div style={{border:'1.5px solid #dbeafe',borderRadius:10,background:'#eff6ff',padding:'12px 16px',display:'flex',flexDirection:'column',gap:6}}>
-              <div style={{fontSize:14.5,fontWeight:700,color:'#1e40af'}}>{block.type==='trous'?'Propositions':'Propositions (choisissez la lettre qui correspond à chaque élément)'}</div>
-              {block.options.map(o=><div key={o.letter} style={{display:'flex',gap:10,fontSize:16.5,color:'#1e293b',lineHeight:1.5}}><b style={{color:'#1e40af',minWidth:22}}>{o.letter}.</b><span>{o.text}</span></div>)}
+              <div style={{fontSize:14.5,fontWeight:700,color:'#1e40af'}}>{block.type==='trous'?'Propositions':block.type==='tri'?'Catégories':'Propositions'} — glissez-en une sur la ligne voulue, ou touchez-la puis touchez la ligne, ou choisissez dans la liste.</div>
+              {block.options.map(o=>(
+                <div key={o.letter} draggable onDragStart={e=>{e.dataTransfer.setData('text/plain',o.letter);e.dataTransfer.effectAllowed='move'}} onClick={()=>setArmed(a=>a===o.letter?null:o.letter)}
+                  style={{display:'flex',gap:10,fontSize:16.5,color:'#1e293b',lineHeight:1.5,cursor:'grab',padding:'6px 10px',borderRadius:8,border:`1.5px solid ${armed===o.letter?'#1d4ed8':'#bfdbfe'}`,background:armed===o.letter?'#dbeafe':'#fff',userSelect:'none'}}>
+                  <i className="fas fa-grip-vertical" style={{color:'#94a3b8',alignSelf:'center'}}/><b style={{color:'#1e40af',minWidth:22}}>{o.letter}.</b><span>{o.text}</span>
+                </div>))}
             </div>
           )}
-          {block.type==='ordre'&&<div style={{fontSize:14.5,color:'#64748b'}}><i className="fas fa-info-circle"/> Indiquez le rang de chaque élément (1 = premier) ; chaque rang n&apos;est utilisé qu&apos;une fois.</div>}
-          {block.items.map((it,i)=>{
-            const sk=`${key}_${i}`;const sv=answers[sk]??''
-            const used=block.type==='ordre'?new Set((block.items??[]).map((_,j)=>j===i?'':(answers[`${key}_${j}`]??'')).filter(Boolean)):new Set<string>()
+          {block.type==='ordre'&&(()=>{
+            const n=block.items!.length
+            const idxs=Array.from({length:n},(_,i)=>i)
+            const rankOf=(i:number)=>parseInt(answers[`${key}_${i}`]??'',10)
+            const ranked=idxs.every(i=>rankOf(i)>=1&&rankOf(i)<=n)
+            const order=ranked?[...idxs].sort((a,b)=>rankOf(a)-rankOf(b)):idxs
+            const commit=(ord:number[])=>setAnswers(p=>{const nx={...p};ord.forEach((idx,pos)=>{nx[`${key}_${idx}`]=String(pos+1)});return nx})
+            const move=(from:number,to:number)=>{if(to<0||to>=n||from===to) return;const o=[...order];const [m]=o.splice(from,1);o.splice(to,0,m);commit(o)}
             return(
-              <div key={i} style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                <div style={{fontSize:14.5,color:'#64748b'}}><i className="fas fa-info-circle"/> Glissez les éléments pour les mettre dans le bon ordre (ou utilisez les flèches). Le premier de la liste est le 1<sup>er</sup>.</div>
+                {order.map((idx,pos)=>{const it=block.items![idx];return(
+                  <div key={idx} draggable onDragStart={e=>{e.dataTransfer.setData('text/plain',String(pos));e.dataTransfer.effectAllowed='move'}} onDragOver={e=>e.preventDefault()}
+                    onDrop={e=>{e.preventDefault();const f=parseInt(e.dataTransfer.getData('text/plain'),10);if(!isNaN(f)) move(f,pos)}}
+                    style={{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',border:`1.5px solid ${ranked?'#10b981':'#e2e8f0'}`,borderRadius:10,background:'#f8fafc',cursor:'grab',userSelect:'none'}}>
+                    <i className="fas fa-grip-vertical" style={{color:'#94a3b8'}}/>
+                    <span style={{minWidth:28,height:28,borderRadius:'50%',background:ranked?'#059669':'#94a3b8',color:'#fff',fontWeight:700,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:15}}>{pos+1}</span>
+                    <span style={{flex:1,fontSize:17,color:'#0f172a',fontWeight:600,lineHeight:1.5}}>{it.letter?<b style={{color:'#1e40af',marginRight:8}}>{it.letter}.</b>:null}{it.text}</span>
+                    <button type="button" onClick={()=>move(pos,pos-1)} disabled={pos===0} aria-label="Monter" style={{border:'none',background:'#e2e8f0',borderRadius:6,padding:'6px 9px',cursor:pos===0?'not-allowed':'pointer'}}><i className="fas fa-chevron-up"/></button>
+                    <button type="button" onClick={()=>move(pos,pos+1)} disabled={pos===n-1} aria-label="Descendre" style={{border:'none',background:'#e2e8f0',borderRadius:6,padding:'6px 9px',cursor:pos===n-1?'not-allowed':'pointer'}}><i className="fas fa-chevron-down"/></button>
+                  </div>)})}
+                {!ranked&&<button type="button" onClick={()=>commit(order)} style={{alignSelf:'flex-start',padding:'9px 16px',border:'1.5px solid #1d4ed8',borderRadius:8,background:'#eff6ff',color:'#1d4ed8',fontWeight:700,cursor:'pointer',fontSize:15.5}}><i className="fas fa-check" style={{marginRight:6}}/>Valider cet ordre</button>}
+              </div>)
+          })()}
+          {block.type!=='ordre'&&block.items.map((it,i)=>{
+            const sk=`${key}_${i}`;const sv=answers[sk]??''
+            const used=new Set<string>()
+            const place=(L:string)=>{setAnswers(p=>({...p,[sk]:L}));setArmed(null)}
+            return(
+              <div key={i} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();const L=e.dataTransfer.getData('text/plain');if(L&&block.options!.some(o=>o.letter===L)) place(L)}}
+                onClick={()=>{if(armed) place(armed)}} style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',borderRadius:10,outline:armed?'2px dashed #93c5fd':'none',outlineOffset:2}}>
                 <div style={{flex:'1 1 260px',padding:'12px 16px',border:'1.5px solid #e2e8f0',borderRadius:10,background:'#f8fafc',fontSize:17,color:'#0f172a',fontWeight:600,lineHeight:1.5}}>
                   {block.type==='ordre'&&it.letter?<b style={{color:'#1e40af',marginRight:8}}>{it.letter}.</b>:<b style={{color:'#1e40af',marginRight:8}}>{it.gap??i+1}.</b>}{block.type==='trous'?'':it.text}{block.type==='trous'&&<span>{it.text}</span>}
                 </div>
@@ -4619,6 +4710,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:Pa
           onFocus={e=>{(e.target as HTMLElement).style.borderColor='#3b82f6'}}
           onBlur={e=>{(e.target as HTMLElement).style.borderColor=(answers[key]?.trim()?'#10b981':'#e2e8f0')}}/>
       )}
+      {block.upload&&(block.type==='open'||block.type==='code'||block.type==='subopen')&&<AttachmentBox attemptId={attemptId??null} num={block.num??''} answers={answers} setAnswers={setAnswers} required={block.upload==='required'}/>}
       {block.type==='open'&&(
         <textarea value={answers[key]??''} onChange={e=>setAnswers(p=>({...p,[key]:e.target.value}))} rows={6} placeholder={`Rédigez votre réponse à la question ${block.num}…`}
           style={{width:'100%',padding:'12px 14px',border:'1.5px solid #e2e8f0',borderRadius:8,fontSize:17,fontFamily:'inherit',resize:'vertical',color:'#0f172a',outline:'none',boxSizing:'border-box',lineHeight:1.6}}

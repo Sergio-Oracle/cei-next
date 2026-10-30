@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { openAttachment, type AttemptAttachment } from '@/lib/attachments'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import type { ExamAttempt } from '@/types'
@@ -598,6 +599,7 @@ interface ReviewData {
   ban_reason?: string; student_answer?: string; raw_answers?: string; feedback?: string; corrector_name?: string;
   incidents: Array<{type: string; data?: any; timestamp?: string}>;
   proctor_notes: Array<{note: string; author?: string; timestamp?: string}>;
+  attachments?: AttemptAttachment[];
   corrected_at?: string;
 }
 
@@ -772,6 +774,20 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
                 <ReviewCard title="Feedback" icon="fa-comment">
                   <div style={{ margin: '0 0 4px', padding: '12px 16px', maxHeight: 300, overflowY: 'auto', whiteSpace: 'pre-wrap', fontSize:15.5, lineHeight: 1.7, color: '#1e293b', background: '#f8fafc', borderRadius: '0 0 10px 10px' }}>
                     {data.feedback}
+                  </div>
+                </ReviewCard>
+              )}
+
+              {/* Fichiers joints par l'étudiant */}
+              {(data.attachments ?? []).length > 0 && (
+                <ReviewCard title={`Fichiers joints (${(data.attachments ?? []).length})`} icon="fa-paperclip">
+                  <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {(data.attachments ?? []).map((a, i) => (
+                      <button key={i} type="button" onClick={() => openAttachment(data.attempt_id, a).catch(() => alert('Téléchargement impossible'))}
+                        style={{ textAlign: 'left', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', background: 'white', cursor: 'pointer', fontSize: 15.5 }}>
+                        <i className="fas fa-download" style={{ color: '#1d4ed8', marginRight: 8 }} />Question {a.num} — {a.name}
+                      </button>
+                    ))}
                   </div>
                 </ReviewCard>
               )}

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
+import { openAttachment, type AttemptAttachment } from '@/lib/attachments'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import { eventLabel } from '@/lib/eventLabels'
@@ -46,6 +47,7 @@ interface AttemptReview {
   duration_min: number | null
   incidents: Incident[]
   proctor_notes: ProctorNote[]
+  attachments?: AttemptAttachment[]
   student_answer?: string
   raw_answers?: Record<string, string> | string
   feedback?: string
@@ -471,6 +473,24 @@ export default function AttemptDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Fichiers joints par l'étudiant (questions « Fichier : oui ») */}
+        {(data.attachments ?? []).length > 0 && (
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', background: '#eff6ff', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="fas fa-paperclip" style={{ color: '#1d4ed8', fontSize: 17 }} />
+              <span style={{ fontWeight: 700, fontSize: 17, color: '#1e3a8a' }}>Fichiers joints ({(data.attachments ?? []).length})</span>
+            </div>
+            <div style={{ padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {(data.attachments ?? []).map((a, i) => (
+                <button key={i} type="button" onClick={() => openAttachment(data.attempt_id, a).catch(() => alert('Téléchargement impossible'))}
+                  style={{ textAlign: 'left', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', background: 'white', cursor: 'pointer', fontSize: 15.5, display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <i className="fas fa-download" style={{ color: '#1d4ed8' }} /><span>Question {a.num} — {a.name}</span><span style={{ color: '#94a3b8', marginLeft: 'auto' }}>{a.size > 1048576 ? (a.size / 1048576).toFixed(1) + ' Mo' : Math.max(1, Math.round(a.size / 1024)) + ' Ko'}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Notes surveillant */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
