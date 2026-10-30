@@ -18,6 +18,7 @@ export interface CreatedSubject {
   has_corrige?: boolean
   corrige_warnings?: string[]
   normalization?: { counts: Record<string, number>; warnings: string[]; questions?: number }[]
+  detection?: { counts: Record<string, number>; converted: string[]; warnings: string[] }
 }
 
 export interface QTypes {

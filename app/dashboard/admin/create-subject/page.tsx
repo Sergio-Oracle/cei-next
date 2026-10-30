@@ -391,6 +391,14 @@ export default function AdminCreateSubjectPage() {
                 {created.normalization[0].warnings.length>0 && <div style={{ color:'#b45309' }}>À contrôler : {created.normalization[0].warnings.join(' ; ')}</div>}
               </div>
             )}
+            {created.detection && Object.keys(created.detection.counts).length>0 && (
+              <div style={{ marginTop:8, fontSize:14.5, color:'#1e3a8a', background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:8, padding:'8px 12px', lineHeight:1.6 }}>
+                <i className="fas fa-list-check" style={{ marginRight:6 }}/>
+                Types de questions reconnus dans votre document : {Object.entries(created.detection.counts).map(([k,v])=>`${v} ${({qcm:'QCM',qcm_multi:'QCM à réponses multiples',vf:'vrai/faux',association:'association',tri:'classement',ordre:'remise en ordre',trous:'texte à trous',cloze:'champs à compléter',court:'réponse courte',numerique:'réponse numérique',calculee:'calcul à variables',zones:'placement sur image',open:'ouverte(s)',subopen:'sous-questions liées',code:'code',appariement:'appariement'} as Record<string,string>)[k]??k}`).join(', ')}.
+                {created.detection.warnings.length>0 && <div style={{ color:'#b45309' }}>À contrôler : {created.detection.warnings.join(' ; ')}</div>}
+                <div style={{ color:'#475569' }}>Vérifiez l&apos;aperçu ci-dessous : si un type ne correspond pas, modifiez le sujet avant de l&apos;enregistrer.</div>
+              </div>
+            )}
             <div style={{ marginTop:8, fontSize:14.5, color:'var(--text-muted)', lineHeight:1.6 }}>
               <i className="fas fa-image" style={{ marginRight:6 }}/>Une question utilise une image (ex. « Placer sur l&apos;image ») ?{' '}
               <label style={{ color:'var(--primary)', fontWeight:700, cursor:'pointer' }}>
