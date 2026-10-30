@@ -414,7 +414,7 @@ export default function ProfessorSuggestionsPage() {
         total_points: totalPoints,
         points_by_type: pointsByType,
       }
-      const data = await api.post<{ success: boolean; title: string; content: string; rubric: string; duplicates?: { similarity: number }[]; grounding?: Grounding | null }>(
+      const data = await api.post<{ success: boolean; title: string; content: string; rubric: string; duplicates?: { similarity: number }[]; grounding?: Grounding | null; type_warnings?: string[] }>(
         '/api/subjects/generate-full-exam', { suggestion: suggestionWithTypes }
       )
       setPreviewTitle(data.title || s.title)
@@ -424,6 +424,7 @@ export default function ProfessorSuggestionsPage() {
       setBankSaveEc(ecId)
       setElimSet(new Set())
       setStep('preview')
+      if (data.type_warnings && data.type_warnings.length > 0) toastErr(data.type_warnings.join(' '))
       if (data.duplicates && data.duplicates.length > 0) {
         toastErr(`${data.duplicates.length} question(s) générée(s) se ressemblent fortement entre elles (jusqu'à ${Math.max(...data.duplicates.map(d=>d.similarity))}% similaire) — vérifiez avant de valider.`)
       }

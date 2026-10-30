@@ -3917,10 +3917,6 @@ export default function ExamPage() {
                 style={{padding:'9px 14px',background:'#f1f5f9',color:pauseUsedRef.current?'#94a3b8':'#334155',border:'none',borderRadius:8,fontWeight:600,fontSize:15.5,cursor:pauseUsedRef.current?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:7,opacity:pauseUsedRef.current?.6:1}}>
                 <i className="fas fa-pause"/> Pause (3 min)
               </button>
-              <button onClick={()=>setShowReview(true)} disabled={submitting}
-                style={{padding:'10px 20px',background:'#10b981',color:'white',border:'none',borderRadius:8,fontWeight:700,fontSize:17,cursor:submitting?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:7}}>
-                {submitting?<><i className="fas fa-spinner fa-spin"/>Soumission…</>:<><i className="fas fa-paper-plane"/>Soumettre</>}
-              </button>
             </div>
           </div>
 
