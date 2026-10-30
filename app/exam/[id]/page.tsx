@@ -50,6 +50,8 @@ interface ParsedBlock {
   items?: { text: string; letter?: string; gap?: number; kind?: string; options?: string[]; zone?: number }[]
   options?: { letter: string; text: string }[]
   vars_line?: string
+  /** Mots croisés (type « cloze » à grille) : position de chaque mot, un mot = un champ. */
+  grid?: { k: number; num: number; dir: 'H' | 'V'; row: number; col: number; len: number }[]
   extraLines?: string[]; choices?: { letter: string; text: string }[]
   pairs?: { left: string; right: string }[]
   media?: { type: 'image' | 'audio' | 'video'; filename: string }[]
@@ -197,6 +199,84 @@ function joinWrappedLines(lines: string[]): string[] {
   return out
 }
 
+/** Grille de mots croisés : chaque mot est un champ du texte à trous (réponse « pq_<n>_<champ> ») ; une case commune à deux mots
+ *  met à jour les deux. L'étudiant tape dans la grille, la réponse est la même que s'il avait rempli chaque mot à part. */
+function CrosswordGrid({ grid, items, answers, setAnswers, keyPrefix }: {
+  grid: NonNullable<ParsedBlock['grid']>; items: NonNullable<ParsedBlock['items']>
+  answers: Record<string, string>; setAnswers: React.Dispatch<React.SetStateAction<Record<string, string>>>; keyPrefix: string
+}) {
+  const [active, setActive] = useState<{ r: number; c: number; dir: 'H' | 'V' } | null>(null)
+  const refs = useRef<Record<string, HTMLInputElement | null>>({})
+  const rows = Math.max(...grid.map(w => w.row + (w.dir === 'V' ? w.len : 1)))
+  const cols = Math.max(...grid.map(w => w.col + (w.dir === 'H' ? w.len : 1)))
+  const cover: Record<string, { w: typeof grid[number]; pos: number; ak: string }[]> = {}
+  const starts: Record<string, number> = {}
+  grid.forEach(w => {
+    const gi = items.findIndex(it => it.gap === w.k); if (gi < 0) return
+    const ak = `${keyPrefix}_${gi}`
+    starts[`${w.row},${w.col}`] = w.num
+    for (let t = 0; t < w.len; t++) {
+      const r = w.row + (w.dir === 'V' ? t : 0), c = w.col + (w.dir === 'H' ? t : 0)
+      ;(cover[`${r},${c}`] ||= []).push({ w, pos: t, ak })
+    }
+  })
+  const letterAt = (r: number, c: number) => {
+    for (const x of cover[`${r},${c}`] || []) { const ch = (answers[x.ak] ?? '')[x.pos]; if (ch && ch !== ' ') return ch }
+    return ''
+  }
+  const setLetter = (r: number, c: number, ch: string) => setAnswers(prev => {
+    const next = { ...prev }
+    for (const x of cover[`${r},${c}`] || []) {
+      const arr = (next[x.ak] ?? '').padEnd(x.w.len, ' ').split('')
+      arr[x.pos] = ch || ' '
+      next[x.ak] = arr.join('').replace(/\s+$/, '')
+    }
+    return next
+  })
+  const focus = (r: number, c: number) => refs.current[`${r},${c}`]?.focus()
+  const step = (r: number, c: number, dir: 'H' | 'V', d: number) => {
+    const nr = r + (dir === 'V' ? d : 0), nc = c + (dir === 'H' ? d : 0)
+    if (cover[`${nr},${nc}`]) { setActive({ r: nr, c: nc, dir }); focus(nr, nc) }
+  }
+  const dirsAt = (r: number, c: number) => Array.from(new Set((cover[`${r},${c}`] || []).map(x => x.w.dir)))
+  const activeWord = active ? (cover[`${active.r},${active.c}`] || []).find(x => x.w.dir === active.dir)?.w : undefined
+  const CELL = 38
+  return (
+    <div style={{ overflowX: 'auto', padding: '3px 3px 6px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${CELL}px)`, gridAutoRows: `${CELL}px`, gap: 0, width: cols * CELL, margin: '8px 0' }}>
+        {Array.from({ length: rows * cols }, (_, idx) => {
+          const r = Math.floor(idx / cols), c = idx % cols, k = `${r},${c}`
+          if (!cover[k]) return <div key={k} />
+          const inWord = !!activeWord && (cover[k] || []).some(x => x.w === activeWord)
+          const isActive = active?.r === r && active?.c === c
+          return (
+            <div key={k} style={{ position: 'relative', width: CELL, height: CELL, boxSizing: 'border-box', border: '1.5px solid #64748b', marginLeft: -1.5, marginTop: -1.5, background: isActive ? '#bfdbfe' : inWord ? '#e0f2fe' : '#fff' }}>
+              {starts[k] != null && <span style={{ position: 'absolute', top: 1, left: 3, fontSize: 11, color: '#1e40af', fontWeight: 700, pointerEvents: 'none' }}>{starts[k]}</span>}
+              <input ref={el => { refs.current[k] = el }} value={letterAt(r, c)} maxLength={2} autoComplete="off" spellCheck={false} aria-label={`Case ${r + 1}-${c + 1}`}
+                onFocus={() => { const ds = dirsAt(r, c); setActive(a => ({ r, c, dir: a && ds.includes(a.dir) ? a.dir : (ds[0] as 'H' | 'V') })) }}
+                onClick={() => { const ds = dirsAt(r, c); if (ds.length > 1 && active?.r === r && active?.c === c) setActive({ r, c, dir: active.dir === 'H' ? 'V' : 'H' }) }}
+                onChange={e => {
+                  const ch = (e.target.value.match(/[A-Za-zÀ-ÿ]/g) || []).pop()?.toUpperCase() || ''
+                  setLetter(r, c, ch)
+                  if (ch) step(r, c, active?.dir ?? (dirsAt(r, c)[0] as 'H' | 'V'), 1)
+                }}
+                onKeyDown={e => {
+                  const dir = active?.dir ?? (dirsAt(r, c)[0] as 'H' | 'V')
+                  if (e.key === 'Backspace' && !letterAt(r, c)) { e.preventDefault(); step(r, c, dir, -1) }
+                  else if (e.key === 'ArrowRight') { e.preventDefault(); step(r, c, 'H', 1) }
+                  else if (e.key === 'ArrowLeft') { e.preventDefault(); step(r, c, 'H', -1) }
+                  else if (e.key === 'ArrowDown') { e.preventDefault(); step(r, c, 'V', 1) }
+                  else if (e.key === 'ArrowUp') { e.preventDefault(); step(r, c, 'V', -1) }
+                }}
+                style={{ width: '100%', height: '100%', border: 'none', background: 'transparent', textAlign: 'center', fontSize: 20, fontWeight: 700, textTransform: 'uppercase', color: '#0f172a', outline: 'none', padding: 0 }} />
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function parseExamBlocks(raw: string): ParsedBlock[] {
   const VF_RE = /\bvrai\s*[\/|ou]\s*faux\b|\bV\s*[\/|]\s*F\b/i
   const strip = (s: string) => s.trim().replace(/^[*_]{1,2}\s*/,'').replace(/\s*[*_]{1,2}$/,'').trim()
@@ -262,7 +342,7 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
     i++
     const extraLines: string[] = []; const choices: { letter: string; text: string }[] = []
     const pairs: { left: string; right: string }[] = []
-    const gItems: string[] = []; let gCats: string[] = []
+    const gItems: string[] = []; let gCats: string[] = []; let gGrid: ParsedBlock['grid']
     while (i < lines.length) {
       if (isSep(lines[i])) { i++; if (choices.length >= 2 || pairs.length >= 2 || gItems.length >= 2) break; continue }
       if (isSect(lines[i]) && !isQ(lines[i])) break
@@ -274,6 +354,8 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
         i++; continue
       }
       if (isGrid) {
+        const gm = q.markerType === 'CLOZE' ? strip(lines[i]).match(/^\s*Grille\s*:\s*(.+)$/i) : null
+        if (gm) { gGrid = gm[1].split(/\s*;\s*/).map(p => p.trim().match(/^(\d{1,2}):(\d{1,2}):([HV]):(\d{1,2}):(\d{1,2}):(\d{1,2})$/i)).filter((m): m is RegExpMatchArray => !!m).map(m => ({ k: +m[1], num: +m[2], dir: m[3].toUpperCase() as 'H' | 'V', row: +m[4], col: +m[5], len: +m[6] })); i++; continue }
         const cm = strip(lines[i]).match(CATS_RE)
         if (cm) { gCats = cm[1].split('|').map(c => c.trim()).filter(Boolean); i++; continue }
         const lm = q.markerType === 'ZONES' ? strip(lines[i]).match(LABELS_RE) : null
@@ -349,6 +431,7 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
           const kind = m[2].toLowerCase(); return { text: 'Champ ' + m[1], gap: parseInt(m[1], 10), kind, options: kind === 'choix' ? (m[3] || '').split('|').map(o => o.trim()).filter(Boolean) : [] } })
           .filter((x): x is NonNullable<typeof x> => !!x)
         blk.options = []
+        if (gGrid && gGrid.length) blk.grid = gGrid
       } else if (q.markerType === 'ZONES') {
         blk.items = gItems.map((t, k) => ({ text: t, zone: k + 1 }))
         blk.options = []
@@ -4471,6 +4554,9 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload}:{block:Pa
             )
           })}
         </div>
+      )}
+      {block.type==='cloze'&&block.items&&block.grid&&block.grid.length>0&&(
+        <CrosswordGrid grid={block.grid} items={block.items} answers={answers} setAnswers={setAnswers} keyPrefix={key}/>
       )}
       {block.type==='cloze'&&block.items&&(
         <div style={{display:'flex',flexDirection:'column',gap:12}}>
