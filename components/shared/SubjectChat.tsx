@@ -139,7 +139,9 @@ export default function SubjectChat({ storageKey, context, draft, onUseDraft, us
                             {q.choices.map((c, j) => <div key={j} style={{ marginLeft: 22, color: '#475569', fontSize: 14 }}>{c}</div>)}
                           </div>
                         ))}
-                        {(m.draft.report.outline ?? []).length === 0 && <div style={{ fontSize: 14.5, color: '#64748b' }}>Aperçu indisponible.</div>}
+                        {(m.draft.report.outline ?? []).length === 0 && (
+                          <pre style={{ margin: 0, fontSize: 13.5, whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{m.draft.content || 'Aucun contenu dans ce brouillon.'}</pre>
+                        )}
                       </div>
                     )}
                     {view[i] === 'r' && <pre style={{ marginTop: 8, maxHeight: 340, overflow: 'auto', background: '#fff', border: '1px solid #d1fae5', borderRadius: 10, padding: '8px 12px', fontSize: 13.5, whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{m.draft.rubric || 'Aucun barème dans ce brouillon.'}</pre>}
