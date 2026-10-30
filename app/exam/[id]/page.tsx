@@ -4462,6 +4462,9 @@ function AttachmentBox({ attemptId, num, answers, setAnswers, required }: {
   )
 }
 
+/** Retire le gras/italique Markdown (*mot*, **mot**, `code`) laissé par certains sujets rédigés par une IA : l'étudiant ne doit jamais voir de symboles. */
+const plain = (t: string) => (t ?? '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/(^|[^*\w])\*(?!\s)([^*\n]+?)\*(?![*\w])/g, '$1$2').replace(/`([^`\n]+)`/g, '$1')
+
 /* Question parsée (contenu brut) */
 function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}:{attemptId?:number|null;block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:(key:string,blockType:string)=>void;mediaMap?:Record<string,string>;blockDownload?:boolean}) {
   const isOpen=block.type==='open'||block.type==='subopen'||block.type==='code'
@@ -4481,13 +4484,13 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}
     association:'Association',tri:'Classement',ordre:'Ordre',trous:'Texte à trous',court:'Réponse courte',numerique:'Numérique',cloze:'Champs à compléter',zones:'Placer sur l\'image',calculee:'Calcul'}
   // Texte à trous : {1} {2}… sont montrés comme (1) (2)… dans l'énoncé
   const [activeZone,setActiveZone]=useState(0)
-  const showGaps=(t:string)=>block.type==='trous'?t.replace(/\{(\d{1,2})\}/g,'($1)'):t
+  const showGaps=(t:string)=>plain(block.type==='trous'?t.replace(/\{(\d{1,2})\}/g,'($1)'):t)
   return(
     <div style={{border:`2px solid ${answered?'#10b981':'#e2e8f0'}`,borderRadius:16,padding:'22px 24px',background:'#fff',boxShadow:'0 2px 8px rgba(0,0,0,.05)',marginBottom:16,transition:'border-color .2s'}}>
       <div style={{display:'flex',alignItems:'flex-start',gap:12,marginBottom:16}}>
         <span style={{width:34,height:34,borderRadius:'50%',background:isOpen?'#065f46':'#1e40af',color:'#fff',fontWeight:800,fontSize:18,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{block.num}</span>
         <div style={{flex:1}}>
-          <div style={{fontWeight:700,fontSize:18,color:'#0f172a',lineHeight:1.5}}>{showGaps(block.text??'')}</div>
+          <div style={{fontWeight:700,fontSize:18,color:'#0f172a',lineHeight:1.5}}>{block.type==='cloze'&&/\{\d+\}/.test(block.text??'')?'Complétez le texte :':showGaps(block.text??'')}</div>
           {block.extraLines&&block.extraLines.filter(l=>l.trim()&&!(block.type==='cloze'&&/\{\d+\}/.test(l))).length>0&&<div style={{fontSize:17,color:'#475569',marginTop:6}}>{joinWrappedLines(block.extraLines.filter(l=>!(block.type==='cloze'&&/\{\d+\}/.test(l)))).map((l,i)=><div key={i} style={{marginTop:i?4:0}}>{showGaps(l)}</div>)}</div>}
         </div>
         <span style={{padding:'2px 8px',borderRadius:99,fontSize:13,fontWeight:700,flexShrink:0,background:isOpen?'#ecfdf5':'#eff6ff',color:isOpen?'#065f46':'#1e40af'}}>
@@ -4653,7 +4656,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}
         <div style={{display:'flex',flexDirection:'column',gap:12}}>
           {[block.text??'',...(block.extraLines??[])].filter(l=>/\{\d+\}/.test(l)).map((line,li)=>(
             <div key={li} style={{fontSize:18,lineHeight:2.2,color:'#1e293b'}}>
-              {line.split(/(\{\d+\})/).map((seg,si)=>{
+              {plain(line).split(/(\{\d+\})/).map((seg,si)=>{
                 const m=seg.match(/^\{(\d+)\}$/); if(!m) return <span key={si}>{seg}</span>
                 const gi=(block.items??[]).findIndex(it=>it.gap===parseInt(m[1],10)); if(gi<0) return <span key={si}>{seg}</span>
                 const it=block.items![gi]; const sk=`${key}_${gi}`; const sv=answers[sk]??''
