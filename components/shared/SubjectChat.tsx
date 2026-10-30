@@ -4,7 +4,9 @@ import api from '@/lib/api'
 
 export interface ChatDraft {
   title: string; content: string; rubric: string
-  report: { questions: number; by_type: Record<string, number>; ok: boolean; issues: string[] }
+  report: { questions: number; blocks?: number; by_type: Record<string, number>; ok: boolean; issues: string[]
+    requested?: number; reused?: number
+    outline?: { num: string; type: string; text: string; choices: string[]; items: number }[] }
 }
 interface Msg { role: 'user' | 'assistant'; content: string; draft?: ChatDraft | null; files?: string[] }
 interface Att { id: string; name: string; chars?: number; corrige?: boolean }
@@ -37,6 +39,7 @@ export default function SubjectChat({ storageKey, context, draft, onUseDraft, us
   const [upBusy, setUpBusy] = useState(false)
   const [err, setErr] = useState('')
   const [using, setUsing] = useState<number | null>(null)
+  const [view, setView] = useState<Record<number, 'q' | 'r' | undefined>>({})
   const endRef = useRef<HTMLDivElement>(null)
 
   // Conversation conservée dans l'onglet (jamais envoyée ailleurs) : un rechargement ne fait pas tout perdre.
@@ -79,7 +82,7 @@ export default function SubjectChat({ storageKey, context, draft, onUseDraft, us
     } finally { setBusy(false) }
   }
 
-  const summary = (d: ChatDraft) => `${d.report.questions} question(s) : ` + Object.entries(d.report.by_type).map(([k, v]) => `${v} ${TYPE_LABELS[k] ?? k}`).join(', ')
+  const summary = (d: ChatDraft) => `${d.report.questions} question(s) notée(s)` + (d.report.blocks && d.report.blocks !== d.report.questions ? ` (${d.report.blocks} énoncés)` : '') + ' : ' + Object.entries(d.report.by_type).map(([k, v]) => `${v} ${TYPE_LABELS[k] ?? k}`).join(', ')
 
   return (
     <div style={{ border: '1.5px solid #bfdbfe', borderRadius: 14, background: 'var(--surface)', overflow: 'hidden', marginBottom: 18 }}>
@@ -112,8 +115,34 @@ export default function SubjectChat({ storageKey, context, draft, onUseDraft, us
                 {m.draft && (
                   <div style={{ marginTop: 8, padding: '10px 14px', border: `1.5px solid ${m.draft.report.ok ? '#86efac' : '#fcd34d'}`, borderRadius: 12, background: m.draft.report.ok ? '#f0fdf4' : '#fffbeb' }}>
                     <div style={{ fontWeight: 700, fontSize: 15.5, color: '#14532d' }}><i className="fas fa-file-circle-check" style={{ marginRight: 6 }} />Brouillon prêt — {summary(m.draft)}</div>
+                    {m.draft.report.requested != null && m.draft.report.requested !== m.draft.report.questions && (
+                      <div style={{ fontSize: 14.5, color: '#92400e', marginTop: 4 }}>
+                        Vous demandiez <b>{m.draft.report.requested}</b> questions, ce brouillon en contient <b>{m.draft.report.questions}</b>.{' '}
+                        <button type="button" disabled={busy} onClick={() => send(`Ajuste le sujet pour avoir exactement ${m.draft!.report.requested} questions notées (retire ou ajoute les dernières), en gardant le même barème sur 20 points.`)} style={{ border: 'none', background: 'transparent', color: '#1d4ed8', textDecoration: 'underline', cursor: 'pointer', fontSize: 14.5 }}>Ajuster à {m.draft.report.requested}</button>
+                      </div>)}
+                    {(m.draft.report.reused ?? 0) > 0 && (
+                      <div style={{ fontSize: 14.5, color: '#92400e', marginTop: 4 }}>
+                        {m.draft.report.reused} question(s) reprennent une question de votre fichier d&apos;origine.{' '}
+                        <button type="button" disabled={busy} onClick={() => send("Remplace les questions qui reprennent celles du fichier par de nouvelles questions sur d'autres points du cours, avec le même nombre total.")} style={{ border: 'none', background: 'transparent', color: '#1d4ed8', textDecoration: 'underline', cursor: 'pointer', fontSize: 14.5 }}>Les remplacer par des nouvelles</button>
+                      </div>)}
                     {m.draft.report.issues.length > 0 && <div style={{ fontSize: 14, color: '#92400e', marginTop: 4 }}>À contrôler : {m.draft.report.issues.join(' ; ')}</div>}
                     {!m.draft.rubric && <div style={{ fontSize: 14, color: '#92400e', marginTop: 4 }}>Aucun barème : demandez-le-moi ou joignez le corrigé.</div>}
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                      <button type="button" onClick={() => setView(v => ({ ...v, [i]: v[i] === 'q' ? undefined : 'q' }))} style={{ padding: '6px 12px', borderRadius: 8, border: '1.5px solid #86efac', background: view[i] === 'q' ? '#dcfce7' : '#fff', color: '#14532d', fontWeight: 600, fontSize: 14.5, cursor: 'pointer' }}><i className="fas fa-eye" style={{ marginRight: 6 }} />Voir les questions</button>
+                      <button type="button" onClick={() => setView(v => ({ ...v, [i]: v[i] === 'r' ? undefined : 'r' }))} style={{ padding: '6px 12px', borderRadius: 8, border: '1.5px solid #86efac', background: view[i] === 'r' ? '#dcfce7' : '#fff', color: '#14532d', fontWeight: 600, fontSize: 14.5, cursor: 'pointer' }}><i className="fas fa-scale-balanced" style={{ marginRight: 6 }} />Voir le barème</button>
+                    </div>
+                    {view[i] === 'q' && (
+                      <div style={{ marginTop: 8, maxHeight: 340, overflowY: 'auto', background: '#fff', border: '1px solid #d1fae5', borderRadius: 10, padding: '8px 12px' }}>
+                        {(m.draft.report.outline ?? []).map((q, k) => (
+                          <div key={k} style={{ padding: '6px 0', borderBottom: '1px solid #ecfdf5', fontSize: 15, lineHeight: 1.5 }}>
+                            <b>{q.num}.</b> <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1e3a8a', background: '#dbeafe', borderRadius: 999, padding: '1px 8px', marginRight: 6 }}>{TYPE_LABELS[q.type] ?? q.type}{q.items > 1 ? ` · ${q.items}` : ''}</span>{q.text}
+                            {q.choices.map((c, j) => <div key={j} style={{ marginLeft: 22, color: '#475569', fontSize: 14 }}>{c}</div>)}
+                          </div>
+                        ))}
+                        {(m.draft.report.outline ?? []).length === 0 && <div style={{ fontSize: 14.5, color: '#64748b' }}>Aperçu indisponible.</div>}
+                      </div>
+                    )}
+                    {view[i] === 'r' && <pre style={{ marginTop: 8, maxHeight: 340, overflow: 'auto', background: '#fff', border: '1px solid #d1fae5', borderRadius: 10, padding: '8px 12px', fontSize: 13.5, whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{m.draft.rubric || 'Aucun barème dans ce brouillon.'}</pre>}
                     <button type="button" disabled={using !== null} onClick={async () => { setUsing(i); try { await onUseDraft(m.draft!) } finally { setUsing(null) } }}
                       style={{ marginTop: 8, padding: '8px 16px', border: 'none', borderRadius: 8, background: '#059669', color: '#fff', fontWeight: 700, fontSize: 15, cursor: using !== null ? 'wait' : 'pointer' }}>
                       <i className={`fas ${using === i ? 'fa-spinner fa-spin' : 'fa-check'}`} style={{ marginRight: 6 }} />{useLabel}
