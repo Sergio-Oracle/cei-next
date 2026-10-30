@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import SubjectChat, { type ChatDraft } from '@/components/shared/SubjectChat'
 import { useToast } from '@/contexts/ToastContext'
 import { useSuggestionFlow } from '@/hooks/useSuggestionFlow'
 import SearchableSelect from '@/components/ui/SearchableSelect'
@@ -691,6 +692,16 @@ export default function ProfessorSuggestionsPage() {
           <p>L'IA a créé un sujet complet avec questions et barème de notation</p>
         </div>
       </div>
+      <div style={{ maxWidth:900, margin:'0 auto' }}>
+        <SubjectChat storageKey="sugg-professor"
+          context={`Niveau : ${level} ; difficulté : ${difficulty} ; durée : ${duration} min ; total ${totalPoints} points`}
+          draft={{ title: previewTitle, content: previewContent, rubric: previewRubric }}
+          useLabel="Remplacer l'aperçu par ce brouillon"
+          onUseDraft={(d: ChatDraft) => {
+            setPreviewTitle(d.title || previewTitle || 'Sujet (assistant IA)'); setPreviewContent(d.content); setPreviewRubric(d.rubric || '')
+            setPreviewGrounding(null); setElimSet(new Set())
+          }} />
+      </div>
       {draftRestoredAt && (
         <div style={{ maxWidth:900, margin:'0 auto 16px', display:'flex', alignItems:'center', gap:12, padding:'12px 18px', background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:10 }}>
           <i className="fas fa-clock-rotate-left" style={{ color:'var(--primary)', fontSize:22 }} />
@@ -1066,6 +1077,17 @@ export default function ProfessorSuggestionsPage() {
             Recommencer à zéro
           </button>
         </div>
+      )}
+
+      {step !== 'created' && (
+        <SubjectChat storageKey="sugg-professor"
+          context={`Niveau : ${level} ; difficulté : ${difficulty} ; durée : ${duration} min ; ${questionCount} questions ; total ${totalPoints} points`}
+          draft={null}
+          useLabel="Ouvrir ce brouillon"
+          onUseDraft={(d: ChatDraft) => {
+            setPreviewTitle(d.title || 'Sujet (assistant IA)'); setPreviewContent(d.content); setPreviewRubric(d.rubric || '')
+            setPreviewGrounding(null); setBankSaveEc(ecId); setElimSet(new Set()); setStep('preview')
+          }} />
       )}
 
       {/* FORM */}

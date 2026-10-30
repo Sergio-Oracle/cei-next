@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import SubjectChat, { type ChatDraft } from '@/components/shared/SubjectChat'
 import { useToast } from '@/contexts/ToastContext'
 import { AI_TIMEOUT_MS } from '@/lib/api'
 import { useSubjectUpload, type QTypes } from '@/hooks/useSubjectUpload'
@@ -122,6 +123,18 @@ export default function AdminCreateSubjectPage() {
       setExpectedQ(String(r.questions))
       toastOk(`${r.questions} question(s) reconnue(s) dans votre fichier${r.declared ? ` (le document en annonce ${r.declared})` : ''}`)
     } catch (e: any) { toastErr(e?.message || 'Comptage impossible') } finally { setCounting(false) }
+  }
+
+  /* Assistant IA (discussion) : le brouillon retenu devient un sujet enregistré, modifiable comme après un import. */
+  async function adoptChatDraft(d: ChatDraft) {
+    try {
+      const res = await api.post<{ subject: any }>('/api/subjects', {
+        title: (d.title || title || 'Sujet (assistant IA)').slice(0, 200), content: d.content, rubric: d.rubric || '',
+        ec_id: ecId ? parseInt(ecId, 10) : null,
+      })
+      setCreated(res.subject); setEditContent(res.subject.content || ''); setEditRubric(res.subject.rubric || '')
+      toastOk(`Sujet créé avec l'assistant — ${d.report.questions} question(s). Vérifiez-le avant de le valider.`)
+    } catch (e: any) { toastErr(e?.message || 'Création du sujet impossible (choisissez un EC si nécessaire)') }
   }
 
   function resetForm() { setCreated(null); setTitle(''); setFiles([]); setEcId(''); setEditContent(''); setEditRubric(''); setMediaMarker('') }
@@ -388,6 +401,9 @@ export default function AdminCreateSubjectPage() {
           </div>
         </div>
 
+        <SubjectChat storageKey="create-admin" context={ecId ? `EC n°${ecId} ; total ${totalPoints} points` : `total ${totalPoints} points`}
+          draft={created ? { title: created.title, content: editContent, rubric: editRubric } : null} onUseDraft={adoptChatDraft} useLabel="Créer ce sujet" />
+
         <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 18px', background:'var(--surface)', border:'1px solid var(--border)', borderLeft:'4px solid var(--primary)', borderRadius:10, marginBottom:16 }}>
           <i className="fas fa-file-alt" style={{ color:'var(--primary)', fontSize:22 }} />
           <div>
@@ -592,6 +608,9 @@ export default function AdminCreateSubjectPage() {
           </p>
         </div>
       </div>
+
+      <SubjectChat storageKey="create-admin" context={ecId ? `EC n°${ecId} ; total ${totalPoints} points` : `total ${totalPoints} points`}
+        draft={null} onUseDraft={adoptChatDraft} useLabel="Créer ce sujet" />
 
       {/* Mode selector */}
       <div style={{ display:'flex', gap:0, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:4, marginBottom:24, width:'fit-content', boxShadow:'var(--shadow-sm)' }}>
