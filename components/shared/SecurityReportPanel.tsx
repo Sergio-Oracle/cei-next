@@ -8,10 +8,11 @@
  *   - Page de détail d'un examen : `fixedExamId` fige le filtre sur CET
  *     examen, pas de sélecteur, pas d'en-tête de page (juste le contenu).
  */
-import { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
-import StatTile from '@/components/ui/StatTile'
+import { useProgressive } from '@/lib/useProgressive'
+import ShowMore from '@/components/ui/ShowMore'
 import { eventLabel } from '@/lib/eventLabels'
 
 interface EventSummary  { event: string; count: number }
@@ -241,6 +242,35 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
     } catch { error('Photo de référence non disponible') }
   }
 
+  // ── Filtres (recherche, statut, niveau de risque, type d'incident, tri) ─────────────────────────────────────────────
+  const [q, setQ] = useState('')
+  const [fStatus, setFStatus] = useState('')
+  const [fRisk, setFRisk] = useState('')
+  const [fEvent, setFEvent] = useState('')
+  const [sort, setSort] = useState<'risk' | 'incidents' | 'name'>('risk')
+  const [openRow, setOpenRow] = useState<number | null>(null)
+  const norm = (t: string) => (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  const riskLevel = (n: number) => (n >= 70 ? 'high' : n >= 40 ? 'mid' : 'low')
+  const statusGroup = (st: string) => (st === 'banned' ? 'banned' : st === 'in_progress' || st === 'in progress' || st === 'active' ? 'running' : 'done')
+
+  const students = useMemo(() => {
+    const list = (report?.by_student ?? []).filter(s => {
+      if (q && !norm(s.student_name + ' ' + s.exam_title).includes(norm(q))) return false
+      if (fStatus && statusGroup(s.status) !== fStatus) return false
+      if (fRisk && riskLevel(s.risk_score) !== fRisk) return false
+      if (fEvent && !s.incidents.some(i => i.event === fEvent)) return false
+      return true
+    })
+    const cnt = (s: StudentIncidents) => fEvent ? (s.incidents.find(i => i.event === fEvent)?.count ?? 0) : s.total_incidents
+    return [...list].sort((a, b) => sort === 'name' ? a.student_name.localeCompare(b.student_name, 'fr') : sort === 'incidents' ? cnt(b) - cnt(a) : b.risk_score - a.risk_score)
+  }, [report, q, fStatus, fRisk, fEvent, sort]) // eslint-disable-line
+  const risky = useMemo(() => (report?.high_risk ?? []).filter(a =>
+    (!q || norm(a.student_name + ' ' + a.exam_title).includes(norm(q))) && (!fStatus || statusGroup(a.status) === fStatus)), [report, q, fStatus]) // eslint-disable-line
+  const pgStudents = useProgressive(students)
+  const pgRisky = useProgressive(risky)
+  const hasFilter = !!(q || fStatus || fRisk || fEvent)
+  const resetFilters = () => { setQ(''); setFStatus(''); setFRisk(''); setFEvent(''); setSort('risk') }
+
   const incidentEvents = (report?.event_summary ?? []).filter(e => INCIDENT_EVENT_TYPES.has(e.event))
   const routineEvents  = (report?.event_summary ?? []).filter(e => !INCIDENT_EVENT_TYPES.has(e.event))
   const totalIncidents = incidentEvents.reduce((a, e) => a + e.count, 0)
@@ -250,7 +280,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
       {!hideHeader && (
         <div className="page-header">
           <div>
-            <h2><i className="fas fa-shield-alt" style={{ marginRight: 10, color: 'var(--danger)' }} />Rapport de sécurité</h2>
+            <h2><i className="fas fa-shield-alt" style={{ marginRight: 10, color: 'var(--primary)' }} />Rapport de sécurité</h2>
             <p>{report?.exam_title ? <>Incidents pour l'examen <strong>{report.exam_title}</strong></> : 'Incidents et comportements suspects — tous examens confondus'}</p>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -290,177 +320,198 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
         <div className="alert alert-error">Impossible de charger le rapport de sécurité.</div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
-            <StatTile icon="fa-ban" color="#ef4444" label="Étudiants bannis" value={report.banned_count || 0} />
-            <StatTile icon="fa-triangle-exclamation" color="#f59e0b" label="À haut risque (score ≥ 70)" value={report.high_risk?.length || 0} />
-            <StatTile icon="fa-list" color="#2563eb" label="Incidents totaux" value={totalIncidents} />
+          {/* Indicateurs */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 18 }}>
+            {[
+              { icon: 'fa-ban', label: 'Étudiants bannis', value: report.banned_count || 0 },
+              { icon: 'fa-triangle-exclamation', label: 'À haut risque (score ≥ 70)', value: report.high_risk?.length || 0 },
+              { icon: 'fa-list', label: 'Incidents enregistrés', value: totalIncidents },
+            ].map(t => (
+              <div key={t.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 40, height: 40, background: '#eff6ff', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <i className={`fas ${t.icon}`} style={{ color: '#1d4ed8', fontSize: 18 }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', lineHeight: 1.1 }}>{t.value}</div>
+                  <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 2 }}>{t.label}</div>
+                </div>
+              </div>
+            ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 18, alignItems: 'start' }}>
-            <div className="card">
-              <div className="card-header">
-                <h3 style={{ margin: 0 }}><i className="fas fa-chart-bar" /> Types d'incidents</h3>
-              </div>
-              <div className="table-responsive">
-                <table>
-                  <thead><tr><th>Événement</th><th style={{ textAlign: 'center' }}>Nb</th></tr></thead>
-                  <tbody>
-                    {incidentEvents.length === 0 ? (
-                      <tr><td colSpan={2} className="empty-message">Aucun incident</td></tr>
-                    ) : incidentEvents.map(e => (
-                      <tr key={e.event}>
-                        <td>
-                          <i className={`fas ${EVT_ICONS[e.event] || 'fa-circle'}`}
-                            style={{ color: EVT_RISK_COLOR[e.event] || '#94a3b8', marginRight: 8, width: 14, textAlign: 'center' }} />
-                          {eventLabel(e.event, EVT_LABELS)}
-                        </td>
-                        <td style={{ fontWeight: 700, textAlign: 'center' }}>{e.count}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          {/* Filtres */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', padding: '12px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, marginBottom: 18 }}>
+            <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 200 }}>
+              <i className="fas fa-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 14 }} />
+              <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un étudiant ou un examen…" aria-label="Rechercher"
+                style={{ ...ctl, width: '100%', paddingLeft: 34, boxSizing: 'border-box' }} />
+            </div>
+            <select value={fStatus} onChange={e => setFStatus(e.target.value)} aria-label="Statut" style={ctl}>
+              <option value="">Tous les statuts</option><option value="running">En cours</option><option value="done">Soumis / terminé</option><option value="banned">Bannis</option>
+            </select>
+            <select value={fRisk} onChange={e => setFRisk(e.target.value)} aria-label="Niveau de risque" style={ctl}>
+              <option value="">Tous les niveaux de risque</option><option value="high">Élevé (≥ 70)</option><option value="mid">Attention (40–69)</option><option value="low">Normal (&lt; 40)</option>
+            </select>
+            <select value={fEvent} onChange={e => setFEvent(e.target.value)} aria-label="Type d'incident" style={ctl}>
+              <option value="">Tous les types d&apos;incident</option>
+              {incidentEvents.map(e => <option key={e.event} value={e.event}>{eventLabel(e.event, EVT_LABELS)} ({e.count})</option>)}
+            </select>
+            <select value={sort} onChange={e => setSort(e.target.value as any)} aria-label="Tri" style={ctl}>
+              <option value="risk">Trier : risque décroissant</option><option value="incidents">Trier : nombre d&apos;incidents</option><option value="name">Trier : nom</option>
+            </select>
+            {hasFilter && <button type="button" onClick={resetFilters} style={{ ...ctl, cursor: 'pointer', color: '#1d4ed8', background: 'transparent' }}><i className="fas fa-xmark" style={{ marginRight: 6 }} />Réinitialiser</button>}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 1fr) 2fr', gap: 18, alignItems: 'start' }}>
+            {/* Types d'incidents */}
+            <div className="card" style={{ overflow: 'hidden' }}>
+              <div style={sectionHead}>Types d&apos;incidents</div>
+              {incidentEvents.length === 0 ? <p className="empty-message">Aucun incident</p> : (
+                <div style={{ padding: '4px 0 6px' }}>
+                  {incidentEvents.map(e => {
+                    const max = Math.max(...incidentEvents.map(x => x.count), 1)
+                    const on = fEvent === e.event
+                    return (
+                      <button key={e.event} type="button" onClick={() => setFEvent(on ? '' : e.event)} title="Filtrer sur ce type d'incident"
+                        style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: on ? '#eff6ff' : 'transparent', padding: '8px 16px', cursor: 'pointer' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, color: 'var(--text)' }}>
+                          <i className={`fas ${EVT_ICONS[e.event] || 'fa-circle'}`} style={{ color: '#64748b', width: 16, textAlign: 'center' }} />
+                          <span style={{ flex: 1 }}>{eventLabel(e.event, EVT_LABELS)}</span>
+                          <b>{e.count}</b>
+                        </div>
+                        <div style={{ height: 4, background: '#e2e8f0', borderRadius: 4, marginTop: 6 }}>
+                          <div style={{ width: `${Math.max(4, (e.count / max) * 100)}%`, height: '100%', background: on ? '#1d4ed8' : '#94a3b8', borderRadius: 4 }} />
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
               {routineEvents.length > 0 && (
-                <>
-                  <div className="card-header" style={{ borderTop: '1px solid var(--border)' }}>
-                    <h3 style={{ margin: 0, fontSize:15.5, color: 'var(--text-muted)', fontWeight: 600 }}>
-                      <i className="fas fa-circle-info" /> Activité de la plateforme (hors incidents)
-                    </h3>
-                  </div>
-                  <div className="table-responsive">
-                    <table>
-                      <tbody>
-                        {routineEvents.map(e => (
-                          <tr key={e.event}>
-                            <td style={{ color: 'var(--text-muted)', fontSize:15.5 }}>
-                              <i className={`fas ${EVT_ICONS[e.event] || 'fa-circle'}`}
-                                style={{ color: '#94a3b8', marginRight: 8, width: 14, textAlign: 'center' }} />
-                              {eventLabel(e.event, EVT_LABELS)}
-                              {e.event === 'face_reference_captured' && (report?.reference_photos?.length ?? 0) > 0 && (
-                                <button onClick={() => setShowRefGallery(true)}
-                                  style={{ marginLeft: 10, background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', padding: '2px 9px', borderRadius: 6, fontSize:13, cursor: 'pointer' }}>
-                                  <i className="fas fa-camera" /> Photo
-                                </button>
-                              )}
-                            </td>
-                            <td style={{ fontWeight: 600, textAlign: 'center', color: 'var(--text-muted)', fontSize:15.5 }}>{e.count}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
+                <div style={{ borderTop: '1px solid var(--border)', padding: '10px 16px' }}>
+                  <div style={{ fontSize: 13.5, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6 }}>Activité de la plateforme (hors incidents)</div>
+                  {routineEvents.map(e => (
+                    <div key={e.event} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--text-muted)', padding: '3px 0' }}>
+                      <i className={`fas ${EVT_ICONS[e.event] || 'fa-circle'}`} style={{ width: 16, textAlign: 'center', color: '#94a3b8' }} />
+                      <span style={{ flex: 1 }}>{eventLabel(e.event, EVT_LABELS)}</span>
+                      {e.event === 'face_reference_captured' && (report?.reference_photos?.length ?? 0) > 0 && (
+                        <button onClick={() => setShowRefGallery(true)} style={{ background: 'transparent', border: '1px solid var(--border)', color: '#1d4ed8', padding: '1px 8px', borderRadius: 6, fontSize: 12.5, cursor: 'pointer' }}>
+                          <i className="fas fa-camera" /> Photos
+                        </button>
+                      )}
+                      <b>{e.count}</b>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
-            <div className="card">
-              <div className="card-header">
-                <h3 style={{ margin: 0 }}><i className="fas fa-user-shield" /> Tentatives à haut risque (score ≥ 70)</h3>
-              </div>
-              {!report.high_risk?.length ? (
-                <p className="empty-message">Aucune tentative à haut risque</p>
-              ) : (
+            {/* Tentatives à haut risque */}
+            <div className="card" style={{ overflow: 'hidden' }}>
+              <div style={sectionHead}>Tentatives à haut risque <span style={subtle}>(score ≥ 70)</span></div>
+              {!risky.length ? (
+                <p className="empty-message">{report.high_risk?.length ? 'Aucune tentative ne correspond à la recherche' : 'Aucune tentative à haut risque'}</p>
+              ) : (<>
                 <div className="table-responsive">
                   <table>
                     <thead>
                       <tr>
-                        <th>Étudiant</th><th>Examen</th>
+                        <th>Étudiant</th>
                         <th style={{ textAlign: 'center' }}>Score</th>
-                        <th style={{ textAlign: 'center' }}>Avert.</th>
+                        <th style={{ textAlign: 'center' }} title="Avertissements">Avert.</th>
                         <th style={{ textAlign: 'center' }}>Onglets</th>
                         <th style={{ textAlign: 'center' }}>Sans visage</th>
                         <th>Statut</th><th style={{ textAlign: 'center' }}>Photo</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {report.high_risk.map(a => {
-                        const st = STATUS_MAP[a.status] ?? { label: a.status, color: '#64748b' }
-                        return (
-                          <tr key={a.attempt_id}>
-                            <td style={{ fontSize:15.5 }}>{a.student_name}</td>
-                            <td style={{ fontSize:14.5, color: 'var(--text-muted)' }}>{a.exam_title}</td>
-                            <td style={{ textAlign: 'center' }}>
-                              <span style={{ fontWeight: 800, color: riskColor(a.risk_score), fontSize:17 }}>{a.risk_score}</span>
-                            </td>
-                            <td style={{ textAlign: 'center', fontSize:14.5 }}>{a.warnings_count}</td>
-                            <td style={{ textAlign: 'center', fontSize:14.5 }}>{a.tab_switches}</td>
-                            <td style={{ textAlign: 'center', fontSize:14.5 }}>{a.no_face_count}</td>
-                            <td>
-                              <span style={{ fontSize:13, fontWeight: 700, color: st.color, background: st.color + '18', padding: '3px 8px', borderRadius: 99 }}>
-                                {st.label}
-                              </span>
-                              {a.ban_reason && <div style={{ fontSize:12, color: 'var(--text-muted)', marginTop: 2 }}>{a.ban_reason}</div>}
-                            </td>
-                            <td style={{ textAlign: 'center' }}>
-                              <button onClick={() => viewFacePhoto(a.attempt_id)}
-                                style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', padding: '4px 10px', borderRadius: 6, fontSize:14.5, cursor: 'pointer' }}>
-                                <i className="fas fa-camera" /> Photo
-                              </button>
-                            </td>
-                          </tr>
-                        )
-                      })}
+                      {pgRisky.shown.map(a => (
+                        <tr key={a.attempt_id}>
+                          <td><div style={{ fontSize: 15.5, fontWeight: 600 }}>{a.student_name}</div><div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>{a.exam_title}</div></td>
+                          <td style={{ textAlign: 'center' }}><b style={{ color: '#b91c1c', fontSize: 17 }}>{a.risk_score}</b></td>
+                          <td style={{ textAlign: 'center' }}>{a.warnings_count}</td>
+                          <td style={{ textAlign: 'center' }}>{a.tab_switches}</td>
+                          <td style={{ textAlign: 'center' }}>{a.no_face_count}</td>
+                          <td><StatusChip status={a.status} />{a.ban_reason && <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 3 }}>{a.ban_reason}</div>}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button onClick={() => viewFacePhoto(a.attempt_id)} title="Voir la photo de référence" style={{ background: 'transparent', border: '1px solid var(--border)', color: '#1d4ed8', padding: '4px 10px', borderRadius: 8, cursor: 'pointer' }}>
+                              <i className="fas fa-camera" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
-              )}
+                <ShowMore pg={pgRisky} label="tentatives" />
+              </>)}
             </div>
           </div>
 
-          <div className="card" style={{ marginTop: 18 }}>
-            <div className="card-header">
-              <h3 style={{ margin: 0 }}><i className="fas fa-user-clock" /> Incidents par étudiant</h3>
-            </div>
-            {!report.by_student?.length ? (
-              <p className="empty-message">Aucun étudiant avec un incident enregistré</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 16px 16px' }}>
-                {report.by_student.map(s => (
-                  <div key={s.attempt_id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize:17 }}>{s.student_name}</div>
-                        <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>{s.exam_title}</div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ fontSize:13, fontWeight: 700, color: (STATUS_MAP[s.status] ?? { color: '#64748b' }).color,
-                          background: (STATUS_MAP[s.status] ?? { color: '#64748b' }).color + '18', padding: '3px 8px', borderRadius: 99 }}>
-                          {(STATUS_MAP[s.status] ?? { label: s.status }).label}
-                        </span>
-                        <span style={{ fontWeight: 800, color: riskColor(s.risk_score), fontSize:17 }}>{s.risk_score}/100</span>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: s.snapshots.length ? 12 : 0 }}>
-                      {s.incidents.map(inc => (
-                        <span key={inc.event} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize:14.5,
-                          background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: 99, padding: '3px 10px' }}>
-                          <i className={`fas ${EVT_ICONS[inc.event] || 'fa-circle'}`} />
-                          {eventLabel(inc.event, EVT_LABELS)} × {inc.count}
-                        </span>
-                      ))}
-                    </div>
-                    {s.snapshots.length > 0 && (
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        {s.snapshots.map((snap, i) => (
-                          <img key={i} src={snap.image_url} alt="capture incident"
-                            onClick={() => setZoomed(snap)}
-                            title={snap.timestamp ? new Date(snap.timestamp).toLocaleString('fr-FR') : ''}
-                            style={{ width: 64, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)', cursor: 'zoom-in' }}
-                            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+          {/* Incidents par étudiant */}
+          <div className="card" style={{ marginTop: 18, overflow: 'hidden' }}>
+            <div style={sectionHead}>Incidents par étudiant <span style={subtle}>{students.length} sur {report.by_student?.length ?? 0}</span></div>
+            {!students.length ? (
+              <p className="empty-message">{report.by_student?.length ? 'Aucun étudiant ne correspond aux filtres' : 'Aucun étudiant avec un incident enregistré'}</p>
+            ) : (<>
+              <div className="table-responsive">
+                <table>
+                  <thead>
+                    <tr><th>Étudiant</th><th>Statut</th><th style={{ minWidth: 150 }}>Risque</th><th>Incidents</th><th style={{ width: 44 }} /></tr>
+                  </thead>
+                  <tbody>
+                    {pgStudents.shown.map(s => {
+                      const open = openRow === s.attempt_id
+                      return (
+                        <React.Fragment key={s.attempt_id}>
+                          <tr onClick={() => s.snapshots.length && setOpenRow(open ? null : s.attempt_id)} style={{ cursor: s.snapshots.length ? 'pointer' : 'default', background: open ? '#f8fafc' : undefined }}>
+                            <td><div style={{ fontSize: 15.5, fontWeight: 600 }}>{s.student_name}</div><div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>{s.exam_title}</div></td>
+                            <td><StatusChip status={s.status} /></td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <div style={{ flex: 1, height: 6, background: '#e2e8f0', borderRadius: 6, minWidth: 70 }}>
+                                  <div style={{ width: `${Math.min(100, s.risk_score)}%`, height: '100%', borderRadius: 6, background: s.risk_score >= 70 ? '#b91c1c' : '#64748b' }} />
+                                </div>
+                                <b style={{ fontSize: 14.5, color: s.risk_score >= 70 ? '#b91c1c' : 'var(--text)', minWidth: 28, textAlign: 'right' }}>{s.risk_score}</b>
+                              </div>
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {s.incidents.map(inc => (
+                                  <span key={inc.event} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13.5, background: fEvent === inc.event ? '#dbeafe' : '#f1f5f9', color: '#334155', borderRadius: 99, padding: '2px 9px' }}>
+                                    <i className={`fas ${EVT_ICONS[inc.event] || 'fa-circle'}`} style={{ color: '#64748b', fontSize: 12 }} />{eventLabel(inc.event, EVT_LABELS)} × {inc.count}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'center', color: '#64748b' }}>{s.snapshots.length > 0 && <><i className={`fas fa-chevron-${open ? 'up' : 'down'}`} /></>}</td>
+                          </tr>
+                          {open && (
+                            <tr><td colSpan={5} style={{ background: '#f8fafc' }}>
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '6px 4px' }}>
+                                {s.snapshots.map((snap, i) => (
+                                  <img key={i} src={snap.image_url} alt="capture incident" onClick={e => { e.stopPropagation(); setZoomed(snap) }}
+                                    title={snap.timestamp ? new Date(snap.timestamp).toLocaleString('fr-FR') : ''}
+                                    style={{ width: 88, height: 66, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)', cursor: 'zoom-in' }}
+                                    onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                                ))}
+                              </div>
+                            </td></tr>
+                          )}
+                        </React.Fragment>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
-            )}
+              <ShowMore pg={pgStudents} label="étudiants" />
+            </>)}
           </div>
 
-          <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '16px 18px', marginTop: 16, fontSize:15.5, color: '#0369a1', lineHeight: 1.7 }}>
-            <strong><i className="fas fa-circle-info" /> Interprétation du score de risque :</strong><br />
-            Le score est calculé à partir du nombre d'avertissements, de changements d'onglet, de détections sans visage et d'autres incidents.{' '}
-            <strong>0–30 : Normal · 30–70 : Attention · 70–100 : Risque élevé</strong>
-          </div>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 14, lineHeight: 1.6 }}>
+            <i className="fas fa-circle-info" style={{ marginRight: 6 }} />Le score de risque (0–100) tient compte des avertissements, changements d&apos;onglet, détections sans visage et autres incidents.
+            {' '}<b>0–39 : normal · 40–69 : attention · 70 et plus : risque élevé.</b>
+          </p>
         </>
       )}
 
@@ -554,5 +605,20 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
         </div>
       )}
     </div>
+  )
+}
+
+const ctl: React.CSSProperties = { padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 15, background: 'var(--background)', color: 'var(--text)', outline: 'none' }
+const sectionHead: React.CSSProperties = { padding: '13px 16px', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: 16.5, color: 'var(--text)' }
+const subtle: React.CSSProperties = { fontWeight: 500, fontSize: 14, color: 'var(--text-muted)', marginLeft: 6 }
+
+/** Statut : pastille neutre, seul le point change de couleur (rouge = banni, bleu = en cours). */
+function StatusChip({ status }: { status: string }) {
+  const st = STATUS_MAP[status] ?? { label: status, color: '#64748b' }
+  const dot = status === 'banned' ? '#b91c1c' : (status === 'in_progress' || status === 'in progress' || status === 'active') ? '#1d4ed8' : '#94a3b8'
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 600, color: '#334155', background: '#f1f5f9', borderRadius: 99, padding: '3px 10px', whiteSpace: 'nowrap' }}>
+      <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot }} />{st.label}
+    </span>
   )
 }
