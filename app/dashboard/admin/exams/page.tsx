@@ -322,6 +322,14 @@ export default function AdminExamsPage() {
                     </button>
                   )}
 
+                  {/* Éditer (brouillon ou planifié) — page de détail de l'examen */}
+                  {(isDraft || isScheduled) && (
+                    <Link href={`/dashboard/admin/exams/${exam.id}?tab=edit`}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>
+                      <i className="fas fa-pencil" />Éditer
+                    </Link>
+                  )}
+
                   {/* Paramètres : modifiables Planifié ET En cours (les règles de verrouillage viennent du serveur) */}
                   {(isDraft || isScheduled || isActive) && (
                     <button type="button" onClick={() => setSettingsId(exam.id)}

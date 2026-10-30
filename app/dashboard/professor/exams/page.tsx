@@ -285,6 +285,9 @@ function ExamCard({
             <button onClick={() => onExtend(exam.id)} disabled={busy} style={btn('rgba(16,185,129,.1)', '#059669')}>
               {busy ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-clock" />} Rallonger
             </button>
+            <Link href={`/dashboard/professor/exams/${exam.id}`} style={btn('rgba(59,130,246,.1)', '#3b82f6')}>
+              <i className="fas fa-pencil-alt" /> Éditer
+            </Link>
             <button onClick={() => onSettings(exam.id)} style={btn('rgba(59,130,246,.1)', '#3b82f6')}>
               <i className="fas fa-sliders" /> Paramètres
             </button>
