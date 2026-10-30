@@ -18,7 +18,7 @@ export interface CreatedSubject {
   has_corrige?: boolean
   corrige_warnings?: string[]
   normalization?: { counts: Record<string, number>; warnings: string[]; questions?: number }[]
-  detection?: { counts: Record<string, number>; converted: string[]; warnings: string[]; lost_lines?: string[]; review?: { ok: boolean | null; issues: { question: string; probleme: string }[] } }
+  detection?: { counts: Record<string, number>; converted: string[]; warnings: string[]; questions_found?: number; expected?: number; declared?: number | null; lost_lines?: string[]; review?: { ok: boolean | null; issues: { question: string; probleme: string }[] } }
 }
 
 export interface QTypes {
@@ -34,6 +34,8 @@ interface UploadPayload {
   files: File[]
   rubricMode?: 'ai' | 'manual'
   totalPoints?: number
+  /** Nombre de questions attendu (facultatif) : la plateforme contrôle qu'elle les a toutes reconnues. */
+  expectedQuestions?: number
 }
 
 export interface UseSubjectUploadReturn {
@@ -74,7 +76,7 @@ export function useSubjectUpload(
     setEditContent(''); setEditRubric('')
   }
 
-  async function upload({ title, ecId, qTypes, files, rubricMode = 'ai', totalPoints = 20 }: UploadPayload) {
+  async function upload({ title, ecId, qTypes, files, rubricMode = 'ai', totalPoints = 20, expectedQuestions }: UploadPayload) {
     const labelMap: Record<keyof QTypes, string> = {
       qcm: 'QCM', open: 'Questions ouvertes', vf: 'Vrai/Faux',
       association: 'Association', tri: 'Classement (tri)', ordre: 'Remise en ordre', trous: 'Texte à trous',
@@ -96,6 +98,7 @@ export function useSubjectUpload(
       if (selectedTypes.length) fd.append('question_types', selectedTypes.join(','))
       fd.append('rubric_mode', rubricMode)
       fd.append('total_points', String(totalPoints))
+      if (expectedQuestions && expectedQuestions > 0) fd.append('expected_questions', String(expectedQuestions))
       files.forEach(f => fd.append('files', f))
 
       const res = await api.upload<{ success: boolean; subject: CreatedSubject; duplicates?: { similarity: number }[] }>(

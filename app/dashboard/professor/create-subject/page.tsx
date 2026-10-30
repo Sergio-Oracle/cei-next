@@ -63,6 +63,8 @@ export default function ProfessorCreateSubjectPage() {
   // (mode manuel = squelette vierge à compléter, plutôt que généré par l'IA).
   const [rubricMode,  setRubricMode]  = useState<'ai' | 'manual'>('ai')
   const [totalPoints, setTotalPoints] = useState(20)
+  const [expectedQ, setExpectedQ] = useState('')
+  const [counting, setCounting] = useState(false)
 
   /* ── basket ── */
   const [basket,      setBasket]      = useState<BasketVersion[]>([])
@@ -111,6 +113,17 @@ export default function ProfessorCreateSubjectPage() {
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
   }, [dirty])
+  async function countQuestions() {
+    if (!files.length) return
+    setCounting(true)
+    try {
+      const fd = new FormData(); files.forEach(f => fd.append('files', f))
+      const r = await api.upload<{ questions: number; declared?: number | null; by_type?: Record<string, number> }>('/api/subjects/count-questions', fd, 'POST', { timeoutMs: 120000 })
+      setExpectedQ(String(r.questions))
+      toastOk(`${r.questions} question(s) reconnue(s) dans votre fichier${r.declared ? ` (le document en annonce ${r.declared})` : ''}`)
+    } catch (e: any) { toastErr(e?.message || 'Comptage impossible') } finally { setCounting(false) }
+  }
+
   function resetForm() { setCreated(null); setTitle(''); setFiles([]); setEcId(''); setEditContent(''); setEditRubric(''); setMediaMarker('') }
   async function handleFinish() {
     if (!created) return
@@ -200,7 +213,7 @@ export default function ProfessorCreateSubjectPage() {
     e.preventDefault()
     if (!title.trim())    { toastErr('Le titre est requis'); return }
     if (!files.length)    { toastErr('Sélectionnez au moins un fichier'); return }
-    await upload({ title, ecId, qTypes, files, rubricMode, totalPoints })
+    await upload({ title, ecId, qTypes, files, rubricMode, totalPoints, expectedQuestions: parseInt(expectedQ,10) > 0 ? parseInt(expectedQ,10) : undefined })
   }
 
   /* ── basket ── */
@@ -404,7 +417,7 @@ export default function ProfessorCreateSubjectPage() {
             {created.detection && Object.keys(created.detection.counts).length>0 && (
               <div style={{ marginTop:8, fontSize:14.5, color:'#1e3a8a', background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:8, padding:'8px 12px', lineHeight:1.6 }}>
                 <i className="fas fa-list-check" style={{ marginRight:6 }}/>
-                Types de questions reconnus dans votre document : {Object.entries(created.detection.counts).map(([k,v])=>`${v} ${({qcm:'QCM',qcm_multi:'QCM à réponses multiples',vf:'vrai/faux',association:'association',tri:'classement',ordre:'remise en ordre',trous:'texte à trous',cloze:'champs à compléter',court:'réponse courte',numerique:'réponse numérique',calculee:'calcul à variables',zones:'placement sur image',open:'ouverte(s)',subopen:'sous-questions liées',code:'code',appariement:'appariement'} as Record<string,string>)[k]??k}`).join(', ')}.
+                {created.detection.questions_found!=null && <b>{created.detection.questions_found} question(s) reconnue(s){created.detection.expected ? ` sur ${created.detection.expected} attendue(s)` : ''}. </b>}Types de questions reconnus dans votre document : {Object.entries(created.detection.counts).map(([k,v])=>`${v} ${({qcm:'QCM',qcm_multi:'QCM à réponses multiples',vf:'vrai/faux',association:'association',tri:'classement',ordre:'remise en ordre',trous:'texte à trous',cloze:'champs à compléter',court:'réponse courte',numerique:'réponse numérique',calculee:'calcul à variables',zones:'placement sur image',open:'ouverte(s)',subopen:'sous-questions liées',code:'code',appariement:'appariement'} as Record<string,string>)[k]??k}`).join(', ')}.
                 {created.detection.warnings.length>0 && <div style={{ color:'#b45309' }}>À contrôler : {created.detection.warnings.join(' ; ')}</div>}
                 {created.detection.lost_lines && created.detection.lost_lines.length>0 && <div style={{ color:'#b91c1c' }}><b>Texte de votre document absent du sujet reconstruit :</b> {created.detection.lost_lines.map(l=>`« ${l} »`).join(' ; ')}</div>}
                 {created.detection.review && created.detection.review.issues.length>0 && <div style={{ color:'#b45309' }}><b>Relecture par l&apos;IA — à vérifier :</b> {created.detection.review.issues.map(i=>`${i.question ? i.question + ' : ' : ''}${i.probleme}`).join(' ; ')}</div>}
@@ -644,6 +657,27 @@ export default function ProfessorCreateSubjectPage() {
                 <p style={{ margin:'8px 0 0', fontSize:14, color:'var(--text-muted)' }}>
                   <i className="fas fa-circle-info" style={{ marginRight:4 }} />
                   Facultatif : ces cases guident la lecture, mais ne limitent plus rien. Même si vous ne cochez rien, la plateforme lit le fichier complet (Word, PDF ou texte), reconnaît le type de chaque question d'après sa structure et reproduit le sujet tel qu'il est. L'encadré après l'import indique ce qui a été trouvé. Si vous déposez aussi le corrigé (nom de fichier contenant « corrigé »), le barème en recopie les réponses sans jamais les afficher aux étudiants.</p>
+              </div>
+
+              {/* Nombre de questions — facultatif : sert à CONTRÔLER que toutes les questions du document ont été reconnues */}
+              <div style={{ marginBottom:22 }}>
+                <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:15.5, fontWeight:600, marginBottom:9 }}>
+                  <i className="fas fa-hashtag" style={{ color:'var(--primary)', width:14 }} />Nombre de questions <span style={{ fontWeight:400, color:'var(--text-muted)' }}>(facultatif)</span>
+                </label>
+                <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+                  <input type="number" inputMode="numeric" min={1} max={300} value={expectedQ} placeholder="Ex : 25"
+                    onChange={e=>setExpectedQ(e.target.value)}
+                    onBlur={()=>{ const n=parseInt(expectedQ,10); setExpectedQ(Number.isFinite(n)&&n>0 ? String(Math.min(300,n)) : '') }}
+                    style={{ width:120, padding:'11px 13px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:17, background:'var(--background)', color:'var(--text)', outline:'none' }} />
+                  <button type="button" disabled={counting||files.length===0} onClick={countQuestions}
+                    style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', border:'1.5px solid #bfdbfe', borderRadius:8, background:'#eff6ff', color:'#1d4ed8', fontWeight:600, fontSize:15.5, cursor:counting||files.length===0?'not-allowed':'pointer', opacity:files.length===0?0.6:1 }}>
+                    <i className={`fas ${counting?'fa-spinner fa-spin':'fa-wand-magic-sparkles'}`} />{counting?'Lecture du fichier…':'Compter (fichier)'}
+                  </button>
+                </div>
+                <p style={{ margin:'8px 0 0', fontSize:14, color:'var(--text-muted)' }}>
+                  <i className="fas fa-circle-info" style={{ marginRight:4 }} />
+                  Indiquez combien de questions contient votre document (une association de 5 notions compte pour 5, une grille de 5 mots pour 5). Après l&apos;import, la plateforme vous prévient si elle n&apos;en a pas reconnu autant. « Compter » lit vos fichiers et propose le nombre trouvé.
+                </p>
               </div>
 
               {/* Barème — Atelier CEI 7/08 : l'enseignant garde la main, l'IA ne
