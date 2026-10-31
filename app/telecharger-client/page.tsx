@@ -70,7 +70,7 @@ export default function DownloadClientPage() {
       <div style={{ maxWidth: 760, margin: '0 auto' }}>
         <h1 style={{ fontSize: 28, color: '#0f172a', margin: '0 0 6px' }}>Application CEI Examen</h1>
         <p style={{ color: '#475569', fontSize: 17, lineHeight: 1.6, margin: '0 0 22px' }}>
-          C&apos;est <b>la seule application à installer</b> sur ordinateur : elle sert pour vos notes et vos examens. Pour les examens qui l&apos;exigent, elle verrouille votre poste en plein écran pendant la composition, comme Safe Exam Browser.
+          C&apos;est <b>la seule application à installer</b>{' '}sur ordinateur : elle sert pour vos notes et vos examens. Pour les examens qui l&apos;exigent, elle verrouille votre poste en plein écran pendant la composition, comme Safe Exam Browser.
           Vous l&apos;installez une seule fois.
         </p>
 
@@ -123,6 +123,21 @@ export default function DownloadClientPage() {
               </div>
             </details>
           )}
+        </div>
+
+        <div style={{ ...card, background: '#fffbeb', border: '1.5px solid #fcd34d', color: '#334155', lineHeight: 1.7, fontSize: 16 }}>
+          <h2 style={{ fontSize: 18, margin: '0 0 8px', color: '#92400e' }}><i className="fas fa-shield-alt" style={{ marginRight: 8 }} />Un avertissement apparaît au téléchargement ? C&apos;est normal</h2>
+          <p style={{ margin: '0 0 10px' }}>L&apos;application est récente et n&apos;est pas encore connue de Microsoft : votre navigateur et Windows demandent donc une confirmation. Ce n&apos;est pas un virus. Suivez ces étapes :</p>
+          <ol style={{ margin: '0 0 10px', paddingLeft: 22 }}>
+            <li><b>Edge</b> : « n&apos;est pas fréquemment téléchargé » → cliquez sur <b>⋯</b> à droite de la ligne, puis <b>Conserver</b>, puis <b>Conserver quand même</b>.</li>
+            <li><b>Chrome</b> : « Ce fichier n&apos;est pas couramment téléchargé » → cliquez sur la flèche ou <b>⋮</b>, puis <b>Conserver</b>.</li>
+            <li><b>Windows</b> (au lancement) : « Windows a protégé votre ordinateur » → <b>Informations complémentaires</b>, puis <b>Exécuter quand même</b>.</li>
+          </ol>
+          <p style={{ margin: '0 0 10px' }}>Si vous voyez un fichier « Non confirmé … .crdownload » dans vos téléchargements, c&apos;est que l&apos;étape « Conserver » n&apos;a pas été faite : rouvrez la liste des téléchargements (<b>Ctrl + J</b>) et confirmez, ou supprimez ce fichier et recommencez.</p>
+          <p style={{ margin: 0, fontSize: 15, color: '#475569' }}>
+            Autre source du même fichier : <a href="https://github.com/Sergio-Oracle/cei-examen-releases/releases/latest" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 600 }}>page des versions sur GitHub</a>.
+            En salle d&apos;examen, le responsable peut aussi vous remettre l&apos;installateur sur clé USB ou sur un partage interne : il s&apos;installe alors sans avertissement du navigateur.
+          </p>
         </div>
 
         <div style={{ ...card, color: '#334155', lineHeight: 1.7, fontSize: 16 }}>
