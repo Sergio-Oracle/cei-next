@@ -737,9 +737,9 @@ export default function LandingPage() {
             <a href="/guide-surveillant"><i className="fas fa-eye" style={{ width: 16, marginRight: 6 }} />Guide Surveillant</a>
             <a href="/guide-superviseur"><i className="fas fa-user-shield" style={{ width: 16, marginRight: 6 }} />Guide Superviseur</a>
             <a href="/guide-responsable-examen"><i className="fas fa-clipboard-check" style={{ width: 16, marginRight: 6 }} />Guide Responsable d&apos;examen</a>
-            <a href="/telecharger-client"><i className="fas fa-download" style={{ width: 16, marginRight: 6 }} />Télécharger l&apos;application CEI Examen</a>
             <a href="/conditions"><i className="fas fa-file-contract" style={{ width: 16, marginRight: 6 }} />Conditions d&apos;Utilisation</a>
             <a href="#comment-ca-marche"><i className="fas fa-question-circle" style={{ width: 16, marginRight: 6 }} />Comment ça marche ?</a>
+            <a href="/telecharger-client"><i className="fas fa-download" style={{ width: 16, marginRight: 6 }} />Télécharger l&apos;application CEI Examen</a>
           </div>
           <div className="footer-section">
             <h3>Contact</h3>

@@ -48,7 +48,7 @@ const REQ: Record<string, string> = { win32: 'Windows 10 ou 11 (64 bits)', darwi
 const HOWTO: Record<string, string> = {
   win32: "Double-cliquez sur le fichier téléchargé et suivez l'assistant (aucun droit administrateur requis) : l'application apparaît sur le Bureau et dans le menu Démarrer. Si l'écran « Windows a protégé votre ordinateur » apparaît : Informations complémentaires, puis Exécuter quand même.",
   darwin: "Ouvrez l'image disque et glissez CEI Examen dans Applications. Au premier lancement : clic droit sur l'application, puis Ouvrir (ou, dans le Terminal : xattr -cr \"/Applications/CEI Examen.app\"). Autorisez ensuite la caméra, le micro et l'enregistrement de l'écran quand macOS le demande.",
-  linux: "Clic droit sur le fichier, Propriétés, autorisez l'exécution du fichier comme un programme, puis double-clic. (Terminal : chmod +x CEI-Examen-*.AppImage puis ./CEI-Examen-*.AppImage)",
+  linux: "Double-cliquez sur le fichier .deb : le Centre de logiciels s'ouvre, cliquez sur Installer (mot de passe de session demandé). CEI Examen apparaît ensuite dans le menu des applications, comme sous Windows. Dans le Terminal : sudo apt install ./CEI-Examen-*-linux-amd64.deb. Version AppImage (sans installation) : autorisez son exécution (clic droit, Propriétés), puis double-clic ; si rien ne se lance, installez libfuse2 (sudo apt install libfuse2) ou utilisez plutôt le .deb.",
 }
 
 /** Page publique : télécharger l'application CEI Examen — la version qui correspond à VOTRE ordinateur est choisie automatiquement. */
