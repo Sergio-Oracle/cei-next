@@ -21,7 +21,8 @@ export default function InstallPwaBanner() {
     })().catch(() => {})
   }, [])
   const showUpdate = !!update && !updateHidden && !pathname?.startsWith('/exam')
-  const visible = canInstall || showIosInstructions || suggestApp || showUpdate
+  const suggestHere = suggestApp && !pathname?.startsWith('/telecharger-client')      // inutile sur la page de téléchargement elle-même
+  const visible = canInstall || showIosInstructions || suggestHere || showUpdate
   const ref = useRef<HTMLDivElement>(null)
 
   /* Signale la présence (+ hauteur réelle, qui varie selon si le texte
@@ -84,12 +85,12 @@ export default function InstallPwaBanner() {
         </>
       )}
 
-      {suggestApp && !showUpdate && (
+      {suggestHere && !showUpdate && (
         <>
           <span style={{ flex: 1 }}>
             {inPwa
               ? "Vous utilisez l'ancienne version web installée de CEI. L'application CEI Examen la remplace : une seule application à installer, nécessaire pour les examens verrouillés."
-              : "Installez l'application CEI Examen sur votre ordinateur : une seule application pour vos cours, vos notes et vos examens, y compris les examens verrouillés."}
+              : "Installez l'application CEI Examen sur votre ordinateur : une seule application pour vos notes et vos examens, y compris les examens verrouillés."}
           </span>
           <a href="/telecharger-client"
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8,

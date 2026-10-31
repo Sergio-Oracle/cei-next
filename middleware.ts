@@ -14,6 +14,8 @@ const PUBLIC_PATHS = new Set([
   '/phone-camera',
   // Page de téléchargement de l'application CEI Examen : consultée avant la connexion
   '/telecharger-client',
+  // Test du poste (caméra, micro, partage d'écran, connexion) avant un examen : avant même la connexion
+  '/test-poste',
 ])
 
 // Préfixes publics (assets, guide public, etc.)

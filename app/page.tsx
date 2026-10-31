@@ -370,10 +370,9 @@ export default function LandingPage() {
       <section id="application-cei" style={{ padding: '56px 0', background: '#fff', borderTop: '1px solid var(--gray-200, #e2e8f0)', borderBottom: '1px solid var(--gray-200, #e2e8f0)' }}>
         <div className="container" style={{ maxWidth: 1100, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 28, justifyContent: 'space-between' }}>
           <div style={{ flex: '1 1 460px' }}>
-            <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize: 14, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 14 }}>Nouveau</span>
             <h2 style={{ margin: '0 0 10px', textAlign: 'left' }}>L&apos;application CEI Examen</h2>
             <p style={{ margin: 0, fontSize: 18, lineHeight: 1.7, color: '#475569' }}>
-              Une seule application à installer sur votre ordinateur (Windows, Linux ou Mac) pour vos cours, vos notes et vos examens. Pour les examens verrouillés, elle fonctionne comme Safe Exam Browser : plein écran impossible à quitter, autres applications fermées, second écran masqué, tentatives de sortie signalées au surveillant.
+              Une seule application à installer sur votre ordinateur (Windows et Linux, Mac bientôt) pour vos notes et vos examens. Pour les examens verrouillés, elle fonctionne comme Safe Exam Browser : plein écran impossible à quitter, autres applications fermées, second écran masqué, tentatives de sortie signalées au surveillant.
             </p>
           </div>
           <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'stretch', minWidth: 260 }}>

@@ -6,7 +6,8 @@ export interface CeiClientEvent { type: string; data: Record<string, any>; ts: n
 interface CeiBridge {
   isCEIClient: boolean
   info(): Promise<{ client: string; version: string; platform: string; vm: boolean } | null>
-  status(): Promise<{ examMode: boolean; displays: number; focused: boolean; kiosk: boolean; shortcuts: string[]; vm: boolean } | null>
+  askMedia?(): Promise<Record<string, string> | null>
+  status(): Promise<{ media?: Record<string, string>; examMode: boolean; displays: number; focused: boolean; kiosk: boolean; shortcuts: string[]; vm: boolean } | null>
   sign(nonce: string, userId: number, examId: number): Promise<{ sig: string; version: string; platform: string; vm: boolean; vm_hint?: string } | null>
   listApps?(): Promise<{ apps: { name: string }[] } | null>
   closeApps?(): Promise<{ closed: number; remaining: { name: string }[] } | null>
