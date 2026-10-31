@@ -91,7 +91,7 @@ export default function DownloadClientPage() {
             choice?.file ? (
               <>
                 <div style={{ fontSize: 15, color: '#64748b', marginBottom: 4 }}>Nous avons détecté : <b style={{ color: '#0f172a' }}>{det.label}</b></div>
-                <a href={`${base}${choice.file.url}`} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', margin: '8px 0 10px', background: '#1d4ed8', color: '#fff', borderRadius: 12, textDecoration: 'none', boxShadow: '0 4px 14px rgba(29,78,216,.25)' }}>
+                <a href={`${base}${choice.file.url}`} download={choice.file.name} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', margin: '8px 0 10px', background: '#1d4ed8', color: '#fff', borderRadius: 12, textDecoration: 'none', boxShadow: '0 4px 14px rgba(29,78,216,.25)' }}>
                   <i className="fas fa-download" style={{ fontSize: 24 }} />
                   <span style={{ flex: 1 }}>
                     <b style={{ fontSize: 19, display: 'block' }}>Télécharger pour {OS_LABEL[det.os]}</b>
@@ -126,7 +126,7 @@ export default function DownloadClientPage() {
         </div>
 
         <div style={{ ...card, background: '#fffbeb', border: '1.5px solid #fcd34d', color: '#334155', lineHeight: 1.7, fontSize: 16 }}>
-          <h2 style={{ fontSize: 18, margin: '0 0 8px', color: '#92400e' }}><i className="fas fa-shield-alt" style={{ marginRight: 8 }} />Un avertissement apparaît au téléchargement ? C&apos;est normal</h2>
+          <h2 style={{ fontSize: 18, margin: '0 0 8px', color: '#92400e' }}><i className="fas fa-shield-alt" style={{ marginRight: 8 }} />Un avertissement apparaît ? C&apos;est normal</h2>
           <p style={{ margin: '0 0 10px' }}>L&apos;application est récente et n&apos;est pas encore connue de Microsoft : votre navigateur et Windows demandent donc une confirmation. Ce n&apos;est pas un virus. Suivez ces étapes :</p>
           <ol style={{ margin: '0 0 10px', paddingLeft: 22 }}>
             <li><b>Edge</b> : « n&apos;est pas fréquemment téléchargé » → cliquez sur <b>⋯</b> à droite de la ligne, puis <b>Conserver</b>, puis <b>Conserver quand même</b>.</li>
