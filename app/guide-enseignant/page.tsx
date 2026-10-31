@@ -67,6 +67,8 @@ export default function GuideEnseignant() {
           <ul className="toc-list">
             <li><a href="#creer-sujet"><i className="fas fa-file-alt" /> 1. Créer un sujet d&apos;examen</a></li>
             <li><a href="#creer-examen"><i className="fas fa-plus-circle" /> 2. Créer et configurer un examen en ligne</a></li>
+            <li><a href="#client"><i className="fas fa-lock" /> 2b. Exiger l&apos;application CEI Examen — poste verrouillé</a></li>
+            <li><a href="#parametres"><i className="fas fa-sliders" /> 2c. Modifier les paramètres d&apos;un examen après sa création</a></li>
             <li><a href="#activer"><i className="fas fa-play-circle" /> 3. Activer l&apos;examen et surveiller</a></li>
             <li><a href="#dashboard"><i className="fas fa-tachometer-alt" /> 4. Dashboard de surveillance en temps réel</a></li>
             <li><a href="#corriger"><i className="fas fa-robot" /> 5. Corriger les copies avec l&apos;IA</a></li>
@@ -163,6 +165,41 @@ export default function GuideEnseignant() {
         </div>
 
         {/* 3. Activer */}
+        <div className="section" id="client">
+          <div className="section-header"><div className="section-icon"><i className="fas fa-lock" /></div><h2>2b. Exiger l&apos;application CEI Examen — poste verrouillé</h2></div>
+          <div className="section-body">
+            <p style={{color:'#475569',marginBottom:16}}>L&apos;application <strong>CEI Examen</strong> est l&apos;équivalent de Safe Exam Browser pour la plateforme : une application que l&apos;étudiant installe et qui <strong>prend le contrôle de son poste</strong> pendant l&apos;examen. Un navigateur ne peut pas le faire : seule une application installée peut empêcher de quitter.</p>
+            <div className="steps">
+              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>L&apos;activer</h4><p>À la création de l&apos;examen (section Sécurité) ou plus tard dans <strong>Paramètres</strong>, cochez <strong>« Exiger l&apos;application CEI Examen »</strong>. Sans cette case, l&apos;examen reste accessible dans un navigateur ; avec elle, un étudiant sans l&apos;application voit l&apos;écran « Application CEI Examen requise » et ne peut pas démarrer. Le contrôle s&apos;applique aussi à la reprise après déconnexion.</p></div></div>
+              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Ce que fait l&apos;application</h4>
+                <ul>
+                  <li>Plein écran verrouillé, toujours au premier plan, impossible à fermer, réduire ou déplacer.</li>
+                  <li>Raccourcis de sortie bloqués (Alt+Tab, touche Windows, F5, F12, Ctrl+W…) et un seul site autorisé.</li>
+                  <li><strong>Toutes les autres applications sont fermées</strong> : bloc-notes, Word, navigateurs, assistants d&apos;intelligence artificielle (Claude, ChatGPT…), messageries. L&apos;étudiant voit la liste et peut les fermer avant de commencer ; toute application qui s&apos;ouvre ensuite est fermée aussitôt.</li>
+                  <li>Second écran masqué, presse-papiers vidé en continu, captures d&apos;écran noires.</li>
+                  <li>Logiciels de partage d&apos;écran, de contrôle à distance et machines virtuelles détectés.</li>
+                </ul></div></div>
+              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Préparer vos étudiants</h4><p>Annoncez l&apos;exigence <strong>au moins une semaine avant</strong> et donnez le lien <a href="/telecharger-client" style={{color:'#2563eb',fontWeight:600}}>/telecharger-client</a>. Demandez-leur de tester l&apos;installation et la connexion la veille. Rappelez-leur d&apos;enregistrer leur travail avant l&apos;examen : les autres applications seront fermées.</p></div></div>
+              <div className="step"><div className="step-num">4</div><div className="step-content"><h4>Suivre les incidents</h4><p>Les alertes de l&apos;application apparaissent comme les autres incidents (surveillance en direct, rapport de sécurité, feuille de la copie) : <em>Logiciel interdit détecté</em>, <em>Application étrangère fermée</em>, <em>Second écran détecté</em>, <em>Raccourci clavier bloqué</em>, <em>Tentative de fermeture</em>, <em>Machine virtuelle détectée</em>. Le bannissement n&apos;est jamais automatique pour ces événements : ils comptent comme avertissements et la décision vous revient.</p></div></div>
+            </div>
+            <div className="info"><i className="fas fa-info-circle" /> Verrouillé dès l&apos;ouverture de l&apos;examen : l&apos;exigence de l&apos;application ne peut plus être modifiée une fois l&apos;examen en cours (règle du standard : on ne change pas les règles en cours de partie).</div>
+            <div className="tip"><i className="fas fa-lightbulb" /><div><strong>Limites à connaître :</strong> aucune application ne peut intercepter Ctrl+Alt+Suppr ni la coupure de courant, et un étudiant très déterminé peut chercher à usurper l&apos;application ; tout est donc enregistré pour que le surveillant et vous décidiez. Les versions Windows et Mac ne sont pas signées par un éditeur : l&apos;étudiant peut voir un avertissement à la première ouverture, qu&apos;il doit passer (voir le Guide Étudiant). Faites passer un examen test avec l&apos;option avant un examen important.</div></div>
+          </div>
+        </div>
+
+        <div className="section" id="parametres">
+          <div className="section-header"><div className="section-icon"><i className="fas fa-sliders" /></div><h2>2c. Modifier les paramètres d&apos;un examen après sa création</h2></div>
+          <div className="section-body">
+            <p style={{color:'#475569',marginBottom:16}}>Sur la carte d&apos;un examen <strong>Planifié</strong> ou <strong>En cours</strong>, le bouton <strong>Paramètres</strong> rouvre tous les réglages de la création. Les règles suivent le standard des plateformes d&apos;examen :</p>
+            <ul style={{paddingLeft:20,color:'#475569',fontSize:14,lineHeight:1.8}}>
+              <li><strong>Planifié :</strong> tout est modifiable (titre, sujet tant qu&apos;aucune copie n&apos;existe, horaire, composition, surveillance, autorisations, correction, application CEI Examen).</li>
+              <li><strong>En cours :</strong> vous pouvez changer le titre, la consigne, les seuils d&apos;alerte, les autorisations (copier-coller, clic droit, téléchargement, calculatrice), la caméra secondaire et la correction automatique ; la <strong>fin ne peut qu&apos;être repoussée</strong>. Le sujet, la date de début, la pagination, l&apos;ordre aléatoire, le minuteur par page, la vérification d&apos;identité, le scan de l&apos;environnement et l&apos;application CEI Examen sont verrouillés (la raison est affichée à côté de chaque champ grisé).</li>
+              <li><strong>Terminé :</strong> plus rien ne se modifie.</li>
+            </ul>
+            <div className="info"><i className="fas fa-info-circle" /> Les changements faits pendant l&apos;examen préviennent le personnel de surveillance ; les réglages de surveillance s&apos;appliquent aux étudiants à leur prochain chargement de page, une prolongation les atteint tout de suite.</div>
+          </div>
+        </div>
+
         <div className="section" id="activer">
           <div className="section-header">
             <div className="section-icon"><i className="fas fa-play-circle" /></div>

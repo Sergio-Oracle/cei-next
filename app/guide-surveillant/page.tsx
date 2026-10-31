@@ -82,6 +82,7 @@ export default function GuideSurveillant() {
             <li><a href="#vigilance"><i className="fas fa-shield-halved" /> 9. Niveau de vigilance — comment votre engagement est mesuré</a></li>
             <li><a href="#reprise"><i className="fas fa-key" /> 10. Reprise après déconnexion — notification automatique</a></li>
             <li><a href="#identite"><i className="fas fa-camera" /> 11. Appel de vérification d&apos;identité (biométrie)</a></li>
+            <li><a href="#client"><i className="fas fa-lock" /> 12. Examens avec l&apos;application CEI Examen — incidents et sortie d&apos;urgence</a></li>
           </ul>
         </div>
 
@@ -248,6 +249,23 @@ export default function GuideSurveillant() {
               <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Vérifier l&apos;identité</h4><p>Répondez à l&apos;appel vidéo et confirmez qu&apos;il s&apos;agit bien de l&apos;étudiant attendu, comme pour tout contrôle d&apos;identité.</p></div></div>
               <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Valider</h4><p>Cliquez sur <strong>&quot;Valider l&apos;identité&quot;</strong> — l&apos;étudiant peut alors accéder à son examen normalement, sans repasser par la reconnaissance automatique.</p></div></div>
             </div>
+          </div>
+        </div>
+
+        <div className="section" id="client">
+          <div className="section-header"><div className="section-icon" style={{background:'#1d4ed8'}}><i className="fas fa-lock" /></div><h2>12. Examens avec l&apos;application CEI Examen — incidents et sortie d&apos;urgence</h2></div>
+          <div className="section-body">
+            <p style={{color:'#475569',marginBottom:16}}>Quand l&apos;enseignant exige l&apos;application <strong>CEI Examen</strong>, le poste de l&apos;étudiant est verrouillé (plein écran, autres applications fermées). L&apos;application vous envoie ses propres alertes, qui apparaissent dans le fil des incidents comme les autres :</p>
+            <div className="steps">
+              <div className="step"><div className="step-num">•</div><div className="step-content"><h4>Perte de focus / changement de fenêtre</h4><p>L&apos;étudiant a tenté de quitter la fenêtre (Alt+Tab, menu Démarrer). Elle a repris le premier plan aussitôt. Une répétition rapide est suspecte.</p></div></div>
+              <div className="step"><div className="step-num">•</div><div className="step-content"><h4>Logiciel interdit détecté / Application étrangère fermée</h4><p>Un logiciel de contrôle à distance, de partage d&apos;écran, de messagerie ou une autre application (navigateur, assistant IA) était ouvert ; l&apos;application l&apos;a fermé et l&apos;a signalé. Si le même nom revient, contactez l&apos;étudiant.</p></div></div>
+              <div className="step"><div className="step-num">•</div><div className="step-content"><h4>Second écran détecté</h4><p>Un écran supplémentaire est branché ; il est masqué. Demandez à l&apos;étudiant de le débrancher.</p></div></div>
+              <div className="step"><div className="step-num">•</div><div className="step-content"><h4>Raccourci bloqué, tentative de fermeture, navigation bloquée</h4><p>Tentatives de sortie. Isolées, elles sont souvent involontaires ; nombreuses, elles méritent un avertissement ou un appel.</p></div></div>
+              <div className="step"><div className="step-num">•</div><div className="step-content"><h4>Machine virtuelle détectée</h4><p>L&apos;étudiant semble utiliser une machine virtuelle (faux positifs possibles). Le démarrage n&apos;est pas bloqué : c&apos;est à vous et à l&apos;enseignant de décider, après un appel de vérification.</p></div></div>
+            </div>
+            <div className="tip"><i className="fas fa-lightbulb" /><div>Ces événements comptent comme des <strong>avertissements</strong> et n&apos;entraînent jamais de bannissement automatique : vous gardez la décision.</div></div>
+            <h4 style={{fontSize:16,fontWeight:700,color:'#0f172a',margin:'22px 0 8px'}}>Sortie d&apos;urgence</h4>
+            <p style={{color:'#475569',fontSize:14,lineHeight:1.7}}>Si l&apos;application d&apos;un étudiant se bloque réellement (panne), il ne peut la quitter qu&apos;avec un <strong>code de sortie</strong> que seul le personnel détient (raccourci <em>Ctrl+Maj+Alt+Q</em> sur son poste). Ne le donnez qu&apos;après avoir <strong>vérifié la panne</strong> (appel vidéo, message), jamais sur simple demande, et signalez-le à l&apos;enseignant : l&apos;utilisation du code est enregistrée. Le code est remis aux surveillants par l&apos;équipe technique ; il ne doit jamais être communiqué aux étudiants. Après une sortie ou un plantage, l&apos;étudiant peut rouvrir l&apos;application et reprendre avec son code personnel (section 10).</p>
           </div>
         </div>
 

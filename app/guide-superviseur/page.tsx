@@ -69,7 +69,8 @@ export default function GuideSuperviseur() {
             <li><a href="#dashboard"><i className="fas fa-tachometer-alt" /> 2. Votre tableau de bord</a></li>
             <li><a href="#vigilance"><i className="fas fa-shield-halved" /> 3. Comprendre les niveaux de vigilance (A/B/C)</a></li>
             <li><a href="#appels"><i className="fas fa-camera" /> 4. Répondre à une demande de vérification d&apos;identité</a></li>
-            <li><a href="#limites"><i className="fas fa-circle-info" /> 5. Ce que vous ne gérez pas</a></li>
+            <li><a href="#client"><i className="fas fa-lock" /> 5. Examens avec l&apos;application CEI Examen</a></li>
+            <li><a href="#limites"><i className="fas fa-circle-info" /> 6. Ce que vous ne gérez pas</a></li>
           </ul>
         </div>
 
@@ -122,8 +123,16 @@ export default function GuideSuperviseur() {
           </div>
         </div>
 
+        <div className="section" id="client">
+          <div className="section-header"><div className="section-icon"><i className="fas fa-lock" /></div><h2>5. Examens avec l&apos;application CEI Examen</h2></div>
+          <div className="section-body">
+            <p style={{color:'#475569',marginBottom:12}}>Pour certains examens, l&apos;enseignant exige l&apos;application <strong>CEI Examen</strong> : le poste de l&apos;étudiant est alors verrouillé et les autres applications sont fermées. Les surveillants reçoivent en plus des alertes propres à l&apos;application (logiciel interdit, second écran, tentatives de sortie, machine virtuelle). Elles sont comptées comme des avertissements et prises en compte dans votre tableau de vigilance comme les autres incidents ; la décision de sanction reste à l&apos;enseignant.</p>
+            <div className="tip"><i className="fas fa-lightbulb" /><div>Les surveillants conservent le <strong>code de sortie d&apos;urgence</strong> de l&apos;application : rappelez-leur de ne le donner qu&apos;après avoir vérifié une vraie panne (voir leur guide, section 12).</div></div>
+          </div>
+        </div>
+
         <div className="section" id="limites">
-          <div className="section-header"><div className="section-icon"><i className="fas fa-circle-info" /></div><h2>5. Ce que vous ne gérez pas</h2></div>
+          <div className="section-header"><div className="section-icon"><i className="fas fa-circle-info" /></div><h2>6. Ce que vous ne gérez pas</h2></div>
           <div className="section-body">
             <p style={{color:'#475569'}}>Pour rester cohérent avec votre rôle de supervision d&apos;équipe (et non de surveillance directe des étudiants), certaines actions restent réservées aux surveillants, enseignants ou administrateurs :</p>
             <ul style={{marginTop:12,paddingLeft:20,color:'#475569',fontSize:17,lineHeight:1.8}}>

@@ -68,6 +68,7 @@ export default function GuideEtudiant() {
           <ul className="toc-list">
             <li><a href="#connexion"><i className="fas fa-sign-in-alt" /> 1. Se connecter à la plateforme</a></li>
             <li><a href="#tableau-bord"><i className="fas fa-home" /> 2. Votre tableau de bord</a></li>
+            <li><a href="#application"><i className="fas fa-lock" /> 2b. Installer l&apos;application CEI Examen (examens verrouillés)</a></li>
             <li><a href="#demarrer"><i className="fas fa-play" /> 3. Démarrer un examen</a></li>
             <li><a href="#camera-secondaire"><i className="fas fa-mobile-screen" /> 3b. Caméra secondaire (smartphone)</a></li>
             <li><a href="#pendant"><i className="fas fa-pen" /> 4. Pendant l&apos;examen</a></li>
@@ -101,6 +102,38 @@ export default function GuideEtudiant() {
               <div className="step"><div className="step-num"><i className="fas fa-file-alt" style={{fontSize:17}} /></div><div className="step-content"><h4>Mes Copies</h4><p>Consultez vos copies soumises, vos notes et les feedbacks de correction IA.</p></div></div>
               <div className="step"><div className="step-num"><i className="fas fa-award" style={{fontSize:17}} /></div><div className="step-content"><h4>Relevés de Notes</h4><p>Téléchargez vos relevés semestriels officiels en PDF avec votre GPA et vos crédits.</p></div></div>
             </div>
+          </div>
+        </div>
+
+        <div className="section" id="application">
+          <div className="section-header"><div className="section-icon" style={{background:'#1d4ed8'}}><i className="fas fa-lock" /></div><h2>2b. Installer l&apos;application CEI Examen (examens verrouillés)</h2></div>
+          <div className="section-body">
+            <p style={{color:'#475569',marginBottom:20}}>Certains examens se passent dans l&apos;application <strong>CEI Examen</strong>, qui verrouille votre ordinateur en plein écran pendant la composition, comme Safe Exam Browser. Votre enseignant vous le précise ; si l&apos;application est exigée et que vous ouvrez l&apos;examen dans un navigateur ordinaire, l&apos;écran <strong>« Application CEI Examen requise »</strong> s&apos;affiche à la place du démarrage.</p>
+            <div className="steps">
+              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Télécharger l&apos;application</h4><p>Rendez-vous sur la page <a href="/telecharger-client" style={{color:'#059669',fontWeight:600}}>Télécharger l&apos;application CEI Examen</a> et choisissez la version de votre ordinateur (Windows, Linux ou Mac quand elle est disponible). Faites-le <strong>bien avant le jour de l&apos;examen</strong>, jamais dix minutes avant.</p></div></div>
+              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Installer et ouvrir</h4>
+                <ul>
+                  <li><strong>Windows :</strong> extrayez l&apos;archive ZIP, puis lancez <em>CEI Examen.exe</em>. Si l&apos;écran « Windows a protégé votre ordinateur » apparaît, cliquez sur <em>Informations complémentaires</em> puis <em>Exécuter quand même</em>.</li>
+                  <li><strong>Mac :</strong> clic droit sur l&apos;application, puis <em>Ouvrir</em> (ou, dans le Terminal : <code>xattr -cr &quot;/Applications/CEI Examen.app&quot;</code>).</li>
+                  <li><strong>Linux :</strong> faites un clic droit sur le fichier AppImage, <em>Propriétés</em>, autorisez l&apos;exécution, puis lancez-le.</li>
+                </ul></div></div>
+              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Se connecter et tester la veille</h4><p>Connectez-vous dans l&apos;application avec votre compte habituel, comme sur le site. Vérifiez que votre tableau de bord s&apos;affiche : si c&apos;est le cas, vous êtes prêt.</p></div></div>
+              <div className="step"><div className="step-num">4</div><div className="step-content"><h4>Le jour de l&apos;examen</h4><p>Ouvrez l&apos;application, allez dans <strong>Mes Examens</strong> et démarrez l&apos;examen comme d&apos;habitude. Depuis le navigateur, le bouton <strong>« Déjà installée : ouvrir dans l&apos;application »</strong> vous y amène directement.</p></div></div>
+              <div className="step"><div className="step-num">5</div><div className="step-content"><h4>Fermer vos autres applications</h4><p>Avant de commencer, l&apos;application affiche la liste des programmes encore ouverts (bloc-notes, Word, navigateurs, assistants d&apos;intelligence artificielle comme Claude ou ChatGPT, messageries…). <strong>Enregistrez votre travail</strong>, puis fermez-les vous-même ou cliquez sur <strong>« Fermer ces applications »</strong>. Le bouton de démarrage reste bloqué tant qu&apos;il en reste.</p>
+                <div className="warn"><i className="fas fa-exclamation-triangle" /><div>Les <strong>navigateurs</strong> sont fermés eux aussi : un chatbot ouvert dans un onglet disparaît avec son navigateur. Un document non enregistré dans une autre application peut être perdu.</div></div></div></div>
+            </div>
+            <h4 style={{fontSize:16,fontWeight:700,color:'#0f172a',margin:'26px 0 10px'}}>Ce qui se passe pendant l&apos;examen</h4>
+            <ul style={{paddingLeft:20,color:'#475569',fontSize:14,lineHeight:1.8}}>
+              <li>L&apos;écran passe en <strong>plein écran verrouillé</strong> : impossible de réduire, déplacer ou fermer la fenêtre.</li>
+              <li><strong>Alt+Tab, la touche Windows, F5, F12, Ctrl+W…</strong> n&apos;ont plus d&apos;effet ; chaque tentative est signalée au surveillant.</li>
+              <li>Aucun autre site ni aucune autre application ne peut s&apos;ouvrir : toute nouvelle application est fermée aussitôt.</li>
+              <li>Un <strong>second écran</strong> branché est masqué (et signalé) : débranchez-le avant de commencer.</li>
+              <li>Le presse-papiers est vidé en continu : rien d&apos;extérieur ne peut être collé. Les captures d&apos;écran apparaissent noires.</li>
+              <li>Les logiciels de partage d&apos;écran, de contrôle à distance et les <strong>machines virtuelles</strong> sont détectés et signalés : utilisez votre ordinateur réel.</li>
+              <li>Quand vous soumettez votre copie, <strong>votre ordinateur est libéré automatiquement</strong>.</li>
+            </ul>
+            <div className="danger"><i className="fas fa-ban" /><div><strong>Ne tentez pas de contourner l&apos;application.</strong> Toutes les tentatives (changement d&apos;application, raccourcis, second écran, logiciel interdit) sont enregistrées avec l&apos;heure et transmises à l&apos;enseignant ; elles peuvent entraîner des sanctions.</div></div>
+            <div className="tip"><i className="fas fa-life-ring" /><div><strong>En cas de problème :</strong> utilisez le bouton <em>Contacter l&apos;enseignant</em> dans la barre de l&apos;examen (message ou appel). Si l&apos;application doit absolument être quittée (panne), seul un surveillant peut vous donner un <strong>code de sortie d&apos;urgence</strong>. Si votre ordinateur redémarre, rouvrez l&apos;application et reprenez l&apos;examen avec votre code personnel (voir section 9) : vos réponses sont conservées.</div></div>
           </div>
         </div>
 

@@ -343,6 +343,7 @@ export default function LandingPage() {
               { icon: 'fa-laptop-code', id: 'feature-exams', title: 'Examens en Ligne Surveillés', desc: "Créez des examens sécurisés avec questions libres, timer configurable et extension de temps à la volée. Sauvegarde automatique des réponses à chaque frappe.", items: ['Timer en temps réel + extension prof', 'Sauvegarde automatique des réponses', 'Mode plein écran forcé', 'Bannissement automatique sur fraude'] },
               { icon: 'fa-robot', id: 'feature-ai', title: 'Correction IA Avancée', desc: "Moteur IA configurable par examen, déclenché automatiquement à la soumission et révisable par le professeur à tout moment.", items: ['Activable examen par examen', 'Correction dès la soumission (arrière-plan)', 'Feedback détaillé par réponse', 'Révision et ajustement par le prof'] },
               { icon: 'fa-shield-alt', id: 'feature-anticheat', title: 'Surveillance Anti-Triche Active', desc: "Surveillance multi-couches pendant toute la durée de l'examen. Chaque événement est horodaté et archivé pour consultation ultérieure.", items: ['Détection faciale par caméra (IA)', 'Détection changement de fenêtre / onglet', 'Caméra secondaire (smartphone) en option', 'Alertes en direct sur la vidéo (bruit, focus…)', 'Score de risque calculé en temps réel'] },
+              { icon: 'fa-lock', id: 'feature-client', title: 'Application CEI Examen — Poste Verrouillé', desc: "Pour les examens à fort enjeu, l'étudiant passe l'épreuve dans l'application CEI Examen : elle prend le contrôle du poste, comme Safe Exam Browser, et empêche de sortir de l'examen.", items: ['Plein écran verrouillé, impossible à quitter', 'Toutes les autres applications fermées (navigateurs, assistants IA…)', 'Raccourcis, second écran, presse-papiers et captures bloqués', 'Logiciels de partage d\'écran et machines virtuelles détectés', 'Exigée examen par examen, tentatives signalées au surveillant'] },
               { icon: 'fa-award', id: 'feature-transcripts', title: 'Relevés de Notes Officiels', desc: "Génération automatique de relevés semestriels au format PDF. Gestion des droits de suppression par rôle (admin / professeur générateur).", items: ['Calcul automatique du GPA', 'Validation semestrielle des crédits', 'Export PDF professionnel', 'Gestion avec droits admin / prof'] },
               { icon: 'fa-sitemap', title: 'Maquette Pédagogique Complète', desc: "Hiérarchie académique intégrale : Formations → Semestres → UEs → ECs. Affectation des professeurs aux UEs et inscription des étudiants par formation.", items: ['Gestion Formations & Semestres', 'Gestion UEs & ECs (coefficients)', 'Affectation professeurs aux UEs', 'Inscription & gestion étudiants'] },
               { icon: 'fa-chart-pie', title: 'Statistiques & Analyses', desc: "Tableaux de bord avec moyennes, médianes, taux de réussite et distributions. Export Excel pour traitements externes.", items: ['Moyennes, médianes, taux réussite', 'Distributions de notes par examen', 'Graphiques interactifs', 'Export Excel des résultats'] },
@@ -361,6 +362,24 @@ export default function LandingPage() {
                 </ul>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Application CEI Examen ── */}
+      <section id="application-cei" style={{ padding: '56px 0', background: '#fff', borderTop: '1px solid var(--gray-200, #e2e8f0)', borderBottom: '1px solid var(--gray-200, #e2e8f0)' }}>
+        <div className="container" style={{ maxWidth: 1100, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 28, justifyContent: 'space-between' }}>
+          <div style={{ flex: '1 1 460px' }}>
+            <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize: 14, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 14 }}>Nouveau</span>
+            <h2 style={{ margin: '0 0 10px', textAlign: 'left' }}>L&apos;application CEI Examen</h2>
+            <p style={{ margin: 0, fontSize: 18, lineHeight: 1.7, color: '#475569' }}>
+              Un examen verrouillé comme avec Safe Exam Browser : plein écran impossible à quitter, autres applications fermées, second écran masqué, tentatives de sortie signalées au surveillant.
+              À installer une seule fois sur Windows, Linux ou Mac, avant le jour de l&apos;examen.
+            </p>
+          </div>
+          <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'stretch', minWidth: 260 }}>
+            <a href="/telecharger-client" style={{ textAlign: 'center', padding: '14px 24px', fontSize: 17, fontWeight: 700, borderRadius: 10, textDecoration: 'none', background: '#1d4ed8', color: '#fff', boxShadow: '0 4px 14px rgba(29,78,216,.25)' }}><i className="fas fa-download" style={{ marginRight: 8 }} />Télécharger l&apos;application</a>
+            <a href="/guide-etudiant#application" style={{ textAlign: 'center', color: 'var(--primary-dark)', fontSize: 15.5, fontWeight: 600, textDecoration: 'none' }}><i className="fas fa-book-open" style={{ marginRight: 6 }} />Comment l&apos;installer et l&apos;utiliser</a>
           </div>
         </div>
       </section>
@@ -518,6 +537,7 @@ export default function LandingPage() {
                 { svg: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>, title: 'Timer et sauvegarde automatique', desc: "Un compte à rebours est affiché en permanence. Les réponses sont sauvegardées toutes les 30 secondes. À l'expiration, la copie est soumise automatiquement." },
                 { svg: <><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></>, title: 'Messages et avertissements en direct', desc: "L'enseignant peut envoyer un avertissement ou un message directement à un étudiant — affiché immédiatement sur son écran sous forme de popup." },
                 { svg: <><rect x="7" y="2" width="10" height="20" rx="2" ry="2"/><line x1="11" y1="18" x2="13" y2="18"/></>, title: 'Caméra secondaire par smartphone', desc: "Activable examen par examen : l'étudiant couple son téléphone en scannant un QR code pour couvrir son poste de travail sous un second angle, consultable et agrandissable en un clic côté surveillance." },
+                { svg: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></>, title: 'Poste verrouillé (application CEI Examen)', desc: "Pour les examens qui l'exigent, l'application installée verrouille l'ordinateur en plein écran : impossible de changer d'application ni d'ouvrir un autre site, et toutes les autres applications sont fermées avant le début." },
               ].map((item, i) => (
                 <div key={i} className="exam-feature-item">
                   <h4>
@@ -709,6 +729,7 @@ export default function LandingPage() {
             <a href="#feature-ai" onClick={e=>{e.preventDefault();goTo('feature-ai')}}>Correction IA</a>
             <a href="#feature-transcripts" onClick={e=>{e.preventDefault();goTo('feature-transcripts')}}>Relevés de Notes</a>
             <a href="#feature-anticheat" onClick={e=>{e.preventDefault();goTo('feature-anticheat')}}>Anti-Triche</a>
+            <a href="#feature-client" onClick={e=>{e.preventDefault();goTo('feature-client')}}>Application CEI Examen</a>
             <a href="#feature-notifications" onClick={e=>{e.preventDefault();goTo('feature-notifications')}}>Notifications Temps Réel</a>
           </div>
           <div className="footer-section">
@@ -718,6 +739,7 @@ export default function LandingPage() {
             <a href="/guide-surveillant"><i className="fas fa-eye" style={{ width: 16, marginRight: 6 }} />Guide Surveillant</a>
             <a href="/guide-superviseur"><i className="fas fa-user-shield" style={{ width: 16, marginRight: 6 }} />Guide Superviseur</a>
             <a href="/guide-responsable-examen"><i className="fas fa-clipboard-check" style={{ width: 16, marginRight: 6 }} />Guide Responsable d&apos;examen</a>
+            <a href="/telecharger-client"><i className="fas fa-download" style={{ width: 16, marginRight: 6 }} />Télécharger l&apos;application CEI Examen</a>
             <a href="/conditions"><i className="fas fa-file-contract" style={{ width: 16, marginRight: 6 }} />Conditions d&apos;Utilisation</a>
             <a href="#comment-ca-marche"><i className="fas fa-question-circle" style={{ width: 16, marginRight: 6 }} />Comment ça marche ?</a>
           </div>

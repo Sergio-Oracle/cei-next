@@ -53,6 +53,22 @@ const CATEGORIES = [
     ],
   },
   {
+    id: 'application',
+    icon: 'fas fa-lock',
+    label: "Application CEI Examen",
+    color: '#1d4ed8',
+    bg: '#eff6ff',
+    bd: '#bfdbfe',
+    faqs: [
+      { icon: 'fas fa-circle-question', q: "Qu'est-ce que l'application CEI Examen ?", r: "Une application à installer sur votre ordinateur qui verrouille votre poste en plein écran pendant un examen, comme Safe Exam Browser : vous ne pouvez plus changer d'application, ouvrir un autre site ni quitter avant d'avoir soumis votre copie. Votre enseignant indique si elle est exigée pour votre examen." },
+      { icon: 'fas fa-download', q: "Où la télécharger et comment l'installer ?", r: "Sur la page « Télécharger l'application CEI Examen » (adresse /telecharger-client). Choisissez Windows, Linux ou Mac, installez-la bien avant l'examen et connectez-vous avec votre compte habituel. Sous Windows, si un écran bleu « Windows a protégé votre ordinateur » apparaît, cliquez sur Informations complémentaires puis Exécuter quand même ; sous Mac, faites un clic droit puis Ouvrir." },
+      { icon: 'fas fa-lock', q: "Pourquoi l'écran « Application CEI Examen requise » s'affiche-t-il ?", r: "Votre enseignant a exigé l'application pour cet examen et vous l'avez ouvert dans un navigateur ordinaire. Installez l'application, ouvrez-la, connectez-vous, puis démarrez l'examen depuis Mes Examens (ou cliquez sur « Déjà installée : ouvrir dans l'application »)." },
+      { icon: 'fas fa-window-restore', q: "Pourquoi mes autres applications doivent-elles être fermées ?", r: "Pendant l'examen, seule l'application CEI Examen peut rester ouverte, y compris les navigateurs et les assistants d'intelligence artificielle. Avant de commencer, enregistrez votre travail puis cliquez sur « Fermer ces applications ». Le démarrage reste bloqué tant que quelque chose est ouvert, et toute application qui s'ouvre pendant l'examen est fermée aussitôt." },
+      { icon: 'fas fa-keyboard', q: "Puis-je encore utiliser Alt+Tab ou ouvrir un autre site ?", r: "Non. Alt+Tab, la touche Windows, F5, F12, Ctrl+W et les autres raccourcis sont bloqués, aucune autre fenêtre ne peut s'ouvrir et chaque tentative est signalée au surveillant avec l'heure. Un second écran branché est masqué et signalé." },
+      { icon: 'fas fa-life-ring', q: "Que faire si l'application se bloque ou si mon ordinateur redémarre ?", r: "Rouvrez l'application, retournez sur l'examen et reprenez avec votre code personnel : vos réponses sont conservées. En cas de vrai blocage, utilisez le bouton « Contacter l'enseignant » ; seul un surveillant peut vous communiquer un code de sortie d'urgence." },
+    ],
+  },
+  {
     id: 'securite',
     icon: 'fas fa-camera',
     label: 'Sécurité & identité',
