@@ -135,7 +135,7 @@ export default function DownloadClientPage() {
           </ol>
           <p style={{ margin: '0 0 10px' }}>Si vous voyez un fichier « Non confirmé … .crdownload » dans vos téléchargements, c&apos;est que l&apos;étape « Conserver » n&apos;a pas été faite : rouvrez la liste des téléchargements (<b>Ctrl + J</b>) et confirmez, ou supprimez ce fichier et recommencez.</p>
           <p style={{ margin: 0, fontSize: 15, color: '#475569' }}>
-            Autre source du même fichier : <a href="https://github.com/Sergio-Oracle/cei-examen-releases/releases/latest" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 600 }}>page des versions sur GitHub</a>.
+            Autre source du même fichier : <a href="https://github.com/Sergio-Oracle/cei-client/releases/latest" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 600 }}>page des versions sur GitHub</a>.
             En salle d&apos;examen, le responsable peut aussi vous remettre l&apos;installateur sur clé USB ou sur un partage interne : il s&apos;installe alors sans avertissement du navigateur.
           </p>
         </div>
