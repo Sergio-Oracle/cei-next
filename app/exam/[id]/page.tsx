@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import api, { serverNow } from '@/lib/api'
+import { getCeiClient, isCeiClient, proveCeiClient, onCeiClientEvent } from '@/lib/ceiClient'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObjects, countPeople } from '@/lib/proctoring-vision'
@@ -22,7 +23,7 @@ interface ExamData {
   start_time: string; end_time: string; subject_title?: string
   max_tab_switches?: number; enable_copy_paste?: boolean; enable_right_click?: boolean; enable_file_download?: boolean
   camera_required?: boolean; ban_on_devtools?: boolean; auto_correct?: boolean; enable_calculator?: boolean
-  allow_secondary_camera?: boolean; run_environment_scan?: boolean
+  allow_secondary_camera?: boolean; run_environment_scan?: boolean; require_client?: boolean
   questions_per_page?: number; randomize_questions?: boolean; time_per_question_seconds?: number | null
   status: string; questions?: Question[]
   subject_content?: { id: number; title: string; content: string } | string | null
@@ -59,7 +60,7 @@ interface ParsedBlock {
   pairs?: { left: string; right: string }[]
   media?: { type: 'image' | 'audio' | 'video'; filename: string }[]
 }
-type Phase = 'loading' | 'instructions' | 'permissions' | 'env_scan' | 'exam' | 'submitted' | 'unsupported'
+type Phase = 'loading' | 'instructions' | 'permissions' | 'env_scan' | 'exam' | 'submitted' | 'unsupported' | 'client_required'
 interface PreviewResult {
   score: number; det_score: number; det_max: number; total_max: number; remaining_max: number
   breakdown: string[]; ai_feedback: string | null; ai_done: boolean; ai_error?: string
@@ -689,6 +690,21 @@ export default function ExamPage() {
   // Compte à rebours de la pause self-service — reprend automatiquement
   // l'examen à l'échéance (calculée côté serveur, resume_at), ou plus tôt si
   // l'étudiant clique "Reprendre maintenant" (endBreak, gère aussi ce cas).
+  /* ── Application CEI Examen : alertes du client relayées au serveur, poste libéré à la fin ── */
+  useEffect(() => {
+    const off = onCeiClientEvent(evt => {
+      const aId = attemptRef.current
+      if (evt.type === 'client_forbidden_app') warning(`Fermez le logiciel « ${evt.data?.name} » : il est interdit pendant l'examen.`)
+      if (evt.type === 'client_second_display') warning('Un second écran est branché : il est masqué. Débranchez-le.')
+      if (aId && !isPreview) logActivity(aId, evt.type, JSON.stringify(evt.data ?? {}))
+    })
+    return () => { off(); getCeiClient()?.leaveExamMode().catch(() => {}) }
+  }, []) // eslint-disable-line
+  useEffect(() => {
+    if (phase === 'submitted' || phase === 'client_required' || phase === 'unsupported') getCeiClient()?.leaveExamMode().catch(() => {})
+  }, [phase])
+  useEffect(() => { if (showBanModal) getCeiClient()?.leaveExamMode().catch(() => {}) }, [showBanModal])
+
   useEffect(() => {
     if (!onBreak || !breakResumeAt) return
     const tick = () => {
@@ -803,7 +819,9 @@ export default function ExamPage() {
         const res = await api.get<ExamData>(`/api/online_exams/${id}/details`)
         if (cancelled) return
         setExam(res); examRef.current = res
-        setPhase(isDeviceSupported() ? 'instructions' : 'unsupported')
+        // Examen exigeant l'application CEI Examen (mode kiosque) : on le dit tout de suite, avant toute saisie.
+        if (res.require_client && !isCeiClient()) setPhase('client_required')
+        else setPhase(isDeviceSupported() || isCeiClient() ? 'instructions' : 'unsupported')
         // Préchargement anticipé du moteur MediaPipe (retour utilisateur du
         // 03/09 : "je veux que ce soit ultra rapide" — la phase env_scan
         // affichait "Chargement du moteur de vérification…" à l'instant même
@@ -1230,8 +1248,20 @@ export default function ExamPage() {
   async function doStartExam() {
     setStarting(true)
     try {
+      // Application CEI Examen : poignée de main signée AVANT le démarrage (exigée par le serveur si l'examen l'impose)
+      let clientVm = false
+      if (isCeiClient()) {
+        const proof = await proveCeiClient(Number(id))
+        if (!proof.ok && examRef.current?.require_client) { toastErr(proof.error || "Vérification de l'application impossible"); setStarting(false); return }
+        clientVm = !!proof.vm
+      }
       const res = await api.post<{attempt:Attempt}>(`/api/online_exams/${id}/start`,{})
       const att=res.attempt; setAttempt(att); noteAttemptClock(att); attemptRef.current=att.id
+      if (isCeiClient()) {
+        // Le client prend le contrôle du poste dès maintenant (permissions, scan, composition) jusqu'à la fin de l'examen
+        getCeiClient()?.enterExamMode({ maxMinutes: (examRef.current?.duration_minutes ?? 120) + (att.extra_minutes ?? 0) }).catch(() => {})
+        if (clientVm) logActivity(att.id, 'client_vm_detected', 'machine virtuelle détectée par le client')
+      }
       extraMinRef.current=att.extra_minutes??0
       if (att.answers) restoreAnswersWithLocalDraft(att.id, att.answers)
       setPhase('permissions')
@@ -1240,6 +1270,8 @@ export default function ExamPage() {
         if (e.data.enrolled === false) { router.push(`/biometric-enroll?redirect=/exam/${id}`); return }
         setBiometricRequired(true)
         initBiometricCheck()
+      } else if (e?.data?.client_required) {
+        setPhase('client_required')
       } else if (e?.data?.code_required) {
         setCodeRequired(true)
         if (e.data.code) setAccessCode(e.data.code)
@@ -3331,6 +3363,30 @@ export default function ExamPage() {
         <p style={{color:'#64748b',marginBottom:28,lineHeight:1.6}}>Votre copie a été transmise avec succès.</p>
         <button onClick={()=>router.push('/dashboard/student')} style={{width:'100%',padding:'13px',background:'#2563eb',color:'white',border:'none',borderRadius:10,fontWeight:700,fontSize:18,cursor:'pointer'}}>
           <i className="fas fa-home" style={{marginRight:8}}/>Retour au tableau de bord
+        </button>
+      </div>
+    </div>
+  )
+
+  if(phase==='client_required') return(
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0f172a',padding:20}}>
+      <div style={{background:'#1e293b',border:'1px solid #334155',borderRadius:20,padding:'40px 32px',maxWidth:500,width:'100%',textAlign:'center',color:'white'}}>
+        <div style={{width:64,height:64,background:'rgba(37,99,235,.18)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:28,color:'#60a5fa'}}>
+          <i className="fas fa-lock"/>
+        </div>
+        <h2 style={{fontSize:23,fontWeight:800,margin:'0 0 10px'}}>Application CEI Examen requise</h2>
+        <p style={{fontSize:15.5,color:'#94a3b8',lineHeight:1.7,marginBottom:22}}>
+          Cet examen se passe dans l&apos;application <strong style={{color:'#e2e8f0'}}>CEI Examen</strong>, qui verrouille votre poste pendant la composition (comme Safe Exam Browser).
+          Installez-la une fois, ouvrez-la, connectez-vous puis rouvrez cet examen.
+        </p>
+        <a href="/telecharger-client" style={{display:'block',width:'100%',padding:13,background:'#2563eb',color:'white',borderRadius:10,fontWeight:700,fontSize:16.5,textDecoration:'none',boxSizing:'border-box'}}>
+          <i className="fas fa-download" style={{marginRight:8}}/>Télécharger l&apos;application
+        </a>
+        <a href={`ceiexamen://exam/${id}`} style={{display:'block',width:'100%',padding:13,marginTop:10,background:'transparent',color:'#e2e8f0',border:'1px solid #475569',borderRadius:10,fontWeight:600,fontSize:15.5,textDecoration:'none',boxSizing:'border-box'}}>
+          <i className="fas fa-up-right-from-square" style={{marginRight:8}}/>Déjà installée : ouvrir dans l&apos;application
+        </a>
+        <button onClick={()=>router.push('/dashboard/student')} style={{width:'100%',padding:13,marginTop:10,background:'transparent',color:'#94a3b8',border:'1px solid #334155',borderRadius:10,fontWeight:600,fontSize:15.5,cursor:'pointer'}}>
+          Retour au tableau de bord
         </button>
       </div>
     </div>

@@ -2,6 +2,15 @@
 // les écrans gardent leurs propres libellés, mais tout identifiant technique
 // absent de leur table passe par ici — jamais d'identifiant anglais à l'écran.
 const SHARED: Record<string, string> = {
+  client_forbidden_app: 'Logiciel interdit détecté sur le poste',
+  client_vm_detected: 'Machine virtuelle détectée',
+  client_second_display: 'Second écran détecté (masqué par le client)',
+  client_shortcut_blocked: 'Raccourci clavier bloqué par le client',
+  client_close_attempt: "Tentative de fermeture de l'application",
+  client_navigation_blocked: 'Navigation hors de la plateforme bloquée',
+  client_quit_code_used: "Sortie d'urgence par code surveillant",
+  client_quit_code_failed: 'Code de sortie incorrect saisi',
+  client_exam_mode_timeout: "Verrouillage du poste levé automatiquement (durée dépassée)",
   mouse_left_window: 'Souris sortie de la fenêtre',
   whisper_detected: 'Chuchotement détecté',
   sustained_audio_detected: 'Bruit prolongé détecté',

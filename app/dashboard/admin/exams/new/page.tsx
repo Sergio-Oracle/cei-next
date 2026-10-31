@@ -37,6 +37,7 @@ export default function NewExamPage() {
     allow_secondary_camera: false,
     require_biometric: false,
     run_environment_scan: false,
+    require_client: false,
   })
 
   useEffect(() => {
@@ -93,6 +94,7 @@ export default function NewExamPage() {
         allow_secondary_camera: form.allow_secondary_camera,
         require_biometric: form.require_biometric,
         run_environment_scan: form.run_environment_scan,
+        require_client: form.require_client,
       })
       success(`Examen créé — Durée : ${res.exam?.duration_minutes ?? '?'} min`)
       // Groupe de surveillance déjà pris sur ce créneau : l'examen est créé,
@@ -294,6 +296,10 @@ export default function NewExamPage() {
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize:15.5, color: '#475569' }}>
                 <input type="checkbox" checked={form.run_environment_scan} onChange={e => set('run_environment_scan', e.target.checked)} style={{ width: 'auto' }} />
                 <span><i className="fas fa-video" style={{ marginRight: 4 }} />Exiger un scan de l&apos;environnement (webcam, ~8s) avant de composer</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize:15.5, color: '#475569' }}>
+                <input type="checkbox" checked={form.require_client} onChange={e => set('require_client', e.target.checked)} style={{ width: 'auto' }} />
+                <span><i className="fas fa-lock" style={{ marginRight: 4 }} />Exiger l&apos;application CEI Examen (poste verrouillé en plein écran, comme Safe Exam Browser)</span>
               </label>
             </div>
             {form.enable_calculator && (

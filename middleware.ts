@@ -12,6 +12,8 @@ const PUBLIC_PATHS = new Set([
   // Ouverte depuis le téléphone en scannant un QR code — cet appareil n'a
   // jamais de session CEI (pas de cookie token), voir POST /api/phone_camera/token.
   '/phone-camera',
+  // Page de téléchargement de l'application CEI Examen : consultée avant la connexion
+  '/telecharger-client',
 ])
 
 // Préfixes publics (assets, guide public, etc.)

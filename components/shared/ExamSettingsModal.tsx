@@ -157,6 +157,7 @@ export default function ExamSettingsModal({ examId, onClose, onSaved }: {
               {row('require_biometric', 'Exiger une vérification d\'identité par reconnaissance faciale')}
               {row('run_environment_scan', 'Exiger un scan de l\'environnement (webcam, ~8 s) avant de composer')}
               {row('allow_secondary_camera', 'Autoriser une caméra secondaire (smartphone)')}
+              {row('require_client', 'Exiger l\'application CEI Examen', 'Poste verrouillé en plein écran pendant l\'examen (comme Safe Exam Browser) : impossible de changer d\'application, de fermer la fenêtre ou d\'ouvrir un autre site')}
             </>)}
 
             {card('Autorisations pendant l\'examen', 'fa-unlock', <>
