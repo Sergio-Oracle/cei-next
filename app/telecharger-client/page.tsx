@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-interface Release { name: string; platform: string; arch?: string; label: string; size: number; sha256: string; url: string }
+interface Release { name: string; platform: string; arch?: string; kind?: string; label: string; size: number; sha256: string; url: string }
 interface Releases { version: string | null; files: Release[]; notes?: string }
 type Os = 'win32' | 'darwin' | 'linux' | 'mobile' | 'other'
 interface Detected { os: Os; arch: 'x64' | 'arm64' | 'unknown'; label: string }
@@ -33,7 +33,8 @@ async function detect(): Promise<Detected> {
 
 /** Meilleure version pour ce poste : même système ; même architecture ou version universelle ; sinon (Windows ARM) la version 64 bits Intel-AMD, qui s'y exécute. */
 function pick(files: Release[], d: Detected): { file?: Release; note?: string } {
-  const same = files.filter(f => f.platform === d.os)
+  const rank = (f: Release) => (f.kind === 'installer' ? 0 : f.kind === 'portable' ? 1 : 2)          // installateur d'abord, archive en dernier recours
+  const same = files.filter(f => f.platform === d.os).sort((a, b) => rank(a) - rank(b))
   if (!same.length) return {}
   const exact = same.find(f => f.arch === d.arch) || same.find(f => f.arch === 'universal')
   if (exact) return { file: exact }
@@ -45,7 +46,7 @@ function pick(files: Release[], d: Detected): { file?: Release; note?: string } 
 
 const REQ: Record<string, string> = { win32: 'Windows 10 ou 11 (64 bits)', darwin: 'macOS récent (Intel ou Apple Silicon)', linux: 'Linux 64 bits (Ubuntu 20.04 ou plus récent, Debian, Mint…)' }
 const HOWTO: Record<string, string> = {
-  win32: "Extrayez l'archive ZIP (clic droit, Extraire tout), puis lancez « CEI Examen.exe ». Si l'écran « Windows a protégé votre ordinateur » apparaît : Informations complémentaires, puis Exécuter quand même.",
+  win32: "Double-cliquez sur le fichier téléchargé et suivez l'assistant (aucun droit administrateur requis) : l'application apparaît sur le Bureau et dans le menu Démarrer. Si l'écran « Windows a protégé votre ordinateur » apparaît : Informations complémentaires, puis Exécuter quand même.",
   darwin: "Ouvrez l'image disque et glissez CEI Examen dans Applications. Au premier lancement : clic droit sur l'application, puis Ouvrir (ou, dans le Terminal : xattr -cr \"/Applications/CEI Examen.app\"). Autorisez ensuite la caméra, le micro et l'enregistrement de l'écran quand macOS le demande.",
   linux: "Clic droit sur le fichier, Propriétés, autorisez l'exécution du fichier comme un programme, puis double-clic. (Terminal : chmod +x CEI-Examen-*.AppImage puis ./CEI-Examen-*.AppImage)",
 }
@@ -98,7 +99,7 @@ export default function DownloadClientPage() {
                   </span>
                 </a>
                 {choice.note && <div style={{ fontSize: 14.5, color: '#92400e', marginBottom: 8 }}>{choice.note}</div>}
-                <div style={{ fontSize: 14.5, color: '#475569', lineHeight: 1.7 }}><b>Configuration requise :</b> {REQ[det.os]}.<br /><b>Installation :</b> {HOWTO[det.os]}</div>
+                <div style={{ fontSize: 14.5, color: '#475569', lineHeight: 1.7 }}><b>Configuration requise :</b> {REQ[det.os]}.<br /><b>Installation :</b> {det.os === 'win32' && choice.file.kind === 'archive' ? "Extrayez l'archive ZIP (clic droit, Extraire tout), puis lancez « CEI Examen.exe ». Si l'écran « Windows a protégé votre ordinateur » apparaît : Informations complémentaires, puis Exécuter quand même." : HOWTO[det.os]}</div>
               </>
             ) : (
               <div style={{ color: '#334155', lineHeight: 1.7 }}>
