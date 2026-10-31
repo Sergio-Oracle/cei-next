@@ -54,6 +54,8 @@ export default function DownloadClientPage() {
             <li>Dès le démarrage, l&apos;écran passe en plein écran verrouillé jusqu&apos;à la fin de l&apos;examen.</li>
             <li>Fermez avant tout logiciel de partage d&apos;écran, de visioconférence, de contrôle à distance et branchez un seul écran.</li>
           </ol>
+          <p style={{ margin: '12px 0 0', fontSize: 14.5, color: '#475569' }}><b>Avant de commencer l&apos;examen, enregistrez et fermez vos autres applications</b> (bloc-notes, navigateurs, assistants d&apos;intelligence artificielle…) : l&apos;application les ferme toutes, y compris un chatbot ouvert dans un onglet.</p>
+          <p style={{ margin: '8px 0 0', fontSize: 14.5, color: '#64748b' }}><b>Windows</b> : si l&apos;écran « Windows a protégé votre ordinateur » apparaît, cliquez sur <i>Informations complémentaires</i> puis <i>Exécuter quand même</i>. <b>Mac</b> : clic droit sur l&apos;application → <i>Ouvrir</i>, ou, dans le Terminal : <code>xattr -cr &quot;/Applications/CEI Examen.app&quot;</code>.</p>
           <p style={{ margin: '12px 0 0', fontSize: 14.5, color: '#64748b' }}>Pendant l&apos;examen, changer d&apos;application, fermer la fenêtre ou ouvrir un autre site est impossible ; toute tentative est signalée au surveillant.</p>
         </div>
         <p style={{ marginTop: 18 }}><Link href="/login" style={{ color: '#2563eb' }}>Retour à la connexion</Link></p>

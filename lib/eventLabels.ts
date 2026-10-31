@@ -2,6 +2,7 @@
 // les écrans gardent leurs propres libellés, mais tout identifiant technique
 // absent de leur table passe par ici — jamais d'identifiant anglais à l'écran.
 const SHARED: Record<string, string> = {
+  client_app_closed: 'Application étrangère fermée par le client',
   client_forbidden_app: 'Logiciel interdit détecté sur le poste',
   client_vm_detected: 'Machine virtuelle détectée',
   client_second_display: 'Second écran détecté (masqué par le client)',

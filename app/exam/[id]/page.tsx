@@ -690,6 +690,24 @@ export default function ExamPage() {
   // Compte à rebours de la pause self-service — reprend automatiquement
   // l'examen à l'échéance (calculée côté serveur, resume_at), ou plus tôt si
   // l'étudiant clique "Reprendre maintenant" (endBreak, gère aussi ce cas).
+  /* ── Application CEI Examen : applications ouvertes à fermer avant de commencer ── */
+  const [otherApps, setOtherApps] = useState<string[]>([])
+  const [closingApps, setClosingApps] = useState(false)
+  useEffect(() => {
+    const c = getCeiClient()
+    if (!c?.listApps || phase !== 'instructions' || isPreview) return
+    let alive = true
+    const poll = () => c.listApps!().then(r => { if (alive && r) setOtherApps(r.apps.map(a => a.name)) }).catch(() => {})
+    poll(); const t = setInterval(poll, 3000)
+    return () => { alive = false; clearInterval(t) }
+  }, [phase]) // eslint-disable-line
+  async function closeOtherApps() {
+    const c = getCeiClient(); if (!c?.closeApps) return
+    setClosingApps(true)
+    try { const r = await c.closeApps(); setOtherApps((r?.remaining ?? []).map(a => a.name)) } catch { /* l'étudiant peut réessayer */ }
+    finally { setClosingApps(false) }
+  }
+
   /* ── Application CEI Examen : alertes du client relayées au serveur, poste libéré à la fin ── */
   useEffect(() => {
     const off = onCeiClientEvent(evt => {
@@ -3543,13 +3561,30 @@ export default function ExamPage() {
           </p>
         </div>
 
+        {/* Application CEI Examen : les autres applications (bloc-notes, chatbots, navigateurs…) doivent être fermées */}
+        {otherApps.length>0&&(
+          <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
+            <div style={{fontWeight:700,fontSize:15.5,color:'#1e3a8a',marginBottom:6}}><i className="fas fa-window-restore" style={{marginRight:8}}/>Fermez vos autres applications pour commencer</div>
+            <div style={{fontSize:14.5,color:'#334155',lineHeight:1.6,marginBottom:8}}>
+              Pendant l&apos;examen, seule l&apos;application CEI Examen peut rester ouverte (y compris les navigateurs et les assistants d&apos;intelligence artificielle).
+              <b> Enregistrez votre travail</b>, puis fermez-les vous-même ou cliquez sur le bouton.
+            </div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
+              {otherApps.map(n=><span key={n} style={{background:'#fff',border:'1px solid #bfdbfe',borderRadius:99,padding:'3px 11px',fontSize:14,color:'#1e3a8a'}}>{n}</span>)}
+            </div>
+            <button type="button" onClick={closeOtherApps} disabled={closingApps} style={{padding:'9px 16px',border:'none',borderRadius:8,background:'#1d4ed8',color:'#fff',fontWeight:700,fontSize:15,cursor:closingApps?'wait':'pointer'}}>
+              {closingApps?<><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Fermeture en cours…</>:<><i className="fas fa-xmark" style={{marginRight:6}}/>Fermer ces applications</>}
+            </button>
+          </div>
+        )}
+
         {/* Boutons */}
         <div style={{display:'flex',gap:10}}>
           <button onClick={()=>router.back()} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:17}}>
             <i className="fas fa-times" style={{marginRight:6}}/>Annuler
           </button>
-          <button onClick={isPreview ? () => startPreview() : doStartExam} disabled={starting}
-            style={{flex:2,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:starting?'not-allowed':'pointer',opacity:starting?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:17}}>
+          <button onClick={isPreview ? () => startPreview() : doStartExam} disabled={starting||(!isPreview&&otherApps.length>0)}
+            style={{flex:2,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:(starting||otherApps.length>0)?'not-allowed':'pointer',opacity:(starting||otherApps.length>0)?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:17}}>
             {starting
               ?<><i className="fas fa-spinner fa-spin"/>Démarrage en cours…</>
               :<><i className="fas fa-check"/>J'accepte et je démarre l'examen</>}
