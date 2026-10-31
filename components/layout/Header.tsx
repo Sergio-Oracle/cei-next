@@ -71,7 +71,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const pathname = usePathname()
   // Relu à chaque page : l'adresse de retour peut être posée après le montage.
   useEffect(() => { setMoodleReturn(getLtiReturn()) }, [pathname])
-  const { canInstallManually, showIosInstructionsManually, promptInstall } = usePwaInstall()
+  const { canInstallManually, showIosInstructionsManually, promptInstall, suggestAppManually } = usePwaInstall()
   const { showToast } = useToast()
   const [unreadCount, setUnreadCount]   = useState(0)
   const [langOpen, setLangOpen]         = useState(false)
@@ -225,6 +225,14 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               car une demande explicite de l'utilisateur ne doit pas être bloquée par
               le cooldown de la suggestion spontanée. Invisible si déjà installée ou
               si le navigateur ne supporte ni l'un ni l'autre mécanisme. */}
+          {suggestAppManually && (
+            <a href="/telecharger-client" title="Installer l'application CEI Examen"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 36, height: 36, borderRadius: '50%', background: 'var(--background)',
+                border: '1px solid var(--border)', color: 'var(--text)', textDecoration: 'none' }}>
+              <i className="fas fa-download" style={{ fontSize: 20 }} />
+            </a>
+          )}
           {(canInstallManually || showIosInstructionsManually) && (
             <button
               onClick={() => {

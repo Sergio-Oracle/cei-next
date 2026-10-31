@@ -373,8 +373,7 @@ export default function LandingPage() {
             <span style={{ display: 'inline-block', background: '#eff6ff', color: 'var(--primary-dark)', fontSize: 14, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '5px 16px', borderRadius: 99, marginBottom: 14 }}>Nouveau</span>
             <h2 style={{ margin: '0 0 10px', textAlign: 'left' }}>L&apos;application CEI Examen</h2>
             <p style={{ margin: 0, fontSize: 18, lineHeight: 1.7, color: '#475569' }}>
-              Un examen verrouillé comme avec Safe Exam Browser : plein écran impossible à quitter, autres applications fermées, second écran masqué, tentatives de sortie signalées au surveillant.
-              À installer une seule fois sur Windows, Linux ou Mac, avant le jour de l&apos;examen.
+              Une seule application à installer sur votre ordinateur (Windows, Linux ou Mac) pour vos cours, vos notes et vos examens. Pour les examens verrouillés, elle fonctionne comme Safe Exam Browser : plein écran impossible à quitter, autres applications fermées, second écran masqué, tentatives de sortie signalées au surveillant.
             </p>
           </div>
           <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'stretch', minWidth: 260 }}>

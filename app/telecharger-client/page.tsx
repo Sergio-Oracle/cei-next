@@ -28,7 +28,7 @@ export default function DownloadClientPage() {
       <div style={{ maxWidth: 760, margin: '0 auto' }}>
         <h1 style={{ fontSize: 28, color: '#0f172a', margin: '0 0 6px' }}>Application CEI Examen</h1>
         <p style={{ color: '#475569', fontSize: 17, lineHeight: 1.6, margin: '0 0 22px' }}>
-          Certains examens se passent dans cette application : elle verrouille votre poste en plein écran pendant la composition, comme Safe Exam Browser.
+          C&apos;est <b>la seule application à installer</b> sur ordinateur : elle sert pour vos cours, vos notes et vos examens. Pour les examens qui l&apos;exigent, elle verrouille votre poste en plein écran pendant la composition, comme Safe Exam Browser.
           Vous l&apos;installez une seule fois.
         </p>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 20, marginBottom: 20 }}>
@@ -57,6 +57,15 @@ export default function DownloadClientPage() {
           <p style={{ margin: '12px 0 0', fontSize: 14.5, color: '#475569' }}><b>Avant de commencer l&apos;examen, enregistrez et fermez vos autres applications</b> (bloc-notes, navigateurs, assistants d&apos;intelligence artificielle…) : l&apos;application les ferme toutes, y compris un chatbot ouvert dans un onglet.</p>
           <p style={{ margin: '8px 0 0', fontSize: 14.5, color: '#64748b' }}><b>Windows</b> : si l&apos;écran « Windows a protégé votre ordinateur » apparaît, cliquez sur <i>Informations complémentaires</i> puis <i>Exécuter quand même</i>. <b>Mac</b> : clic droit sur l&apos;application → <i>Ouvrir</i>, ou, dans le Terminal : <code>xattr -cr &quot;/Applications/CEI Examen.app&quot;</code>.</p>
           <p style={{ margin: '12px 0 0', fontSize: 14.5, color: '#64748b' }}>Pendant l&apos;examen, changer d&apos;application, fermer la fenêtre ou ouvrir un autre site est impossible ; toute tentative est signalée au surveillant.</p>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 20, marginTop: 20, color: '#334155', lineHeight: 1.7, fontSize: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Vous aviez installé la version web de CEI ?</div>
+          <p style={{ margin: '0 0 8px' }}>L&apos;application CEI Examen la <b>remplace</b> : elle sert pour vos cours, vos notes, vos examens ordinaires <i>et</i> les examens verrouillés. Vous n&apos;avez donc besoin que d&apos;une seule application. Une fois CEI Examen installée, vous pouvez désinstaller l&apos;ancienne :</p>
+          <ul style={{ margin: 0, paddingLeft: 20, fontSize: 15 }}>
+            <li><b>Chrome</b> : tapez <code>chrome://apps</code>, clic droit sur CEI, <i>Désinstaller</i>. <b>Edge</b> : <code>edge://apps</code>, puis <i>Désinstaller</i>.</li>
+            <li><b>Windows</b> : Paramètres, Applications, Applications installées, CEI, <i>Désinstaller</i>.</li>
+          </ul>
+          <p style={{ margin: '8px 0 0', fontSize: 14.5, color: '#64748b' }}>Sur téléphone ou tablette, l&apos;application CEI Examen n&apos;existe pas : gardez la version web installée (les examens surveillés se passent sur ordinateur).</p>
         </div>
         <p style={{ marginTop: 18 }}><Link href="/login" style={{ color: '#2563eb' }}>Retour à la connexion</Link></p>
       </div>

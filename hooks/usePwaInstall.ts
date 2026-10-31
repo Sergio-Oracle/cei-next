@@ -22,6 +22,18 @@ function isStandaloneMode(): boolean {
   )
 }
 
+/** Dans l'application « CEI Examen » (Electron) : elle EST l'application installée, rien à proposer. */
+function isCeiApp(): boolean {
+  return typeof window !== 'undefined' && !!(window as any).ceiClient
+}
+
+/** Ordinateur (pas de téléphone ni de tablette) : on y propose l'application CEI Examen plutôt que la version web installable,
+ *  pour qu'un étudiant n'ait jamais DEUX applications à installer. Sur téléphone, la version web (PWA) reste la seule possible. */
+function isDesktopDevice(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return !/android|iphone|ipad|ipod|mobile|tablet/i.test(navigator.userAgent)
+}
+
 function isIosDevice(): boolean {
   if (typeof navigator === 'undefined') return false
   return /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())
@@ -50,8 +62,15 @@ export function usePwaInstall() {
   const [deferredEvent, setDeferredEvent] = useState<BeforeInstallPromptEvent | null>(null)
   const [isIos, setIsIos] = useState(false)
   const [dismissed, setDismissed] = useState(true)
+  const [desktop, setDesktop] = useState(false)           // ordinateur, hors application CEI Examen
+  const [inPwa, setInPwa] = useState(false)               // ancienne version web installée (PWA) sur un ordinateur
 
   useEffect(() => {
+    if (isCeiApp()) return                                  // déjà dans l'application : aucune invitation à installer quoi que ce soit
+    if (isDesktopDevice()) {
+      setDesktop(true); setInPwa(isStandaloneMode()); setDismissed(wasDismissedRecently())
+      return                                                // ordinateur : on n'utilise jamais l'installation de la version web
+    }
     if (isStandaloneMode()) return
     setIsIos(isIosDevice())
     setDismissed(wasDismissedRecently())
@@ -108,18 +127,22 @@ export function usePwaInstall() {
     setDismissed(true)
   }, [])
 
-  const canInstall = !dismissed && !!deferredEvent
-  const showIosInstructions = !dismissed && isIos && !deferredEvent
+  const canInstall = !dismissed && !!deferredEvent && !desktop
+  const showIosInstructions = !dismissed && isIos && !deferredEvent && !desktop
+  // Ordinateur : suggestion de l'application CEI Examen (unique application à installer)
+  const suggestApp = desktop && !dismissed
 
   // Pour un déclencheur manuel explicite (ex: bouton dans un menu) : l'utilisateur
   // qui va chercher volontairement l'action d'installer doit pouvoir le faire même
   // s'il a fermé la bannière automatique — le cooldown "dismissed" ne s'applique
   // qu'à l'apparition SPONTANÉE de la bannière, pas à une demande explicite.
-  const canInstallManually  = !!deferredEvent
-  const showIosInstructionsManually = isIos && !deferredEvent
+  const canInstallManually  = !!deferredEvent && !desktop
+  const showIosInstructionsManually = isIos && !deferredEvent && !desktop
+  const suggestAppManually = desktop
 
   return {
     canInstall, showIosInstructions, promptInstall, dismiss,
     canInstallManually, showIosInstructionsManually,
+    suggestApp, suggestAppManually, inPwa,
   }
 }
