@@ -386,6 +386,10 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
         if (lm) { lm[1].split('|').map(t => t.trim()).filter(Boolean).forEach(t => gItems.push(t)); i++; continue }
         const im = strip(lines[i]).match(ITEM_RE)
         if (im && q.markerType !== 'ORDRE') { gItems.push(im[1].trim()); i++; continue }
+        if (q.markerType === 'CLOZE' && !gItems.length && !gGrid && !choices.length && !C_RE.test(strip(lines[i]))) {
+          // Suite du texte à trous coupée par un retour à la ligne : elle n'est pas une proposition
+          q.text = (q.text + ' ' + strip(lines[i])).trim(); i++; continue
+        }
         const wm = strip(lines[i]).match(C_WIDE)
         if (wm) { choices.push({ letter: wm[1].toUpperCase(), text: strip(wm[2]) }); i++; continue }
         if (choices.length) choices[choices.length - 1].text = (choices[choices.length - 1].text + ' ' + lines[i].trim()).trim()
@@ -399,7 +403,12 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
         else break
         continue
       }
-      const c = getC(lines[i])
+      let c = getC(lines[i])
+      if (!c && choices.length) {
+        // Plus de six propositions : « G. … » après « F. … » est la proposition suivante, pas la suite du texte de F
+        const wm2 = strip(lines[i]).match(C_WIDE)
+        if (wm2 && wm2[1].toUpperCase() === String.fromCharCode(choices[choices.length - 1].letter.charCodeAt(0) + 1)) c = { letter: wm2[1].toUpperCase(), text: strip(wm2[2]) }
+      }
       if (c) { choices.push(c); i++ }
       else if (choices.length === 0) { extraLines.push(lines[i]); i++ }
       else { choices[choices.length - 1].text = (choices[choices.length - 1].text + ' ' + lines[i].trim()).trim(); i++ }  // suite d'une proposition coupée (PDF)
