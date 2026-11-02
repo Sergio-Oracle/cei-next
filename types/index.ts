@@ -106,6 +106,8 @@ export type ExamStatus = 'draft' | 'scheduled' | 'active' | 'closed'
 export type AttemptStatus = 'in_progress' | 'submitted' | 'banned' | 'auto_submitted'
 
 export interface OnlineExam {
+  /** Date à laquelle l'enseignant a validé l'affichage du sujet dans « Prévisualiser » (null : pas encore validé). */
+  subject_validated_at?: string | null
   id: number
   subject_id?: number
   subject_title?: string

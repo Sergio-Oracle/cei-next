@@ -264,6 +264,11 @@ export default function AdminExamsPage() {
 
                   {/* Indicateurs de sécurité — couleurs et logique identiques à la plateforme d'origine */}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                    {(exam.status === 'scheduled' || exam.status === 'draft') && (exam.subject_title || exam.subject_id) && (
+                      exam.subject_validated_at
+                        ? <SecPill icon="fa-circle-check" value="Affichage validé" title="L'enseignant a validé l'aperçu du sujet" color="#047857" bg="#ecfdf5" />
+                        : <SecPill icon="fa-clipboard-check" value="Aperçu à valider" title="Ouvrez « Prévisualiser » puis validez l'affichage du sujet" color="#b45309" bg="#fffbeb" />
+                    )}
                     <SecPill icon="fa-exchange-alt" value={`${exam.max_tab_switches ?? 2} chgt${(exam.max_tab_switches ?? 2) !== 1 ? 's' : ''}`} title="Seuil changements de fenêtre" color="#c2410c" bg="#fff7ed" />
                     {(exam.max_no_face_count == null || exam.max_no_face_count >= 0) && (
                       <SecPill icon="fa-eye-slash" value={`${exam.max_no_face_count ?? 10} visage${(exam.max_no_face_count ?? 10) !== 1 ? 's' : ''}`} title="Seuil visage absent" color="#ef4444" bg="#fef2f2" />

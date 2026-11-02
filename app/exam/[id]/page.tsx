@@ -9,6 +9,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObjects, countPeople } from '@/lib/proctoring-vision'
 import { initYoloDetector, isYoloReady, detectSuspectObjects, type YoloMatch } from '@/lib/yolo-detector'
 import Calculator from '@/components/exam/Calculator'
+import SubjectEditor from '@/components/exam/SubjectEditor'
 import BiometricCallModal from '@/components/exam/BiometricCallModal'
 import { loadFaceApi, captureSingleDescriptor, warmupFaceApi } from '@/lib/faceCapture'
 // Correctif montée en charge (29/08, audit) : import statique retiré —
@@ -27,6 +28,8 @@ interface ExamData {
   questions_per_page?: number; randomize_questions?: boolean; time_per_question_seconds?: number | null
   status: string; questions?: Question[]
   subject_content?: { id: number; title: string; content: string } | string | null
+  /** Aperçu enseignant : ce qu'il peut faire du sujet (modifier / valider l'affichage). */
+  subject_edit?: { subject_id: number | null; can_edit: boolean; reason: string | null; validated_at: string | null; validated_by: string | null }
 }
 // Dates du serveur = UTC. Sans « Z » le navigateur les lirait comme l'heure LOCALE de
 // l'appareil : décalage de plusieurs heures sur un appareil réglé sur un autre fuseau.
@@ -531,6 +534,18 @@ export default function ExamPage() {
   // un lien interne, où l'adresse n'est pas encore à jour au premier rendu.
   const isPreview = useSearchParams().get('preview') === '1'
   const previewTimerRef = useRef<ReturnType<typeof setInterval>|null>(null)
+  // Aperçu : modifier le sujet depuis les questions affichées, puis valider l'affichage
+  const [subjectEditor, setSubjectEditor] = useState<{num: string|null; ctx: boolean}|null>(null)
+  const [validating, setValidating] = useState(false)
+  async function toggleSubjectValidation() {
+    if (validating || !exam?.subject_edit) return
+    setValidating(true)
+    try {
+      const r = await api.post<any>(`/api/online_exams/${id}/subject_validation`, { validated: !exam.subject_edit.validated_at })
+      setExam(prev => prev ? { ...prev, subject_edit: { ...prev.subject_edit!, validated_at: r.validated_at, validated_by: r.validated_by } } : prev)
+    } catch (e: any) { toastErr(e?.message || 'La validation a échoué') }
+    finally { setValidating(false) }
+  }
   const previewSeedRef = useRef<number|null>(null)
   const [previewResult, setPreviewResult] = useState<PreviewResult | null>(null)
   const [previewAiLoading, setPreviewAiLoading] = useState(false)
@@ -3944,9 +3959,25 @@ export default function ExamPage() {
           </div>
         )}
 
+        {isPreview && subjectEditor && exam?.subject_edit?.subject_id && (
+          <SubjectEditor subjectId={exam.subject_edit.subject_id} canEdit={exam.subject_edit.can_edit} reason={exam.subject_edit.reason}
+            focusNum={subjectEditor.num} focusContext={subjectEditor.ctx}
+            onClose={()=>setSubjectEditor(null)} onSaved={()=>window.location.reload()}/>
+        )}
         {isPreview && (
-          <div style={{position:'fixed',left:'50%',bottom:14,transform:'translateX(-50%)',zIndex:9997,background:'#0f766e',color:'white',padding:'8px 14px 8px 16px',borderRadius:24,boxShadow:'0 6px 20px rgba(0,0,0,.2)',display:'flex',alignItems:'center',gap:12,fontSize:14.5,fontWeight:600,maxWidth:'calc(100% - 32px)'}}>
+          <div style={{position:'fixed',left:'50%',bottom:14,transform:'translateX(-50%)',zIndex:9997,background:'#0f766e',color:'white',padding:'8px 14px 8px 16px',borderRadius:24,boxShadow:'0 6px 20px rgba(0,0,0,.2)',display:'flex',flexWrap:'wrap',justifyContent:'center',alignItems:'center',gap:12,fontSize:14.5,fontWeight:600,maxWidth:'calc(100% - 32px)'}}>
             <span><i className="fas fa-eye" style={{marginRight:6}}/>Prévisualisation — affichage étudiant, sans surveillance, rien n&apos;est enregistré</span>
+            {exam?.subject_edit?.subject_id && (<>
+              <button onClick={()=>setSubjectEditor({num:null,ctx:false})} title={exam.subject_edit.can_edit?'Corriger le texte du sujet':'Consulter le sujet (modification impossible)'}
+                style={{background:'white',color:'#0f766e',border:'none',borderRadius:16,padding:'4px 12px',fontWeight:700,cursor:'pointer',fontSize:14}}>
+                <i className={`fas ${exam.subject_edit.can_edit?'fa-pen-to-square':'fa-lock'}`} style={{marginRight:6}}/>{exam.subject_edit.can_edit?'Modifier le sujet':'Voir le sujet'}
+              </button>
+              <button onClick={toggleSubjectValidation} disabled={validating}
+                title={exam.subject_edit.validated_at?`Affichage validé${exam.subject_edit.validated_by?' par '+exam.subject_edit.validated_by:''} le ${new Date(exam.subject_edit.validated_at.endsWith('Z')?exam.subject_edit.validated_at:exam.subject_edit.validated_at+'Z').toLocaleString('fr-FR')} — cliquer pour retirer`:'Confirmer que ce que voient les étudiants correspond à votre sujet'}
+                style={{background:exam.subject_edit.validated_at?'#bbf7d0':'rgba(255,255,255,.18)',color:exam.subject_edit.validated_at?'#065f46':'white',border:'none',borderRadius:16,padding:'4px 12px',fontWeight:700,cursor:'pointer',fontSize:14}}>
+                <i className={`fas ${exam.subject_edit.validated_at?'fa-circle-check':'fa-clipboard-check'}`} style={{marginRight:6}}/>{exam.subject_edit.validated_at?'Affichage validé':"Valider l'affichage"}
+              </button>
+            </>)}
             <button onClick={closePreview} style={{background:'rgba(255,255,255,.18)',color:'white',border:'none',borderRadius:16,padding:'4px 12px',fontWeight:600,cursor:'pointer',fontSize:14}}>Quitter</button>
           </div>
         )}
@@ -4211,7 +4242,7 @@ export default function ExamPage() {
                           </div>
                         </div>
                       )}
-                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i,arr)=><PQC key={i} prev={arr[i-1]} block={b} answers={answers} setAnswers={setAnswers} onAnswer={checkAutoAdvance} attemptId={attemptRef.current} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>)}
+                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i,arr)=><PQC key={i} prev={arr[i-1]} onEdit={isPreview&&exam?.subject_edit?.subject_id?((n,c)=>setSubjectEditor({num:n,ctx:c})):undefined} block={b} answers={answers} setAnswers={setAnswers} onAnswer={checkAutoAdvance} attemptId={attemptRef.current} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>)}
                       {p1Pages.length<=1&&p2Blocks.length>0&&(
                         <button onClick={confirmAndLockQcm} style={{marginTop:8,background:'#10b981',border:'none',color:'#fff',borderRadius:8,padding:'10px 18px',cursor:'pointer',fontSize:15.5,fontWeight:600}}>
                           <i className="fas fa-arrow-right"/> Passer aux questions ouvertes
@@ -4236,7 +4267,7 @@ export default function ExamPage() {
                           {(b.text??'').split(/\n+/).filter(l=>l.trim()).map((l,li)=><p key={li} style={{margin:li?'8px 0 0':0,fontSize:17,lineHeight:1.65}}>{l}</p>)}
                         </div>
                         if(b.type==='section') return <div key={i} style={{margin:'18px 0 10px',padding:'10px 16px',background:'#f1f5f9',borderRadius:8,fontWeight:700,fontSize:17,color:'#334155',borderLeft:'4px solid #94a3b8'}}><i className="fas fa-layer-group" style={{color:'#64748b',marginRight:8}}/>{b.title}</div>
-                        return <PQC key={i} prev={arr[i-1]} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>
+                        return <PQC key={i} prev={arr[i-1]} onEdit={isPreview&&exam?.subject_edit?.subject_id?((n,c)=>setSubjectEditor({num:n,ctx:c})):undefined} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>
                       })}
                       {p2Pages.length>1&&(
                         <div style={{display:'flex',alignItems:'center',gap:10,marginTop:16}}>
@@ -4587,20 +4618,29 @@ const plain = (t: string) => (t ?? '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/
 /* Question parsée (contenu brut) */
 /* Énoncé de la partie (« Partie A — … », « On utilise les variables… ») affiché au-dessus de la première question qui en dépend sur la page :
    les questions QCM sont listées seules (et parfois mélangées), l'énoncé voyage donc avec chacune d'elles et n'est montré qu'une fois par suite. */
-function PQC(props: React.ComponentProps<typeof PQ> & { prev?: ParsedBlock }) {
-  const { prev, ...rest } = props
+function PQC(props: React.ComponentProps<typeof PQ> & { prev?: ParsedBlock; onEdit?: (num: string, ctx: boolean) => void }) {
+  const { prev, onEdit, ...rest } = props
   const c = props.block.context
   const key = (x?: ParsedBlock) => (x?.context ? `${x.context.title}|${x.context.text}` : '')
   const isP1 = P1_TYPES.includes(props.block.type)
   const showTitle = isP1 && !!c?.title                       // en partie rédaction, le titre est déjà affiché par l'en-tête de section
   const show = !!c && (showTitle || !!c.text) && key(props.block) !== key(prev)
   return (<>
-    {show && c && <div style={{margin:'18px 0 14px',padding:'16px 20px',background:'#f8fafc',border:'1.5px solid #cbd5e1',borderRadius:14,color:'#1e293b'}}>
+    {show && c && <div style={{margin:'18px 0 14px',padding:'16px 20px',background:'#f8fafc',border:'1.5px solid #cbd5e1',borderRadius:14,color:'#1e293b',position:'relative'}}>
+      {onEdit&&props.block.num&&<EditPencil label="Modifier cet énoncé" onClick={()=>onEdit(String(props.block.num),true)}/>}
       {showTitle&&<div style={{fontWeight:800,fontSize:18,color:'#334155',marginBottom:c.text?8:0}}><i className="fas fa-layer-group" style={{color:'#64748b',marginRight:8}}/>{c.title}</div>}
       {c.text.split(/\n+/).filter(l=>l.trim()).map((l,li)=><p key={li} style={{margin:li?'6px 0 0':0,fontSize:17,lineHeight:1.65}}>{l}</p>)}
     </div>}
-    <PQ {...rest}/>
+    {onEdit&&props.block.num ? <div style={{position:'relative'}}><EditPencil label={`Modifier la question ${props.block.num}`} onClick={()=>onEdit(String(props.block.num),false)}/><PQ {...rest}/></div> : <PQ {...rest}/>}
   </>)
+}
+
+/* Crayon « Modifier » des aperçus enseignant : ouvre l'éditeur du sujet sur ce passage. */
+function EditPencil({label,onClick}:{label:string;onClick:()=>void}) {
+  return <button onClick={onClick} title={label} aria-label={label}
+    style={{position:'absolute',top:-14,right:16,zIndex:3,background:'#fff',border:'1.5px solid #cbd5e1',color:'#1d4ed8',borderRadius:8,padding:'4px 9px',fontSize:13,fontWeight:700,cursor:'pointer',display:'inline-flex',alignItems:'center',gap:6}}>
+    <i className="fas fa-pen"/>Modifier
+  </button>
 }
 
 function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}:{attemptId?:number|null;block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:(key:string,blockType:string)=>void;mediaMap?:Record<string,string>;blockDownload?:boolean}) {
