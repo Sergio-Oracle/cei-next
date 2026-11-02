@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import SearchField, { matchesQuery } from '@/components/shared/SearchField'
 import { fetchUsersByRole } from '@/lib/fetchUsersByRole'
 import { useToast } from '@/contexts/ToastContext'
 import GroupExamsPlanning, { conflictMessage, useMemberWarnings } from '@/components/proctor/GroupExamsPlanning'
@@ -48,6 +49,12 @@ export default function ProctorGroupsPage() {
   const [supervisorSelected, setSupervisorSelected] = useState<Set<number>>(new Set())
   const [addingSupervisors, setAddingSupervisors] = useState(false)
   const [ecToLink, setEcToLink] = useState('')
+  // Recherche rapide dans les listes de la fenêtre « Gérer » (remise à zéro à chaque changement de groupe)
+  const [fSurv, setFSurv] = useState('')
+  const [fSup, setFSup] = useState('')
+  const [fMembers, setFMembers] = useState('')
+  const [fEc, setFEc] = useState('')
+  useEffect(() => { setFSurv(''); setFSup(''); setFMembers(''); setFEc('') }, [manageGroup?.id])
   const [linkingEc, setLinkingEc] = useState(false)
 
   const load = useCallback(async () => {
@@ -187,6 +194,10 @@ export default function ProctorGroupsPage() {
   const availableSurveillants = manageGroup ? surveillants.filter(s => !manageGroup.members.some(m => m.proctor_id === s.id)) : []
   const availableSuperviseurs = manageGroup ? superviseurs.filter(s => !manageGroup.supervisors.some(x => x.supervisor_id === s.id)) : []
   const availableEcs = manageGroup ? ecs.filter(e => !manageGroup.ec_ids.includes(e.id)) : []
+  const shownSurveillants = availableSurveillants.filter(s => matchesQuery(fSurv, s.full_name, s.email))
+  const shownSuperviseurs = availableSuperviseurs.filter(s => matchesQuery(fSup, s.full_name, s.email))
+  const shownMembers = manageGroup ? manageGroup.members.filter(m => matchesQuery(fMembers, m.proctor_name, m.proctor_email)) : []
+  const shownEcs = availableEcs.filter(e => matchesQuery(fEc, e.code, e.name))
 
   return (
     <div>
@@ -260,11 +271,11 @@ export default function ProctorGroupsPage() {
 
       {/* ══ Modal gestion groupe ══ */}
       {manageGroup && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.55)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.55)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
           onClick={() => setManageGroup(null)}>
-          <div className="card" style={{ padding: 0, width: '100%', maxWidth: 560, maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}
+          <div className="card" style={{ padding: 0, width: '100%', maxWidth: 'min(1100px, 96vw)', maxHeight: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}>
-            <div className="card-header">
+            <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <i className="fas fa-user-shield" style={{ color: 'var(--primary)' }} /> {manageGroup.name}
               </h3>
@@ -306,14 +317,16 @@ export default function ProctorGroupsPage() {
                     <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ajouter des superviseurs</div>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:14.5, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>
                       <input type="checkbox"
-                        checked={availableSuperviseurs.length > 0 && availableSuperviseurs.every(s => supervisorSelected.has(s.id))}
-                        onChange={e => setSupervisorSelected(e.target.checked ? new Set(availableSuperviseurs.map(s => s.id)) : new Set())}
+                        checked={shownSuperviseurs.length > 0 && shownSuperviseurs.every(s => supervisorSelected.has(s.id))}
+                        onChange={e => { const on = e.target.checked; setSupervisorSelected(prev => { const n = new Set(prev); shownSuperviseurs.forEach(s => on ? n.add(s.id) : n.delete(s.id)); return n }) }}
                         style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }} />
                       Tout cocher
                     </label>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 180, overflowY: 'auto', marginBottom: 10 }}>
-                    {availableSuperviseurs.map(s => (
+                  <SearchField value={fSup} onChange={setFSup} placeholder="Rechercher un superviseur (nom ou courriel)…" shown={shownSuperviseurs.length} total={availableSuperviseurs.length} />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 6, maxHeight: 'min(380px, 40vh)', overflowY: 'auto', marginBottom: 10 }}>
+                    {shownSuperviseurs.length === 0 && <div style={{ gridColumn: '1 / -1', padding: '10px 12px', color: 'var(--text-muted)', fontSize: 15 }}>Aucun résultat pour « {fSup} »</div>}
+                    {shownSuperviseurs.map(s => (
                       <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', border: '1.5px solid var(--border)' }}>
                         <input type="checkbox" checked={supervisorSelected.has(s.id)} onChange={() => toggleSupervisorSel(s.id)}
                           style={{ width: 15, height: 15, accentColor: 'var(--primary)' }} />
@@ -328,6 +341,7 @@ export default function ProctorGroupsPage() {
                     title={supervisorSelected.size === 0 ? 'Cochez au moins un superviseur' : undefined}>
                     <i className={`fas ${addingSupervisors ? 'fa-spinner fa-spin' : 'fa-user-plus'}`} /> Ajouter ({supervisorSelected.size})
                   </button>
+                  {[...supervisorSelected].filter(id => !shownSuperviseurs.some(s => s.id === id)).length > 0 && <span style={{ marginLeft: 10, fontSize: 14, color: 'var(--text-muted)' }}>dont {[...supervisorSelected].filter(id => !shownSuperviseurs.some(s => s.id === id)).length} masqué(s) par la recherche</span>}
                 </div>
               )}
               {superviseurs.length === 0 && (
@@ -359,8 +373,11 @@ export default function ProctorGroupsPage() {
                 {manageGroup.members.length === 0 ? (
                   <p style={{ fontSize:15.5, color: 'var(--text-muted)' }}>Aucun membre pour l'instant</p>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {manageGroup.members.map(m => {
+                  <>
+                  {manageGroup.members.length > 5 && <SearchField value={fMembers} onChange={setFMembers} placeholder="Rechercher parmi les membres (nom ou courriel)…" shown={shownMembers.length} total={manageGroup.members.length} />}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 6, maxHeight: 'min(420px, 42vh)', overflowY: 'auto' }}>
+                    {shownMembers.length === 0 && <div style={{ gridColumn: '1 / -1', padding: '10px 12px', color: 'var(--text-muted)', fontSize: 15 }}>Aucun résultat pour « {fMembers} »</div>}
+                    {shownMembers.map(m => {
                       const seen = lastSeenLabel(m.proctor_last_login)
                       return (
                         <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--background)', borderRadius: 8, border: '1px solid var(--border)' }}>
@@ -377,6 +394,7 @@ export default function ProctorGroupsPage() {
                       )
                     })}
                   </div>
+                  </>
                 )}
               </div>
 
@@ -387,14 +405,16 @@ export default function ProctorGroupsPage() {
                     <div style={{ fontSize:14.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ajouter des surveillants</div>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:14.5, fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>
                       <input type="checkbox"
-                        checked={availableSurveillants.length > 0 && availableSurveillants.every(s => memberSelected.has(s.id))}
-                        onChange={e => setMemberSelected(e.target.checked ? new Set(availableSurveillants.map(s => s.id)) : new Set())}
+                        checked={shownSurveillants.length > 0 && shownSurveillants.every(s => memberSelected.has(s.id))}
+                        onChange={e => { const on = e.target.checked; setMemberSelected(prev => { const n = new Set(prev); shownSurveillants.forEach(s => on ? n.add(s.id) : n.delete(s.id)); return n }) }}
                         style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }} />
                       Tout cocher
                     </label>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 180, overflowY: 'auto', marginBottom: 10 }}>
-                    {availableSurveillants.map(s => (
+                  <SearchField value={fSurv} onChange={setFSurv} placeholder="Rechercher un surveillant (nom ou courriel)…" shown={shownSurveillants.length} total={availableSurveillants.length} />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 6, maxHeight: 'min(380px, 40vh)', overflowY: 'auto', marginBottom: 10 }}>
+                    {shownSurveillants.length === 0 && <div style={{ gridColumn: '1 / -1', padding: '10px 12px', color: 'var(--text-muted)', fontSize: 15 }}>Aucun résultat pour « {fSurv} »</div>}
+                    {shownSurveillants.map(s => (
                       <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', border: '1.5px solid var(--border)' }}>
                         <input type="checkbox" checked={memberSelected.has(s.id)} onChange={() => toggleMemberSel(s.id)}
                           style={{ width: 15, height: 15, accentColor: 'var(--primary)' }} />
@@ -409,6 +429,7 @@ export default function ProctorGroupsPage() {
                     title={memberSelected.size === 0 ? 'Cochez au moins un surveillant' : undefined}>
                     <i className={`fas ${addingMembers ? 'fa-spinner fa-spin' : 'fa-user-plus'}`} /> Ajouter ({memberSelected.size})
                   </button>
+                  {[...memberSelected].filter(id => !shownSurveillants.some(s => s.id === id)).length > 0 && <span style={{ marginLeft: 10, fontSize: 14, color: 'var(--text-muted)' }}>dont {[...memberSelected].filter(id => !shownSurveillants.some(s => s.id === id)).length} masqué(s) par la recherche</span>}
                 </div>
               )}
 
@@ -430,10 +451,11 @@ export default function ProctorGroupsPage() {
                   </div>
                 )}
                 {availableEcs.length > 0 && (
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) minmax(220px, 1.6fr) auto', gap: 8 }}>
+                    <SearchField compact value={fEc} onChange={setFEc} placeholder="Rechercher un EC (code ou nom)…" shown={shownEcs.length} total={availableEcs.length} />
                     <select className="form-control" value={ecToLink} onChange={e => setEcToLink(e.target.value)} style={{ flex: 1, fontSize:15.5 }}>
-                      <option value="">— Sélectionner un EC —</option>
-                      {availableEcs.map(e => <option key={e.id} value={e.id}>{e.code} — {e.name}</option>)}
+                      <option value="">{shownEcs.length === 0 ? '— Aucun EC trouvé —' : `— Sélectionner un EC (${shownEcs.length}) —`}</option>
+                      {shownEcs.map(e => <option key={e.id} value={e.id}>{e.code} — {e.name}</option>)}
                     </select>
                     <button className="btn btn-secondary" style={{ fontSize:15.5 }} onClick={linkEc} disabled={linkingEc}
                       title={!ecToLink ? 'Sélectionnez un EC' : undefined}>
