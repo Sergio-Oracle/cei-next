@@ -3,9 +3,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import api from '@/lib/api'
 
 interface Issue { level: 'error' | 'warn'; message: string }
+interface Row {
+  num: string; kind: 'qcm' | 'qcm_multi' | 'vf' | 'auto' | 'ai'; text: string; choices: { letter: string; text: string }[]
+  points: number | null; letters: string[]; value: string | null; status: 'ok' | 'warn' | 'error'; mode: 'auto' | 'ia'; suggest?: string | null
+}
 interface Check {
   ok: boolean; questions: number; by_type: Record<string, number>; issues: Issue[]
-  hidden_lines: string[]; rubric: { missing_in_rubric: number[]; missing_in_subject: number[] } | null
+  hidden_lines: string[]; rubric_text: string
+  grading: { rows: Row[]; total_points: number; auto_count: number; ai_count: number }
 }
 
 const LINE_H = 22
@@ -25,6 +30,10 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
   const [title, setTitle] = useState('')
   const [orig, setOrig] = useState('')
   const [text, setText] = useState('')
+  const [rubricOrig, setRubricOrig] = useState('')
+  const [rubric, setRubric] = useState('')
+  const [tab, setTab] = useState<'sujet' | 'bareme'>('sujet')
+  const [ptsRaw, setPtsRaw] = useState<Record<string, string>>({})     // points en cours de saisie : jamais corrigés pendant la frappe
   const [loading, setLoading] = useState(true)
   const [check, setCheck] = useState<Check | null>(null)
   const [checking, setChecking] = useState(false)
@@ -32,7 +41,7 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
   const [err, setErr] = useState('')
   const taRef = useRef<HTMLTextAreaElement>(null)
   const focused = useRef(false)
-  const dirty = text !== orig
+  const dirty = text !== orig || rubric !== rubricOrig
 
   useEffect(() => {
     let alive = true
@@ -41,7 +50,7 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
         const r = await api.get<any>(`/api/subjects/${subjectId}`)
         const s = r.subject || r
         if (!alive) return
-        setTitle(s.title || ''); setOrig(s.content || ''); setText(s.content || '')
+        setTitle(s.title || ''); setOrig(s.content || ''); setText(s.content || ''); setRubricOrig(s.rubric || ''); setRubric(s.rubric || '')
       } catch (e: any) { if (alive) setErr(e?.message || 'Impossible de charger le sujet') }
       finally { if (alive) setLoading(false) }
     })()
@@ -53,12 +62,12 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
     if (loading) return
     setChecking(true)
     const t = setTimeout(async () => {
-      try { setCheck(await api.post<Check>('/api/subjects/check', { content: text, subject_id: subjectId })) }
+      try { setCheck(await api.post<Check>('/api/subjects/check', { content: text, rubric, subject_id: subjectId })) }
       catch { setCheck(null) }
       finally { setChecking(false) }
     }, 500)
     return () => clearTimeout(t)
-  }, [text, loading, subjectId])
+  }, [text, rubric, loading, subjectId])
 
   const lines = useMemo(() => text.split('\n'), [text])
 
@@ -88,12 +97,28 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
     if (i >= 0) select(i, i)
   }
 
+  // Bonne réponse / points modifiés dans le tableau : le serveur réécrit le barème (sans toucher aux autres questions) et renvoie le contrôle
+  async function edit(num: string, ed: { letters?: string[]; value?: string; points?: number }) {
+    if (!canEdit) return
+    try {
+      const r = await api.post<Check>('/api/subjects/check', { content: text, rubric, subject_id: subjectId, edits: { [num]: ed } })
+      setRubric(r.rubric_text); setCheck(r)
+    } catch (e: any) { setErr(e?.message || 'Modification impossible') }
+  }
+  function commitPoints(num: string) {
+    const raw = ptsRaw[num]; if (raw === undefined) return
+    const v = parseFloat(raw.replace(',', '.'))
+    setPtsRaw(p => { const { [num]: _x, ...rest } = p; return rest })
+    if (!isFinite(v) || v < 0) return
+    edit(num, { points: v })
+  }
+
   async function save() {
     if (!canEdit || !dirty || busy) return
     const errors = (check?.issues || []).filter(i => i.level === 'error')
     if (errors.length && !window.confirm(`Le contrôle signale ${errors.length} erreur(s) :\n\n- ${errors.map(e => e.message).join('\n- ')}\n\nEnregistrer quand même ?`)) return
     setBusy(true); setErr('')
-    try { await api.put(`/api/subjects/${subjectId}`, { content: text }); onSaved() }
+    try { await api.put(`/api/subjects/${subjectId}`, { content: text, rubric }); onSaved() }
     catch (e: any) { setErr(e?.message || "L'enregistrement a échoué"); setBusy(false) }
   }
 
@@ -105,6 +130,7 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
   // « N ligne(s) ne seraient affichées nulle part » : déjà détaillé dans la liste des lignes, on ne le répète pas
   const issues = (check?.issues || []).filter(i => !(check?.hidden_lines?.length && /ne seraient affichées nulle part/.test(i.message)))
   const errors = issues.filter(i => i.level === 'error')
+  const gradingErrors = (check?.grading?.rows || []).filter(r => r.status === 'error').length
   const warns = issues.filter(i => i.level === 'warn')
   const hidden = check?.hidden_lines || []
   const good = !!check && !errors.length && !warns.length && !hidden.length
@@ -132,6 +158,17 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 560px', minWidth: 0, display: 'flex', flexDirection: 'column', padding: 16, borderRight: '1px solid #e2e8f0' }}>
+            <div role="tablist" style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+              {([['sujet', 'fa-file-lines', 'Texte du sujet'], ['bareme', 'fa-list-check', 'Barème et réponses']] as const).map(([k, ic, lab]) => (
+                <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+                  style={{ border: '1.5px solid ' + (tab === k ? '#1d4ed8' : '#cbd5e1'), background: tab === k ? '#eff6ff' : '#fff', color: tab === k ? '#1d4ed8' : '#334155',
+                    borderRadius: 10, padding: '7px 14px', fontWeight: 700, fontSize: 14.5, cursor: 'pointer' }}>
+                  <i className={`fas ${ic}`} style={{ marginRight: 8 }} />{lab}
+                  {k === 'bareme' && gradingErrors > 0 && <span style={{ marginLeft: 8, background: '#b91c1c', color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 12.5 }}>{gradingErrors}</span>}
+                </button>
+              ))}
+            </div>
+            {tab === 'sujet' ? (<>
             <div style={{ fontSize: 13.5, color: '#475569', marginBottom: 8, lineHeight: 1.5 }}>
               Une question commence par son numéro (<b>1.</b>, <b>2.</b>…), ses propositions par <b>A.</b> <b>B.</b> <b>C.</b>. Un texte placé <b>avant</b> une question s&apos;affiche comme énoncé de sa partie ;
               une ligne « Partie B — … » ouvre une nouvelle partie.
@@ -143,17 +180,87 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
                   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: 14, lineHeight: `${LINE_H}px`, color: '#0f172a', background: canEdit ? '#fff' : '#f8fafc' }} />
             )}
             <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 6 }}>{lines.length} ligne(s){dirty ? ' · modifications non enregistrées' : ''}</div>
+            </>) : (
+              <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+                <div style={{ fontSize: 13.5, color: '#475569', marginBottom: 10, lineHeight: 1.5 }}>
+                  La <b>correction</b> lit la bonne réponse et les points ci-dessous. Une question sans bonne réponse n&apos;est <b>pas notée automatiquement</b>.
+                  Après avoir déplacé ou modifié des propositions, vérifiez la bonne réponse de la question.
+                </div>
+                {!check ? <div style={{ color: '#64748b' }}>Chargement…</div> : !check.grading ? <div style={{ color: '#b45309' }}>Le contrôle du barème n&apos;est pas disponible sur ce serveur.</div> : (
+                  <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '46px 1fr 190px 84px 28px', gap: 8, padding: '8px 10px', background: '#f1f5f9', fontWeight: 700, fontSize: 13, color: '#475569' }}>
+                      <span>N°</span><span>Question</span><span>Bonne réponse</span><span>Points</span><span />
+                    </div>
+                    {check.grading.rows.map(r => (
+                      <div key={r.num} style={{ display: 'grid', gridTemplateColumns: '46px 1fr 190px 84px 28px', gap: 8, alignItems: 'center', padding: '8px 10px', borderTop: '1px solid #e2e8f0',
+                        background: r.status === 'error' ? '#fef2f2' : r.status === 'warn' ? '#fffbeb' : '#fff' }}>
+                        <b style={{ color: '#0f172a' }}>Q{r.num}</b>
+                        <span style={{ fontSize: 13.5, color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.text}>{r.text.replace(/^Q\d+\.\s*/, '')}</span>
+                        <span>
+                          {r.kind === 'qcm' && (
+                            <select aria-label={`Bonne réponse de la question ${r.num}`} disabled={!canEdit} value={r.letters[0] || ''} onChange={e => edit(r.num, { letters: e.target.value ? [e.target.value] : [] })}
+                              style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid ' + (r.status === 'error' ? '#fca5a5' : '#cbd5e1'), fontSize: 14, background: '#fff' }}>
+                              <option value="">— choisir —</option>
+                              {r.choices.map(c => <option key={c.letter} value={c.letter}>{c.letter}. {c.text.slice(0, 40)}</option>)}
+                            </select>
+                          )}
+                          {r.kind === 'qcm_multi' && (
+                            <span style={{ display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
+                              {r.choices.map(c => (
+                                <label key={c.letter} style={{ fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                  <input type="checkbox" disabled={!canEdit} checked={r.letters.includes(c.letter)}
+                                    onChange={e => edit(r.num, { letters: e.target.checked ? [...r.letters, c.letter].sort() : r.letters.filter(x => x !== c.letter) })} />{c.letter}
+                                </label>
+                              ))}
+                            </span>
+                          )}
+                          {r.kind === 'vf' && (
+                            <select aria-label={`Réponse de la question ${r.num}`} disabled={!canEdit} value={r.value || ''} onChange={e => e.target.value && edit(r.num, { value: e.target.value })}
+                              style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid ' + (r.status === 'error' ? '#fca5a5' : '#cbd5e1'), fontSize: 14, background: '#fff' }}>
+                              <option value="">— choisir —</option><option value="Vrai">Vrai</option><option value="Faux">Faux</option>
+                            </select>
+                          )}
+                          {r.kind === 'auto' && <span style={{ fontSize: 13, color: '#64748b' }}>Réponse lue dans le barème</span>}
+                          {r.kind === 'ai' && <span style={{ fontSize: 13, color: '#64748b' }}>Corrigée par l&apos;IA</span>}
+                        </span>
+                        <input aria-label={`Points de la question ${r.num}`} inputMode="decimal" disabled={!canEdit}
+                          value={ptsRaw[r.num] ?? (r.points == null ? '' : String(r.points).replace('.', ','))} placeholder="—"
+                          onChange={e => setPtsRaw(p => ({ ...p, [r.num]: e.target.value }))} onBlur={() => commitPoints(r.num)}
+                          onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                          style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid ' + (r.points == null ? '#fca5a5' : '#cbd5e1'), fontSize: 14, textAlign: 'right', boxSizing: 'border-box' }} />
+                        <i className={`fas ${r.status === 'ok' ? 'fa-circle-check' : r.status === 'warn' ? 'fa-triangle-exclamation' : 'fa-circle-xmark'}`}
+                          style={{ color: r.status === 'ok' ? '#047857' : r.status === 'warn' ? '#d97706' : '#b91c1c' }} />
+                        {r.suggest && canEdit && (
+                          <button onClick={() => edit(r.num, { letters: [r.suggest as string] })}
+                            style={{ gridColumn: '2 / 6', justifySelf: 'start', background: '#fff', border: '1.5px solid #1d4ed8', color: '#1d4ed8', borderRadius: 8, padding: '4px 10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                            <i className="fas fa-wand-magic-sparkles" style={{ marginRight: 6 }} />La proposition a changé de place : mettre la bonne réponse sur {r.suggest}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <div style={{ padding: '9px 12px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', fontSize: 13.5, color: '#334155' }}>
+                      <b>Total : {String(check.grading.total_points).replace('.', ',')} points</b> (ramenés sur 20) · {check.grading.auto_count} question(s) corrigée(s) automatiquement · {check.grading.ai_count}{' '}par l&apos;IA
+                    </div>
+                  </div>
+                )}
+                <details style={{ marginTop: 14 }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: 700, color: '#1d4ed8', fontSize: 14.5 }}>Modifier le texte du barème (avancé)</summary>
+                  <textarea value={rubric} readOnly={!canEdit} onChange={e => setRubric(e.target.value)} aria-label="Texte du barème" spellCheck={false}
+                    style={{ width: '100%', boxSizing: 'border-box', minHeight: 220, marginTop: 8, border: '1.5px solid #cbd5e1', borderRadius: 10, padding: 12, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: 13.5, lineHeight: '20px', color: '#0f172a' }} />
+                </details>
+              </div>
+            )}
           </div>
 
           <div style={{ flex: '1 1 340px', minWidth: 0, overflowY: 'auto', padding: 16, background: '#f8fafc' }}>
             <div style={{ fontWeight: 800, fontSize: 15.5, color: '#0f172a', marginBottom: 10 }}>
-              Ce que verront les étudiants {checking && <i className="fas fa-spinner fa-spin" style={{ color: '#94a3b8', marginLeft: 6 }} />}
+              Contrôle : affichage et correction {checking && <i className="fas fa-spinner fa-spin" style={{ color: '#94a3b8', marginLeft: 6 }} />}
             </div>
             {!check ? <div style={{ color: '#64748b', fontSize: 14 }}>Contrôle en cours…</div> : (
               <>
                 <div style={{ background: toneBg, border: `1.5px solid ${tone}33`, color: tone, borderRadius: 12, padding: '12px 14px', fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
                   <i className={`fas ${good ? 'fa-circle-check' : errors.length ? 'fa-circle-xmark' : 'fa-triangle-exclamation'}`} style={{ marginRight: 8 }} />
-                  {check.questions} question{check.questions > 1 ? 's' : ''} lue{check.questions > 1 ? 's' : ''}
+                  {check.questions} question{check.questions > 1 ? 's' : ''} lue{check.questions > 1 ? 's' : ''} par les étudiants
                   {good ? ' — rien ne manque.' : errors.length ? ' — à corriger avant l’examen.' : ' — à vérifier.'}
                   <div style={{ fontWeight: 500, fontSize: 13, marginTop: 4, color: '#475569' }}>
                     {Object.entries(check.by_type).map(([t, n]) => `${n} ${TYPE_LABEL[t] || t}`).join(' · ')}
