@@ -22,6 +22,7 @@ const PUBLIC_PATHS = new Set([
 const PUBLIC_PREFIXES = [
   '/_next/',
   '/fontawesome/',
+  '/fonts/',
   '/static/',
   '/screenshots/',  // captures d'écran produit sur la page d'accueil publique
   '/icons/',        // icônes PWA (manifest.json) — doivent rester accessibles sans authentification
@@ -70,6 +71,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon|fontawesome|screenshots|icons|sw\\.js|manifest\\.json).*)',
+    '/((?!_next/static|_next/image|favicon|fontawesome|fonts|screenshots|icons|sw\\.js|manifest\\.json).*)',
   ],
 }

@@ -108,6 +108,8 @@ export type AttemptStatus = 'in_progress' | 'submitted' | 'banned' | 'auto_submi
 export interface OnlineExam {
   /** Date à laquelle l'enseignant a validé l'affichage du sujet dans « Prévisualiser » (null : pas encore validé). */
   subject_validated_at?: string | null
+  /** Examen réservé aux étudiants inscrits à l'UE de l'EC (vrai par défaut). */
+  restrict_to_enrolled?: boolean
   id: number
   subject_id?: number
   subject_title?: string

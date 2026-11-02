@@ -148,6 +148,7 @@ export default function ExamSettingsModal({ examId, onClose, onSaved }: {
             </div>)}
 
             {card('Surveillance', 'fa-shield-halved', <>
+              {row('restrict_to_enrolled', 'Réserver l\'examen aux étudiants inscrits à l\'UE', 'Coché (recommandé) : seuls les étudiants inscrits à l\'UE de cet EC voient et peuvent démarrer l\'examen, même avec le lien direct. Décochez seulement pour un examen ouvert à d\'autres étudiants.')}
               {row('auto_ban_enabled', 'Bannissement automatique', 'Désactivé : un seuil atteint envoie une alerte au lieu d\'exclure automatiquement')}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, margin: '8px 0' }}>
                 {field('max_tab_switches', 'Seuil — changements de fenêtre', numField('max_tab_switches', 0, 50), '0 = aucun toléré')}
