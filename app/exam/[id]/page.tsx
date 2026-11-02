@@ -59,6 +59,8 @@ interface ParsedBlock {
   extraLines?: string[]; choices?: { letter: string; text: string }[]
   pairs?: { left: string; right: string }[]
   media?: { type: 'image' | 'audio' | 'video'; filename: string }[]
+  /** Titre et énoncé de la partie à laquelle appartient la question (« Partie A — … », « On utilise les variables… »). */
+  context?: { title: string; text: string }
 }
 type Phase = 'loading' | 'instructions' | 'permissions' | 'env_scan' | 'exam' | 'submitted' | 'unsupported' | 'client_required'
 interface PreviewResult {
@@ -317,7 +319,10 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
   // la ligne se collait aux lignes annexes de la question précédente
   // (garbled overlap constaté : "Vrai / Faux" + "Partie — Appariement…"
   // affichés l'un sur l'autre dans le même bloc de question).
-  const isSect = (l: string) => /^(?:Partie|Section|Exercice|Part)\s+(?:[IVX]+\b|\d+\b|[-–—:])/i.test(strip(l)) && !isQ(l)
+  // « Partie A », « Partie B — … » : lettre MAJUSCULE seule (jamais « Partie de … »)
+  const isSect = (l: string) => (/^(?:Partie|Section|Exercice|Part)\s+(?:[IVX]+\b|\d+\b|[-–—:])/i.test(strip(l)) || /^(?:Partie|Section|Exercice|Part)\s+[A-Z]\b(?![’'a-zà-ÿ])/.test(strip(l))) && !isQ(l)
+  // Lignes qui ne sont jamais un énoncé : en-tête de fichier, médias, marqueurs seuls
+  const isNoise = (l: string) => { const t = l.trim(); return !t || /^[-=*─═▬]{3,}$/.test(t) || /^\[(IMAGE|AUDIO|VIDEO):.+\]$/i.test(t) || /^---.*---$/.test(t) || /^\[[A-Za-zÉé_ ]+\]$/.test(t) }
   const INSTR_RE = /^(?:Défini[rz]|Expliqu[eé][rz]?|Décri[vz]|Analys[eé][rz]?|Calcul[eé][rz]?|Rédig[eé][rz]?|Démontr[eé][rz]?|Comment[eé][rz]?|Identifi[eé][rz]?|Justifi[eé][rz]?|Compar[eé][rz]?|Présent[eé][rz]?|Discut[eé][rz]?|Montr[eé][rz]?|Propos[eé][rz]?|Cit[eé][rz]?|Donner?)/i
 
   const lines = raw.split('\n')
@@ -326,6 +331,18 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
   const preamble: string[] = []
   while (i < lines.length && !isQ(lines[i])) { preamble.push(lines[i]); i++ }
   if (preamble.join('').trim()) blocks.push({ type: 'text', content: preamble.join('\n') })
+  // Énoncé d'une partie : rattaché à chaque question de la partie (champ `context`), comme le lecteur du serveur.
+  let ctxTitle = '', ctxText: string[] = [], pending: string[] = []
+  const lastSectIdx = (() => { let k = -1; preamble.forEach((l, j) => { if (isSect(l)) k = j }); return k })()
+  if (lastSectIdx >= 0) {
+    ctxTitle = strip(preamble[lastSectIdx])
+    pending = preamble.slice(lastSectIdx + 1).filter(l => !isNoise(l)).map(l => l.replace(/\s+$/, ''))
+  } else {
+    let para: string[] = [], lastPara: string[] = []
+    for (const l of preamble) { if (l.trim()) para.push(l.replace(/\s+$/, '')); else if (para.length) { lastPara = para; para = [] } }
+    para = (para.length ? para : lastPara).filter(l => !isNoise(l))
+    if (para.join(' ').length >= 40) pending = para
+  }
 
   while (i < lines.length) {
     const dm = lines[i].match(DESC_RE)
@@ -335,9 +352,9 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       blocks.push({ type: 'description', title: dm[1].trim(), text: body.join('\n').trim() })
       continue
     }
-    if (isSect(lines[i])) { blocks.push({ type: 'section', title: strip(lines[i]) }); i++; continue }
+    if (isSect(lines[i])) { blocks.push({ type: 'section', title: strip(lines[i]) }); ctxTitle = strip(lines[i]); ctxText = []; pending = []; i++; continue }
     if (isSep(lines[i]) && !isQ(lines[i])) { i++; continue }
-    if (!isQ(lines[i])) { i++; continue }
+    if (!isQ(lines[i])) { if (!isNoise(lines[i])) pending.push(lines[i].replace(/\s+$/, '')); i++; continue }
     const q = getQ(lines[i]); if (!q) { i++; continue }
     const isPairMode = q.markerType === 'APPARIEMENT'
     const isGrid = !!q.markerType && GRID.includes(q.markerType)
@@ -453,6 +470,8 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       }
       blk.choices = []
     }
+    if (pending.length) { ctxText = pending; pending = [] }
+    if (ctxTitle || ctxText.length) blk.context = { title: ctxTitle, text: ctxText.join('\n').trim() }
     blocks.push(blk)
   }
   return blocks
@@ -4183,7 +4202,7 @@ export default function ExamPage() {
                           </div>
                         </div>
                       )}
-                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={setAnswers} onAnswer={checkAutoAdvance} attemptId={attemptRef.current} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>)}
+                      {(p1Pages[qcmIdx]??p1Blocks).map((b,i,arr)=><PQC key={i} prev={arr[i-1]} block={b} answers={answers} setAnswers={setAnswers} onAnswer={checkAutoAdvance} attemptId={attemptRef.current} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>)}
                       {p1Pages.length<=1&&p2Blocks.length>0&&(
                         <button onClick={confirmAndLockQcm} style={{marginTop:8,background:'#10b981',border:'none',color:'#fff',borderRadius:8,padding:'10px 18px',cursor:'pointer',fontSize:15.5,fontWeight:600}}>
                           <i className="fas fa-arrow-right"/> Passer aux questions ouvertes
@@ -4202,13 +4221,13 @@ export default function ExamPage() {
                           {p1Blocks.length>0&&<div style={{fontSize:13,color:'#059669',marginTop:4}}><i className="fas fa-lock" style={{marginRight:4}}/>Partie QCM terminée — retour impossible</div>}
                         </div>
                       </div>
-                      {(p2Pages[p2PageIdx]??p2Items).map((b,i)=>{
+                      {(p2Pages[p2PageIdx]??p2Items).map((b,i,arr)=>{
                         if(b.type==='description') return <div key={i} style={{margin:'6px 0 16px',padding:'18px 22px',background:'#fffbeb',border:'1.5px solid #fde68a',borderRadius:14,color:'#1e293b'}}>
                           {b.title&&<div style={{fontWeight:800,fontSize:18,color:'#92400e',marginBottom:8}}><i className="fas fa-file-alt" style={{marginRight:8}}/>{b.title}</div>}
                           {(b.text??'').split(/\n+/).filter(l=>l.trim()).map((l,li)=><p key={li} style={{margin:li?'8px 0 0':0,fontSize:17,lineHeight:1.65}}>{l}</p>)}
                         </div>
                         if(b.type==='section') return <div key={i} style={{margin:'18px 0 10px',padding:'10px 16px',background:'#f1f5f9',borderRadius:8,fontWeight:700,fontSize:17,color:'#334155',borderLeft:'4px solid #94a3b8'}}><i className="fas fa-layer-group" style={{color:'#64748b',marginRight:8}}/>{b.title}</div>
-                        return <PQ key={i} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>
+                        return <PQC key={i} prev={arr[i-1]} block={b} answers={answers} setAnswers={setAnswers} attemptId={attemptRef.current} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>
                       })}
                       {p2Pages.length>1&&(
                         <div style={{display:'flex',alignItems:'center',gap:10,marginTop:16}}>
@@ -4315,7 +4334,7 @@ export default function ExamPage() {
                 {structuredQs.length>0 ? (
                   structuredQs.map((q,i)=><SQ key={q.id} q={q} idx={i} answers={answers} setAnswers={()=>{}}/>)
                 ) : hasParsed ? (
-                  allQBlocks.map((b,i)=><PQ key={i} block={b} answers={answers} setAnswers={()=>{}} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>)
+                  allQBlocks.map((b,i,arr)=><PQC key={i} prev={arr[i-1]} block={b} answers={answers} setAnswers={()=>{}} mediaMap={mediaMap} blockDownload={!exam.enable_file_download}/>)
                 ) : (
                   <p style={{color:'#94a3b8',fontSize:15.5}}>Aucune question détectée.</p>
                 )}
@@ -4557,6 +4576,24 @@ function AttachmentBox({ attemptId, num, answers, setAnswers, required }: {
 const plain = (t: string) => (t ?? '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/(^|[^*\w])\*(?!\s)([^*\n]+?)\*(?![*\w])/g, '$1$2').replace(/`([^`\n]+)`/g, '$1')
 
 /* Question parsée (contenu brut) */
+/* Énoncé de la partie (« Partie A — … », « On utilise les variables… ») affiché au-dessus de la première question qui en dépend sur la page :
+   les questions QCM sont listées seules (et parfois mélangées), l'énoncé voyage donc avec chacune d'elles et n'est montré qu'une fois par suite. */
+function PQC(props: React.ComponentProps<typeof PQ> & { prev?: ParsedBlock }) {
+  const { prev, ...rest } = props
+  const c = props.block.context
+  const key = (x?: ParsedBlock) => (x?.context ? `${x.context.title}|${x.context.text}` : '')
+  const isP1 = P1_TYPES.includes(props.block.type)
+  const showTitle = isP1 && !!c?.title                       // en partie rédaction, le titre est déjà affiché par l'en-tête de section
+  const show = !!c && (showTitle || !!c.text) && key(props.block) !== key(prev)
+  return (<>
+    {show && c && <div style={{margin:'18px 0 14px',padding:'16px 20px',background:'#f8fafc',border:'1.5px solid #cbd5e1',borderRadius:14,color:'#1e293b'}}>
+      {showTitle&&<div style={{fontWeight:800,fontSize:18,color:'#334155',marginBottom:c.text?8:0}}><i className="fas fa-layer-group" style={{color:'#64748b',marginRight:8}}/>{c.title}</div>}
+      {c.text.split(/\n+/).filter(l=>l.trim()).map((l,li)=><p key={li} style={{margin:li?'6px 0 0':0,fontSize:17,lineHeight:1.65}}>{l}</p>)}
+    </div>}
+    <PQ {...rest}/>
+  </>)
+}
+
 function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}:{attemptId?:number|null;block:ParsedBlock;answers:Record<string,string>;setAnswers:React.Dispatch<React.SetStateAction<Record<string,string>>>;onAnswer?:(key:string,blockType:string)=>void;mediaMap?:Record<string,string>;blockDownload?:boolean}) {
   const isOpen=block.type==='open'||block.type==='subopen'||block.type==='code'
   const key=`pq_${block.num}`
