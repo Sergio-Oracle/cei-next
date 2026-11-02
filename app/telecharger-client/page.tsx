@@ -5,7 +5,7 @@ import Link from 'next/link'
 interface Release { name: string; platform: string; arch?: string; kind?: string; label: string; size: number; sha256: string; url: string }
 interface Releases { version: string | null; files: Release[]; notes?: string }
 type Os = 'win32' | 'darwin' | 'linux' | 'mobile' | 'other'
-interface Detected { os: Os; arch: 'x64' | 'arm64' | 'unknown'; label: string }
+interface Detected { os: Os; arch: 'x64' | 'arm64' | 'unknown'; label: string; edge: boolean }
 
 const OS_LABEL: Record<Os, string> = { win32: 'Windows', darwin: 'macOS', linux: 'Linux', mobile: 'un téléphone ou une tablette', other: 'votre système' }
 const mb = (n: number) => `${(n / 1048576).toFixed(0)} Mo`
@@ -28,12 +28,16 @@ async function detect(): Promise<Detected> {
     else if (/x86_64|win64|x64|amd64|intel/i.test(ua)) arch = 'x64'
   } catch { /* navigateur sans indice d'architecture : on propose la version générale */ }
   const archTxt = arch === 'arm64' ? (os === 'darwin' ? ' (Apple Silicon)' : ' (ARM 64 bits)') : arch === 'x64' ? (os === 'darwin' ? ' (Intel)' : ' (64 bits)') : ''
-  return { os, arch, label: OS_LABEL[os] + archTxt }
+  const edge = /\bEdg(e|A|iOS)?\//.test(ua)           // Microsoft Edge : son filtre SmartScreen retient les .exe peu connus (voir « installer-zip »)
+  return { os, arch, label: OS_LABEL[os] + archTxt, edge }
 }
 
 /** Meilleure version pour ce poste : même système ; même architecture ou version universelle ; sinon (Windows ARM) la version 64 bits Intel-AMD, qui s'y exécute. */
 function pick(files: Release[], d: Detected): { file?: Release; note?: string } {
-  const rank = (f: Release) => (f.kind === 'installer' ? 0 : f.kind === 'portable' ? 1 : 2)          // installateur d'abord, archive en dernier recours
+  // Installateur d'abord, archive en dernier recours. Le ZIP contenant l'installateur n'est proposé d'office qu'à Edge :
+  // Edge retient le .exe (« n'est pas fréquemment téléchargé ») mais laisse passer une archive.
+  const zipFirst = d.os === 'win32' && d.edge
+  const rank = (f: Release) => (f.kind === 'installer-zip' ? (zipFirst ? -1 : 3) : f.kind === 'installer' ? 0 : f.kind === 'portable' ? 1 : 2)
   const same = files.filter(f => f.platform === d.os).sort((a, b) => rank(a) - rank(b))
   if (!same.length) return {}
   const exact = same.find(f => f.arch === d.arch) || same.find(f => f.arch === 'universal')
@@ -99,7 +103,7 @@ export default function DownloadClientPage() {
                   </span>
                 </a>
                 {choice.note && <div style={{ fontSize: 14.5, color: '#92400e', marginBottom: 8 }}>{choice.note}</div>}
-                <div style={{ fontSize: 14.5, color: '#475569', lineHeight: 1.7 }}><b>Configuration requise :</b> {REQ[det.os]}.<br /><b>Installation :</b> {det.os === 'win32' && choice.file.kind === 'archive' ? "Extrayez l'archive ZIP (clic droit, Extraire tout), puis lancez « CEI Examen.exe ». Si l'écran « Windows a protégé votre ordinateur » apparaît : Informations complémentaires, puis Exécuter quand même." : HOWTO[det.os]}</div>
+                <div style={{ fontSize: 14.5, color: '#475569', lineHeight: 1.7 }}><b>Configuration requise :</b> {REQ[det.os]}.<br /><b>Installation :</b> {det.os === 'win32' && choice.file.kind === 'installer-zip' ? "Faites un clic droit sur le fichier ZIP téléchargé, puis Extraire tout, puis double-cliquez sur « Installer CEI Examen » et suivez l'assistant (aucun droit administrateur requis) : l'application apparaît sur le Bureau et dans le menu Démarrer. Si l'écran « Windows a protégé votre ordinateur » apparaît : Informations complémentaires, puis Exécuter quand même." : det.os === 'win32' && choice.file.kind === 'archive' ? "Extrayez l'archive ZIP (clic droit, Extraire tout), puis lancez « CEI Examen.exe ». Si l'écran « Windows a protégé votre ordinateur » apparaît : Informations complémentaires, puis Exécuter quand même." : HOWTO[det.os]}</div>
               </>
             ) : (
               <div style={{ color: '#334155', lineHeight: 1.7 }}>
