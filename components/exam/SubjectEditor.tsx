@@ -156,8 +156,10 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
           </div>
         )}
 
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 560px', minWidth: 0, display: 'flex', flexDirection: 'column', padding: 16, borderRight: '1px solid #e2e8f0' }}>
+        {/* Corps : deux colonnes qui défilent chacune dans la hauteur de la fenêtre (sur petit écran : une colonne, le corps défile) */}
+        <style>{`@media (max-width: 900px){ .se-body{flex-direction:column!important;overflow-y:auto!important} .se-body>div{flex:none!important;overflow:visible!important;border-right:none!important} .se-scroll{overflow:visible!important} }`}</style>
+        <div className="se-body" style={{ flex: 1, minHeight: 0, display: 'flex', flexWrap: 'nowrap', overflow: 'hidden' }}>
+          <div style={{ flex: '1 1 60%', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', padding: 16, borderRight: '1px solid #e2e8f0', overflow: 'hidden' }}>
             <div role="tablist" style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
               {([['sujet', 'fa-file-lines', 'Texte du sujet'], ['bareme', 'fa-list-check', 'Barème et réponses']] as const).map(([k, ic, lab]) => (
                 <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
@@ -181,14 +183,14 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
             )}
             <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 6 }}>{lines.length} ligne(s){dirty ? ' · modifications non enregistrées' : ''}</div>
             </>) : (
-              <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+              <div className="se-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
                 <div style={{ fontSize: 13.5, color: '#475569', marginBottom: 10, lineHeight: 1.5 }}>
                   La <b>correction</b> lit la bonne réponse et les points ci-dessous. Une question sans bonne réponse n&apos;est <b>pas notée automatiquement</b>.
                   Après avoir déplacé ou modifié des propositions, vérifiez la bonne réponse de la question.
                 </div>
                 {!check ? <div style={{ color: '#64748b' }}>Chargement…</div> : !check.grading ? <div style={{ color: '#b45309' }}>Le contrôle du barème n&apos;est pas disponible sur ce serveur.</div> : (
-                  <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '46px 1fr 190px 84px 28px', gap: 8, padding: '8px 10px', background: '#f1f5f9', fontWeight: 700, fontSize: 13, color: '#475569' }}>
+                  <div style={{ border: '1px solid #e2e8f0', borderRadius: 10 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '46px 1fr 190px 84px 28px', gap: 8, padding: '8px 10px', background: '#f1f5f9', fontWeight: 700, fontSize: 13, color: '#475569', position: 'sticky', top: 0, zIndex: 2 }}>
                       <span>N°</span><span>Question</span><span>Bonne réponse</span><span>Points</span><span />
                     </div>
                     {check.grading.rows.map(r => (
@@ -252,7 +254,7 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
             )}
           </div>
 
-          <div style={{ flex: '1 1 340px', minWidth: 0, overflowY: 'auto', padding: 16, background: '#f8fafc' }}>
+          <div style={{ flex: '1 1 40%', minWidth: 300, minHeight: 0, overflowY: 'auto', padding: 16, background: '#f8fafc' }}>
             <div style={{ fontWeight: 800, fontSize: 15.5, color: '#0f172a', marginBottom: 10 }}>
               Contrôle : affichage et correction {checking && <i className="fas fa-spinner fa-spin" style={{ color: '#94a3b8', marginLeft: 6 }} />}
             </div>
