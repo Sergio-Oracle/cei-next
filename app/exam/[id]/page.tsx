@@ -570,6 +570,9 @@ export default function ExamPage() {
   const saveRetryTimerRef = useRef<ReturnType<typeof setTimeout>|null>(null)
   const submitRetryTimerRef = useRef<ReturnType<typeof setTimeout>|null>(null)
   const mainCamTrackRef = useRef<any>(null)
+  // Plafonds d'encodage d'origine de la caméra publiée, par couche simulcast
+  // (rid) — permet de les réduire/rétablir à chaud sans republier la piste.
+  const camEncBaseRef = useRef<Map<string,{maxBitrate?:number;maxFramerate?:number}>>(new Map())
   const mainScreenTrackRef = useRef<any>(null)
 
   /* ── Surveillance renforcée par vision par ordinateur (MediaPipe) ────────
@@ -1257,10 +1260,19 @@ export default function ExamPage() {
     if (phase !== 'exam') return
     const conn = (navigator as any).connection
     if (!conn) return // API absente (Firefox/Safari) — comportement normal, pas de dégradation possible à détecter
+    let lastSwitch = 0
     function evaluate() {
-      const poor = conn.downlink < 0.5 || ['slow-2g','2g'].includes(conn.effectiveType) || !!conn.saveData
+      // Hystérésis : l'estimation de débit du navigateur oscille souvent
+      // autour du seuil sur les réseaux mobiles ; sans cela le mode basculait
+      // en permanence. Retour au mode normal seulement au-dessus de 0,8 Mb/s
+      // et au plus un changement toutes les 20 s.
+      const flagsPoor = ['slow-2g','2g'].includes(conn.effectiveType) || !!conn.saveData
+      const wasPoor = networkQualityRef.current === 'poor'
+      const poor = flagsPoor || (wasPoor ? conn.downlink < 0.8 : conn.downlink < 0.5)
       const next: 'good'|'poor' = poor ? 'poor' : 'good'
       if (next === networkQualityRef.current) return
+      if (Date.now() - lastSwitch < 20_000 && lastSwitch !== 0) return
+      lastSwitch = Date.now()
       networkQualityRef.current = next
       setNetworkQuality(next)
       const aId = attemptRef.current
@@ -1274,7 +1286,10 @@ export default function ExamPage() {
     }
     evaluate()
     conn.addEventListener?.('change', evaluate)
-    return () => conn.removeEventListener?.('change', evaluate)
+    // Réévaluation périodique : un changement ignoré par le délai de 20 s
+    // ci-dessus serait sinon pris en compte seulement au prochain événement.
+    const iv = setInterval(evaluate, 10_000)
+    return () => { conn.removeEventListener?.('change', evaluate); clearInterval(iv) }
   }, [phase]) // eslint-disable-line
 
   /* ── Démarrer ─────────────────────────────────────────────────────────── */
@@ -2103,9 +2118,65 @@ export default function ExamPage() {
   function initLiveKit(aId:number) {
     if(typeof window==='undefined') return
     if(window.LivekitClient){connectLiveKit(aId);return}
-    const s=document.createElement('script')
-    s.src='https://cdn.jsdelivr.net/npm/livekit-client@2.5.7/dist/livekit-client.umd.min.js'
-    s.crossOrigin='anonymous'; s.onload=()=>connectLiveKit(aId); document.head.appendChild(s)
+    // Un seul CDN auparavant : s'il était lent ou bloqué sur le réseau de
+    // l'étudiant, il n'y avait aucune surveillance vidéo, sans aucun message.
+    const SOURCES=[
+      'https://cdn.jsdelivr.net/npm/livekit-client@2.5.7/dist/livekit-client.umd.min.js',
+      'https://unpkg.com/livekit-client@2.5.7/dist/livekit-client.umd.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/livekit-client/2.5.7/livekit-client.umd.min.js',
+    ]
+    const load=(i:number)=>{
+      if(i>=SOURCES.length){console.warn('[LiveKit] client indisponible (3 sources)');return}
+      const s=document.createElement('script')
+      s.src=SOURCES[i]; s.crossOrigin='anonymous'
+      s.onload=()=>connectLiveKit(aId)
+      s.onerror=()=>{s.remove();load(i+1)}
+      document.head.appendChild(s)
+    }
+    load(0)
+  }
+
+  /* Options de publication de la caméra. Toujours en simulcast (3 couches,
+     dont une très légère 160x120) : le serveur choisit pour chaque
+     surveillant la couche que SA connexion supporte, et l'étudiant
+     n'envoie que les couches réellement regardées (dynacast). Avant, le mode
+     « connexion lente » coupait le simulcast et envoyait un seul flux 640x480
+     bridé à 100 kb/s : image floue ET aucune couche de repli. */
+  function camPublishOptions(LK:any){
+    const opts:any={simulcast:true,videoEncoding:{maxBitrate:300_000,maxFramerate:15}}
+    if(LK.VideoPreset){
+      opts.videoSimulcastLayers=[new LK.VideoPreset(160,120,60_000,10),new LK.VideoPreset(320,240,150_000,12)]
+    }
+    return opts
+  }
+
+  /* Réduit / rétablit à chaud les plafonds de débit et d'images/s de toutes
+     les couches de la caméra, sans dépublier la piste. L'ancienne méthode
+     (dépublier puis republier) faisait disparaître le flux pendant quelques
+     secondes chez le surveillant à chaque oscillation du réseau — écran noir
+     « Flux vidéo ». Renvoie false si l'ajustement à chaud n'est pas possible. */
+  async function tuneCamEncoding(low:boolean):Promise<boolean>{
+    const vt:any=mainCamTrackRef.current
+    const sender:RTCRtpSender|undefined=vt?.sender
+    if(!sender) return false
+    try{
+      const params=sender.getParameters()
+      if(!params.encodings?.length) return false
+      params.encodings.forEach((enc:any,i:number)=>{
+        const key=enc.rid||String(i)
+        if(!camEncBaseRef.current.has(key)) camEncBaseRef.current.set(key,{maxBitrate:enc.maxBitrate,maxFramerate:enc.maxFramerate})
+        const base=camEncBaseRef.current.get(key)!
+        if(low){
+          if(base.maxBitrate) enc.maxBitrate=Math.max(25_000,Math.round(base.maxBitrate*0.4))
+          enc.maxFramerate=Math.min(base.maxFramerate||15,6)
+        } else {
+          if(base.maxBitrate) enc.maxBitrate=base.maxBitrate; else delete enc.maxBitrate
+          if(base.maxFramerate) enc.maxFramerate=base.maxFramerate; else delete enc.maxFramerate
+        }
+      })
+      await sender.setParameters(params)
+      return true
+    }catch(e){console.warn('[LiveKit] ajustement à chaud du débit impossible:',e); return false}
   }
 
   /* Publie (ou republie) caméra/micro/écran sur la salle. Doit être
@@ -2122,8 +2193,10 @@ export default function ExamPage() {
     if(camTracks?.length){
       try{
         const vt=new LK.LocalVideoTrack(camTracks[0].clone(),undefined,false)
-        await room.localParticipant.publishTrack(vt,{simulcast:!low,videoEncoding:low?{maxBitrate:100_000,maxFramerate:8}:{maxBitrate:300_000,maxFramerate:15}})
+        await room.localParticipant.publishTrack(vt,camPublishOptions(LK))
         mainCamTrackRef.current=vt
+        camEncBaseRef.current=new Map()
+        if(low) tuneCamEncoding(true)
       }
       catch(e){console.warn('[LiveKit] échec publication caméra:',e)}
     }
@@ -2152,14 +2225,19 @@ export default function ExamPage() {
     const room=lkRoomRef.current; const LK=(window as any).LivekitClient
     if(!room||!LK||!mainCamTrackRef.current) return
     const low=networkQualityRef.current==='poor'
+    // Voie normale : ajustement à chaud, le flux ne s'interrompt jamais.
+    if(await tuneCamEncoding(low)) return
+    // Repli (navigateur sans accès à l'expéditeur RTP) : republication.
     try{ await room.localParticipant.unpublishTrack(mainCamTrackRef.current); mainCamTrackRef.current.stop() }catch{}
     mainCamTrackRef.current=null
     const camTracks=camStream.current?.getVideoTracks()
     if(!camTracks?.length) return
     try{
       const vt=new LK.LocalVideoTrack(camTracks[0].clone(),undefined,false)
-      await room.localParticipant.publishTrack(vt,{simulcast:!low,videoEncoding:low?{maxBitrate:100_000,maxFramerate:8}:{maxBitrate:300_000,maxFramerate:15}})
+      await room.localParticipant.publishTrack(vt,camPublishOptions(LK))
       mainCamTrackRef.current=vt
+      camEncBaseRef.current=new Map()
+      if(low) tuneCamEncoding(true)
     }catch(e){console.warn('[LiveKit] échec republication adaptative caméra:',e)}
   }
 

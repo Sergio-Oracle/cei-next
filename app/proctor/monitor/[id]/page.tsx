@@ -250,6 +250,11 @@ export default function ProctorMonitorPage() {
   // au risque de geler l'onglet. Grille limitée à VIDEO_PAGE_SIZE tuiles.
   const [videoPage,  setVideoPage]   = useState(0)
   useEffect(() => { setVideoPage(0) }, [search, filter])
+  // Compteur incrémenté à chaque piste vidéo reçue/perdue : sert de
+  // déclencheur au ré-attachement des <video> des tuiles affichées (voir
+  // l'effet « attache les vidéos des tuiles visibles » plus bas).
+  const [trackTick, setTrackTick] = useState(0)
+  const bumpTracks = useCallback(() => setTrackTick(t => t + 1), [])
   const [camOn,      setCamOn]      = useState(false)
   const [micOn,      setMicOn]      = useState(false)
   const [recording,  setRecording]  = useState(false)
@@ -352,6 +357,7 @@ export default function ProctorMonitorPage() {
 
   /* LiveKit */
   const roomRef         = useRef<any>(null)
+  const reconnectLKRef  = useRef<() => void>(() => {})
   const videoTracksRef  = useRef<Map<string, any>>(new Map())
   const screenTracksRef = useRef<Map<string, any>>(new Map())
   const [proctorStatus, setProctorStatus] = useState<Map<string, {online:boolean;camOn:boolean;micOn:boolean}>>(new Map())
@@ -484,7 +490,9 @@ export default function ProctorMonitorPage() {
       if (agentPoll.current) clearInterval(agentPoll.current)
       clearInterval(msgPoll)
       clearInterval(bellPoll)
-      roomRef.current?.disconnect()
+      const lkRoom = roomRef.current
+      roomRef.current = null // évite la reconnexion automatique après démontage
+      lkRoom?.disconnect()
       privateRoomRef.current?.disconnect()
     }
   }, []) // eslint-disable-line
@@ -597,29 +605,60 @@ export default function ProctorMonitorPage() {
 
   useEffect(() => {
     let scriptEl: HTMLScriptElement | null = null
-    function initLK() {
-      if (typeof window === 'undefined') return
-      if (!window.LivekitClient) {
-        scriptEl = document.createElement('script')
-        scriptEl.src = 'https://cdn.jsdelivr.net/npm/livekit-client@2.5.7/dist/livekit-client.umd.min.js'
-        scriptEl.crossOrigin = 'anonymous'
-        scriptEl.onload = () => connectLK()
-        document.head.appendChild(scriptEl)
-      } else {
-        connectLK()
+    let cancelled = false
+    // Le client LiveKit était chargé depuis un seul CDN : s'il était lent ou
+    // bloqué sur le réseau du surveillant, aucune vidéo ne s'affichait,
+    // jamais, sans message. Sources de secours essayées dans l'ordre.
+    const SOURCES = [
+      'https://cdn.jsdelivr.net/npm/livekit-client@2.5.7/dist/livekit-client.umd.min.js',
+      'https://unpkg.com/livekit-client@2.5.7/dist/livekit-client.umd.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/livekit-client/2.5.7/livekit-client.umd.min.js',
+    ]
+    function loadScript(i: number) {
+      if (cancelled) return
+      if (i >= SOURCES.length) { console.warn('LiveKit client : aucune source disponible'); return }
+      scriptEl?.remove()
+      scriptEl = document.createElement('script')
+      scriptEl.src = SOURCES[i]
+      scriptEl.crossOrigin = 'anonymous'
+      scriptEl.onload = () => connectLKWithRetry()
+      scriptEl.onerror = () => loadScript(i + 1)
+      document.head.appendChild(scriptEl)
+    }
+    // Une seule tentative de connexion jusqu'ici : un échec réseau
+    // ponctuel laissait la grille noire pour toute la séance.
+    async function connectLKWithRetry() {
+      for (let attempt = 0; attempt < 6 && !cancelled; attempt++) {
+        const ok = await connectLK()
+        if (ok || cancelled) return
+        await new Promise(r => setTimeout(r, Math.min(2000 * Math.pow(1.6, attempt), 15000)))
       }
     }
-    initLK()
-    return () => { if (scriptEl) scriptEl.remove() }
+    reconnectLKRef.current = () => { if (window.LivekitClient) connectLKWithRetry() }
+    if (typeof window !== 'undefined') {
+      if (window.LivekitClient) connectLKWithRetry(); else loadScript(0)
+    }
+    return () => { cancelled = true; if (scriptEl) scriptEl.remove() }
   }, [id]) // eslint-disable-line
 
-  async function connectLK() {
+  async function connectLK(): Promise<boolean> {
     try {
       const tok = await api.get<{ ws_url: string; token: string }>(`/api/online_exams/${id}/proctor_token`)
-      if (!tok.ws_url || !tok.token) return
+      if (!tok.ws_url || !tok.token) return false
       const LK   = window.LivekitClient
+      // Ferme une éventuelle ancienne salle (reconnexion complète) avant d'en
+      // ouvrir une nouvelle, sinon deux salles se disputeraient les tuiles.
+      const oldRoom = roomRef.current
+      roomRef.current = null
+      try { oldRoom?.disconnect() } catch {}
       const room = new LK.Room({ adaptiveStream: true, dynacast: true })
       roomRef.current = room
+      // Perte définitive de la salle (le client LiveKit retente seul en
+      // premier) : on se reconnecte au lieu de laisser la grille figée.
+      room.on(LK.RoomEvent.Disconnected, () => {
+        if (roomRef.current !== room) return
+        setTimeout(() => { if (roomRef.current === room) reconnectLKRef.current() }, 3000)
+      })
 
       // Alertes en direct (bruit prolongé, changement d'onglet/focus,
       // plusieurs écrans) diffusées par la page d'examen de l'étudiant sur
@@ -670,6 +709,7 @@ export default function ProctorMonitorPage() {
             videoTracksRef.current.set(identity, track)
             setPhoneLiveSet(prev => new Set(prev).add(baseIdentity))
             setTimeout(() => attachVideo(identity, track), 50)
+            bumpTracks()
           }
           return
         }
@@ -686,6 +726,7 @@ export default function ProctorMonitorPage() {
               if (s) setTimeout(() => attachVideo(identity, track), 50)
               return prev
             })
+            bumpTracks()
           }
         }
       })
@@ -722,6 +763,7 @@ export default function ProctorMonitorPage() {
             const ph = document.getElementById(`ph-${identity}`)
             if (el) el.style.display = 'none'
             if (ph) ph.style.display = 'flex'
+            bumpTracks()
           }
         }
       })
@@ -842,7 +884,9 @@ export default function ProctorMonitorPage() {
       if (alreadyLive.length > 0) {
         setLiveSet(new Set(alreadyLive))
       }
-    } catch (e) { console.warn('LiveKit proctor connection failed:', e) }
+      bumpTracks()
+      return true
+    } catch (e) { console.warn('LiveKit proctor connection failed:', e); return false }
   }
 
   function attachVideo(identity: string, track: any) {
@@ -1101,6 +1145,66 @@ export default function ProctorMonitorPage() {
     }
   }, [phoneZoomModal])
 
+  /* ── Vidéos des tuiles visibles ─────────────────────────────────────────── */
+
+  // Identités des tuiles actuellement affichées (renseigné au rendu, plus bas).
+  // Cause des écrans noirs « Flux vidéo » : la piste n'était rattachée au
+  // <video> qu'une seule fois, 50 ms après sa réception. Une tuile affichée
+  // plus tard (changement de page, liste d'étudiants chargée après la piste,
+  // rendu ralenti avec 50 flux) restait noire jusqu'au rafraîchissement
+  // suivant. On rattache donc à chaque changement de page / de piste / de
+  // données, et un chien de garde relance les flux qui n'arrivent pas.
+  const visibleIdsRef = useRef<string[]>([])
+
+  useEffect(() => {
+    function attachVisible() {
+      visibleIdsRef.current.forEach(ident => {
+        const track = videoTracksRef.current.get(ident)
+        if (track) {
+          const el = document.getElementById(`video-${ident}`) as HTMLVideoElement | null
+          // Ne ré-attache que si nécessaire (évite de réinitialiser un flux qui joue).
+          if (el && (el.srcObject == null || el.paused || el.readyState === 0)) attachVideo(ident, track)
+        }
+        const ptrack = videoTracksRef.current.get(`${ident}-phone`)
+        if (ptrack) {
+          const pel = document.getElementById(`video-${ident}-phone`) as HTMLVideoElement | null
+          if (pel && (pel.srcObject == null || pel.paused || pel.readyState === 0)) attachVideo(`${ident}-phone`, ptrack)
+        }
+      })
+    }
+    // Après le rendu des tuiles (React a posé les <video> dans le DOM).
+    const t1 = setTimeout(attachVisible, 0)
+    const t2 = setTimeout(attachVisible, 600)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [trackTick, videoPage, liveSet, phoneLiveSet, data, search, filter, loading])
+
+  useEffect(() => {
+    const LK = () => (typeof window !== 'undefined' ? window.LivekitClient : null)
+    const timer = setInterval(() => {
+      const room = roomRef.current
+      const lk = LK()
+      if (!room || !lk) return
+      visibleIdsRef.current.forEach(ident => {
+        const p = room.remoteParticipants?.get(ident)
+        if (!p) return
+        p.trackPublications.forEach((pub: any) => {
+          if (pub.kind !== 'video') return
+          if (pub.source === lk.Track.Source.ScreenShare || pub.trackName === 'screen') return
+          if (pub.isMuted) return
+          if (!pub.isSubscribed) {
+            // Abonnement perdu ou jamais abouti : on le redemande.
+            try { pub.setSubscribed(true) } catch {}
+          } else if (pub.track && videoTracksRef.current.get(ident) !== pub.track) {
+            // Piste reçue mais jamais enregistrée (événement manqué).
+            videoTracksRef.current.set(ident, pub.track)
+            setTrackTick(t => t + 1)
+          }
+        })
+      })
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [])
+
   /* ── Données dérivées ───────────────────────────────────────────────────── */
 
   if (loading) return (
@@ -1154,6 +1258,7 @@ export default function ProctorMonitorPage() {
     videoPageClamped * VIDEO_PAGE_SIZE,
     (videoPageClamped + 1) * VIDEO_PAGE_SIZE,
   )
+  visibleIdsRef.current = pagedLiveStudents.map(s => s.livekit_identity)
 
   /* Étudiants en cours d'examen dont le heartbeat n'a pas été reçu depuis le
      seuil défini — souvent absents de la grille "Vues en direct" (déconnectés
@@ -2687,7 +2792,7 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
           <div id={`ph-${s.livekit_identity}`}
             style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <i className="fas fa-video-slash" style={{ fontSize: 29, color: 'rgba(255,255,255,.18)' }} />
-            <span style={{ fontSize:12, color: 'rgba(255,255,255,.18)' }}>Flux vidéo</span>
+            <span style={{ fontSize:12, color: 'rgba(255,255,255,.3)' }}>Image en cours de chargement…</span>
           </div>
           <video id={`video-${s.livekit_identity}`} autoPlay playsInline
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'none' }} />
