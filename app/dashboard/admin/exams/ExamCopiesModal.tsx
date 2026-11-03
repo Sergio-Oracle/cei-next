@@ -601,6 +601,7 @@ interface ReviewData {
   proctor_notes: Array<{note: string; author?: string; timestamp?: string}>;
   attachments?: AttemptAttachment[];
   corrected_at?: string;
+  question_scores?: Array<{num: string | number; max?: number; score?: number; correct?: boolean | null}> | null;
 }
 
 const STATUS_LBL: Record<string, string> = { submitted: 'Soumis', auto_submitted: 'Auto-soumis', in_progress: 'En cours', banned: 'Exclu' }
@@ -631,7 +632,43 @@ const INCIDENT_FR: Record<string, string> = {
   sustained_audio_detected: 'Bruit prolongé détecté', multi_screen_detected: 'Plusieurs écrans détectés',
 }
 
-function renderAnswers(rawAnswers?: string): React.ReactNode {
+/* Les réponses sont enregistrées en clés plates (pq_1, pq_2…) : le serveur en tire un texte lisible
+   « Question N (énoncé) — Réponse : … » ; on l'affiche question par question avec les points obtenus. */
+function renderReadableAnswers(text: string, scores?: ReviewData['question_scores']): React.ReactNode {
+  const blocks = text.split(/\n\s*\n(?=Question\s)/).map(b => b.trim()).filter(Boolean)
+  const byNum: Record<string, { max?: number; score?: number; correct?: boolean | null }> = {}
+  ;(scores || []).forEach(q => { byNum[String(q.num)] = q })
+  const parsed = blocks.map(b => {
+    const m = b.match(/^Question\s+(\S+)\s*\(([\s\S]*?)\)\s*—\s*Réponse\s*:\s*([\s\S]*)$/)
+    return m ? { num: m[1], stem: m[2].trim(), answer: m[3].trim() } : null
+  })
+  if (!parsed.length || parsed.some(x => !x)) {
+    return <pre style={{ margin: 0, fontSize:15.5, whiteSpace: 'pre-wrap', lineHeight: 1.7, color: 'var(--text)', maxHeight: 360, overflowY: 'auto' }}>{text}</pre>
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 420, overflowY: 'auto' }}>
+      {parsed.map(q => {
+        const sc = byNum[q!.num]
+        const hasPts = sc && typeof sc.score === 'number' && typeof sc.max === 'number'
+        const ok = hasPts ? (sc!.correct === true || (sc!.correct == null && sc!.score! >= sc!.max! - 1e-9)) : null
+        const col = ok === null ? '#64748b' : ok ? '#059669' : (sc!.score! > 0 ? '#d97706' : '#dc2626')
+        return (
+          <div key={q!.num} style={{ border: '1px solid #e2e8f0', borderLeft: `4px solid ${col}`, borderRadius: 8, padding: '10px 12px', background: '#f8fafc' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <span style={{ fontSize:13, fontWeight: 700, color: '#64748b' }}>Question {q!.num}</span>
+              {hasPts && <span style={{ fontSize:14, fontWeight: 700, color: col }}>{sc!.score} / {sc!.max}</span>}
+            </div>
+            <div style={{ fontSize:14.5, color: '#475569', lineHeight: 1.55, marginBottom: 6, whiteSpace: 'pre-wrap' }}>{q!.stem}</div>
+            <div style={{ fontSize:15.5, color: '#0f172a', fontWeight: 600, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{q!.answer}</div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function renderAnswers(rawAnswers?: string, readable?: string, scores?: ReviewData['question_scores']): React.ReactNode {
+  if (readable && readable.trim() && /^Question\s/.test(readable.trim())) return renderReadableAnswers(readable, scores)
   if (!rawAnswers) return <em style={{ color: '#94a3b8', fontSize:15.5 }}>Aucune réponse enregistrée</em>
   let data: any = {}
   try { data = JSON.parse(rawAnswers) } catch {
@@ -755,7 +792,7 @@ function AttemptReviewModal({ attemptId, onClose }: { attemptId: number; onClose
 
               {/* Réponses */}
               <ReviewCard title="Réponses de l'Étudiant" icon="fa-pen">
-                <div style={{ padding: '12px 16px' }}>{renderAnswers(data.raw_answers)}</div>
+                <div style={{ padding: '12px 16px' }}>{renderAnswers(data.raw_answers, data.student_answer, data.question_scores)}</div>
               </ReviewCard>
 
               {/* Résultat */}
