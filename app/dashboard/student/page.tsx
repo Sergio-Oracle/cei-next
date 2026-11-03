@@ -56,7 +56,7 @@ function RecBadge({ hasRec, status }: { hasRec?: boolean; status?: string }) {
 
 async function downloadPDF(paperId: number, onError?: (msg: string) => void) {
   try {
-    const blob = await api.blob(`/api/papers/${paperId}/pdf`)
+    const blob = await api.blob(`/api/papers/${paperId}/export`)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url; a.download = `copie_${paperId}.pdf`; a.click()
