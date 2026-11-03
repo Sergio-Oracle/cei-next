@@ -76,17 +76,27 @@ ssh -i "$PROD_KEY" -p "$PROD_PORT" -o ConnectTimeout=15 "$PROD_HOST" "
   echo 'OK — vérifié sur le serveur, aucune URL de dev.'
 "
 
-echo "== Redémarrage des 6 instances =="
-ssh -i "$PROD_KEY" -p "$PROD_PORT" -o ConnectTimeout=15 "$PROD_HOST" \
-  "sudo -n systemctl restart cei-next cei-next-2 cei-next-3 cei-next-4 cei-next-5 cei-next-6"
-sleep 3
-
-echo "== Vérification des 6 ports =="
+echo "== Redémarrage ROULANT des instances (une à la fois, jamais toutes ensemble) =="
+# Avant : les 6 instances étaient redémarrées simultanément, d'où une coupure de
+# quelques secondes. Désormais on découvre les instances sur le serveur
+# (cei-next, cei-next-2, …, quel qu'en soit le nombre) et on attend que chacune
+# réponde 200 avant de passer à la suivante : nginx (least_conn) sert pendant ce
+# temps les instances encore en place, sans interruption visible.
 ssh -i "$PROD_KEY" -p "$PROD_PORT" -o ConnectTimeout=15 "$PROD_HOST" '
-  for p in 5175 5176 5177 5178 5179 5180; do
-    echo "  port $p -> $(curl -s -o /dev/null -w "%{http_code}" http://localhost:$p/)"
+  units=$(systemctl list-unit-files "cei-next*.service" --no-legend | awk "{print \$1}" | sed "s/\.service$//" | sort -V)
+  [ -n "$units" ] || { echo "ERREUR : aucune instance cei-next* trouvée" >&2; exit 1; }
+  for u in $units; do
+    port=$(systemctl show "$u" -p Environment --value | tr " " "\n" | sed -n "s/^PORT=//p")
+    sudo -n systemctl restart "$u" || { echo "ERREUR : redémarrage de $u refusé" >&2; exit 1; }
+    ok=""
+    for i in $(seq 1 40); do
+      [ "$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$port/")" = "200" ] && { ok=1; break; }
+      sleep 0.5
+    done
+    if [ -n "$ok" ]; then echo "  $u (port $port) -> 200"; else echo "  ERREUR : $u (port $port) ne répond pas après 20 s" >&2; exit 1; fi
   done
 '
+
 echo "== Terminé =="
 echo ""
 echo "!! ATTENTION : ce dossier local (.next/) contient maintenant le build de PRODUCTION"
