@@ -100,6 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     api.refresh().then((t: string | null) => {
       if (!mounted.current) return
       if (!t) {
+        // Échec passager (limite de débit, réseau instable) : la session existe peut-être encore, on garde
+        // le profil affiché au lieu de déconnecter. Les requêtes suivantes retenteront le renouvellement.
+        if (api.refreshWasTransient() && cached) { setLoading(false); return }
         cacheUser(null)
         if (cached) { clearAuthCookie(); setUser(null) }
         setLoading(false); return

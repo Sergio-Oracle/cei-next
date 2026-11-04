@@ -72,32 +72,40 @@ let _refreshing: Promise<string | null> | null = null
 // /api/auth/me séparé au chargement de chaque page.
 let _refreshUser: any = null
 
+// Vrai si le dernier échec de renouvellement est PASSAGER (limite de débit 429, renouvellement concurrent 409, panne
+// serveur 5xx, réseau coupé) et non un refus de la session (401/403). Un échec passager ne doit jamais déconnecter :
+// au devoir du 03/11/2026, des étudiants ont été renvoyés à l'écran de connexion pour un simple refus 429.
+let _refreshTransient = false
+
 async function tryRefresh(): Promise<string | null> {
   if (_refreshing) return _refreshing
   _refreshing = (async () => {
-    // Un seul aléa réseau/serveur transitoire (surcharge, timeout) ne doit pas
-    // déconnecter l'utilisateur — une tentative supplémentaire avant d'abandonner
-    // (constaté le 07/08 : des utilisateurs déconnectés par un simple pic de charge).
-    for (let attempt = 0; attempt < 2; attempt++) {
+    _refreshTransient = false
+    const backoff = [800, 2000, 4000]   // jusqu'à 4 tentatives (≈ 7 s), puis on abandonne SANS déconnecter
+    for (let attempt = 0; attempt <= backoff.length; attempt++) {
+      let wait = backoff[attempt]
       try {
         const res = await fetchWithTimeout(`${API_URL}/api/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
         }, 15_000)
-        if (!res.ok) {
-          if (attempt === 0) { await sleep(800); continue }
-          return null
+        if (res.ok) {
+          const json = await res.json()
+          const token = json.access_token
+          if (token) setToken(token, json.expires_in)
+          if (json.user) _refreshUser = json.user
+          return token ?? null
         }
-        const json = await res.json()
-        const token = json.access_token
-        if (token) setToken(token, json.expires_in)
-        if (json.user) _refreshUser = json.user
-        return token ?? null
-      } catch {
-        if (attempt === 0) { await sleep(800); continue }
-        return null
-      }
+        // 401/403 : la session n'existe plus (cookie absent, expiré, révoqué) → refus définitif.
+        if (res.status === 401 || res.status === 403) return null
+        // 429/409/5xx : passager. On respecte Retry-After (plafonné) quand le serveur l'indique.
+        const ra = Number(res.headers.get('Retry-After'))
+        if (ra > 0) wait = Math.min(ra, 5) * 1000
+      } catch { /* réseau coupé ou délai dépassé : passager */ }
+      if (attempt === backoff.length) break
+      await sleep(wait)
     }
+    _refreshTransient = true
     return null
   })()
   _refreshing.finally(() => { _refreshing = null })
@@ -177,6 +185,10 @@ async function _request<T = any>(
   if (res.status === 401 && _retry && path !== '/api/auth/login' && path !== '/api/auth/refresh') {
     const newToken = await tryRefresh()
     if (newToken) return _request<T>(method, path, data, opts, false)
+    if (_refreshTransient) {
+      // Le renouvellement a échoué pour une raison passagère : on ne déconnecte pas, l'appelant réessaiera.
+      throw Object.assign(new Error('Connexion instable. Réessayez dans un instant.'), { network: true })
+    }
     if (typeof window !== 'undefined') {
       setToken(null)
       localStorage.removeItem('user')
@@ -250,6 +262,7 @@ export const api = {
   setToken,
   tokenExpiringSoon,
   refresh: tryRefresh,
+  refreshWasTransient: () => _refreshTransient,
   serverNow,
   /** Profil reçu avec le dernier jeton (null si l'API ne l'a pas renvoyé). */
   refreshUser: () => _refreshUser,
