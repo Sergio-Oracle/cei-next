@@ -16,6 +16,13 @@ interface Incident {
   timestamp: string
   snapshot_data?: string | null
   details?: string
+  // Affectation d'EC : contexte pour remplir « Examen » / « Étudiant »
+  ec_code?: string | null
+  ec_name?: string | null
+  ue_code?: string | null
+  ue_name?: string | null
+  formation_name?: string | null
+  assignment_kind?: 'responsable' | 'tuteur'
 }
 
 interface AlertItem {
@@ -115,6 +122,7 @@ export default function ProfessorNotificationsPage() {
   const [lightboxSrc,    setLightboxSrc]    = useState<string | null>(null)
   const [dismissing,     setDismissing]     = useState<string | null>(null)
   const [clearingAll,    setClearingAll]    = useState(false)
+  const [deletingAlert,  setDeletingAlert]  = useState<string | null>(null)
   // Alertes de la cloche (fraude, seuils, examen sans surveillant…) : toujours listées ici,
   // pour que la page montre au moins tout ce que la cloche signale.
   const [alerts,         setAlerts]         = useState<AlertItem[]>([])
@@ -140,6 +148,18 @@ export default function ProfessorNotificationsPage() {
       setAlerts(prev => prev.map(a => ({ ...a, is_read: true })))
       window.dispatchEvent(new CustomEvent('cei:notifications-read'))
     } catch { toastErr("Échec — les alertes n'ont pas été marquées comme lues") }
+  }
+
+  async function deleteAlerts(ids: string[] | 'all') {
+    const all = ids === 'all'
+    if (all && !confirm(`Supprimer définitivement les ${alerts.length} alerte(s) ?`)) return
+    setDeletingAlert(all ? '*' : ids[0])
+    try {
+      await api.post('/api/notifications/dismiss', all ? { all: true } : { ids })
+      setAlerts(prev => all ? [] : prev.filter(a => !ids.includes(a.id)))
+      window.dispatchEvent(new CustomEvent('cei:notifications-read'))
+    } catch { toastErr("Échec — l'alerte n'a pas été supprimée") }
+    finally { setDeletingAlert(null) }
   }
 
   async function dismiss(id: number | string) {
@@ -205,12 +225,18 @@ export default function ProfessorNotificationsPage() {
               <i className="fas fa-bell" style={{ color: '#2563eb', marginRight: 8 }} />
               Alertes ({alerts.filter(a => !a.is_read).length} non lue(s))
             </div>
-            {alerts.some(a => !a.is_read) && (
-              <button onClick={markAlertsRead}
-                style={{ padding: '7px 14px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #dbe7f7', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>
-                <i className="fas fa-check-double" style={{ marginRight: 6 }} />Tout marquer comme lu
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {alerts.some(a => !a.is_read) && (
+                <button onClick={markAlertsRead}
+                  style={{ padding: '7px 14px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #dbe7f7', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>
+                  <i className="fas fa-check-double" style={{ marginRight: 6 }} />Tout marquer comme lu
+                </button>
+              )}
+              <button onClick={() => deleteAlerts('all')} disabled={deletingAlert !== null}
+                style={{ padding: '7px 14px', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: 8, fontWeight: 600, cursor: deletingAlert ? 'not-allowed' : 'pointer' }}>
+                <i className={`fas ${deletingAlert === '*' ? 'fa-spinner fa-spin' : 'fa-trash'}`} style={{ marginRight: 6 }} />Tout supprimer
               </button>
-            )}
+            </div>
           </div>
           {alerts.slice(0, 30).map(a => (
             <div key={a.id} style={{ display: 'flex', gap: 12, padding: '12px 18px', borderBottom: '1px solid #f1f5f9', background: a.is_read ? 'transparent' : '#f5f9ff' }}>
@@ -220,6 +246,13 @@ export default function ProfessorNotificationsPage() {
                 {a.message && <div style={{ fontSize: 15, color: '#475569' }}>{a.message}</div>}
                 {a.created_at && <div style={{ fontSize: 13.5, color: '#94a3b8', marginTop: 3 }}>{new Date(a.created_at).toLocaleString('fr-FR')}</div>}
               </div>
+              <button onClick={() => deleteAlerts([a.id])} disabled={deletingAlert !== null}
+                title="Supprimer cette alerte"
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: deletingAlert ? 'not-allowed' : 'pointer', padding: 6, borderRadius: 6, alignSelf: 'flex-start', fontSize: 15.5 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ef4444'; (e.currentTarget as HTMLElement).style.background = '#fef2f2' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#94a3b8'; (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+                <i className={`fas ${deletingAlert === a.id ? 'fa-spinner fa-spin' : 'fa-times'}`} />
+              </button>
             </div>
           ))}
         </div>
@@ -320,7 +353,23 @@ export default function ProfessorNotificationsPage() {
                         {timeAgo(inc.timestamp)}
                       </td>
 
+                      {/* Affectation d'EC : EC, UE, formation et rôle sur les deux colonnes Examen/Étudiant */}
+                      {inc.event_type === 'ec_assignment' && (inc.ec_name || inc.ec_code) && (
+                        <td colSpan={2} style={{ padding: '12px 16px', fontSize:15.5, color: '#0f172a' }}>
+                          <div style={{ fontWeight: 600 }}>
+                            <i className="fas fa-book" style={{ color: '#2563eb', marginRight: 7 }} />
+                            {inc.ec_code ? `${inc.ec_code} — ` : ''}{inc.ec_name}
+                          </div>
+                          <div style={{ fontSize:13.5, color: '#64748b', marginTop: 2 }}>
+                            {[inc.ue_code && inc.ue_name ? `UE ${inc.ue_code} · ${inc.ue_name}` : (inc.ue_name || inc.ue_code),
+                              inc.formation_name,
+                              inc.assignment_kind === 'tuteur' ? 'Rôle : tuteur' : 'Rôle : responsable'].filter(Boolean).join(' · ')}
+                          </div>
+                        </td>
+                      )}
+
                       {/* Examen */}
+                      {!(inc.event_type === 'ec_assignment' && (inc.ec_name || inc.ec_code)) && (
                       <td style={{ padding: '12px 16px', fontWeight: 600, color: '#0f172a', fontSize:15.5 }}>
                         {inc.exam_title ? (
                           <><i className="fas fa-laptop-code" style={{ color: '#2563eb', marginRight: 7 }} />{inc.exam_title}</>
@@ -329,7 +378,10 @@ export default function ProfessorNotificationsPage() {
                         )}
                       </td>
 
+                      )}
+
                       {/* Étudiant */}
+                      {!(inc.event_type === 'ec_assignment' && (inc.ec_name || inc.ec_code)) && (
                       <td style={{ padding: '12px 16px', color: '#334155', fontSize:15.5 }}>
                         {inc.student_name ? (
                           <><i className="fas fa-user" style={{ color: '#94a3b8', marginRight: 7 }} />{inc.student_name}</>
@@ -337,10 +389,11 @@ export default function ProfessorNotificationsPage() {
                           <span style={{ color: '#94a3b8', fontSize:14.5 }}>—</span>
                         )}
                       </td>
+                      )}
 
                       {/* Type d'incident */}
                       <td style={{ padding: '12px 16px', fontSize:15.5, color: '#334155' }}>
-                        {isInfo && inc.details ? (
+                        {isInfo && inc.details && inc.event_type !== 'ec_assignment' ? (
                           <span title={inc.details}>{label} <span style={{ color: '#94a3b8', fontSize:13 }}>— {inc.details}</span></span>
                         ) : label}
                       </td>
