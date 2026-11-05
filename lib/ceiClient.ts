@@ -18,6 +18,9 @@ interface CeiBridge {
   configure?(o: ExamModeOptions): Promise<{ ok: boolean }>
   openAssist?(url: string): Promise<{ ok: boolean; message?: string }>
   closeAssist?(): Promise<{ ok: boolean }>
+  /** Version 1.3.0+ : lance tout de suite la mise à jour automatique (jamais pendant un examen). */
+  updateNow?(): Promise<{ skipped?: string; installing?: boolean; error?: string }>
+  updateInfo?(): Promise<{ version: string; updating: boolean } | null>
 }
 
 export const getCeiClient = (): CeiBridge | undefined =>

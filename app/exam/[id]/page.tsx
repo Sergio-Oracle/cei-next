@@ -1364,6 +1364,11 @@ export default function ExamPage() {
       let clientVm = false
       if (isCeiClient()) {
         const proof = await proveCeiClient(Number(id))
+        if (!proof.ok && proof.outdated && getCeiClient()?.updateNow) {
+          // Version de l'application trop ancienne : elle se met à jour toute seule (puis redémarre) — l'étudiant rouvre ensuite l'examen
+          toastErr("Votre application CEI Examen est trop ancienne : mise à jour automatique en cours, elle va redémarrer.")
+          getCeiClient()?.updateNow?.().catch(() => {}); setStarting(false); return
+        }
         if (!proof.ok && (examRef.current?.require_client || proof.refused)) { toastErr(proof.error || "Vérification de l'application impossible"); setStarting(false); return }
         clientVm = !!proof.vm
       }
