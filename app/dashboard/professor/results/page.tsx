@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -301,6 +302,46 @@ function SubjectDetail({ subject, onClose }: { subject: Subject; onClose: () => 
   )
 }
 
+/* ─── Panneau d'un sujet sans copie corrigée (le bouton « Consulter » n'ouvrait rien) ─── */
+function SubjectEmpty({ subject, onClose }: { subject: Subject; onClose: () => void }) {
+  const linkStyle = { display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 9,
+    fontSize: 15.5, fontWeight: 600, textDecoration: 'none' } as const
+  return (
+    <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 14, overflow: 'hidden',
+      boxShadow: '0 2px 8px rgba(0,0,0,.08)', marginTop: 8 }}>
+      <div style={{ background: '#2563eb', padding: '16px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <p style={{ color: '#bfdbfe', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', margin: '0 0 4px' }}>
+            Statistiques détaillées
+          </p>
+          <h3 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'white' }}>{subject.title}</h3>
+        </div>
+        <button onClick={onClose} aria-label="Fermer" style={{ background: 'rgba(255,255,255,.2)', border: 'none', color: 'white',
+          width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 21.5,
+          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <i className="fas fa-times" />
+        </button>
+      </div>
+      <div style={{ padding: '26px 24px', textAlign: 'center' }}>
+        <i className="fas fa-hourglass-half" style={{ fontSize: 38, color: '#94a3b8', display: 'block', marginBottom: 12 }} />
+        <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: 18, color: '#0f172a' }}>Aucune copie corrigée pour ce sujet</p>
+        <p style={{ margin: '0 0 18px', fontSize: 15.5, color: '#64748b' }}>
+          {subject.ec_name ? `${subject.ec_code ? subject.ec_code + ' — ' : ''}${subject.ec_name}. ` : ''}
+          Les statistiques (moyenne, réussite, distribution des notes) apparaîtront dès qu'une copie sera corrigée.
+        </p>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link href="/dashboard/professor/online-correction" style={{ ...linkStyle, background: '#2563eb', color: 'white' }}>
+            <i className="fas fa-check-double" />Corriger les examens en ligne
+          </Link>
+          <Link href="/dashboard/professor/corrected" style={{ ...linkStyle, background: '#f1f5f9', color: '#334155' }}>
+            <i className="fas fa-check-circle" />Copies corrigées
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Page principale ─── */
 export default function ProfessorResultsPage() {
   const { error } = useToast()
@@ -485,8 +526,8 @@ export default function ProfessorResultsPage() {
                           style={{ background: hasData ? '#2563eb' : '#f1f5f9', color: hasData ? '#fff' : '#64748b',
                             border: 'none', padding: '9px 16px', borderRadius: 9, fontSize:15.5, fontWeight: 600,
                             cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                          <i className={`fas ${hasData ? (isOpen ? 'fa-times' : 'fa-chart-pie') : 'fa-search'}`} style={{ marginRight: 6 }} />
-                          {hasData ? (isOpen ? 'Fermer' : 'Détails') : 'Consulter'}
+                          <i className={`fas ${isOpen ? 'fa-times' : hasData ? 'fa-chart-pie' : 'fa-search'}`} style={{ marginRight: 6 }} />
+                          {isOpen ? 'Fermer' : hasData ? 'Détails' : 'Consulter'}
                         </button>
                       </div>
 
@@ -503,7 +544,9 @@ export default function ProfessorResultsPage() {
                       )}
                     </div>
 
-                    {isOpen && hasData && <SubjectDetail subject={s} onClose={() => setDetail(null)} />}
+                    {isOpen && (hasData
+                      ? <SubjectDetail subject={s} onClose={() => setDetail(null)} />
+                      : <SubjectEmpty subject={s} onClose={() => setDetail(null)} />)}
                   </div>
                 )
               })}
