@@ -171,9 +171,12 @@ export default function ProfessorNotificationsPage() {
     finally { setDismissing(null) }
   }
 
-  async function dismissAll() {
+  async function dismissAll(deleting = false) {
     if (visible.length === 0) return
-    if (!confirm(`Marquer ${visible.length} incident(s) comme lu(s) ? Ils ne réapparaîtront plus.`)) return
+    const msg = deleting
+      ? `Supprimer définitivement les ${visible.length} incident(s) affiché(s) ? Cette action est irréversible.`
+      : `Marquer ${visible.length} incident(s) comme lu(s) ? Ils ne réapparaîtront plus.`
+    if (!confirm(msg)) return
     setClearingAll(true)
     try {
       await api.post('/api/professor/recent_incidents/dismiss', { item_ids: visible.map(i => i.id) })
@@ -205,7 +208,7 @@ export default function ProfessorNotificationsPage() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {visible.length > 0 && (
-            <button onClick={dismissAll} disabled={clearingAll}
+            <button onClick={() => dismissAll(false)} disabled={clearingAll}
               style={{ padding: '9px 16px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 600, cursor: clearingAll ? 'not-allowed' : 'pointer', fontSize:15.5 }}>
               {clearingAll ? <i className="fas fa-spinner fa-spin" style={{ marginRight: 6 }} /> : <i className="fas fa-check-double" style={{ marginRight: 6 }} />}
               Tout marquer comme lu
@@ -302,6 +305,13 @@ export default function ProfessorNotificationsPage() {
             </button>
           )
         })}
+        {visible.length > 0 && (
+          <button onClick={() => dismissAll(true)} disabled={clearingAll}
+            style={{ marginLeft: 'auto', padding: '6px 14px', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: 8, fontWeight: 600, fontSize: 14.5, cursor: clearingAll ? 'not-allowed' : 'pointer' }}>
+            <i className={`fas ${clearingAll ? 'fa-spinner fa-spin' : 'fa-trash'}`} style={{ marginRight: 6 }} />
+            Tout supprimer{filterSeverity !== 'all' ? ` (${visible.length})` : ''}
+          </button>
+        )}
       </div>
 
       {/* Tableau */}
