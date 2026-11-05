@@ -288,6 +288,8 @@ export default function ProctorMonitorPage() {
 
   /* modal: temps supplémentaire */
   const [extraModal,   setExtraModal]   = useState<{ attemptId: number; name: string } | null>(null)
+  // Code de sortie d'urgence de l'application CEI Examen : généré à la demande, valable 15 min, utilisable une seule fois
+  const [exitCodeModal, setExitCodeModal] = useState<{ attemptId: number; name: string; code?: string; expiresAt?: number; busy?: boolean; error?: string } | null>(null)
   const [extraMins,    setExtraMins]    = useState('15')
   const [grantingTime, setGrantingTime] = useState(false)
 
@@ -1291,6 +1293,17 @@ export default function ProctorMonitorPage() {
   function openBan(s: Student) {
     setBanModal({ attemptId: s.attempt_id, name: s.student_name, identity: s.livekit_identity }); setBanReason('')
   }
+  async function generateExitCode(attemptId: number, name: string) {
+    setExitCodeModal({ attemptId, name, busy: true })
+    try {
+      const r = await api.post<{ code: string; expires_in: number }>(`/api/exam_attempts/${attemptId}/client_exit_code`, {})
+      setExitCodeModal({ attemptId, name, code: r.code, expiresAt: Date.now() + r.expires_in * 1000 })
+    } catch (e: any) { setExitCodeModal({ attemptId, name, error: e?.message || 'Impossible de générer le code' }) }
+  }
+  function openExitCode(s: Student) {
+    if (!confirm(`Générer un code de sortie d'urgence pour ${s.student_name} ?\n\nÀ donner seulement après avoir vérifié une vraie panne (appel ou message). Le code est à usage unique et vaut 15 minutes.`)) return
+    generateExitCode(s.attempt_id, s.student_name)
+  }
   function openExtra(s: Student) {
     setExtraModal({ attemptId: s.attempt_id, name: s.student_name }); setExtraMins('15')
   }
@@ -2012,6 +2025,7 @@ export default function ProctorMonitorPage() {
                 onScreen={() => openScreenView(s)}
                 onCall={() => startPrivateCall(s.attempt_id, s.student_name)}
                 onExtraTime={() => openExtra(s)}
+                onExitCode={() => openExitCode(s)}
                 onNote={() => openNote(s)}
                 onLogs={() => openLogs(s)}
                 onZoomPhone={() => openPhoneZoom(s)}
@@ -2099,6 +2113,31 @@ export default function ProctorMonitorPage() {
               style={{ ...btnPrimary, background: '#10b981', opacity: identityVerifying ? .5 : 1 }}>
               {identityVerifying ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-user-check" />} Confirmer l'identité
             </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Code de sortie d'urgence */}
+      {exitCodeModal && (
+        <Modal onClose={() => setExitCodeModal(null)}>
+          <h2 style={{ fontSize:21.5, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: '#e7e5e4' }}>
+            <i className="fas fa-key" /> Code de sortie d&apos;urgence
+          </h2>
+          <p style={{ fontSize:15.5, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>Étudiant : <strong>{exitCodeModal.name}</strong></p>
+          {exitCodeModal.busy && <p style={{ color: 'rgba(255,255,255,.7)' }}><i className="fas fa-spinner fa-spin" /> Génération…</p>}
+          {exitCodeModal.error && <p style={{ color: '#fca5a5' }}><i className="fas fa-circle-exclamation" /> {exitCodeModal.error}</p>}
+          {exitCodeModal.code && (<>
+            <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: 6, textAlign: 'center', padding: '16px 0', background: 'rgba(255,255,255,.06)', border: '2px solid rgba(255,255,255,.15)', borderRadius: 12, color: 'white', fontFamily: 'ui-monospace, monospace' }}>
+              {exitCodeModal.code}
+            </div>
+            <p style={{ fontSize:14.5, color: 'rgba(255,255,255,.6)', margin: '12px 0 0', lineHeight: 1.5 }}>
+              L&apos;étudiant tape <b>Ctrl+Maj+Alt+Q</b> (⌘⇧⌥Q sur Mac) dans l&apos;application et saisit ce code. Il est <b>valable 15 minutes</b>, <b>utilisable une seule fois</b>, et ne marche que pour cet étudiant.
+              Le serveur vérifie le code ; sa génération et son usage sont enregistrés. Donnez-le oralement ou par message privé, jamais en public.
+            </p>
+          </>)}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+            {exitCodeModal.code && <button onClick={() => generateExitCode(exitCodeModal.attemptId, exitCodeModal.name)} style={btnSecondary}>Nouveau code</button>}
+            <button onClick={() => setExitCodeModal(null)} style={btnPrimary}>Fermer</button>
           </div>
         </Modal>
       )}
@@ -2767,7 +2806,7 @@ function AgentBanner({ agent, lastCheck, studentsCount }: { agent: AgentStatus |
   )
 }
 
-function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onBan, onRec, onScreen, onCall, onExtraTime, onNote, onLogs, onZoomPhone, onIdentityVerify }: {
+function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onBan, onRec, onScreen, onCall, onExtraTime, onExitCode, onNote, onLogs, onZoomPhone, onIdentityVerify }: {
   s: Student
   recActive:    boolean
   screenAvail:  boolean
@@ -2779,6 +2818,7 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
   onScreen:     () => void
   onCall:       () => void
   onExtraTime:  () => void
+  onExitCode:   () => void
   onNote:       () => void
   onLogs:       () => void
   onZoomPhone:  () => void
@@ -2961,6 +3001,10 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
               <button className="card-act-btn" style={{ background: 'rgba(245,158,11,.12)', color: '#d97706', borderColor: 'rgba(245,158,11,.2)' }}
                 onClick={onExtraTime} title="Temps supplémentaire">
                 <i className="fas fa-clock" />
+              </button>
+              <button className="card-act-btn" style={{ background: 'rgba(168,162,158,.14)', color: '#d6d3d1', borderColor: 'rgba(168,162,158,.25)' }}
+                onClick={onExitCode} title="Code de sortie d'urgence (application CEI Examen)">
+                <i className="fas fa-key" />
               </button>
               <button className="card-act-btn" style={{ background: 'rgba(13,148,136,.12)', color: '#2dd4bf', borderColor: 'rgba(13,148,136,.2)' }}
                 onClick={onNote} title="Note de surveillance">

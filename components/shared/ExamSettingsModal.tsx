@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import api from '@/lib/api'
 import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
+import ClientAssistSettings from '@/components/shared/ClientAssistSettings'
 
 interface Policy {
   success: boolean; status: 'draft' | 'scheduled' | 'active' | 'closed'; attempts: number; by_waves: boolean
@@ -158,6 +159,11 @@ export default function ExamSettingsModal({ examId, onClose, onSaved }: {
               {row('run_environment_scan', 'Exiger un scan de l\'environnement (webcam, ~8 s) avant de composer')}
               {row('allow_secondary_camera', 'Autoriser une caméra secondaire (smartphone)')}
               {row('require_client', 'Exiger l\'application CEI Examen', 'Poste verrouillé en plein écran pendant l\'examen (comme Safe Exam Browser) : impossible de changer d\'application, de fermer la fenêtre ou d\'ouvrir un autre site')}
+              {form.require_client && <>
+                {row('client_block_vm', 'Refuser les machines virtuelles', 'L\'étudiant doit composer sur un ordinateur physique. Les sessions de bureau à distance sont toujours refusées.')}
+                <ClientAssistSettings sites={Array.isArray(form.client_allowed_sites) ? form.client_allowed_sites : []} apps={Array.isArray(form.client_allowed_apps) ? form.client_allowed_apps : []}
+                  onSites={v => set('client_allowed_sites', v)} onApps={v => set('client_allowed_apps', v)} />
+              </>}
             </>)}
 
             {card('Autorisations pendant l\'examen', 'fa-unlock', <>

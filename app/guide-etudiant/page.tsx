@@ -135,7 +135,7 @@ export default function GuideEtudiant() {
               <li>Quand vous soumettez votre copie, <strong>votre ordinateur est libéré automatiquement</strong>.</li>
             </ul>
             <div className="danger"><i className="fas fa-ban" /><div><strong>Ne tentez pas de contourner l&apos;application.</strong> Toutes les tentatives (changement d&apos;application, raccourcis, second écran, logiciel interdit) sont enregistrées avec l&apos;heure et transmises à l&apos;enseignant ; elles peuvent entraîner des sanctions.</div></div>
-            <div className="tip"><i className="fas fa-life-ring" /><div><strong>En cas de problème :</strong> utilisez le bouton <em>Contacter l&apos;enseignant</em> dans la barre de l&apos;examen (message ou appel). Si l&apos;application doit absolument être quittée (panne), seul un surveillant peut vous donner un <strong>code de sortie d&apos;urgence</strong>. Si votre ordinateur redémarre, rouvrez l&apos;application et reprenez l&apos;examen avec votre code personnel (voir section 9) : vos réponses sont conservées.</div></div>
+            <div className="tip"><i className="fas fa-life-ring" /><div><strong>En cas de problème :</strong> utilisez le bouton <em>Contacter l&apos;enseignant</em> dans la barre de l&apos;examen (message ou appel). Si l&apos;application doit absolument être quittée (panne), seul un surveillant peut vous donner un <strong>code de sortie d&apos;urgence</strong> (8 chiffres, créé pour vous seul, valable 15 minutes, à usage unique, vérifié par le serveur). Si votre ordinateur redémarre, rouvrez l&apos;application et reprenez l&apos;examen avec votre code personnel (voir section 9) : vos réponses sont conservées.</div></div>
           </div>
         </div>
 

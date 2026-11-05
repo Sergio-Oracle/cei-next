@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import api, { serverNow } from '@/lib/api'
 import { getCeiClient, isCeiClient, proveCeiClient, onCeiClientEvent } from '@/lib/ceiClient'
+import { ASSIST_PRESETS } from '@/components/shared/ClientAssistSettings'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObjects, countPeople } from '@/lib/proctoring-vision'
@@ -25,6 +26,7 @@ interface ExamData {
   max_tab_switches?: number; enable_copy_paste?: boolean; enable_right_click?: boolean; enable_file_download?: boolean
   camera_required?: boolean; ban_on_devtools?: boolean; auto_correct?: boolean; enable_calculator?: boolean
   allow_secondary_camera?: boolean; run_environment_scan?: boolean; require_client?: boolean
+  client_allowed_sites?: string[]; client_allowed_apps?: string[]; client_block_vm?: boolean
   questions_per_page?: number; randomize_questions?: boolean; time_per_question_seconds?: number | null
   status: string; questions?: Question[]
   subject_content?: { id: number; title: string; content: string } | string | null
@@ -504,6 +506,10 @@ export default function ExamPage() {
   const { id }   = useParams<{ id: string }>()
   const router   = useRouter()
   const { user } = useAuth()
+  // Fenêtre d'assistance technique de l'application CEI Examen ouverte : le focus quitte la page sans que ce soit une sortie de l'examen
+  const assistOpenRef  = useRef(false)
+  const assistGraceRef = useRef(0)
+  const assistBusy = () => assistOpenRef.current || Date.now() < assistGraceRef.current
   const { success, error: toastErr, warning } = useToast()
   // Alertes de détection : affichées à l'étudiant seulement si SHOW_DETECTION_ALERTS_TO_STUDENT (voir plus haut).
   const warnDetect = (m: string) => { if (SHOW_DETECTION_ALERTS_TO_STUDENT) warning(m) }
@@ -779,6 +785,9 @@ export default function ExamPage() {
       const aId = attemptRef.current
       if (evt.type === 'client_forbidden_app') warning(`Fermez le logiciel « ${evt.data?.name} » : il est interdit pendant l'examen.`)
       if (evt.type === 'client_second_display') warning('Un second écran est branché : il est masqué. Débranchez-le.')
+      if (evt.type === 'client_assist_opened') assistOpenRef.current = true
+      if (evt.type === 'client_assist_closed') { assistOpenRef.current = false; assistGraceRef.current = Date.now() + 3000 }
+      if (evt.type === 'client_remote_session') warning('Un bureau à distance est détecté sur ce poste : fermez-le immédiatement.')
       if (aId && !isPreview) logActivity(aId, evt.type, JSON.stringify(evt.data ?? {}))
     })
     return () => { off(); getCeiClient()?.leaveExamMode().catch(() => {}) }
@@ -786,6 +795,11 @@ export default function ExamPage() {
   useEffect(() => {
     if (phase === 'submitted' || phase === 'client_required' || phase === 'unsupported') getCeiClient()?.leaveExamMode().catch(() => {})
   }, [phase])
+  // L'application connaît l'examen dès son chargement (applications tolérées prises en compte dès la vérification du poste, avant le mode examen)
+  useEffect(() => {
+    if (!exam || !user?.id || !isCeiClient()) return
+    getCeiClient()?.configure?.({ examId: Number(id), userId: user.id, allowedSites: exam.client_allowed_sites ?? [], allowedApps: exam.client_allowed_apps ?? [] })?.catch?.(() => {})
+  }, [exam?.id, user?.id]) // eslint-disable-line
   useEffect(() => { if (showBanModal) getCeiClient()?.leaveExamMode().catch(() => {}) }, [showBanModal])
 
   useEffect(() => {
@@ -1052,7 +1066,7 @@ export default function ExamPage() {
   useEffect(() => {
     if (phase !== 'exam' || isPreview) return
     const onVis = async () => {
-      if (breakActiveRef.current) return
+      if (breakActiveRef.current || assistBusy()) return
       if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
       if (!document.hidden) return
       const next = tabCount + 1; setTabCount(next)
@@ -1075,7 +1089,7 @@ export default function ExamPage() {
       // pas toujours dans ces cas alors que le focus de la fenêtre, lui,
       // est perdu immédiatement. Le backend reconnaît déjà 'window_blur'
       // dans ses seuils (severity_tab_events) — seul l'envoi manquait ici.
-      if (sessionEndedRef.current || breakActiveRef.current) return
+      if (sessionEndedRef.current || breakActiveRef.current || assistBusy()) return
       if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
       const next = tabCount + 1; setTabCount(next)
       setRiskScore(r => Math.min(r + 10, 100))
@@ -1127,6 +1141,9 @@ export default function ExamPage() {
     }
     const onFs = () => {
       if (breakActiveRef.current) return
+      // Application CEI Examen : le plein écran est tenu par le client lui-même (mode kiosque, Échap bloqué), pas par l'API plein écran de la page —
+      // sinon une touche Échap faisait apparaître « Revenir à l'examen » alors que le poste est déjà verrouillé.
+      if (isCeiClient()) return
       if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
       if (!document.fullscreenElement && !sessionEndedRef.current) {
         if (fsPollGuardRef.current) return // déjà signalé, en attente du clic "Revenir à l'examen"
@@ -1155,7 +1172,7 @@ export default function ExamPage() {
     // du tout (échec silencieux de requestFullscreen), pas seulement une
     // sortie après coup.
     const pollState = () => {
-      if (sessionEndedRef.current || breakActiveRef.current) return
+      if (sessionEndedRef.current || breakActiveRef.current || assistBusy()) return
       if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
       onFs()
       if (!document.hasFocus()) {
@@ -1347,14 +1364,18 @@ export default function ExamPage() {
       let clientVm = false
       if (isCeiClient()) {
         const proof = await proveCeiClient(Number(id))
-        if (!proof.ok && examRef.current?.require_client) { toastErr(proof.error || "Vérification de l'application impossible"); setStarting(false); return }
+        if (!proof.ok && (examRef.current?.require_client || proof.refused)) { toastErr(proof.error || "Vérification de l'application impossible"); setStarting(false); return }
         clientVm = !!proof.vm
       }
       const res = await api.post<{attempt:Attempt}>(`/api/online_exams/${id}/start`,{})
       const att=res.attempt; setAttempt(att); noteAttemptClock(att); attemptRef.current=att.id
       if (isCeiClient()) {
         // Le client prend le contrôle du poste dès maintenant (permissions, scan, composition) jusqu'à la fin de l'examen
-        getCeiClient()?.enterExamMode({ maxMinutes: (examRef.current?.duration_minutes ?? 120) + (att.extra_minutes ?? 0) }).catch(() => {})
+        getCeiClient()?.enterExamMode({
+          maxMinutes: (examRef.current?.duration_minutes ?? 120) + (att.extra_minutes ?? 0),
+          examId: Number(id), userId: user?.id,
+          allowedSites: examRef.current?.client_allowed_sites ?? [], allowedApps: examRef.current?.client_allowed_apps ?? [],
+        }).catch(() => {})
         if (clientVm) logActivity(att.id, 'client_vm_detected', 'machine virtuelle détectée par le client')
       }
       extraMinRef.current=att.extra_minutes??0
@@ -4210,6 +4231,26 @@ export default function ExamPage() {
               </div>
             ))}
           </div>
+          {/* Assistance technique (application CEI Examen) : seuls les sites choisis par l'enseignant pour CET examen, dans une fenêtre de l'application */}
+          {isCeiClient() && (exam?.client_allowed_sites?.length ?? 0) > 0 && (
+            <div style={{padding:'8px 12px',borderTop:'1px solid #e2e8f0'}}>
+              <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px',color:'#64748b',marginBottom:6}}>
+                <i className="fas fa-life-ring"/> Assistance technique
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                {(exam?.client_allowed_sites ?? []).map(url => {
+                  const label = ASSIST_PRESETS.find(p => p.url.replace(/\/+$/,'') === url.replace(/\/+$/,''))?.label ?? (()=>{ try { return new URL(url).hostname } catch { return url } })()
+                  return (
+                    <button key={url} onClick={async()=>{ const r = await getCeiClient()?.openAssist?.(url); if (r && !r.ok) toastErr(r.message || "Impossible d'ouvrir l'assistance") }}
+                      title="Ouvre le site d'assistance dans une fenêtre de l'application. L'ouverture est enregistrée."
+                      style={{background:'rgba(37,99,235,.08)',color:'#1d4ed8',border:'1px solid rgba(37,99,235,.25)',borderRadius:6,padding:'6px 8px',cursor:'pointer',fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:6,textAlign:'left'}}>
+                      <i className="fas fa-headset"/> {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
           {/* Contacter enseignant */}
           <div style={{padding:'8px 12px',borderTop:'1px solid #e2e8f0'}}>
             <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px',color:'#64748b',marginBottom:6}}>

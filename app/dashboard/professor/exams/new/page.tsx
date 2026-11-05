@@ -6,6 +6,7 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import type { Subject } from '@/types'
 import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
+import ClientAssistSettings from '@/components/shared/ClientAssistSettings'
 
 export default function NewExamPage() {
   const router = useRouter()
@@ -36,6 +37,9 @@ export default function NewExamPage() {
     require_biometric: false,
     run_environment_scan: false,
     require_client: false,
+    client_block_vm: false,
+    client_allowed_sites: [] as string[],
+    client_allowed_apps: [] as string[],
   })
 
   // Retour : la sélection manuelle de surveillants a été retirée du
@@ -100,6 +104,9 @@ export default function NewExamPage() {
         require_biometric: form.require_biometric,
         run_environment_scan: form.run_environment_scan,
         require_client: form.require_client,
+        client_block_vm: form.require_client && form.client_block_vm,
+        client_allowed_sites: form.require_client ? form.client_allowed_sites : [],
+        client_allowed_apps: form.require_client ? form.client_allowed_apps : [],
       })
       success(`Examen créé — Durée : ${res.exam?.duration_minutes ?? '?'} min`)
       // Groupe de surveillance déjà pris sur ce créneau : l'examen est créé,
@@ -290,6 +297,17 @@ export default function NewExamPage() {
                 <input type="checkbox" checked={form.require_client} onChange={e => set('require_client', e.target.checked)} style={{ width: 'auto' }} />
                 <span><i className="fas fa-lock" style={{ marginRight: 4 }} />Exiger l&apos;application CEI Examen (poste verrouillé en plein écran, comme Safe Exam Browser)</span>
               </label>
+              {form.require_client && (
+                <>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize:15.5, color: '#475569', marginLeft: 24 }}>
+                    <input type="checkbox" checked={form.client_block_vm} onChange={e => set('client_block_vm', e.target.checked)} style={{ width: 'auto' }} />
+                    <span>Refuser les machines virtuelles (les sessions de bureau à distance sont toujours refusées)</span>
+                  </label>
+                  <div style={{ marginLeft: 24 }}>
+                    <ClientAssistSettings sites={form.client_allowed_sites} apps={form.client_allowed_apps} onSites={v => set('client_allowed_sites', v)} onApps={v => set('client_allowed_apps', v)} />
+                  </div>
+                </>
+              )}
             </div>
             {form.enable_calculator && (
               <p style={{ margin: '-8px 0 16px', fontSize:14, color: '#64748b' }}>

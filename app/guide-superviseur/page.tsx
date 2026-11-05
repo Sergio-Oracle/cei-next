@@ -127,7 +127,7 @@ export default function GuideSuperviseur() {
           <div className="section-header"><div className="section-icon"><i className="fas fa-lock" /></div><h2>5. Examens avec l&apos;application CEI Examen</h2></div>
           <div className="section-body">
             <p style={{color:'#475569',marginBottom:12}}>Pour certains examens, l&apos;enseignant exige l&apos;application <strong>CEI Examen</strong> : le poste de l&apos;étudiant est alors verrouillé et les autres applications sont fermées. Les surveillants reçoivent en plus des alertes propres à l&apos;application (logiciel interdit, second écran, tentatives de sortie, machine virtuelle). Elles sont comptées comme des avertissements et prises en compte dans votre tableau de vigilance comme les autres incidents ; la décision de sanction reste à l&apos;enseignant.</p>
-            <div className="tip"><i className="fas fa-lightbulb" /><div>Les surveillants conservent le <strong>code de sortie d&apos;urgence</strong> de l&apos;application : rappelez-leur de ne le donner qu&apos;après avoir vérifié une vraie panne (voir leur guide, section 12).</div></div>
+            <div className="tip"><i className="fas fa-lightbulb" /><div>Les surveillants génèrent eux-mêmes le <strong>code de sortie d&apos;urgence</strong> d&apos;un étudiant (code aléatoire, à usage unique, valable 15 minutes, vérifié par le serveur) : rappelez-leur de ne le donner qu&apos;après avoir vérifié une vraie panne, et que chaque génération et chaque usage sont enregistrés (voir leur guide, section 12)</div></div>
           </div>
         </div>
 
