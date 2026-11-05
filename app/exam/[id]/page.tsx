@@ -122,7 +122,17 @@ declare global { interface Window { LivekitClient: any } }
 /* Seuils de luminosité (0-255) en deçà/au-delà desquels la détection faciale
    n'est plus fiable — mêmes bornes utilisées pour l'avertissement étudiant et
    pour disculper une absence de visage détectée par l'IA (voir faceDetectionTick). */
-const BRIGHTNESS_LOW = 40, BRIGHTNESS_HIGH = 235
+// Retour de la responsable de formation (05/11/2026, après le devoir du 03/11) : les alertes de détection affichées
+// directement à l'étudiant perturbent la composition. Elles restent journalisées et transmises en direct au surveillant /
+// superviseur (logActivity / logProctoring / alerte LiveKit) ; seuls l'affichage côté étudiant est coupé. Remettre à true
+// pour les réafficher. Ne concerne NI les messages/avertissements envoyés par un enseignant ou un surveillant, NI les avis
+// techniques utiles à l'étudiant (temps restant, connexion, sauvegarde, caméra/partage d'écran perdus).
+const SHOW_DETECTION_ALERTS_TO_STUDENT = false
+// Seuil de « faible luminosité » relevé 40 → 55 : une absence de visage dans une image sombre est classée « éclairage
+// faible » (poids de risque 0, non pénalisant) plutôt que « visage non détecté ».
+const BRIGHTNESS_LOW = 55, BRIGHTNESS_HIGH = 235
+// En dessous de cette luminosité, une absence de visage est revérifiée sur une image éclaircie avant d'être comptée.
+const LIGHT_RETRY_BELOW = 90
 
 /* Luminosité moyenne (0-255) d'une frame vidéo, échantillonnée 1 pixel sur 10
    (suffisant pour une moyenne stable à faible coût sur une capture 320x240). */
@@ -495,6 +505,9 @@ export default function ExamPage() {
   const router   = useRouter()
   const { user } = useAuth()
   const { success, error: toastErr, warning } = useToast()
+  // Alertes de détection : affichées à l'étudiant seulement si SHOW_DETECTION_ALERTS_TO_STUDENT (voir plus haut).
+  const warnDetect = (m: string) => { if (SHOW_DETECTION_ALERTS_TO_STUDENT) warning(m) }
+  const setAlertsDetect = (fn: (a: {type:string;msg:string;at:string}[]) => {type:string;msg:string;at:string}[]) => { if (SHOW_DETECTION_ALERTS_TO_STUDENT) setAlerts(fn) }
 
   const [exam,         setExam]         = useState<ExamData | null>(null)
   const [attempt,      setAttempt]      = useState<Attempt | null>(null)
@@ -621,6 +634,9 @@ export default function ExamPage() {
   const [micOn,        setMicOn]        = useState(false)
   const [screenOn,     setScreenOn]     = useState(false)
   const [faceStatus,   setFaceStatus]   = useState<'init'|'ok'|'warn'|'bad'|'unavailable'>('init')
+  // Côté étudiant : plus d'anneau rouge/orange clignotant ni de « Visage absent » (alerte coupée, voir SHOW_DETECTION_ALERTS_TO_STUDENT) ;
+  // le surveillant garde le détail. Un simple « Caméra active » neutre remplace l'état d'avertissement.
+  const faceBadge = (!SHOW_DETECTION_ALERTS_TO_STUDENT && (faceStatus==='warn'||faceStatus==='bad')) ? 'neutral' : faceStatus
   const [faceIssue,    setFaceIssue]    = useState<'none'|'no_face'|'multiple'|'mismatch'>('none')
   const [warnText,     setWarnText]     = useState('')
   const [showWarnModal,setShowWarnModal]= useState(false)
@@ -1038,8 +1054,8 @@ export default function ExamPage() {
       if (!document.hidden) return
       const next = tabCount + 1; setTabCount(next)
       setRiskScore(r => Math.min(r + 10, 100))
-      setAlerts(a => [{type:'tab',msg:`Changement d'onglet (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
-      warning(`Attention : changement d'onglet détecté (${next}/${examRef.current?.max_tab_switches??3})`)
+      setAlertsDetect(a => [{type:'tab',msg:`Changement d'onglet (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
+      warnDetect(`Attention : changement d'onglet détecté (${next}/${examRef.current?.max_tab_switches??3})`)
       setFocusLost(true)
       const aId = attemptRef.current
       if (aId) {
@@ -1060,8 +1076,8 @@ export default function ExamPage() {
       if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
       const next = tabCount + 1; setTabCount(next)
       setRiskScore(r => Math.min(r + 10, 100))
-      setAlerts(a => [{type:'blur',msg:`Perte de focus détectée (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
-      warning(`Attention : perte de focus détectée (${next}/${examRef.current?.max_tab_switches??3})`)
+      setAlertsDetect(a => [{type:'blur',msg:`Perte de focus détectée (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
+      warnDetect(`Attention : perte de focus détectée (${next}/${examRef.current?.max_tab_switches??3})`)
       setFocusLost(true)
       const aId = attemptRef.current
       if (aId) {
@@ -1103,7 +1119,7 @@ export default function ExamPage() {
         e.preventDefault()
         const aId = attemptRef.current
         if (aId) { logActivity(aId,'devtools_attempt','Tentative outils dev').catch(()=>{}); logProctoring(aId,'devtools_attempt','Tentative outils dev').catch(()=>{}) }
-        setAlerts(a => [{type:'devtools',msg:'Accès outils développeur bloqué',at:new Date().toLocaleTimeString('fr-FR')},...a])
+        setAlertsDetect(a => [{type:'devtools',msg:'Accès outils développeur bloqué',at:new Date().toLocaleTimeString('fr-FR')},...a])
       }
     }
     const onFs = () => {
@@ -1121,7 +1137,7 @@ export default function ExamPage() {
           // risque, une sortie de plein écran ne comptait pas dessus.
           logProctoring(aId,'fullscreen_exit','Plein écran quitté').catch(()=>{})
         }
-        setAlerts(a => [{type:'fs',msg:'Plein écran quitté',at:new Date().toLocaleTimeString('fr-FR')},...a])
+        setAlertsDetect(a => [{type:'fs',msg:'Plein écran quitté',at:new Date().toLocaleTimeString('fr-FR')},...a])
       } else if (document.fullscreenElement) {
         fsPollGuardRef.current = false
       }
@@ -1144,8 +1160,8 @@ export default function ExamPage() {
         focusPollGuardRef.current = true
         const next = tabCount + 1; setTabCount(next)
         setRiskScore(r => Math.min(r + 10, 100))
-        setAlerts(a => [{type:'blur',msg:`Perte de focus détectée (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
-        warning(`Attention : perte de focus détectée (${next}/${examRef.current?.max_tab_switches??3})`)
+        setAlertsDetect(a => [{type:'blur',msg:`Perte de focus détectée (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
+        warnDetect(`Attention : perte de focus détectée (${next}/${examRef.current?.max_tab_switches??3})`)
         setFocusLost(true)
         const aId = attemptRef.current
         if (aId) {
@@ -1992,7 +2008,7 @@ export default function ExamPage() {
         const now = Date.now()
         if (now-(lastVisionAlertRef.current.multiscreen||0) > 60_000) {
           lastVisionAlertRef.current.multiscreen = now
-          warning(`${count} écrans détectés — un seul écran est autorisé pendant l'examen`)
+          warnDetect(`${count} écrans détectés — un seul écran est autorisé pendant l'examen`)
           logActivity(aId,'multi_screen_detected',`${count} écrans détectés`).catch(()=>{})
           logProctoring(aId,'multi_screen_detected',`${count} écrans détectés`).catch(()=>{})
         }
@@ -2376,7 +2392,7 @@ export default function ExamPage() {
     'gaze_away','head_turned','talking_detected','whisper_detected',
     'no_face_detected','multiple_faces','face_covered','face_hidden_object_detected',
     'suspect_object_detected','suspect_object_confirmed',
-    'liveness_check_failed','devtools_attempt','mouse_left_window',
+    'devtools_attempt','mouse_left_window',
     'pattern_gaze_talk_mouth','pattern_object_gaze_away','pattern_multi_face_audio',
     'pattern_head_turned_talking','pattern_whisper_gaze','pattern_mouth_covered_audio',
     // Audit complet (01/09) — signal rare (un seul par session, au pire) et
@@ -2420,7 +2436,7 @@ export default function ExamPage() {
     try {
       const res=await api.post<{banned?:boolean;alert_sent?:boolean;ban_reason?:string}>(`/api/exam_attempts/${aId}/log_activity`,{event_type:eventType,event_data:eventData})
       if(res.banned) triggerBan()
-      else if(res.alert_sent) warning("Comportement à risque détecté — l'enseignant a été alerté.")
+      else if(res.alert_sent) warnDetect("Comportement à risque détecté — l'enseignant a été alerté.")
     } catch {}
   }
 
@@ -2455,8 +2471,8 @@ export default function ExamPage() {
       if (!p.needs.every(sig => within(sig, now))) continue
       if (now - (lastPatternAlertRef.current[p.name] || 0) < PATTERN_COOLDOWN_MS) continue
       lastPatternAlertRef.current[p.name] = now
-      warning(p.message)
-      setAlerts(a => [{ type: 'pattern', msg: p.message, at: new Date().toLocaleTimeString('fr-FR') }, ...a])
+      warnDetect(p.message)
+      setAlertsDetect(a => [{ type: 'pattern', msg: p.message, at: new Date().toLocaleTimeString('fr-FR') }, ...a])
       logActivity(curAId, p.name, p.message).catch(() => {})
       logProctoring(curAId, p.name, p.message).catch(() => {})
       captureSnapshot(p.name, curAId, true, 1, null, 5_000)
@@ -2633,7 +2649,7 @@ export default function ExamPage() {
       const brightness = sampleBrightness(vid)
       if(brightness!==null && (brightness<BRIGHTNESS_LOW||brightness>BRIGHTNESS_HIGH) && now-lastLightWarnRef.current>60_000) {
         lastLightWarnRef.current=now
-        warning(brightness<BRIGHTNESS_LOW ? "Éclairage insuffisant détecté — rapprochez-vous d'une source de lumière." : 'Éclairage trop fort détecté — évitez un contre-jour direct.')
+        warnDetect(brightness<BRIGHTNESS_LOW ? "Éclairage insuffisant détecté — rapprochez-vous d'une source de lumière." : 'Éclairage trop fort détecté — évitez un contre-jour direct.')
       }
       const frameAnalysis = brightness!==null ? JSON.stringify({brightness,width:vid.videoWidth,height:vid.videoHeight}) : null
       await api.post(`/api/exam_attempts/${aId}/camera_snapshot`,{event_type:eventType,image_data:c.toDataURL('image/jpeg',0.55),face_detected:faceDetected,faces_count:facesCount,confidence_score:confidenceScore,frame_analysis:frameAnalysis})
@@ -2692,7 +2708,11 @@ export default function ExamPage() {
     // /models — chemin propre à ce miroir jsDelivr).
     const FACEAPI_MODEL_URL_CDN='https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model'
     const ALERT_COOLDOWN=30_000
-    const CONSEC_ALERT=3
+    // Relevé 3 → 5 (05/11/2026) : une absence doit durer ~25 s au lieu de ~15 s avant d'être signalée ; un visage qui sort du
+    // cadre quelques secondes (se pencher, boire, ajuster la caméra) ou une détection qui flanche (éclairage) ne déclenche plus rien.
+    const CONSEC_ALERT=5
+    // Une absence continue n'est re-signalée que toutes les 90 s (30 s avant) : le surveillant voit déjà l'état en direct.
+    const NO_FACE_COOLDOWN=90_000
     // Détection de personne(s) supplémentaire(s) : seuil plus court que le
     // reste (10s au lieu de 15s) — signal plus fiable/moins ambigu qu'une
     // absence de visage ou un léger mismatch, donc pas besoin d'attendre
@@ -2787,13 +2807,31 @@ export default function ExamPage() {
         // séparément, et seulement dans le cas à un seul visage (voir plus
         // bas) — leur échec éventuel n'efface plus jamais ce comptage déjà
         // acquis.
-        const dets = await fa.detectAllFaces(vid,opts)
+        let dets = await fa.detectAllFaces(vid,opts)
+        // Seconde chance avant de compter une absence : image sombre ou en contre-jour → on la corrige (luminosité/contraste)
+        // et on relance la détection. Évite les fausses absences en faible luminosité sans abaisser le niveau d'exigence
+        // (une vraie absence reste absente après correction). Sans effet sur un navigateur qui ne gère pas ctx.filter.
+        if (dets.length === 0) {
+          try {
+            const b = sampleBrightness(vid)
+            if (b !== null && (b < LIGHT_RETRY_BELOW || b > BRIGHTNESS_HIGH)) {
+              const cv = document.createElement('canvas'); cv.width = vid.videoWidth || 640; cv.height = vid.videoHeight || 480
+              const cx: any = cv.getContext('2d')
+              if (cx && 'filter' in cx) {
+                const f = Math.min(3, Math.max(0.6, 110 / Math.max(b, 8)))
+                cx.filter = `brightness(${f.toFixed(2)}) contrast(1.2)`
+                cx.drawImage(vid, 0, 0, cv.width, cv.height)
+                dets = await fa.detectAllFaces(cv, opts)
+              }
+            }
+          } catch {}
+        }
         const count=dets.length
         if(count===0){
           consNoFaceRef.current++; consMismatchRef.current=0; consMultiRef.current=0; consGood=0
           if(consNoFaceRef.current>=CONSEC_ALERT){
             setFaceStatus('bad'); setFaceIssue('no_face')
-            if(now-lastFaceAlertRef.current.no_face>ALERT_COOLDOWN){
+            if(now-lastFaceAlertRef.current.no_face>NO_FACE_COOLDOWN){
               lastFaceAlertRef.current.no_face=now
               // Retour DFIP — une luminosité insuffisante/excessive rend la
               // détection faciale peu fiable ; dans ce cas on ne pénalise pas
@@ -2820,8 +2858,8 @@ export default function ExamPage() {
               const objLabel = objHere?.phoneDetected?'téléphone':objHere?.bookDetected?'livre/document':objHere?.otherScreenDetected?'écran supplémentaire':null
               if (objLabel) {
                 const detail = objHere!.matches.map(m=>`${m.label} (confiance ${(m.score*100).toFixed(0)}%)`).join(', ')
-                warning(`Visage masqué — ${objLabel} détecté devant la caméra`)
-                setAlerts(a => [{type:'object',msg:`Visage masqué — ${objLabel} détecté devant la caméra`,at:new Date().toLocaleTimeString('fr-FR')},...a])
+                warnDetect(`Visage masqué — ${objLabel} détecté devant la caméra`)
+                setAlertsDetect(a => [{type:'object',msg:`Visage masqué — ${objLabel} détecté devant la caméra`,at:new Date().toLocaleTimeString('fr-FR')},...a])
                 logActivity(curAId,'face_hidden_object_detected',`Visage non détecté, objet identifié dans le cadre : ${detail}`).catch(()=>{})
                 logProctoring(curAId,'face_hidden_object_detected',`Visage non détecté, objet identifié dans le cadre : ${detail}`).catch(()=>{})
                 captureSnapshot('face_hidden_object_detected',curAId,false,0,null,5_000)
@@ -2829,11 +2867,11 @@ export default function ExamPage() {
                 const brightness = sampleBrightness(vid)
                 const poorLight = brightness!==null && (brightness<BRIGHTNESS_LOW||brightness>BRIGHTNESS_HIGH)
                 if(poorLight){
-                  warning("Éclairage insuffisant — l'IA ne peut pas vérifier votre présence de façon fiable, améliorez la luminosité")
+                  warnDetect("Éclairage insuffisant — l'IA ne peut pas vérifier votre présence de façon fiable, améliorez la luminosité")
                   logActivity(curAId,'no_face_low_light',`Absent ${consNoFaceRef.current} vérifications consécutives (luminosité=${brightness})`).catch(()=>{})
                   logProctoring(curAId,'no_face_low_light',`Absent ${consNoFaceRef.current} vérifications consécutives (luminosité=${brightness})`).catch(()=>{})
                 } else {
-                  warning('Aucun visage détecté — repositionnez-vous face à la caméra')
+                  warnDetect('Aucun visage détecté — repositionnez-vous face à la caméra')
                   logActivity(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
                   logProctoring(curAId,'no_face_detected',`Absent ${consNoFaceRef.current} vérifications consécutives`).catch(()=>{})
                 }
@@ -2848,7 +2886,7 @@ export default function ExamPage() {
             setFaceStatus('bad'); setFaceIssue('multiple')
             if(now-lastFaceAlertRef.current.multiple>ALERT_COOLDOWN){
               lastFaceAlertRef.current.multiple=now
-              warning(`${count} visages détectés — éloignez toute autre personne`)
+              warnDetect(`${count} visages détectés — éloignez toute autre personne`)
               logProctoring(curAId,'multiple_faces',`${count} visages`).catch(()=>{})
               captureSnapshot('multiple_faces',curAId,true,count,null,5_000)
             }
@@ -2948,8 +2986,8 @@ export default function ExamPage() {
         consGazeAwayRef.current = gazeAway ? consGazeAwayRef.current+1 : 0
         if (consGazeAwayRef.current>=CONSEC_ALERT_GAZE && now-(lastVisionAlertRef.current.gaze||0)>COOLDOWN) {
           lastVisionAlertRef.current.gaze=now
-          warning('Regard détourné de l\'écran de façon prolongée')
-          setAlerts(a => [{type:'gaze',msg:'Regard détourné de l\'écran de façon prolongée',at:new Date().toLocaleTimeString('fr-FR')},...a])
+          warnDetect('Regard détourné de l\'écran de façon prolongée')
+          setAlertsDetect(a => [{type:'gaze',msg:'Regard détourné de l\'écran de façon prolongée',at:new Date().toLocaleTimeString('fr-FR')},...a])
           logActivity(curAId,'gaze_away',`Regard détourné (${consGazeAwayRef.current} vérifications consécutives)`).catch(()=>{})
           logProctoring(curAId,'gaze_away','Regard détourné de façon prolongée').catch(()=>{})
         }
@@ -2961,8 +2999,8 @@ export default function ExamPage() {
         consHeadTurnRef.current = headTurned ? consHeadTurnRef.current+1 : 0
         if (consHeadTurnRef.current>=CONSEC_ALERT_GAZE && now-(lastVisionAlertRef.current.head||0)>COOLDOWN) {
           lastVisionAlertRef.current.head=now
-          warning('Tête tournée hors de l\'écran de façon prolongée')
-          setAlerts(a => [{type:'head',msg:'Tête tournée hors de l\'écran de façon prolongée',at:new Date().toLocaleTimeString('fr-FR')},...a])
+          warnDetect('Tête tournée hors de l\'écran de façon prolongée')
+          setAlertsDetect(a => [{type:'head',msg:'Tête tournée hors de l\'écran de façon prolongée',at:new Date().toLocaleTimeString('fr-FR')},...a])
           logActivity(curAId,'head_turned',`Tête tournée (yaw=${sig.headYaw?.toFixed(2)})`).catch(()=>{})
           logProctoring(curAId,'head_turned','Tête tournée de façon prolongée').catch(()=>{})
         }
@@ -2972,8 +3010,8 @@ export default function ExamPage() {
         consMouthRef.current = talking ? consMouthRef.current+1 : 0
         if (consMouthRef.current>=CONSEC_ALERT && now-(lastVisionAlertRef.current.mouth||0)>COOLDOWN) {
           lastVisionAlertRef.current.mouth=now
-          warning('Parole probable détectée')
-          setAlerts(a => [{type:'talking',msg:'Parole probable détectée',at:new Date().toLocaleTimeString('fr-FR')},...a])
+          warnDetect('Parole probable détectée')
+          setAlertsDetect(a => [{type:'talking',msg:'Parole probable détectée',at:new Date().toLocaleTimeString('fr-FR')},...a])
           logActivity(curAId,'talking_detected','Bouche ouverte de façon prolongée — parole probable').catch(()=>{})
           logProctoring(curAId,'talking_detected','Parole probable détectée').catch(()=>{})
         }
@@ -3100,8 +3138,8 @@ export default function ExamPage() {
         }
         const eventType = yoloStatus==='agreed' ? 'suspect_object_confirmed' : 'suspect_object_detected'
         const label = yoloStatus==='agreed' ? `Objet suspect confirmé par 2 modèles : ${what}` : `Objet suspect détecté : ${what}`
-        warning(label)
-        setAlerts(a => [{type:'object',msg:label,at:new Date().toLocaleTimeString('fr-FR')},...a])
+        warnDetect(label)
+        setAlertsDetect(a => [{type:'object',msg:label,at:new Date().toLocaleTimeString('fr-FR')},...a])
         // event_data envoyé en JSON exploitable (corrige un bug préexistant
         // : une simple phrase française y était envoyée avant, perdue
         // silencieusement côté backend au parsing — voir get_attempt_review,
@@ -3157,8 +3195,8 @@ export default function ExamPage() {
       if (yWhat && consYoloIndependentRef.current.count>=1 && now-(lastVisionAlertRef.current.object||0)>COOLDOWN) {
         lastVisionAlertRef.current.object = now
         const label = `Objet suspect détecté : ${yWhat}`
-        warning(label)
-        setAlerts(a => [{type:'object',msg:label,at:new Date().toLocaleTimeString('fr-FR')},...a])
+        warnDetect(label)
+        setAlertsDetect(a => [{type:'object',msg:label,at:new Date().toLocaleTimeString('fr-FR')},...a])
         // yolo.status='independent' — nouveau cas distinct de 'agreed'/
         // 'disagreed'/'unavailable'/'no_equivalent_class' (voir en-tête
         // visionEnrichedTick) : signifie qu'EfficientDet n'a PAS vu cet
@@ -4109,7 +4147,7 @@ export default function ExamPage() {
                 le flux vidéo lui-même (même principe que les plateformes de
                 surveillance standard) montre concrètement OÙ replacer son
                 visage, pas seulement QU'il manque. */}
-            {(faceStatus==='warn'||faceStatus==='bad') && (
+            {SHOW_DETECTION_ALERTS_TO_STUDENT && (faceStatus==='warn'||faceStatus==='bad') && (
               <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',pointerEvents:'none',padding:8,gap:6}}>
                 <div style={{width:'52%',aspectRatio:'3/4',borderRadius:'50%',border:`2px dashed ${faceStatus==='bad'?'#ef4444':'#f59e0b'}`,animation:faceStatus==='bad'?'faceRingBad 1.4s ease-in-out infinite':'faceRingWarn 1.6s ease-in-out infinite'}}/>
                 <div style={{background:'rgba(15,23,42,.78)',color:'#fff',fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:6,textAlign:'center',lineHeight:1.3}}>
@@ -4118,14 +4156,15 @@ export default function ExamPage() {
                 </div>
               </div>
             )}
-            <div style={{position:'absolute',top:6,right:6,padding:'3px 7px',background:identityUnderReview?'rgba(217,119,6,.92)':faceStatus==='ok'?'rgba(16,185,129,.9)':faceStatus==='warn'?'rgba(245,158,11,.9)':faceStatus==='bad'?'rgba(239,68,68,.9)':'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',borderRadius:4,color:'white',fontSize:11,fontWeight:600,display:'flex',alignItems:'center',gap:4,animation:faceStatus==='bad'?'faceRingBad 1.4s ease-in-out infinite':faceStatus==='warn'?'faceRingWarn 1.6s ease-in-out infinite':'none'}}>
+            <div style={{position:'absolute',top:6,right:6,padding:'3px 7px',background:identityUnderReview?'rgba(217,119,6,.92)':faceBadge==='ok'?'rgba(16,185,129,.9)':faceBadge==='warn'?'rgba(245,158,11,.9)':faceBadge==='bad'?'rgba(239,68,68,.9)':'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',borderRadius:4,color:'white',fontSize:11,fontWeight:600,display:'flex',alignItems:'center',gap:4,animation:faceBadge==='bad'?'faceRingBad 1.4s ease-in-out infinite':faceBadge==='warn'?'faceRingWarn 1.6s ease-in-out infinite':'none'}}>
               {identityUnderReview&&<><i className="fas fa-user-shield"/>Identité en vérification</>}
-              {!identityUnderReview&&faceStatus==='init'&&<><i className="fas fa-sync fa-spin"/>Init…</>}
-              {!identityUnderReview&&faceStatus==='ok'&&<><i className="fas fa-user-check"/>Visage OK</>}
-              {!identityUnderReview&&faceStatus==='warn'&&faceIssue==='multiple'&&<><i className="fas fa-user-group"/>Plusieurs visages…</>}
-              {!identityUnderReview&&faceStatus==='warn'&&faceIssue!=='multiple'&&<><i className="fas fa-eye-slash"/>Repositionnez…</>}
-              {!identityUnderReview&&faceStatus==='bad'&&faceIssue==='multiple'&&<><i className="fas fa-user-group"/>Plusieurs visages</>}
-              {!identityUnderReview&&faceStatus==='bad'&&faceIssue!=='multiple'&&<><i className="fas fa-times"/>Visage absent</>}
+              {!identityUnderReview&&faceBadge==='init'&&<><i className="fas fa-sync fa-spin"/>Init…</>}
+              {!identityUnderReview&&faceBadge==='ok'&&<><i className="fas fa-user-check"/>Visage OK</>}
+              {!identityUnderReview&&faceBadge==='warn'&&faceIssue==='multiple'&&<><i className="fas fa-user-group"/>Plusieurs visages…</>}
+              {!identityUnderReview&&faceBadge==='warn'&&faceIssue!=='multiple'&&<><i className="fas fa-eye-slash"/>Repositionnez…</>}
+              {!identityUnderReview&&faceBadge==='bad'&&faceIssue==='multiple'&&<><i className="fas fa-user-group"/>Plusieurs visages</>}
+              {!identityUnderReview&&faceBadge==='bad'&&faceIssue!=='multiple'&&<><i className="fas fa-times"/>Visage absent</>}
+              {!identityUnderReview&&faceBadge==='neutral'&&<><i className="fas fa-video"/>Caméra active</>}
               {!identityUnderReview&&faceStatus==='unavailable'&&<><i className="fas fa-triangle-exclamation"/>Vérification indisponible</>}
             </div>
           </div>
