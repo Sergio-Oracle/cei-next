@@ -2708,9 +2708,10 @@ export default function ExamPage() {
     // /models — chemin propre à ce miroir jsDelivr).
     const FACEAPI_MODEL_URL_CDN='https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model'
     const ALERT_COOLDOWN=30_000
-    // Relevé 3 → 5 (05/11/2026) : une absence doit durer ~25 s au lieu de ~15 s avant d'être signalée ; un visage qui sort du
-    // cadre quelques secondes (se pencher, boire, ajuster la caméra) ou une détection qui flanche (éclairage) ne déclenche plus rien.
-    const CONSEC_ALERT=5
+    // Abaissé 3 → 2 (05/11/2026, demande du propriétaire) : contrôle toutes les 5 s, donc une absence doit durer ~10 s (au lieu de
+    // ~15 s) avant d'être signalée. La tolérance vient d'ailleurs : seconde détection sur image éclaircie avant de compter une
+    // absence, absence classée « éclairage faible » (non pénalisante) en image sombre, rappel espacé de 90 s, poids de risque réduit.
+    const CONSEC_ALERT=2
     // Une absence continue n'est re-signalée que toutes les 90 s (30 s avant) : le surveillant voit déjà l'état en direct.
     const NO_FACE_COOLDOWN=90_000
     // Détection de personne(s) supplémentaire(s) : seuil plus court que le
