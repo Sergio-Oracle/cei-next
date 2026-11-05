@@ -100,6 +100,17 @@ function offlineSince(iso: string | null): number | null {
   return d >= OFFLINE_THRESHOLD_SEC ? d : null
 }
 
+// Priorité des alertes en direct sur la vignette d'un étudiant (un seul badge par étudiant, 7 s). Un signal de priorité
+// inférieure n'écrase plus un signal plus important encore affiché, et reste moins longtemps : une absence de visage
+// (la plus fréquente, souvent due à l'éclairage) ne masque plus « plusieurs visages » ou un objet suspect (05/11/2026).
+const LIVE_ALERT_PRIORITY_LOW = new Set(['no_face_detected', 'no_face_low_light', 'mouse_left_window', 'window_blur', 'gaze_away'])
+const LIVE_ALERT_PRIORITY_HIGH = new Set(['multiple_faces', 'face_hidden_object_detected', 'suspect_object_confirmed', 'suspect_object_detected',
+  'identity_mismatch_sustained', 'devtools_attempt', 'face_covered', 'pattern_gaze_talk_mouth', 'pattern_object_gaze_away', 'pattern_multi_face_audio',
+  'pattern_head_turned_talking', 'pattern_whisper_gaze', 'pattern_mouth_covered_audio'])
+function liveAlertPriority(eventType: string): number {
+  return LIVE_ALERT_PRIORITY_LOW.has(eventType) ? 1 : LIVE_ALERT_PRIORITY_HIGH.has(eventType) ? 3 : 2
+}
+
 // Traduction des event_type (stockés en anglais côté backend/agent de vision)
 // — utilisée à la fois par le panneau de logs et la grille de snapshots, qui
 // affichait auparavant la valeur brute ("face reference captured") faute de
@@ -187,10 +198,10 @@ const EVENT_LABEL_MAP: Record<string, string> = {
 const EVENT_ICON_MAP: Record<string, { icon: string; color: string }> = {
   tab_switch:             { icon: 'exchange-alt',        color: '#f59e0b' },
   tab_closed:             { icon: 'door-open',           color: '#ef4444' },
-  no_face_detected:       { icon: 'user-slash',          color: '#ef4444' },
+  no_face_detected:       { icon: 'user-slash',          color: '#f59e0b' },   // orange (05/11/2026) : souvent l'éclairage ou le cadrage, rouge réservé aux signaux graves
   no_face_low_light:      { icon: 'lightbulb',           color: '#f59e0b' },
   face_hidden_object_detected: { icon: 'mobile-screen',  color: '#ef4444' },
-  no_face:                { icon: 'user-slash',          color: '#ef4444' },
+  no_face:                { icon: 'user-slash',          color: '#f59e0b' },
   multiple_faces:         { icon: 'users',               color: '#ef4444' },
   teacher_warning:        { icon: 'exclamation-triangle', color: '#f59e0b' },
   teacher_message:        { icon: 'comment',             color: '#3b82f6' },
@@ -314,6 +325,7 @@ export default function ProctorMonitorPage() {
   // après coup via "Logs"). Clé = identité de base (student-{id}).
   const [liveAlerts, setLiveAlerts] = useState<Map<string, { eventType: string; message: string }>>(new Map())
   const liveAlertTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  const livePrioRef = useRef<Map<string, number>>(new Map())   // priorité de l'alerte actuellement affichée par étudiant
   useEffect(() => () => { liveAlertTimersRef.current.forEach(t => clearTimeout(t)); liveAlertTimersRef.current.clear() }, [])
 
   /* identités LiveKit des étudiants actuellement connectés */
@@ -669,6 +681,10 @@ export default function ProctorMonitorPage() {
           if (msg?.kind !== 'proctor_live_alert') return
           const identity = participant?.identity
           if (!identity || !identity.startsWith('student-')) return
+          const prio = liveAlertPriority(msg.event_type)
+          const shown = livePrioRef.current.get(identity)
+          if (shown !== undefined && shown > prio) return   // un signal plus important est déjà affiché sur cette vignette
+          livePrioRef.current.set(identity, prio)
           setLiveAlerts(prev => {
             const next = new Map(prev)
             next.set(identity, { eventType: msg.event_type, message: msg.message })
@@ -678,8 +694,9 @@ export default function ProctorMonitorPage() {
           if (timers.has(identity)) clearTimeout(timers.get(identity))
           timers.set(identity, setTimeout(() => {
             setLiveAlerts(prev => { const n = new Map(prev); n.delete(identity); return n })
+            livePrioRef.current.delete(identity)
             timers.delete(identity)
-          }, 7000))
+          }, prio === 1 ? 4000 : 7000))
         } catch {}
       })
 
