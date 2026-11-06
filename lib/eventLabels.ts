@@ -12,6 +12,8 @@ const SHARED: Record<string, string> = {
   client_quit_code_used: "Sortie d'urgence par code surveillant",
   client_quit_code_failed: 'Code de sortie incorrect saisi',
   client_exit_code_issued: "Code de sortie d'urgence généré pour l'étudiant",
+  client_usb_storage: 'Clé ou disque USB branché (éjecté par le client)',
+  client_external_display: 'Écran externe ou projection détecté (HDMI, VGA, sans fil)',
   client_remote_session: 'Bureau à distance détecté sur le poste',
   client_assist_opened: "Assistance technique ouverte par l'étudiant",
   client_assist_closed: "Assistance technique fermée",

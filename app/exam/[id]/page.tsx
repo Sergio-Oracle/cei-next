@@ -785,6 +785,8 @@ export default function ExamPage() {
       const aId = attemptRef.current
       if (evt.type === 'client_forbidden_app') warning(`Fermez le logiciel « ${evt.data?.name} » : il est interdit pendant l'examen.`)
       if (evt.type === 'client_second_display') warning('Un second écran est branché : il est masqué. Débranchez-le.')
+      if (evt.type === 'client_usb_storage') warning("Une clé ou un disque USB est branché : il est éjecté. Débranchez-le, les périphériques de stockage sont interdits pendant l'examen.")
+      if (evt.type === 'client_external_display') warning('Un écran externe ou un câble de projection (HDMI, VGA…) est branché : débranchez-le tout de suite.')
       if (evt.type === 'client_assist_opened') assistOpenRef.current = true
       if (evt.type === 'client_assist_closed') { assistOpenRef.current = false; assistGraceRef.current = Date.now() + 3000 }
       if (evt.type === 'client_remote_session') warning('Un bureau à distance est détecté sur ce poste : fermez-le immédiatement.')
