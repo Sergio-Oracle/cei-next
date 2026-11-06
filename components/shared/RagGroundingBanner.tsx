@@ -9,7 +9,7 @@ export interface Grounding {
   unsupported: { question: number; title: string; reason: string; cited?: string[] }[]
 }
 
-export default function RagGroundingBanner({ g }: { g: Grounding | null }) {
+export default function RagGroundingBanner({ g, correctionAnchored }: { g: Grounding | null; correctionAnchored?: boolean }) {
   if (!g || !g.checked) return null
   const bad = g.unsupported
   const ok = bad.length === 0
@@ -29,6 +29,7 @@ export default function RagGroundingBanner({ g }: { g: Grounding | null }) {
         </ul>
       )}
       {!ok && <div style={{ fontSize: 13.5, color: '#92400e' }}>Corrigez ou supprimez ces questions dans l’aperçu avant d’enregistrer le sujet.</div>}
+      {correctionAnchored && <div style={{ fontSize: 13.5, color: '#047857' }}><i className="fas fa-link" style={{ marginRight: 6 }} />Une fois le sujet enregistré, la correction par l’IA s’appuiera aussi sur ces passages du cours : elle ne jugera pas d’après des connaissances extérieures.</div>}
       {g.status === 'partial' && <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>Une partie des questions n’a pas pu être vérifiée (service d’IA indisponible un instant).</div>}
     </div>
   )

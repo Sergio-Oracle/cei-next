@@ -121,6 +121,8 @@ export default function ProfessorSuggestionsPage() {
   const [previewContent, setPreviewContent] = useState('')
   const [previewRubric,  setPreviewRubric]  = useState('')
   const [previewGrounding, setPreviewGrounding] = useState<Grounding | null>(null)
+  // Passages du cours sur lesquels le sujet est construit : gardés avec le sujet, la correction IA s'y appuie
+  const [previewRagPassages, setPreviewRagPassages] = useState<any[]>([])
   const [savingSubject,  setSavingSubject]  = useState(false)
   const [createdSubject, setCreatedSubject] = useState<CreatedSubject | null>(null)
 
@@ -415,13 +417,14 @@ export default function ProfessorSuggestionsPage() {
         total_points: totalPoints,
         points_by_type: pointsByType,
       }
-      const data = await api.post<{ success: boolean; title: string; content: string; rubric: string; duplicates?: { similarity: number }[]; grounding?: Grounding | null; type_warnings?: string[] }>(
+      const data = await api.post<{ success: boolean; title: string; content: string; rubric: string; duplicates?: { similarity: number }[]; grounding?: Grounding | null; rag_passages?: any[]; type_warnings?: string[] }>(
         '/api/subjects/generate-full-exam', { suggestion: suggestionWithTypes }
       )
       setPreviewTitle(data.title || s.title)
       setPreviewContent(data.content || '')
       setPreviewRubric(data.rubric || '')
       setPreviewGrounding(data.grounding ?? null)
+      setPreviewRagPassages(data.rag_passages ?? [])
       setBankSaveEc(ecId)
       setElimSet(new Set())
       setStep('preview')
@@ -454,6 +457,7 @@ export default function ProfessorSuggestionsPage() {
         rubric_override: previewRubric,
         ec_id:           ecId ? Number(ecId) : null,
         metadata:        { generated_by_ai: true },
+        rag_passages:    previewRagPassages,
         media_link_key:  mediaLinkKey || undefined,
       })
       setCreatedSubject(res.subject)
@@ -699,7 +703,7 @@ export default function ProfessorSuggestionsPage() {
           useLabel="Remplacer l'aperçu par ce brouillon"
           onUseDraft={(d: ChatDraft) => {
             setPreviewTitle(d.title || previewTitle || 'Sujet (assistant IA)'); setPreviewContent(d.content); setPreviewRubric(d.rubric || '')
-            setPreviewGrounding(null); setElimSet(new Set())
+            setPreviewGrounding(null); setPreviewRagPassages([]); setElimSet(new Set())
           }} />
       </div>
       {draftRestoredAt && (
@@ -721,7 +725,7 @@ export default function ProfessorSuggestionsPage() {
             <i className="fas fa-robot" style={{ marginRight:4 }} />IA — Modifiable
           </span>
         </div>
-        <RagGroundingBanner g={previewGrounding} />
+        <RagGroundingBanner g={previewGrounding} correctionAnchored={previewRagPassages.length > 0} />
 
         <div style={{ background:'var(--surface)', borderRadius:12, border:'1px solid var(--border)', overflow:'hidden', boxShadow:'var(--shadow-sm)', marginBottom:14 }}>
           <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, background:'var(--background)' }}>
@@ -1086,7 +1090,7 @@ export default function ProfessorSuggestionsPage() {
           useLabel="Ouvrir ce brouillon"
           onUseDraft={(d: ChatDraft) => {
             setPreviewTitle(d.title || 'Sujet (assistant IA)'); setPreviewContent(d.content); setPreviewRubric(d.rubric || '')
-            setPreviewGrounding(null); setBankSaveEc(ecId); setElimSet(new Set()); setStep('preview')
+            setPreviewGrounding(null); setPreviewRagPassages([]); setBankSaveEc(ecId); setElimSet(new Set()); setStep('preview')
           }} />
       )}
 
