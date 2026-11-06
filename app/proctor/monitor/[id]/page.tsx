@@ -259,8 +259,10 @@ export default function ProctorMonitorPage() {
   // (contrairement au surveillant, déjà borné à son groupe côté backend) et
   // la grille tentait d'ouvrir autant de connexions LiveKit simultanées,
   // au risque de geler l'onglet. Grille limitée à VIDEO_PAGE_SIZE tuiles.
-  const [videoPage,  setVideoPage]   = useState(0)
-  useEffect(() => { setVideoPage(0) }, [search, filter])
+  // Pagination de toutes les listes (grille vidéo, tableaux En cours / Terminés / Exclus, hors ligne) :
+  // page + taille par liste ; « Afficher plus » en bas agrandit la page.
+  const [pgState, setPgState] = useState<Record<string, { page: number; size: number }>>({})
+  useEffect(() => { setPgState(p => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, { ...v, page: 0 }]))) }, [search, filter])
   // Compteur incrémenté à chaque piste vidéo reçue/perdue : sert de
   // déclencheur au ré-attachement des <video> des tuiles affichées (voir
   // l'effet « attache les vidéos des tuiles visibles » plus bas).
@@ -1195,7 +1197,7 @@ export default function ProctorMonitorPage() {
     const t1 = setTimeout(attachVisible, 0)
     const t2 = setTimeout(attachVisible, 600)
     return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [trackTick, videoPage, liveSet, phoneLiveSet, data, search, filter, loading])
+  }, [trackTick, pgState.video, liveSet, phoneLiveSet, data, search, filter, loading])
 
   useEffect(() => {
     const LK = () => (typeof window !== 'undefined' ? window.LivekitClient : null)
@@ -1271,12 +1273,22 @@ export default function ProctorMonitorPage() {
     return true
   }).sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0))
 
-  const videoTotalPages = Math.max(1, Math.ceil(liveStudents.length / VIDEO_PAGE_SIZE))
-  const videoPageClamped = Math.min(videoPage, videoTotalPages - 1)
-  const pagedLiveStudents = liveStudents.slice(
-    videoPageClamped * VIDEO_PAGE_SIZE,
-    (videoPageClamped + 1) * VIDEO_PAGE_SIZE,
-  )
+  function pgOf(key: string, total: number, defSize: number, maxSize = 1000): Pager {
+    const st = pgState[key] || { page: 0, size: defSize }
+    const pages = Math.max(1, Math.ceil(total / st.size))
+    const page = Math.min(st.page, pages - 1)
+    const upd = (patch: Partial<{ page: number; size: number }>) =>
+      setPgState(p => ({ ...p, [key]: { page: st.page, size: st.size, ...patch } }))
+    return {
+      page, pages, size: st.size, total, from: page * st.size, to: Math.min(total, (page + 1) * st.size),
+      go: n => upd({ page: Math.max(0, Math.min(pages - 1, n)) }),
+      setSize: n => upd({ size: n, page: 0 }),
+      more: step => upd({ size: Math.min(maxSize, st.size + step), page: 0 }),
+      maxSize,
+    }
+  }
+  const pgVideo = pgOf('video', liveStudents.length, VIDEO_PAGE_SIZE, 48)
+  const pagedLiveStudents = liveStudents.slice(pgVideo.from, pgVideo.to)
   visibleIdsRef.current = pagedLiveStudents.map(s => s.livekit_identity)
 
   /* Étudiants en cours d'examen dont le heartbeat n'a pas été reçu depuis le
@@ -1285,6 +1297,18 @@ export default function ProctorMonitorPage() {
   const offlineInProgress = inProgress
     .filter(s => offlineSince(s.last_seen_at) != null)
     .sort((a, b) => (offlineSince(b.last_seen_at) ?? 0) - (offlineSince(a.last_seen_at) ?? 0))
+  const inProgressRows = inProgress
+    .filter(s => {
+      const q = search.toLowerCase()
+      if (q && !s.student_name.toLowerCase().includes(q)) return false
+      if (filter === 'high_risk') return s.risk_score >= 60
+      return true
+    })
+    .sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0))
+  const pgIP = pgOf('inprogress', inProgressRows.length, 25)
+  const pgDone = pgOf('completed', completed.length, 25)
+  const pgBan = pgOf('banned', banned.length, 25)
+  const pgOff = pgOf('offline', offlineInProgress.length, 12)
 
   /* ── Actions communes sur les cartes ──────────────────────────────────────── */
   function openMsg(s: Student, type: 'message' | 'warning') {
@@ -1835,16 +1859,7 @@ export default function ProctorMonitorPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {inProgress
-                      .filter(s => {
-                        const q = search.toLowerCase()
-                        const m = !q || s.student_name.toLowerCase().includes(q)
-                        if (!m) return false
-                        if (filter === 'high_risk') return s.risk_score >= 60
-                        return true
-                      })
-                      .sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0))
-                      .map(s => {
+                    {inProgressRows.slice(pgIP.from, pgIP.to).map(s => {
                         const rc = riskCls(s.risk_score)
                         const offSec = offlineSince(s.last_seen_at)
                         return (
@@ -1890,6 +1905,7 @@ export default function ProctorMonitorPage() {
                     )}
                   </tbody>
                 </table>
+                <PagerBar pg={pgIP} sizes={[10, 25, 50, 100]} step={25} />
               </Section>
             )}
 
@@ -1906,7 +1922,7 @@ export default function ProctorMonitorPage() {
                   <tbody>
                     {completed.length === 0 ? (
                       <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20, color: 'rgba(255,255,255,.3)' }}>Aucune copie soumise</td></tr>
-                    ) : completed.map(s => {
+                    ) : completed.slice(pgDone.from, pgDone.to).map(s => {
                       const rc    = riskCls(s.risk_score)
                       const isAuto = s.status === 'auto_submitted'
                       const dur   = s.duration_minutes != null ? `${s.duration_minutes} min` : '—'
@@ -1933,6 +1949,7 @@ export default function ProctorMonitorPage() {
                     })}
                   </tbody>
                 </table>
+                <PagerBar pg={pgDone} sizes={[10, 25, 50, 100]} step={25} />
               </Section>
             )}
 
@@ -1946,7 +1963,7 @@ export default function ProctorMonitorPage() {
                   <tbody>
                     {banned.length === 0 ? (
                       <tr><td colSpan={4} style={{ textAlign: 'center', padding: 20, color: 'rgba(255,255,255,.3)' }}>Aucun étudiant exclu</td></tr>
-                    ) : banned.map(s => {
+                    ) : banned.slice(pgBan.from, pgBan.to).map(s => {
                       const rc = riskCls(s.risk_score)
                       return (
                         <tr key={s.attempt_id}>
@@ -1959,6 +1976,7 @@ export default function ProctorMonitorPage() {
                     })}
                   </tbody>
                 </table>
+                <PagerBar pg={pgBan} sizes={[10, 25, 50, 100]} step={25} />
               </Section>
             )}
           </>
@@ -1972,7 +1990,7 @@ export default function ProctorMonitorPage() {
               {offlineInProgress.length} étudiant{offlineInProgress.length > 1 ? 's' : ''} hors ligne (examen toujours en cours)
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {offlineInProgress.map(s => (
+              {offlineInProgress.slice(pgOff.from, pgOff.to).map(s => (
                 <div key={s.attempt_id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.05)', borderRadius: 8, padding: '6px 12px' }}>
                   <span style={{ fontSize:15, fontWeight: 700, color: 'rgba(255,255,255,.85)' }}>{s.student_name}</span>
                   <span style={{ fontSize:12.5, color: '#fcd34d' }}>hors ligne depuis {elapsed(s.last_seen_at)}</span>
@@ -1983,6 +2001,7 @@ export default function ProctorMonitorPage() {
                 </div>
               ))}
             </div>
+            <PagerBar pg={pgOff} sizes={[12, 24, 50, 100]} step={12} />
             <div style={{ fontSize:12, color: 'rgba(255,255,255,.35)', marginTop: 8 }}>
               Une déconnexion ne compte jamais comme une violation — l'étudiant conserve son code de reprise et sera signalé à sa reconnexion.
             </div>
@@ -1995,17 +2014,15 @@ export default function ProctorMonitorPage() {
             <div style={{ fontSize:12, fontWeight: 700, color: 'rgba(255,255,255,.35)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block', animation: 'pulse 2s infinite' }} />
               <span>Vues en direct ({liveStudents.length})</span>
-              {videoTotalPages > 1 && (
+              {pgVideo.pages > 1 && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', textTransform: 'none', letterSpacing: 'normal' }}>
-                  <button onClick={() => setVideoPage(p => Math.max(0, p - 1))} disabled={videoPageClamped === 0}
-                    style={{ ...btnSecondary, padding: '4px 10px', opacity: videoPageClamped === 0 ? 0.4 : 1 }}>
+                  <button onClick={() => pgVideo.go(pgVideo.page - 1)} disabled={pgVideo.page === 0}
+                    style={{ ...btnSecondary, padding: '4px 10px', opacity: pgVideo.page === 0 ? 0.4 : 1 }}>
                     <i className="fas fa-chevron-left" />
                   </button>
-                  <span style={{ color: 'rgba(255,255,255,.5)' }}>
-                    Page {videoPageClamped + 1} / {videoTotalPages}
-                  </span>
-                  <button onClick={() => setVideoPage(p => Math.min(videoTotalPages - 1, p + 1))} disabled={videoPageClamped >= videoTotalPages - 1}
-                    style={{ ...btnSecondary, padding: '4px 10px', opacity: videoPageClamped >= videoTotalPages - 1 ? 0.4 : 1 }}>
+                  <span style={{ color: 'rgba(255,255,255,.5)' }}>Page {pgVideo.page + 1} / {pgVideo.pages}</span>
+                  <button onClick={() => pgVideo.go(pgVideo.page + 1)} disabled={pgVideo.page >= pgVideo.pages - 1}
+                    style={{ ...btnSecondary, padding: '4px 10px', opacity: pgVideo.page >= pgVideo.pages - 1 ? 0.4 : 1 }}>
                     <i className="fas fa-chevron-right" />
                   </button>
                 </span>
@@ -2033,6 +2050,7 @@ export default function ProctorMonitorPage() {
               />
             ))}
           </div>
+          <PagerBar pg={pgVideo} sizes={[6, 12, 24, 48]} step={12} />
           {liveSet.size === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 24px', color: 'rgba(255,255,255,.25)' }}>
               <i className="fas fa-hourglass-half" style={{ fontSize: 53, display: 'block', marginBottom: 14 }} />
@@ -2742,6 +2760,41 @@ function Pill({ label, icon, dot, color }: { label: string; icon?: string; dot?:
       {dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, animation: 'pulse 2s infinite', display: 'inline-block' }} />}
       {icon && <i className={`fas ${icon}`} />}
       {label}
+    </div>
+  )
+}
+
+type Pager = {
+  page: number; pages: number; size: number; total: number; from: number; to: number; maxSize: number
+  go: (n: number) => void; setSize: (n: number) => void; more: (step: number) => void
+}
+
+/** Barre de pagination en bas d'une liste : plage affichée, pages, taille de page, « Afficher plus ». */
+function PagerBar({ pg, sizes, step }: { pg: Pager; sizes: number[]; step: number }) {
+  if (pg.total <= sizes[0]) return null
+  const dis = (off: boolean): React.CSSProperties => ({ ...btnSecondary, padding: '5px 12px', opacity: off ? 0.4 : 1 })
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center', padding: '12px 4px 4px', fontSize: 13.5, color: 'rgba(255,255,255,.55)' }}>
+      <span>{pg.from + 1}–{pg.to} sur {pg.total}</span>
+      <button onClick={() => pg.go(pg.page - 1)} disabled={pg.page === 0} style={dis(pg.page === 0)} aria-label="Page précédente">
+        <i className="fas fa-chevron-left" />
+      </button>
+      <span>Page {pg.page + 1} / {pg.pages}</span>
+      <button onClick={() => pg.go(pg.page + 1)} disabled={pg.page >= pg.pages - 1} style={dis(pg.page >= pg.pages - 1)} aria-label="Page suivante">
+        <i className="fas fa-chevron-right" />
+      </button>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        Par page
+        <select value={pg.size} onChange={e => pg.setSize(Number(e.target.value))}
+          style={{ background: 'rgba(255,255,255,.07)', color: 'white', border: '1px solid rgba(255,255,255,.2)', borderRadius: 6, padding: '4px 6px' }}>
+          {Array.from(new Set([...sizes, pg.size])).sort((a, b) => a - b).map(n => <option key={n} value={n} style={{ color: '#0f172a' }}>{n}</option>)}
+        </select>
+      </label>
+      {pg.to < pg.total && pg.size < pg.maxSize && (
+        <button onClick={() => pg.more(step)} style={{ ...btnSecondary, padding: '5px 14px' }}>
+          <i className="fas fa-chevron-down" /> Afficher plus
+        </button>
+      )}
     </div>
   )
 }
