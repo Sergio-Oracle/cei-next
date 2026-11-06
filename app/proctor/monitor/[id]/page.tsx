@@ -1309,6 +1309,7 @@ export default function ProctorMonitorPage() {
   const pgDone = pgOf('completed', completed.length, 25)
   const pgBan = pgOf('banned', banned.length, 25)
   const pgOff = pgOf('offline', offlineInProgress.length, 12)
+  const pgProc = pgOf('proctors', proctors.length, 12)
 
   /* ── Actions communes sur les cartes ──────────────────────────────────────── */
   function openMsg(s: Student, type: 'message' | 'warning') {
@@ -1748,7 +1749,7 @@ export default function ProctorMonitorPage() {
               <i className="fas fa-user-tie" style={{ marginRight: 5 }} />Surveillants humains connectés
             </div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {proctors.map(p => {
+              {proctors.slice(pgProc.from, pgProc.to).map(p => {
                 const st = proctorStatus.get(p.proctor_identity) || { online: false, camOn: false, micOn: false }
                 const diffuse = st.camOn || st.micOn
                 const groupStudents = (data?.attempts || []).filter(s => s.proctor_id === p.proctor_id)
@@ -1817,6 +1818,7 @@ export default function ProctorMonitorPage() {
                 )
               })}
             </div>
+            <PagerBar pg={pgProc} sizes={[6, 12, 24, 50]} step={12} />
           </div>
         )}
 
