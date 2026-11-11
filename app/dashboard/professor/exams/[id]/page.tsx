@@ -11,6 +11,7 @@ import { recomputeGrades, publishWithGradeCheck } from '@/lib/gradeCheck'
 import type { OnlineExam, ExamAttempt, ExamStatus } from '@/types'
 import SecurityReportPanel from '@/components/shared/SecurityReportPanel'
 import ExamWavesPanel from '@/components/exam/ExamWavesPanel'
+import ExamMakeupPanel from '@/components/exam/ExamMakeupPanel'
 import StatTile from '@/components/ui/StatTile'
 import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
 import { useProgressive } from '@/lib/useProgressive'
@@ -516,6 +517,7 @@ export default function ProfessorExamDetailPage() {
       </div>
 
       <ExamWavesPanel examId={Number(id)} durationMinutes={exam.duration_minutes} locked={exam.status === 'closed'} />
+      {exam.status !== 'draft' && <ExamMakeupPanel examId={Number(id)} durationMinutes={exam.duration_minutes} />}
 
 
       {/* Rapport de sécurité — propre à cet examen (mêmes stats/tableaux que

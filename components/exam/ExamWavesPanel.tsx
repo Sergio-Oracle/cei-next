@@ -36,6 +36,11 @@ export default function ExamWavesPanel({ examId, durationMinutes, locked }: {
     try { setSum(await api.get<Summary>(`/api/online_exams/${examId}/waves`)) } catch { setSum(null) }
   }
   useEffect(() => { load() }, [examId]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {          // le rattrapage vient de modifier les vagues
+    const h = () => { load() }
+    window.addEventListener('exam-waves-changed', h)
+    return () => window.removeEventListener('exam-waves-changed', h)
+  }, [examId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!sum || (locked && !sum.enabled)) return null
   const count = parseInt(form.count, 10)
