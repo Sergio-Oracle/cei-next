@@ -311,7 +311,7 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
   const getQ = (l: string) => {
     const m = strip(l).match(Q_RE); if (!m) return null
     const marker = strip(l).match(TYPE_MARKER)
-    return { num: m[1], text: strip(m[2]).replace(TYPE_MARKER,'').replace(DIFF_MARKER,'').trim(), markerType: marker ? marker[1].toUpperCase() : null }
+    return { num: m[1], text: strip(m[2]).replace(TYPE_MARKER,'').replace(DIFF_MARKER,'').replace(/\s*\.{10,}\s*/g,' ').replace(/\s{2,}/g,' ').trim(), markerType: marker ? marker[1].toUpperCase() : null }
   }
   const C_RE = /^(?:\(?([A-Fa-f])\)?)\s*[.):\s-]\s+(.+)/
   const isC  = (l: string) => C_RE.test(strip(l)) && strip(l).length > 3
