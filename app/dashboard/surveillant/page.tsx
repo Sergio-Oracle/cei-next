@@ -13,6 +13,7 @@ interface StudentInfo {
   attempt_id:    number | null
   status:        string
   risk_score:    number
+  exam_seen?:    boolean
 }
 
 interface ExamWithStudents {
@@ -223,7 +224,9 @@ function StudentsTable({ students }: { students: StudentInfo[] }) {
                     </thead>
                     <tbody>
                       {pageItems.map(student => {
-                        const st = attemptLabel(student.status)
+                        const st = student.status === 'in_progress' && student.exam_seen === false
+                          ? { label: 'En connexion', color: '#64748b', bg: '#f1f5f9' }      // copie pas encore affichée
+                          : attemptLabel(student.status)
                         return (
                           <tr key={student.student_id} style={{ borderTop: '1px solid var(--border)' }}>
                             <td style={{ padding: '10px 24px' }}>

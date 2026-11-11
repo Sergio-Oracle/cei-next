@@ -51,6 +51,8 @@ export default function ProfessorExamDetailPage() {
   const [attemptsTotalPages, setAttemptsTotalPages] = useState(1)
   const [attemptsTotal, setAttemptsTotal] = useState(0)
   const [needsCorrectionCount, setNeedsCorrectionCount] = useState(0)
+  const [participantsCount, setParticipantsCount] = useState(0)   // étudiants qui ont eu leur copie sous les yeux
+  const [notReachedCount, setNotReachedCount] = useState(0)        // tentatives créées mais jamais affichées (caméra, réseau…)
   const [attemptsSearch, setAttemptsSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [loadingAttempts, setLoadingAttempts] = useState(false)
@@ -110,11 +112,15 @@ export default function ProfessorExamDetailPage() {
         setAttemptsTotal(data.length)
         setAttemptsTotalPages(1)
         setNeedsCorrectionCount(data.filter((a: AttemptWithMeta) => a.needs_correction).length)
+        setParticipantsCount(data.filter((a: AttemptWithMeta) => a.exam_seen !== false).length)
+        setNotReachedCount(data.filter((a: AttemptWithMeta) => a.exam_seen === false).length)
       } else if (data) {
         setAttempts(data.attempts ?? [])
         setAttemptsTotal(data.total ?? 0)
         setAttemptsTotalPages(data.total_pages ?? 1)
         setNeedsCorrectionCount(data.needs_correction_count ?? 0)
+        setParticipantsCount(data.participants_count ?? data.total ?? 0)
+        setNotReachedCount(data.not_reached_count ?? 0)
       }
       setAttemptsPage(page)
     } finally {
@@ -453,11 +459,18 @@ export default function ProfessorExamDetailPage() {
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
-        <StatTile icon="fa-users" label="Participants" value={attempts.length} color="#3b82f6" />
+        <StatTile icon="fa-users" label="Participants" value={participantsCount} color="#3b82f6" />
         <StatTile icon="fa-pen" label="À corriger" value={toCorrect} color={toCorrect > 0 ? '#f59e0b' : '#10b981'} />
         <StatTile icon="fa-check" label="Corrigées" value={corrected} color="#10b981" />
         <StatTile icon="fa-chart-bar" label="Moyenne" value={avgScore ? `${avgScore}/20` : '—'} color="#3b82f6" />
       </div>
+
+{notReachedCount > 0 && (
+        <div style={{ marginTop: -12, marginBottom: 20, padding: '10px 14px', borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontSize: 14.5 }}>
+          <i className="fa-solid fa-circle-info" style={{ marginRight: 8, color: '#64748b' }} />
+          {notReachedCount} tentative(s) n'ont jamais eu leur copie affichée (caméra, micro ou réseau) : ces étudiants ne sont pas comptés comme participants. Ils restent visibles dans la liste ci-dessous.
+        </div>
+      )}
 
       {/* Horaires + sécurité */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 24 }}>
@@ -570,7 +583,7 @@ export default function ProfessorExamDetailPage() {
               ) : attempts_pg.shown.map(a => (
                 <tr key={a.id} style={{ background: a.needs_correction ? '#fffbeb' : undefined }}>
                   <td>
-                    <div style={{ fontWeight: 600 }}>{a.student_name ?? `Étudiant #${a.student_id}`}</div>
+                    <div style={{ fontWeight: 600 }}>{a.student_name ?? `Étudiant #${a.student_id}`}{a.exam_seen === false && <span title="Cet étudiant a ouvert l'examen mais n'a jamais vu sa copie (caméra, micro, réseau…) : il n'est pas compté comme participant." style={{ marginLeft: 8, padding: '1px 8px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}>Copie non affichée</span>}</div>
                     {a.student_email && <div style={{ fontSize:14.5, color: 'var(--text-muted)' }}>{a.student_email}</div>}
                   </td>
                   <td><StatusBadge status={a.status} /></td>

@@ -302,6 +302,8 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
   }
 
   const inProgress = attempts.filter(a => a.status === 'in_progress')
+  const inProgressSeen = inProgress.filter(a => a.exam_seen !== false).length     // copie réellement affichée
+  const inProgressConnecting = inProgress.length - inProgressSeen                  // en train de se connecter (caméra, réseau…)
   const inProgress_pg = useProgressive(inProgress)
   const done       = attempts.filter(a => a.status === 'submitted' || a.status === 'auto_submitted')
   const done_pg = useProgressive(done)
@@ -399,7 +401,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
             ) : (
               <>
                 {/* EN COURS */}
-                <Section title={`EN COURS (${inProgress.length})`} color="#059669" dot>
+                <Section title={`EN COURS (${inProgressSeen})` + (inProgressConnecting > 0 ? ` — ${inProgressConnecting} en connexion, copie pas encore affichée` : '')} color="#059669" dot>
                   <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: 8 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
@@ -413,7 +415,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                           : inProgress_pg.shown.map(a => (
                             <tr key={a.id}>
                               <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
-                                <strong>{a.student_name || 'N/A'}</strong>
+                                <strong>{a.student_name || 'N/A'}</strong>{a.exam_seen === false && <span title="Cet étudiant n'a jamais eu sa copie sous les yeux (caméra, micro, réseau…) : il n'est pas compté comme participant." style={{ marginLeft: 8, padding: '1px 8px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}>Copie non affichée</span>}
                                 {a.student_email && <><br /><small style={{ color: '#64748b' }}>{a.student_email}</small></>}
                               </td>
                               <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
@@ -468,7 +470,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                             return (
                               <tr key={a.id}>
                                 <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
-                                  <strong>{a.student_name || 'N/A'}</strong>
+                                  <strong>{a.student_name || 'N/A'}</strong>{a.exam_seen === false && <span title="Cet étudiant n'a jamais eu sa copie sous les yeux (caméra, micro, réseau…) : il n'est pas compté comme participant." style={{ marginLeft: 8, padding: '1px 8px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}>Copie non affichée</span>}
                                   {a.student_email && <><br /><small style={{ color: '#64748b' }}>{a.student_email}</small></>}
                                 </td>
                                 <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>

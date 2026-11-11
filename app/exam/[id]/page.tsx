@@ -996,6 +996,32 @@ export default function ExamPage() {
     }
   }, [phase]) // eslint-disable-line
 
+  /* ── « Copie affichée » : l'étudiant n'est compté comme participant que lorsqu'il a RÉELLEMENT sa copie sous les yeux.
+     La tentative existe dès le clic sur « Démarrer » ; un étudiant bloqué ensuite (caméra, micro, réseau…) n'a jamais vu l'examen.
+     Envoyé une seule fois, avec reprises (le réseau peut flancher justement à ce moment) ; le serveur a deux secours
+     (heartbeat de la page d'examen, première sauvegarde de réponses). ─────────────────────────────────────────────── */
+  const seenSentRef = useRef(false)
+  useEffect(() => {
+    if (phase !== 'exam' || isPreview || seenSentRef.current) return
+    if (parsedBlocks.length === 0 && shuffledBlocks.length === 0) return            // les questions ne sont pas encore à l'écran
+    const attId = attemptRef.current ?? attempt?.id
+    if (!attId) return
+    // petit délai : on attend que la copie soit réellement peinte (annulé si le rendu se relance avant)
+    const t = setTimeout(() => {
+      if (seenSentRef.current) return
+      seenSentRef.current = true
+      let tries = 0
+      const post = () => {
+        api.post(`/api/exam_attempts/${attId}/seen`, {}).catch(() => {
+          if (++tries < 6 && !sessionEndedRef.current) setTimeout(post, 3000 * tries)
+          else seenSentRef.current = false                                           // abandon : le prochain rendu réessaiera
+        })
+      }
+      post()
+    }, 400)
+    return () => clearTimeout(t)
+  }, [phase, parsedBlocks.length, shuffledBlocks.length, attempt?.id]) // eslint-disable-line
+
   /* ── Pagination façon Moodle calculée côté serveur ───────────────────── */
   useEffect(() => {
     if (phase !== 'exam' || isPreview) return
