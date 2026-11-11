@@ -402,6 +402,8 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
         const im = strip(lines[i]).match(ITEM_RE)
         if (im && q.markerType !== 'ORDRE') { gItems.push(im[1].trim()); i++; continue }
         if (q.markerType === 'CLOZE' && !gItems.length && !gGrid && !choices.length && !C_RE.test(strip(lines[i]))) {
+          // Titre complet (« Titre court (2 pts) ») : le texte à trous qui suit est le corps de la question, pas la suite du titre
+          if (/\(\s*\d+(?:[.,]\d+)?\s*pts?\s*\)\s*$/i.test(q.text)) { extraLines.push(lines[i]); i++; continue }
           // Suite du texte à trous coupée par un retour à la ligne : elle n'est pas une proposition
           q.text = (q.text + ' ' + strip(lines[i])).trim(); i++; continue
         }
