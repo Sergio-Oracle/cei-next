@@ -11,7 +11,6 @@ interface Student {
   student_name:     string
   student_email:    string
   status:           string
-  exam_seen?:       boolean      // false = pas encore sa copie sous les yeux (en connexion)
   risk_score:       number
   warnings_count:   number
   tab_switches:     number
@@ -100,8 +99,7 @@ export default function ProctorPage() {
   // les 8 s ci-dessus.
 
   const students  = data?.attempts ?? []
-  const active    = students.filter(s => s.status === 'in_progress' && s.exam_seen !== false)   // présents : copie réellement affichée
-  const connecting = students.filter(s => s.status === 'in_progress' && s.exam_seen === false).length   // en connexion, pas comptés
+  const active    = students.filter(s => s.status === 'in_progress')
   const done      = students.filter(s => s.status === 'submitted' || s.status === 'auto_submitted')
   const bannedAll = students.filter(s => s.banned)
   const highRisk  = students.filter(s => s.risk_score >= 70 && !s.banned)
@@ -222,7 +220,6 @@ export default function ProctorPage() {
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', display: 'inline-block', animation: 'pulse 2s infinite' }} /> LIVE
           </div>
           <div className="pc-pill" style={{ background: 'rgba(255,255,255,.15)' }}><i className="fas fa-users" /> {active.length} actifs</div>
-          {connecting > 0 && <div className="pc-pill" title="Ont cliqué « Démarrer » mais n'ont pas encore leur copie à l'écran (caméra, micro, réseau…) : non comptés présents." style={{ background: 'rgba(148,163,184,.25)' }}><i className="fas fa-plug" /> {connecting} en connexion</div>}
           <div className="pc-pill" style={{ background: 'rgba(239,68,68,.3)' }}><i className="fas fa-exclamation-triangle" /> {highRisk.length} risque élevé</div>
           <div className="pc-pill" style={{ background: 'rgba(16,185,129,.3)' }}><i className="fas fa-check-circle" /> {done.length} terminés</div>
           {bannedAll.length > 0 && <div className="pc-pill" style={{ background: 'rgba(239,68,68,.25)' }}><i className="fas fa-ban" /> {bannedAll.length} exclus</div>}

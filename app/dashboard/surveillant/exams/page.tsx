@@ -11,7 +11,6 @@ interface StudentInfo {
   student_email: string
   status:        string
   risk_score:    number
-  exam_seen?:    boolean      // false = n'a pas encore sa copie sous les yeux (connexion, caméra…)
 }
 
 interface SurveillantExam {
@@ -82,8 +81,7 @@ export default function SurveillantExamsPage() {
       ) : exams.map(exam => {
         const sc = STATUS_CFG[exam.status] ?? STATUS_CFG.draft
         const students = exam.my_students ?? []
-        const inProgress  = students.filter(s => s.status === 'in_progress' && s.exam_seen !== false).length   // copie réellement affichée
-        const connecting  = students.filter(s => s.status === 'in_progress' && s.exam_seen === false).length    // en train de se connecter
+        const inProgress  = students.filter(s => s.status === 'in_progress').length
         const submitted   = students.filter(s => ['submitted','auto_submitted'].includes(s.status)).length
         const notStarted  = students.filter(s => s.status === 'not_started').length
         const bannedCount = students.filter(s => s.status === 'banned').length
@@ -116,7 +114,6 @@ export default function SurveillantExamsPage() {
             {/* Barre progression mini-stats */}
             <div style={{ padding: '8px 20px', background: 'var(--background)', borderBottom: '1px solid var(--border)', display: 'flex', gap: 18, flexWrap: 'wrap' }}>
               <span style={{ fontSize:14.5, color: '#3b82f6', fontWeight: 600 }}><strong>{inProgress}</strong> en cours</span>
-              {connecting > 0 && <span title="Ces étudiants ont démarré l'examen mais n'ont pas encore leur copie à l'écran (caméra, micro, réseau…) : ils ne sont pas comptés « en cours »." style={{ fontSize:14.5, color: '#64748b', fontWeight: 600 }}><strong>{connecting}</strong> en connexion</span>}
               <span style={{ fontSize:14.5, color: '#10b981', fontWeight: 600 }}><strong>{submitted}</strong> soumis</span>
               <span style={{ fontSize:14.5, color: '#94a3b8', fontWeight: 600 }}><strong>{notStarted}</strong> pas commencé</span>
               {bannedCount > 0 && <span style={{ fontSize:14.5, color: '#ef4444', fontWeight: 600 }}><strong>{bannedCount}</strong> exclu(s)</span>}

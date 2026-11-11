@@ -310,8 +310,7 @@ export default function AdminExamDetailPage() {
   )
 
   const fmt = (d?: string | null) => d ? new Date(d).toLocaleString('fr-FR') : '—'
-  const participants = attempts.filter(a => a.exam_seen !== false).length   // ont eu leur copie sous les yeux
-  const notReached   = attempts.filter(a => a.exam_seen === false).length   // tentative créée, copie jamais affichée
+  const participants = attempts.length
   const corrected   = attempts.filter(a => a.score != null).length
   const toCorrect   = attempts.filter(a => a.needs_correction && a.score == null).length
   const banned      = attempts.filter(a => a.status === 'banned').length
@@ -392,12 +391,6 @@ export default function AdminExamDetailPage() {
         <StatTile icon="fa-chart-bar" label="Moyenne" value={avgScore ? `${avgScore}/20` : '—'} color="#3b82f6" />
       </div>
 
-{notReached > 0 && (
-        <div style={{ marginTop: -12, marginBottom: 20, padding: '10px 14px', borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontSize: 14.5 }}>
-          <i className="fa-solid fa-circle-info" style={{ marginRight: 8, color: '#64748b' }} />
-          {notReached} tentative(s) n'ont jamais eu leur copie affichée (caméra, micro ou réseau) : ces étudiants ne sont pas comptés comme participants. Ils restent visibles dans la liste ci-dessous.
-        </div>
-      )}
 
       {/* Infos + Sécurité */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 24 }}>
@@ -469,7 +462,7 @@ export default function AdminExamDetailPage() {
                 : attempts_pg.shown.map(a => (
                   <tr key={a.id}>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{a.student_name ?? `Étudiant #${a.student_id}`}{a.exam_seen === false && <span title="Cet étudiant n'a jamais eu sa copie sous les yeux (caméra, micro, réseau…) : il n'est pas compté comme participant." style={{ marginLeft: 8, padding: '1px 8px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}>Copie non affichée</span>}</div>
+                      <div style={{ fontWeight: 600 }}>{a.student_name ?? `Étudiant #${a.student_id}`}</div>
                       {a.student_email && <div style={{ fontSize:13, color: 'var(--text-muted)' }}>{a.student_email}</div>}
                       {(a.extra_minutes ?? 0) > 0 && <span style={{ fontSize:12, background: '#dbeafe', color: '#1d4ed8', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>+{a.extra_minutes}min</span>}
                     </td>

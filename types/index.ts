@@ -180,7 +180,6 @@ export interface ExamAttempt {
   total_questions?: number
   imported_grade?: boolean
   /** false = l'étudiant n'a jamais eu sa copie sous les yeux (bloqué avant la page d'examen) : non compté comme participant */
-  exam_seen?: boolean
 }
 
 // ── Réclamations ──────────────────────────────────────────────────────────────
