@@ -15,6 +15,7 @@ interface Student {
   student_name:      string
   student_email:     string
   status:            string
+  exam_seen?:        boolean      // false = n'a pas encore sa copie sous les yeux (en connexion) : pas compté présent
   risk_score:        number
   warnings_count:    number
   tab_switches:      number
@@ -1244,7 +1245,11 @@ export default function ProctorMonitorPage() {
   const proctors      = data?.proctors  ?? []
   const msgsCount     = data?.messages_count ?? 0
 
-  const inProgress = students.filter(s => s.status === 'in_progress')
+  // Présent = a RÉELLEMENT sa copie sous les yeux. Un étudiant qui a cliqué « Démarrer » mais n'a pas encore (ou jamais) vu les
+  // questions (caméra, micro, réseau…) est « en connexion » : listé pour être aidé, mais jamais compté.
+  const inProgressAll = students.filter(s => s.status === 'in_progress')
+  const inProgress    = inProgressAll.filter(s => s.exam_seen !== false)
+  const connecting    = inProgressAll.length - inProgress.length
   const completed  = students.filter(s => ['submitted', 'auto_submitted'].includes(s.status))
   const banned     = students.filter(s => s.status === 'banned')
   const highRisk   = students.filter(s => s.risk_score >= 60)
@@ -1297,7 +1302,7 @@ export default function ProctorMonitorPage() {
   const offlineInProgress = inProgress
     .filter(s => offlineSince(s.last_seen_at) != null)
     .sort((a, b) => (offlineSince(b.last_seen_at) ?? 0) - (offlineSince(a.last_seen_at) ?? 0))
-  const inProgressRows = inProgress
+  const inProgressRows = inProgressAll
     .filter(s => {
       const q = search.toLowerCase()
       if (q && !s.student_name.toLowerCase().includes(q)) return false
@@ -1825,8 +1830,9 @@ export default function ProctorMonitorPage() {
         {/* Mini-stats + filtres */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18, alignItems: 'center' }}>
           {[
-            { label: 'Total', val: students.length, color: '#e2e8f0' },
+            { label: 'Total', val: students.filter(s => s.exam_seen !== false).length, color: '#e2e8f0' },
             { label: 'En cours', val: inProgress.length, color: '#34d399' },
+            ...(connecting > 0 ? [{ label: 'En connexion', val: connecting, color: '#cbd5e1' }] : []),
             { label: 'Terminés', val: completed.length, color: '#6ee7b7' },
             { label: 'Exclus', val: banned.length, color: '#f87171' },
             ...(avgScore != null ? [{ label: 'Moy.', val: `${avgScore.toFixed(1)}/20`, color: '#93c5fd' }] : []),
@@ -1868,6 +1874,7 @@ export default function ProctorMonitorPage() {
                           <tr key={s.attempt_id}>
                             <td>
                               <strong style={{ color: 'rgba(255,255,255,.9)' }}>{s.student_name}</strong>
+                              {s.exam_seen === false && <span title="Cet étudiant a cliqué « Démarrer » mais n'a pas encore sa copie sous les yeux (caméra, micro, réseau…) : il n'est pas compté présent." style={{ marginLeft: 8, fontSize: 11.5, fontWeight: 800, color: '#cbd5e1', background: 'rgba(148,163,184,.18)', border: '1px solid rgba(148,163,184,.45)', borderRadius: 4, padding: '1px 6px' }}>EN CONNEXION</span>}
                               {offSec != null && (
                                 <span title="Aucun signal du navigateur depuis ce délai — n'affecte pas le score de risque"
                                   style={{ marginLeft: 8, fontSize:11.5, fontWeight: 800, color: '#fcd34d', background: 'rgba(245,158,11,.15)', border: '1px solid rgba(245,158,11,.4)', borderRadius: 4, padding: '1px 6px', letterSpacing: '.03em' }}>
