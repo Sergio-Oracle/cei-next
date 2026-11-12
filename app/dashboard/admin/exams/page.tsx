@@ -305,7 +305,7 @@ export default function AdminExamsPage() {
                   )}
 
                   {/* Rattrapage — examen terminé (organiser) ou session de rattrapage (ajouter des étudiants) */}
-                  {(isClosed || exam.makeup_of_id) && (
+                  {(isClosed || (exam.end_time && new Date(exam.end_time) < new Date()) || exam.makeup_of_id) && (
                     <Link href={`/dashboard/admin/exams/${exam.id}#rattrapage`} title="Organiser un rattrapage pour les étudiants absents, sans moyens ou empêchés"
                       style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid #bfdbfe', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: '#1e3a8a', textDecoration: 'none' }}>
                       <i className="fas fa-rotate-right" />Rattrapage

@@ -464,6 +464,12 @@ export default function ProfessorExamDetailPage() {
       </div>
 
 
+      {/* Rattrapage — en haut de page dès que l'examen est terminé ou clôturé (et sur la session de rattrapage elle-même) */}
+      {(exam.status === 'closed' || new Date(exam.end_time) < new Date() || (exam as any).makeup_of_id) && (
+        <ExamMakeupPanel examId={Number(id)} durationMinutes={exam.duration_minutes} makeupOfId={(exam as any).makeup_of_id}
+          basePath="/dashboard/professor/exams" ended />
+      )}
+
       {/* Horaires + sécurité */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 24 }}>
         <div className="card">
@@ -517,10 +523,6 @@ export default function ProfessorExamDetailPage() {
       </div>
 
       <ExamWavesPanel examId={Number(id)} durationMinutes={exam.duration_minutes} locked={exam.status === 'closed'} />
-      {exam.status !== 'draft' && exam.status !== 'scheduled' && (
-        <ExamMakeupPanel examId={Number(id)} durationMinutes={exam.duration_minutes} makeupOfId={(exam as any).makeup_of_id}
-          basePath="/dashboard/professor/exams" ended={exam.status === 'closed' || new Date(exam.end_time) < new Date()} />
-      )}
 
 
       {/* Rapport de sécurité — propre à cet examen (mêmes stats/tableaux que

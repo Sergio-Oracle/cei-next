@@ -6,8 +6,8 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { localInputToIso } from '@/lib/datetime'
 
-interface Candidate { id: number; name: string; email: string; composed: boolean; score: number | null; makeup: string | null }
-interface CandidatesResponse { candidates: Candidate[]; total: number; composed_total: number }
+interface Candidate { id: number; name: string; email: string; absent: boolean; below_average: boolean; composed: boolean; score: number | null; makeup: string | null }
+interface CandidatesResponse { candidates: Candidate[]; total: number; priority_total: number; absent_total: number; below_total: number; composed_total: number }
 interface Makeup { id: number; title: string; start_time: string; end_time: string; status: string; students: number; participants: number }
 
 const fmt = (iso: string) =>
@@ -26,7 +26,7 @@ export default function ExamMakeupPanel({ examId, durationMinutes, makeupOfId, b
   const [busy, setBusy] = useState(false)
   const [search, setSearch] = useState('')
   const [everyone, setEveryone] = useState(false)
-  const [data, setData] = useState<CandidatesResponse>({ candidates: [], total: 0, composed_total: 0 })
+  const [data, setData] = useState<CandidatesResponse>({ candidates: [], total: 0, priority_total: 0, absent_total: 0, below_total: 0, composed_total: 0 })
   const [picked, setPicked] = useState<Set<number>>(new Set())
   const [start, setStart] = useState('')
   const [end, setEnd] = useState('')
@@ -112,8 +112,9 @@ export default function ExamMakeupPanel({ examId, durationMinutes, makeupOfId, b
           </p>
         ) : (
           <p style={{ marginTop: 0, color: 'var(--text-muted)', fontSize: 15 }}>
-            Pour les étudiants qui n’ont pas pu composer : absents, sans moyens de connexion ou empêchés. Le rattrapage est une <strong>session distincte</strong> :
-            mêmes questions, autre date, uniquement pour les étudiants que vous convoquez. Il ne modifie ni l’examen, ni ses vagues, ni les copies déjà rendues.
+            Convoquez les <strong>absents</strong> (qui n’ont pas pu se connecter pour composer) et les étudiants <strong>sous la moyenne</strong> (moins de 10/20) :
+            ils sont proposés en premier. Le rattrapage est une <strong>session distincte</strong> : mêmes questions, autre date, uniquement pour les étudiants
+            que vous convoquez. Il ne modifie ni l’examen, ni ses vagues, ni les copies déjà rendues.
           </p>
         )}
 
@@ -149,11 +150,11 @@ export default function ExamMakeupPanel({ examId, durationMinutes, makeupOfId, b
             <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginBottom: 12 }}>
               <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
                 <input type="radio" checked={!everyone} onChange={() => setEveryone(false)} />
-                Absents, sans moyens de connexion ou empêchés
+                Absents et sous la moyenne (moins de 10/20)
               </label>
               <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
                 <input type="radio" checked={everyone} onChange={() => setEveryone(true)} />
-                Tous les inscrits (y compris ceux qui ont composé : leur copie reste conservée)
+                Tous les inscrits (les autres suivent ; leur copie reste conservée)
               </label>
             </div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
@@ -161,9 +162,16 @@ export default function ExamMakeupPanel({ examId, durationMinutes, makeupOfId, b
                 onChange={e => setSearch(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') load() }} />
               <button className="btn btn-secondary" onClick={() => load()} disabled={loading}><i className="fas fa-search" /> Rechercher</button>
               <span style={{ color: 'var(--text-muted)', fontSize: 14.5 }}>
-                {data.total.toLocaleString('fr-FR')} étudiant(s) · <strong>{picked.size}</strong> convoqué(s)
+                {data.absent_total.toLocaleString('fr-FR')} absent(s) · {data.below_total.toLocaleString('fr-FR')} sous la moyenne · <strong>{picked.size}</strong> convoqué(s)
               </span>
             </div>
+            {selectable.length > 0 && (
+              <div style={{ marginBottom: 10 }}>
+                <button className="btn btn-secondary" onClick={() => setPicked(prev => { const n = new Set(prev); data.candidates.filter(c => !c.makeup && (c.absent || c.below_average)).forEach(c => n.add(c.id)); return n })}>
+                  <i className="fas fa-check-double" /> Sélectionner tous les absents et les étudiants sous la moyenne
+                </button>
+              </div>
+            )}
             <div style={{ maxHeight: 360, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 10 }}>
               {loading ? <div style={{ padding: 16 }}>Chargement…</div> : data.candidates.length === 0 ? (
                 <div style={{ padding: 16, color: 'var(--text-muted)' }}>Aucun étudiant à afficher.</div>
@@ -178,7 +186,7 @@ export default function ExamMakeupPanel({ examId, durationMinutes, makeupOfId, b
                       <tr key={c.id} onClick={() => { if (!c.makeup) toggle(c.id) }} style={{ cursor: c.makeup ? 'default' : 'pointer', opacity: c.makeup ? 0.55 : 1 }}>
                         <td><input type="checkbox" disabled={!!c.makeup} checked={picked.has(c.id)} onChange={() => toggle(c.id)} onClick={e => e.stopPropagation()} /></td>
                         <td><strong>{c.name}</strong></td><td>{c.email}</td>
-                        <td>{c.makeup ? 'Déjà convoqué' : c.composed ? `A composé${c.score != null ? ` (${c.score}/20)` : ''}` : 'Absent'}</td>
+                        <td>{c.makeup ? 'Déjà convoqué' : c.absent ? 'Absent' : c.below_average ? `Sous la moyenne (${String(c.score).replace('.', ',')}/20)` : `A composé${c.score != null ? ` (${String(c.score).replace('.', ',')}/20)` : ''}`}</td>
                       </tr>
                     ))}
                   </tbody>
