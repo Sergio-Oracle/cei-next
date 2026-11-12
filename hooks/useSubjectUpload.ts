@@ -18,7 +18,7 @@ export interface CreatedSubject {
   has_corrige?: boolean
   corrige_warnings?: string[]
   normalization?: { counts: Record<string, number>; warnings: string[]; questions?: number }[]
-  detection?: { counts: Record<string, number>; converted: string[]; warnings: string[]; questions_found?: number; expected?: number; declared?: number | null; lost_lines?: string[]; review?: { ok: boolean | null; issues: { question: string; probleme: string }[] } }
+  detection?: { counts: Record<string, number>; converted: string[]; warnings: string[]; questions_found?: number; expected?: number; declared?: number | null; lost_lines?: string[]; points_note?: string | null; review?: { ok: boolean | null; issues: { question: string; probleme: string }[] } }
 }
 
 export interface QTypes {
