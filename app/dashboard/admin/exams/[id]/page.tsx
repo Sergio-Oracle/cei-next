@@ -434,7 +434,10 @@ export default function AdminExamDetailPage() {
       </div>
 
       <ExamWavesPanel examId={Number(id)} durationMinutes={exam.duration_minutes} locked={exam.status === 'closed'} />
-      {exam.status !== 'draft' && <ExamMakeupPanel examId={Number(id)} durationMinutes={exam.duration_minutes} />}
+      {exam.status !== 'draft' && exam.status !== 'scheduled' && (
+        <ExamMakeupPanel examId={Number(id)} durationMinutes={exam.duration_minutes} makeupOfId={(exam as any).makeup_of_id}
+          basePath="/dashboard/admin/exams" ended={exam.status === 'closed' || new Date(exam.end_time) < new Date()} />
+      )}
 
 
       {/* Rapport de sécurité — propre à cet examen (mêmes stats/tableaux que

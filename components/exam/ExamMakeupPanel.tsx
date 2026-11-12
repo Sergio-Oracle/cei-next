@@ -1,44 +1,62 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { localInputToIso } from '@/lib/datetime'
 
-interface Candidate { id: number; name: string; email: string }
-interface CandidatesResponse { candidates: Candidate[]; total: number }
+interface Candidate { id: number; name: string; email: string; composed: boolean; score: number | null; makeup: string | null }
+interface CandidatesResponse { candidates: Candidate[]; total: number; composed_total: number }
+interface Makeup { id: number; title: string; start_time: string; end_time: string; status: string; students: number; participants: number }
 
-/** Rattrapage : le personnel choisit les étudiants qui n'ont pas pu composer (sans moyens, absents, bloqués avant les questions)
- *  et leur ouvre un nouveau créneau sur le même sujet. Les autres étudiants ne sont pas concernés. */
-export default function ExamMakeupPanel({ examId, durationMinutes }: { examId: number; durationMinutes: number }) {
+const fmt = (iso: string) =>
+  new Date(iso).toLocaleString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+
+/** Rattrapage : une SESSION À PART (autre date, mêmes questions) pour les étudiants qui n'ont pas pu composer — absents, sans moyens de
+ *  connexion, empêchés. Distinct des vagues : il ne modifie ni l'examen, ni ses vagues, ni les copies déjà rendues. */
+export default function ExamMakeupPanel({ examId, durationMinutes, makeupOfId, basePath, ended }: {
+  examId: number; durationMinutes: number; makeupOfId?: number | null; basePath: string; ended: boolean
+}) {
   const { success, error } = useToast()
+  const isMakeup = !!makeupOfId
+  const [makeups, setMakeups] = useState<Makeup[]>([])
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [busy, setBusy] = useState(false)
   const [search, setSearch] = useState('')
-  const [data, setData] = useState<CandidatesResponse>({ candidates: [], total: 0 })
+  const [everyone, setEveryone] = useState(false)
+  const [data, setData] = useState<CandidatesResponse>({ candidates: [], total: 0, composed_total: 0 })
   const [picked, setPicked] = useState<Set<number>>(new Set())
   const [start, setStart] = useState('')
   const [end, setEnd] = useState('')
 
-  async function load(q = search) {
+  const loadMakeups = useCallback(async () => {
+    if (isMakeup) return
+    try { setMakeups((await api.get<{ makeups: Makeup[] }>(`/api/online_exams/${examId}/makeups`)).makeups || []) } catch { setMakeups([]) }
+  }, [examId, isMakeup])
+  useEffect(() => { loadMakeups() }, [loadMakeups])
+
+  async function load(q = search, all = everyone) {
     setLoading(true)
     try {
       const params = new URLSearchParams({ limit: '500' })
       if (q.trim()) params.set('search', q.trim())
+      if (all) params.set('include_composed', '1')
       setData(await api.get<CandidatesResponse>(`/api/online_exams/${examId}/makeup/candidates?${params.toString()}`))
     } catch (e: any) { error(e?.message || 'Chargement impossible') } finally { setLoading(false) }
   }
-  useEffect(() => { if (open) load('') }, [open, examId]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (open) load(search, everyone) }, [open, everyone]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const selectable = data.candidates.filter(c => !c.makeup)
   function toggle(id: number) {
     setPicked(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
   }
-  const allShown = data.candidates.length > 0 && data.candidates.every(c => picked.has(c.id))
+  const allShown = selectable.length > 0 && selectable.every(c => picked.has(c.id))
   function toggleAll() {
     setPicked(prev => {
       const n = new Set(prev)
-      if (allShown) data.candidates.forEach(c => n.delete(c.id)); else data.candidates.forEach(c => n.add(c.id))
+      if (allShown) selectable.forEach(c => n.delete(c.id)); else selectable.forEach(c => n.add(c.id))
       return n
     })
   }
@@ -56,17 +74,22 @@ export default function ExamMakeupPanel({ examId, durationMinutes }: { examId: n
 
   async function submit() {
     if (picked.size === 0) { error('Choisissez au moins un étudiant'); return }
-    if (!start || !end) { error('Indiquez le début et la fin du rattrapage'); return }
-    if (!confirm(`Ouvrir le rattrapage à ${picked.size} étudiant(s) ? Ils seront prévenus par notification et par e-mail.`)) return
+    if (!isMakeup && (!start || !end)) { error('Indiquez le début et la fin du rattrapage'); return }
+    if (!confirm(`${isMakeup ? 'Ajouter' : 'Convoquer'} ${picked.size} étudiant(s) au rattrapage ? Ils seront prévenus par notification et par e-mail.`)) return
     setBusy(true)
     try {
-      await api.post(`/api/online_exams/${examId}/makeup`, {
-        student_ids: Array.from(picked), start_time: localInputToIso(start), end_time: localInputToIso(end),
-      })
-      success('Rattrapage organisé')
+      if (isMakeup) {
+        await api.post(`/api/online_exams/${examId}/makeup_students`, { student_ids: Array.from(picked) })
+        success('Étudiants ajoutés au rattrapage')
+      } else {
+        await api.post(`/api/online_exams/${examId}/makeups`, {
+          student_ids: Array.from(picked), start_time: localInputToIso(start), end_time: localInputToIso(end),
+        })
+        success('Rattrapage organisé')
+        await loadMakeups()
+      }
       setPicked(new Set()); setStart(''); setEnd(''); setOpen(false)
-      window.dispatchEvent(new Event('exam-waves-changed'))
-    } catch (e: any) { error(e?.message || 'Organisation impossible') } finally { setBusy(false) }
+    } catch (e: any) { error(e?.message || 'Opération impossible') } finally { setBusy(false) }
   }
 
   return (
@@ -75,38 +98,80 @@ export default function ExamMakeupPanel({ examId, durationMinutes }: { examId: n
         <h3 style={{ margin: 0 }}><i className="fa-solid fa-rotate-right" style={{ marginRight: 8 }} />Rattrapage</h3>
       </div>
       <div style={{ padding: '20px 24px' }}>
-        <p style={{ marginTop: 0, color: 'var(--text-muted)', fontSize: 15 }}>
-          Faites recomposer les étudiants qui n’ont pas pu passer l’examen (sans moyens de connexion, absents, empêchés avant d’avoir vu les questions).
-          Choisissez-les puis fixez un nouveau créneau : ils composent le même sujet. Les autres étudiants ne sont pas concernés.
-        </p>
-        {!open ? (
-          <button className="btn btn-primary" onClick={() => setOpen(true)}>
-            <i className="fas fa-user-check" /> Choisir les étudiants du rattrapage
-          </button>
+        {isMakeup ? (
+          <p style={{ marginTop: 0, color: 'var(--text-muted)', fontSize: 15 }}>
+            Cette session est un <strong>rattrapage</strong> : mêmes questions que l’examen d’origine, réservée aux étudiants convoqués.{' '}
+            <Link href={`${basePath}/${makeupOfId}`}>Voir l’examen d’origine</Link>
+          </p>
         ) : (
+          <p style={{ marginTop: 0, color: 'var(--text-muted)', fontSize: 15 }}>
+            Pour les étudiants qui n’ont pas pu composer : absents, sans moyens de connexion ou empêchés. Le rattrapage est une <strong>session distincte</strong> :
+            mêmes questions, autre date, uniquement pour les étudiants que vous convoquez. Il ne modifie ni l’examen, ni ses vagues, ni les copies déjà rendues.
+          </p>
+        )}
+
+        {!isMakeup && makeups.length > 0 && (
+          <div style={{ overflowX: 'auto', marginBottom: 14 }}>
+            <table className="table" style={{ width: '100%' }}>
+              <thead><tr><th>Rattrapage</th><th>Créneau (heure locale)</th><th>Convoqués</th><th>Présents</th></tr></thead>
+              <tbody>
+                {makeups.map(m => (
+                  <tr key={m.id}>
+                    <td><Link href={`${basePath}/${m.id}`}><strong>{m.title}</strong></Link></td>
+                    <td>{fmt(m.start_time)} → {new Date(m.end_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</td>
+                    <td>{m.students}</td><td>{m.participants}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {!isMakeup && !ended && (
+          <p style={{ color: 'var(--text-muted)', fontSize: 14.5, marginBottom: 0 }}>Le rattrapage s’organise une fois l’examen terminé.</p>
+        )}
+
+        {(isMakeup || ended) && !open && (
+          <button className="btn btn-primary" onClick={() => setOpen(true)}>
+            <i className="fas fa-user-plus" /> {isMakeup ? 'Ajouter des étudiants' : 'Organiser un rattrapage'}
+          </button>
+        )}
+
+        {open && (
           <>
+            <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginBottom: 12 }}>
+              <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
+                <input type="radio" checked={!everyone} onChange={() => setEveryone(false)} />
+                Absents, sans moyens de connexion ou empêchés
+              </label>
+              <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
+                <input type="radio" checked={everyone} onChange={() => setEveryone(true)} />
+                Tous les inscrits (y compris ceux qui ont composé : leur copie reste conservée)
+              </label>
+            </div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
               <input className="form-control" style={{ maxWidth: 320 }} placeholder="Rechercher un nom ou un e-mail…" value={search}
                 onChange={e => setSearch(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') load() }} />
               <button className="btn btn-secondary" onClick={() => load()} disabled={loading}><i className="fas fa-search" /> Rechercher</button>
               <span style={{ color: 'var(--text-muted)', fontSize: 14.5 }}>
-                {data.total.toLocaleString('fr-FR')} étudiant(s) sans copie · <strong>{picked.size}</strong> choisi(s)
+                {data.total.toLocaleString('fr-FR')} étudiant(s) · <strong>{picked.size}</strong> convoqué(s)
               </span>
             </div>
             <div style={{ maxHeight: 360, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 10 }}>
               {loading ? <div style={{ padding: 16 }}>Chargement…</div> : data.candidates.length === 0 ? (
-                <div style={{ padding: 16, color: 'var(--text-muted)' }}>Aucun étudiant sans copie.</div>
+                <div style={{ padding: 16, color: 'var(--text-muted)' }}>Aucun étudiant à afficher.</div>
               ) : (
                 <table className="table" style={{ width: '100%', margin: 0 }}>
                   <thead><tr>
                     <th style={{ width: 44 }}><input type="checkbox" checked={allShown} onChange={toggleAll} aria-label="Tout sélectionner" /></th>
-                    <th>Étudiant</th><th>E-mail</th>
+                    <th>Étudiant</th><th>E-mail</th><th>Situation</th>
                   </tr></thead>
                   <tbody>
                     {data.candidates.map(c => (
-                      <tr key={c.id} onClick={() => toggle(c.id)} style={{ cursor: 'pointer' }}>
-                        <td><input type="checkbox" checked={picked.has(c.id)} onChange={() => toggle(c.id)} onClick={e => e.stopPropagation()} /></td>
+                      <tr key={c.id} onClick={() => { if (!c.makeup) toggle(c.id) }} style={{ cursor: c.makeup ? 'default' : 'pointer', opacity: c.makeup ? 0.55 : 1 }}>
+                        <td><input type="checkbox" disabled={!!c.makeup} checked={picked.has(c.id)} onChange={() => toggle(c.id)} onClick={e => e.stopPropagation()} /></td>
                         <td><strong>{c.name}</strong></td><td>{c.email}</td>
+                        <td>{c.makeup ? 'Déjà convoqué' : c.composed ? `A composé${c.score != null ? ` (${c.score}/20)` : ''}` : 'Absent'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -116,16 +181,18 @@ export default function ExamMakeupPanel({ examId, durationMinutes }: { examId: n
             {data.total > data.candidates.length && (
               <small style={{ color: 'var(--text-muted)' }}>Seuls les {data.candidates.length} premiers sont affichés : utilisez la recherche pour affiner.</small>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginTop: 16 }}>
-              <div><label style={{ fontWeight: 600, fontSize: 15 }}>Début du rattrapage</label>
-                <input type="datetime-local" className="form-control" value={start} onChange={e => onStart(e.target.value)} /></div>
-              <div><label style={{ fontWeight: 600, fontSize: 15 }}>Fin du rattrapage</label>
-                <input type="datetime-local" className="form-control" value={end} min={start || undefined} onChange={e => setEnd(e.target.value)} />
-                <small style={{ color: 'var(--text-muted)' }}>Au moins la durée de l’examen ({durationMinutes} min)</small></div>
-            </div>
+            {!isMakeup && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginTop: 16 }}>
+                <div><label style={{ fontWeight: 600, fontSize: 15 }}>Début du rattrapage</label>
+                  <input type="datetime-local" className="form-control" value={start} onChange={e => onStart(e.target.value)} /></div>
+                <div><label style={{ fontWeight: 600, fontSize: 15 }}>Fin du rattrapage</label>
+                  <input type="datetime-local" className="form-control" value={end} min={start || undefined} onChange={e => setEnd(e.target.value)} />
+                  <small style={{ color: 'var(--text-muted)' }}>Au moins la durée de l’examen ({durationMinutes} min)</small></div>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
               <button className="btn btn-success" disabled={busy || picked.size === 0} onClick={submit}>
-                <i className={`fas ${busy ? 'fa-spinner fa-spin' : 'fa-check'}`} /> Organiser le rattrapage
+                <i className={`fas ${busy ? 'fa-spinner fa-spin' : 'fa-check'}`} /> {isMakeup ? 'Ajouter au rattrapage' : 'Organiser le rattrapage'}
               </button>
               <button className="btn btn-secondary" onClick={() => setOpen(false)}>Annuler</button>
             </div>
