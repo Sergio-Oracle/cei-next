@@ -242,6 +242,7 @@ function ExamCard({
           {!exam.enable_copy_paste   && <SecChip icon="fa-ban"       label="C/C"         color="#64748b" bg="#f1f5f9" />}
           {!exam.enable_right_click  && <SecChip icon="fa-ban"       label="Clic droit"  color="#64748b" bg="#f1f5f9" />}
           {exam.auto_correct         && <SecChip icon="fa-robot"     label="IA auto"     color="#15803d" bg="#f0fdf4" />}
+          {exam.makeup_of_id         && <SecChip icon="fa-rotate-right" label="Rattrapage" color="#1d4ed8" bg="#eff6ff" />}
         </div>
       </div>
 
@@ -257,6 +258,13 @@ function ExamCard({
           style={btn('rgba(13,148,136,.1)', '#0f766e')}>
           <i className="fas fa-display" /> Prévisualiser
         </Link>
+
+        {/* Rattrapage — examen terminé (organiser) ou session de rattrapage (ajouter des étudiants) */}
+        {(effectiveStatus === 'closed' || exam.makeup_of_id) && (
+          <Link href={`/dashboard/professor/exams/${exam.id}#rattrapage`} style={btn('rgba(37,99,235,.1)', '#1d4ed8')}>
+            <i className="fas fa-rotate-right" /> Rattrapage
+          </Link>
+        )}
 
         {/* Actions active */}
         {exam.status === 'active' && (

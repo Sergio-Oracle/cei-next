@@ -278,6 +278,7 @@ export default function AdminExamsPage() {
                     {!exam.enable_right_click && <SecPill icon="fa-ban"      value="Clic droit" title="Clic droit interdit"          color="#64748b" bg="#f1f5f9" />}
                     {exam.auto_correct        && <SecPill icon="fa-robot"    value="IA auto"    title="Correction automatique par IA activée" color="#15803d" bg="#f0fdf4" />}
                     <SecPill icon="fa-users" value={`${exam.attempts_count ?? 0}`} title="Participants" color="#2563eb" bg="#eff6ff" />
+                    {exam.makeup_of_id && <SecPill icon="fa-rotate-right" value="Rattrapage" title="Session de rattrapage" color="#1d4ed8" bg="#eff6ff" />}
                   </div>
                 </div>
 
@@ -301,6 +302,14 @@ export default function AdminExamsPage() {
                       style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid #bfdbfe', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: '#1e3a8a', cursor: 'pointer' }}>
                       <i className="fas fa-file-lines" />Copies
                     </button>
+                  )}
+
+                  {/* Rattrapage — examen terminé (organiser) ou session de rattrapage (ajouter des étudiants) */}
+                  {(isClosed || exam.makeup_of_id) && (
+                    <Link href={`/dashboard/admin/exams/${exam.id}#rattrapage`} title="Organiser un rattrapage pour les étudiants absents, sans moyens ou empêchés"
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: 'var(--surface)', border: '1px solid #bfdbfe', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: '#1e3a8a', textDecoration: 'none' }}>
+                      <i className="fas fa-rotate-right" />Rattrapage
+                    </Link>
                   )}
 
                   {/* Activer (brouillon ou planifié) */}

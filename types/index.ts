@@ -106,6 +106,8 @@ export type ExamStatus = 'draft' | 'scheduled' | 'active' | 'closed'
 export type AttemptStatus = 'in_progress' | 'submitted' | 'banned' | 'auto_submitted'
 
 export interface OnlineExam {
+  /** Renseigné sur une session de rattrapage : identifiant de l'examen d'origine. */
+  makeup_of_id?: number | null
   /** Date à laquelle l'enseignant a validé l'affichage du sujet dans « Prévisualiser » (null : pas encore validé). */
   subject_validated_at?: string | null
   /** Examen réservé aux étudiants inscrits à l'UE de l'EC (vrai par défaut). */

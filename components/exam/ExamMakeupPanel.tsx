@@ -92,8 +92,15 @@ export default function ExamMakeupPanel({ examId, durationMinutes, makeupOfId, b
     } catch (e: any) { error(e?.message || 'Opération impossible') } finally { setBusy(false) }
   }
 
+  // Lien direct depuis la liste des examens (#rattrapage) : amène le bloc à l'écran
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.location.hash !== '#rattrapage') return
+    const t = setTimeout(() => document.getElementById('rattrapage')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 600)
+    return () => clearTimeout(t)
+  }, [])
+
   return (
-    <div className="card" style={{ marginBottom: 24 }}>
+    <div id="rattrapage" className="card" style={{ marginBottom: 24, scrollMarginTop: 80 }}>
       <div className="card-header">
         <h3 style={{ margin: 0 }}><i className="fa-solid fa-rotate-right" style={{ marginRight: 8 }} />Rattrapage</h3>
       </div>
