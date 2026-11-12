@@ -3768,6 +3768,14 @@ export default function ExamPage() {
           </div>
         )}
 
+        {/* Consignes saisies par le professeur pour cet examen (s'il y en a) */}
+        {exam.instructions && exam.instructions.trim() && (
+          <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:10,padding:'14px 16px',marginBottom:18}}>
+            <div style={{fontWeight:700,color:'#1e3a8a',fontSize:15.5,marginBottom:6}}><i className="fas fa-chalkboard-teacher" style={{marginRight:8}}/>Consignes de l&apos;enseignant</div>
+            <div style={{whiteSpace:'pre-wrap',fontSize:15.5,lineHeight:1.55,color:'#0f172a'}}>{exam.instructions.trim()}</div>
+          </div>
+        )}
+
         {/* Conditions de surveillance */}
         <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:10,padding:'14px 16px',marginBottom:18}}>
           <div style={{display:'flex',flexDirection:'column',gap:9}}>
@@ -4378,6 +4386,13 @@ export default function ExamPage() {
           </div>
 
           <div style={{flex:1,padding:24,maxWidth:900,width:'100%',margin:'0 auto'}}>
+            {/* Consignes saisies par le professeur pour cet examen (s'il y en a) */}
+            {exam.instructions && exam.instructions.trim() && (
+              <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:12,padding:'14px 18px',marginBottom:20}}>
+                <div style={{fontWeight:700,color:'#1e3a8a',fontSize:15.5,marginBottom:6}}><i className="fas fa-chalkboard-teacher" style={{marginRight:8}}/>Consignes de l&apos;enseignant</div>
+                <div style={{whiteSpace:'pre-wrap',fontSize:15.5,lineHeight:1.55,color:'#0f172a'}}>{exam.instructions.trim()}</div>
+              </div>
+            )}
             {/* Filet de sécurité : aucune question reconnue → l'étudiant voit au moins le sujet complet */}
             {structuredQs.length===0&&!hasParsed&&(()=>{
               const raw=exam.subject_content?(typeof exam.subject_content==='object'?exam.subject_content.content:(exam.subject_content as string)):''
