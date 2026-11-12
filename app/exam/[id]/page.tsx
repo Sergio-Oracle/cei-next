@@ -46,6 +46,8 @@ interface Attempt {
   id: number; status: string; started_at: string; extra_minutes?: number; pause_used?: boolean
   /** Temps écoulé depuis le début, calculé par le serveur (indépendant de l'heure de l'appareil). */
   elapsed_seconds?: number; server_now?: string
+  /** Vrai quand la copie a déjà été affichée à l'étudiant (l'horloge de l'examen court alors depuis cet instant). */
+  exam_seen?: boolean
   answers?: Record<string, string> | string
 }
 interface ParsedBlock {
@@ -749,10 +751,25 @@ export default function ExamPage() {
   // (performance.now). Ni l'heure, ni le fuseau horaire, ni un réglage manuel de
   // l'appareil ne peuvent plus faire expirer le minuteur ou soumettre trop tôt.
   const attemptClockRef = useRef<{elapsed:number; at:number}|null>(null)
+  // L'horloge de l'examen démarre quand la copie S'AFFICHE à l'étudiant (confirmé par le serveur), pas au clic « Démarrer » :
+  // le temps passé à l'étape caméra / micro / réseau n'est pas retiré de sa composition.
+  const clockSeenRef    = useRef(false)                 // le serveur a confirmé que la copie est affichée
+  const clockEnterAtRef = useRef<number|null>(null)     // instant (performance.now) où la copie est apparue à l'écran
+  const CLOCK_GRACE_S   = 15                            // sans confirmation du serveur au-delà, l'horloge démarre quand même
   function noteAttemptClock(att: Attempt) {
     attemptClockRef.current = typeof att.elapsed_seconds === 'number' ? { elapsed: att.elapsed_seconds, at: performance.now() } : null
+    clockSeenRef.current = !!att.exam_seen                // reprise d'une copie déjà vue : le temps court déjà
+  }
+  function noteSeenClock(elapsed?: number) {
+    attemptClockRef.current = { elapsed: typeof elapsed === 'number' ? elapsed : 0, at: performance.now() }
+    clockSeenRef.current = true
   }
   function elapsedSeconds(att: Attempt|null): number {
+    if (!clockSeenRef.current) {
+      // copie pas encore confirmée affichée : le temps ne court pas (le serveur confirme en moins d'une seconde)
+      const e = clockEnterAtRef.current
+      return e == null ? 0 : Math.max(0, (performance.now() - e) / 1000 - CLOCK_GRACE_S)
+    }
     const c = attemptClockRef.current
     if (c) return c.elapsed + (performance.now() - c.at) / 1000
     return att ? Math.max(0, (serverNow() - parseUtc(att.started_at)) / 1000) : 0
@@ -1012,7 +1029,7 @@ export default function ExamPage() {
       seenSentRef.current = true
       let tries = 0
       const post = () => {
-        api.post(`/api/exam_attempts/${attId}/seen`, {}).catch(() => {
+        api.post<{elapsed_seconds?: number}>(`/api/exam_attempts/${attId}/seen`, {}).then(r => noteSeenClock(r?.elapsed_seconds)).catch(() => {
           if (++tries < 6 && !sessionEndedRef.current) setTimeout(post, 3000 * tries)
           else seenSentRef.current = false                                           // abandon : le prochain rendu réessaiera
         })
@@ -1881,6 +1898,7 @@ export default function ExamPage() {
   function enterExam() {
     if (!exam||!attempt) return
     examEnterTimeRef.current = Date.now()
+    clockEnterAtRef.current = performance.now()
     document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
     pauseUsedRef.current = attempt.pause_used || false
     const totalSec   = exam.duration_minutes*60+extraMinRef.current*60
