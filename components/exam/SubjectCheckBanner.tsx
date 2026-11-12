@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 
-interface Issue { level: 'error' | 'warn'; message: string }
+interface Issue { level: 'error' | 'warn' | 'info'; message: string }
 interface Report { ok: boolean; questions: number; by_type: Record<string, number>; issues: Issue[] }
 
 const TYPE_LABEL: Record<string, string> = { qcm: 'QCM', qcm_multi: 'QCM multiples', vf: 'Vrai/Faux', open: 'ouvertes', subopen: 'à sous-questions', appariement: 'appariement', code: 'code' }
@@ -17,7 +17,8 @@ export default function SubjectCheckBanner({ examId }: { examId: number | string
   }, [examId])
   if (!r) return null
   const err = r.issues.some(i => i.level === 'error')
-  const warn = !err && r.issues.length > 0
+  const warn = !err && r.issues.some(i => i.level === 'warn')
+  const infos = r.issues.filter(i => i.level === 'info')          // information sobre (ex. barème sur 10 points ramené sur 20) : jamais un défaut
   const c = err ? { bg: '#fef2f2', bd: '#fecaca', fg: '#b91c1c', ic: 'fa-triangle-exclamation' }
     : warn ? { bg: '#fffbeb', bd: '#fde68a', fg: '#b45309', ic: 'fa-circle-exclamation' }
     : { bg: '#eff6ff', bd: '#dbe7f7', fg: '#1d4ed8', ic: 'fa-circle-check' }
@@ -29,10 +30,13 @@ export default function SubjectCheckBanner({ examId }: { examId: number | string
         {err ? 'Sujet à corriger avant l’examen' : warn ? 'Sujet : points à vérifier' : 'Sujet lu correctement'}
         {` — ${r.questions} question(s) reconnue(s)`}{types ? ` (${types})` : ''}
       </div>
-      {r.issues.length > 0 && (
+      {r.issues.some(i => i.level !== 'info') && (
         <ul style={{ margin: '6px 0 0', paddingLeft: 20 }}>
-          {r.issues.map((i, k) => <li key={k}>{i.message}</li>)}
+          {r.issues.filter(i => i.level !== 'info').map((i, k) => <li key={k}>{i.message}</li>)}
         </ul>
+      )}
+      {infos.length > 0 && (
+        <div style={{ marginTop: 6, fontSize: 14, fontWeight: 400, color: '#475569' }}>{infos.map(i => i.message).join(' ')}</div>
       )}
     </div>
   )

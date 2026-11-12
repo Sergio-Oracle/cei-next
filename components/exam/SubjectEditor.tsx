@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import api from '@/lib/api'
 
-interface Issue { level: 'error' | 'warn'; message: string }
+interface Issue { level: 'error' | 'warn' | 'info'; message: string }
 interface Row {
   num: string; kind: 'qcm' | 'qcm_multi' | 'vf' | 'auto' | 'ai'; text: string; choices: { letter: string; text: string }[]
   points: number | null; letters: string[]; value: string | null; status: 'ok' | 'warn' | 'error'; mode: 'auto' | 'ia'; suggest?: string | null
