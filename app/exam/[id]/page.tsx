@@ -154,6 +154,9 @@ declare global { interface Window { LivekitClient: any } }
 // pour les réafficher. Ne concerne NI les messages/avertissements envoyés par un enseignant ou un surveillant, NI les avis
 // techniques utiles à l'étudiant (temps restant, connexion, sauvegarde, caméra/partage d'écran perdus).
 const SHOW_DETECTION_ALERTS_TO_STUDENT = false
+// Panneau « Structure du sujet » de l'aperçu (parties, énoncés, questions + alertes) : prêt mais NON affiché aux enseignants tant que le
+// lecteur de sujets n'est pas consolidé (décision du 13/11/2026). Passer à true pour l'activer ; les données arrivent déjà de l'API.
+const SHOW_SUBJECT_STRUCTURE_PANEL = false
 // Seuil de « faible luminosité » relevé 40 → 55 : une absence de visage dans une image sombre est classée « éclairage
 // faible » (poids de risque 0, non pénalisant) plutôt que « visage non détecté ».
 const BRIGHTNESS_LOW = 55, BRIGHTNESS_HIGH = 235
@@ -4245,7 +4248,7 @@ export default function ExamPage() {
             focusNum={subjectEditor.num} focusContext={subjectEditor.ctx}
             onClose={()=>setSubjectEditor(null)} onSaved={()=>window.location.reload()}/>
         )}
-        {isPreview && showStructure && exam?.structure && (
+        {SHOW_SUBJECT_STRUCTURE_PANEL && isPreview && showStructure && exam?.structure && (
           <div style={{position:'fixed',left:'50%',bottom:64,transform:'translateX(-50%)',zIndex:9997,width:'min(640px,94vw)',maxHeight:'55vh',overflowY:'auto',background:'#fff',color:'#1e293b',border:'1.5px solid #cbd5e1',borderRadius:14,padding:'16px 20px',boxShadow:'0 10px 30px rgba(0,0,0,.25)'}}>
             <div style={{fontWeight:800,fontSize:17,marginBottom:10}}><i className="fas fa-sitemap" style={{marginRight:8,color:'#0f766e'}}/>Structure du sujet — ce que verront les étudiants</div>
             {exam.structure.groups.map((g,i)=>(
@@ -4276,7 +4279,7 @@ export default function ExamPage() {
                 <i className={`fas ${exam.subject_edit.validated_at?'fa-circle-check':'fa-clipboard-check'}`} style={{marginRight:6}}/>{exam.subject_edit.validated_at?'Affichage validé':"Valider l'affichage"}
               </button>
             </>)}
-            {exam?.structure && exam.structure.groups.length>0 && (
+            {SHOW_SUBJECT_STRUCTURE_PANEL && exam?.structure && exam.structure.groups.length>0 && (
               <button onClick={()=>setShowStructure(v=>!v)} title="Ce que les étudiants verront : parties, énoncés et questions"
                 style={{background:exam.structure.issues.length?'#fde68a':'rgba(255,255,255,.18)',color:exam.structure.issues.length?'#92400e':'white',border:'none',borderRadius:16,padding:'4px 12px',fontWeight:700,cursor:'pointer',fontSize:14}}>
                 <i className={`fas ${exam.structure.issues.length?'fa-triangle-exclamation':'fa-sitemap'}`} style={{marginRight:6}}/>Structure du sujet{exam.structure.issues.length?` (${exam.structure.issues.length} à vérifier)`:''}
