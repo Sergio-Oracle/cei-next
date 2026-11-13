@@ -4520,9 +4520,9 @@ export default function ExamPage() {
                 const p2=structuredQs.filter(q=>q.question_type!=='qcm'&&q.question_type!=='vf')
                 return(<>
                   <ProgBar answered={structAnswered} total={structuredQs.length}/>
-                  {p1.length>0&&<SecHead icon="fa-check-square" color="#3b82f6" bg="#eff6ff" tc="#1e40af" title="Partie 1 — Questions à correction automatique" sub={`${p1.length} question${p1.length>1?'s':''} • Cochez la bonne réponse`}/>}
+                  {p1.length>0&&<SecHead icon="fa-check-square" color="#3b82f6" bg="#eff6ff" tc="#1e40af" title={p2.length>0?"Partie 1 — Questions à correction automatique":"Questions à correction automatique"} sub={`${p1.length} question${p1.length>1?'s':''} • Cochez la bonne réponse`}/>}
                   {p1.map((q,i)=><SQ key={q.id} q={q} idx={i} answers={answers} setAnswers={setAnswers}/>)}
-                  {p2.length>0&&<SecHead icon="fa-pen-alt" color="#10b981" bg="#ecfdf5" tc="#065f46" title="Partie 2 — Questions à réponses courtes / développées" sub={`${p2.length} question${p2.length>1?'s':''} • Rédigez vos réponses`}/>}
+                  {p2.length>0&&<SecHead icon="fa-pen-alt" color="#10b981" bg="#ecfdf5" tc="#065f46" title={p1.length>0?"Partie 2 — Questions à réponses courtes / développées":"Questions à réponses courtes / développées"} sub={`${p2.length} question${p2.length>1?'s':''} • Rédigez vos réponses`}/>}
                   {p2.map((q,i)=><SQ key={q.id} q={q} idx={i} answers={answers} setAnswers={setAnswers}/>)}
                 </>)
               })()}
@@ -4537,7 +4537,7 @@ export default function ExamPage() {
                       ni modifier ses réponses QCM (risque de partage entre étudiants). */}
                   {p1Blocks.length>0&&!showPart2&&(
                     <div>
-                      <SecHead icon="fa-check-square" color="#3b82f6" bg="#eff6ff" tc="#1e40af" title="Partie 1 — Questions à correction automatique" sub={`${p1Blocks.length} question${p1Blocks.length>1?'s':''}${isFinite(perPage)?` • ${perPage} par page`:''}`}/>
+                      <SecHead icon="fa-check-square" color="#3b82f6" bg="#eff6ff" tc="#1e40af" title={p2Blocks.length>0?"Partie 1 — Questions à correction automatique":"Questions à correction automatique"} sub={`${p1Blocks.length} question${p1Blocks.length>1?'s':''}${isFinite(perPage)?` • ${perPage} par page`:''}`}/>
                       {pageTimeLeft!==null&&(
                         <div style={{display:'flex',alignItems:'center',gap:8,background:pageTimeLeft<=10?'#fef2f2':'#fffbeb',border:`1px solid ${pageTimeLeft<=10?'#fca5a5':'#fde68a'}`,borderRadius:8,padding:'8px 14px',marginBottom:12,fontSize:15.5,fontWeight:700,color:pageTimeLeft<=10?'#b91c1c':'#92400e'}}>
                           <i className="fas fa-hourglass-half" style={{animation:pageTimeLeft<=10?'pulse 1s infinite':'none'}}/>
@@ -4591,7 +4591,7 @@ export default function ExamPage() {
                       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14,padding:'12px 16px',background:'#ecfdf5',borderRadius:10,borderLeft:'4px solid #10b981'}}>
                         <i className="fas fa-pen-alt" style={{color:'#10b981',fontSize:22}}/>
                         <div style={{flex:1}}>
-                          <div style={{fontWeight:700,fontSize:17,color:'#065f46'}}>Partie 2 — Questions à réponses courtes / développées</div>
+                          <div style={{fontWeight:700,fontSize:17,color:'#065f46'}}>{p1Blocks.length>0?'Partie 2 — ':''}Questions à réponses courtes / développées</div>
                           <div style={{fontSize:14.5,color:'#10b981'}}>{p2Blocks.length} question{p2Blocks.length>1?'s':''}{isFinite(perPage)?` • ${perPage} par page`:''} • Rédigez vos réponses dans les zones ci-dessous</div>
                           {p1Blocks.length>0&&<div style={{fontSize:13,color:'#059669',marginTop:4}}><i className="fas fa-lock" style={{marginRight:4}}/>Partie QCM terminée — retour impossible</div>}
                         </div>
