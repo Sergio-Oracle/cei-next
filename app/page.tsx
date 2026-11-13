@@ -377,7 +377,7 @@ export default function LandingPage() {
           </div>
           <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'stretch', minWidth: 260 }}>
             <a href="/telecharger-client" style={{ textAlign: 'center', padding: '14px 24px', fontSize: 17, fontWeight: 700, borderRadius: 10, textDecoration: 'none', background: '#1d4ed8', color: '#fff', boxShadow: '0 4px 14px rgba(29,78,216,.25)' }}><i className="fas fa-download" style={{ marginRight: 8 }} />Télécharger l&apos;application</a>
-            <a href="/guide-etudiant#application" style={{ textAlign: 'center', color: 'var(--primary-dark)', fontSize: 15.5, fontWeight: 600, textDecoration: 'none' }}><i className="fas fa-book-open" style={{ marginRight: 6 }} />Comment l&apos;installer et l&apos;utiliser</a>
+            <a href="/guide-etudiant/application" style={{ textAlign: 'center', color: 'var(--primary-dark)', fontSize: 15.5, fontWeight: 600, textDecoration: 'none' }}><i className="fas fa-book-open" style={{ marginRight: 6 }} />Comment l&apos;installer et l&apos;utiliser</a>
           </div>
         </div>
       </section>

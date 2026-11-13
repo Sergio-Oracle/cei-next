@@ -1,290 +1,85 @@
+import GuideShell, { type TocItem } from './GuideShell'
+import { Connexion, TableauBord, Resultats, Reclamation } from './blocks'
+
+export const metadata = { title: 'Guide Étudiant — CEI' }
+
+const TOC: TocItem[] = [
+  { id: 'choix', icon: 'fa-signs-post', label: 'Quel guide pour mon examen ?' },
+  { id: 'comparatif', icon: 'fa-table', label: 'Application ou navigateur : les différences' },
+  { id: 'communes', icon: 'fa-list-check', label: 'Les règles valables dans tous les cas' },
+  { id: 'connexion', icon: 'fa-sign-in-alt', label: 'Se connecter à la plateforme' },
+  { id: 'tableau-bord', icon: 'fa-home', label: 'Votre tableau de bord' },
+  { id: 'resultats', icon: 'fa-star', label: 'Consulter vos résultats' },
+  { id: 'reclamation', icon: 'fa-comment-dots', label: 'Faire une réclamation' },
+]
+
 export default function GuideEtudiant() {
   return (
-    <>
-      <style>{`
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#f8fafc; color:#1e293b; line-height:1.7; }
-        .topbar { background:#059669; color:white; padding:14px 32px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,.2); }
-        .topbar-brand { font-size:17px; font-weight:700; display:flex; align-items:center; gap:10px; }
-        .topbar-brand i { font-size:22px; }
-        .btn-back { background:rgba(255,255,255,.15); color:white; border:1px solid rgba(255,255,255,.3); padding:8px 18px; border-radius:8px; text-decoration:none; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; transition:.2s; }
-        .btn-back:hover { background:rgba(255,255,255,.25); }
-        .hero-doc { background:#059669; color:white; padding:60px 32px; text-align:center; }
-        .hero-doc h1 { font-size:2.4rem; font-weight:800; margin-bottom:12px; }
-        .hero-doc p { font-size:1.1rem; opacity:.9; max-width:600px; margin:0 auto; }
-        .hero-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); padding:6px 16px; border-radius:99px; font-size:13px; font-weight:600; margin-bottom:20px; }
-        .content-wrap { max-width:900px; margin:0 auto; padding:48px 24px 80px; }
-        .toc { background:white; border-radius:14px; border:1px solid #e2e8f0; padding:24px 28px; margin-bottom:40px; }
-        .toc h3 { font-size:14px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:14px; }
-        .toc-list { list-style:none; display:flex; flex-direction:column; gap:6px; }
-        .toc-list a { color:#059669; text-decoration:none; font-size:14px; font-weight:500; display:flex; align-items:center; gap:8px; }
-        .toc-list a:hover { text-decoration:underline; }
-        .toc-list a i { width:18px; text-align:center; font-size:13px; color:#94a3b8; }
-        .section { background:white; border-radius:16px; border:1px solid #e2e8f0; margin-bottom:32px; overflow:hidden; }
-        .section-header { background:#ecfdf5; border-bottom:1px solid #a7f3d0; padding:20px 28px; display:flex; align-items:center; gap:14px; }
-        .section-icon { width:48px; height:48px; background:#059669; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; color:white; flex-shrink:0; }
-        .section-header h2 { font-size:1.15rem; font-weight:700; color:#064e3b; margin:0; }
-        .section-body { padding:28px; }
-        .steps { display:flex; flex-direction:column; gap:20px; }
-        .step { display:flex; gap:16px; align-items:flex-start; }
-        .step-num { width:36px; height:36px; background:#059669; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; margin-top:2px; }
-        .step-content h4 { font-size:15px; font-weight:700; color:#0f172a; margin-bottom:6px; }
-        .step-content p { font-size:14px; color:#475569; line-height:1.65; }
-        .step-content ul { margin-top:8px; padding-left:18px; }
-        .step-content li { font-size:13px; color:#64748b; margin-bottom:4px; }
-        .warn { background:#fef3c7; border:1px solid #fcd34d; border-left:4px solid #f59e0b; border-radius:8px; padding:14px 16px; margin-top:14px; font-size:13px; color:#92400e; display:flex; align-items:flex-start; gap:10px; }
-        .warn i { color:#f59e0b; margin-top:2px; flex-shrink:0; }
-        .tip { background:#ecfdf5; border:1px solid #a7f3d0; border-left:4px solid #059669; border-radius:8px; padding:14px 16px; margin-top:14px; font-size:13px; color:#065f46; display:flex; align-items:flex-start; gap:10px; }
-        .tip i { color:#059669; margin-top:2px; flex-shrink:0; }
-        .danger { background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #ef4444; border-radius:8px; padding:14px 16px; margin-top:14px; font-size:13px; color:#9f1239; display:flex; align-items:flex-start; gap:10px; }
-        .danger i { color:#ef4444; margin-top:2px; flex-shrink:0; }
-        .rule-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-top:16px; }
-        .rule-card { border-radius:10px; padding:16px; border:1px solid; text-align:center; }
-        .rule-card.bad { background:#fff1f2; border-color:#fecdd3; color:#9f1239; }
-        .rule-card.bad i { font-size:24px; display:block; margin-bottom:8px; color:#ef4444; }
-        .rule-card.good { background:#ecfdf5; border-color:#a7f3d0; color:#065f46; }
-        .rule-card.good i { font-size:24px; display:block; margin-bottom:8px; color:#059669; }
-        .rule-card p { font-size:12px; font-weight:600; }
-        .guide-img { display:block; width:100%; max-width:720px; margin:18px auto 6px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,.08); }
-        footer.doc-footer { background:#1e293b; color:rgba(255,255,255,.7); text-align:center; padding:32px; font-size:13px; }
-        footer.doc-footer a { color:#34d399; text-decoration:none; font-weight:600; }
-        @media(max-width:640px) { .hero-doc h1 { font-size:1.8rem; } .content-wrap { padding:24px 16px 60px; } }
-      `}</style>
+    <GuideShell badge="Pour les Étudiants" title="Guide Étudiant" subtitle="Tout ce que vous devez savoir pour passer vos examens en ligne sur la plateforme CEI. Commencez par choisir le guide qui correspond à votre examen." toc={TOC}>
 
-      <div className="topbar">
-        <div className="topbar-brand"><i className="fas fa-graduation-cap" /> Centre d&apos;Examen Intelligent</div>
-        <a href="/" className="btn-back"><i className="fas fa-arrow-left" /> Retour à l&apos;accueil</a>
+      <div className="section" id="choix">
+        <div className="section-header"><div className="section-icon"><i className="fas fa-signs-post" /></div><h2>Quel guide pour mon examen ?</h2></div>
+        <div className="section-body">
+          <p style={{color:'#475569',marginBottom:20}}>Un examen se passe soit dans l&apos;application <strong>CEI Examen</strong>, soit directement dans votre <strong>navigateur</strong>. Les consignes ne sont pas les mêmes : lisez le guide qui correspond à votre cas. <strong>Votre enseignant vous indique lequel s&apos;applique.</strong> Si l&apos;application est exigée et que vous ouvrez l&apos;examen dans un navigateur, l&apos;écran « Application CEI Examen requise » s&apos;affiche à la place du démarrage.</p>
+          <div className="choice-grid">
+            <a className="choice-card app" href="/guide-etudiant/application">
+              <div className="ico"><i className="fas fa-lock" /></div>
+              <h3>Mon examen se passe dans l&apos;application CEI Examen</h3>
+              <p>L&apos;ordinateur est verrouillé en plein écran. À installer et à tester avant le jour J.</p>
+              <span className="go">Ouvrir ce guide <i className="fas fa-arrow-right" /></span>
+            </a>
+            <a className="choice-card web" href="/guide-etudiant/navigateur">
+              <div className="ico"><i className="fas fa-globe" /></div>
+              <h3>Mon examen se passe dans le navigateur</h3>
+              <p>Rien à installer, mais c&apos;est à vous de préparer le poste et de respecter les règles.</p>
+              <span className="go">Ouvrir ce guide <i className="fas fa-arrow-right" /></span>
+            </a>
+          </div>
+        </div>
       </div>
 
-      <div className="hero-doc">
-        <div className="hero-badge"><i className="fas fa-user-graduate" /> Pour les Étudiants</div>
-        <h1>Guide Étudiant</h1>
-        <p>Tout ce que vous devez savoir pour passer vos examens en ligne sur la plateforme CEI.</p>
+      <div className="section" id="comparatif">
+        <div className="section-header"><div className="section-icon" style={{background:'#0891b2'}}><i className="fas fa-table" /></div><h2>Application ou navigateur : les différences</h2></div>
+        <div className="section-body">
+          <div className="table-wrap">
+            <table className="compare">
+              <thead><tr><th></th><th>Application CEI Examen</th><th>Navigateur</th></tr></thead>
+              <tbody>
+                <tr><th>Installation</th><td>Oui, bien avant le jour J, avec test du poste.</td><td>Non. Test du poste conseillé la veille.</td></tr>
+                <tr><th>Plein écran</th><td>Verrouillé : impossible de le quitter.</td><td>Demandé. Le quitter est détecté et signalé.</td></tr>
+                <tr><th>Autres applications</th><td>Listées puis fermées par l&apos;application.</td><td>À fermer vous-même. Chaque changement de fenêtre ou d&apos;onglet est compté.</td></tr>
+                <tr><th>Teams, Zoom, Discord…</th><td>Arrêtés automatiquement s&apos;ils tournent en arrière-plan.</td><td>À quitter vous-même, notifications coupées.</td></tr>
+                <tr><th>Raccourcis (Alt+Tab, F5, F12)</th><td>Bloqués et signalés.</td><td>Non bloqués, mais détectés.</td></tr>
+                <tr><th>Second écran, clé USB</th><td>Démarrage refusé tant qu&apos;ils sont branchés.</td><td>Second écran détecté et signalé.</td></tr>
+                <tr><th>Copier-coller</th><td>Presse-papiers vidé en continu.</td><td>Désactivé dans la page de l&apos;examen.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      <div className="content-wrap">
-        <div className="toc">
-          <h3><i className="fas fa-list" /> &nbsp;Sommaire</h3>
-          <ul className="toc-list">
-            <li><a href="#connexion"><i className="fas fa-sign-in-alt" /> 1. Se connecter à la plateforme</a></li>
-            <li><a href="#tableau-bord"><i className="fas fa-home" /> 2. Votre tableau de bord</a></li>
-            <li><a href="#application"><i className="fas fa-lock" /> 2b. Installer l&apos;application CEI Examen (examens verrouillés)</a></li>
-            <li><a href="#demarrer"><i className="fas fa-play" /> 3. Démarrer un examen</a></li>
-            <li><a href="#camera-secondaire"><i className="fas fa-mobile-screen" /> 3b. Caméra secondaire (smartphone)</a></li>
-            <li><a href="#pendant"><i className="fas fa-pen" /> 4. Pendant l&apos;examen</a></li>
-            <li><a href="#pause"><i className="fas fa-mug-hot" /> 4b. Faire une pause</a></li>
-            <li><a href="#regles"><i className="fas fa-shield-alt" /> 5. Règles à respecter</a></li>
-            <li><a href="#soumettre"><i className="fas fa-paper-plane" /> 6. Soumettre votre copie</a></li>
-            <li><a href="#resultats"><i className="fas fa-star" /> 7. Consulter vos résultats</a></li>
-            <li><a href="#detection-faciale"><i className="fas fa-user-check" /> 5b. Détection faciale — conseils</a></li>
-            <li><a href="#reclamation"><i className="fas fa-comment-dots" /> 8. Faire une réclamation</a></li>
-            <li><a href="#deconnexion"><i className="fas fa-key" /> 9. En cas de déconnexion — reprendre l&apos;examen</a></li>
-          </ul>
-        </div>
-
-        <div className="section" id="connexion">
-          <div className="section-header"><div className="section-icon"><i className="fas fa-sign-in-alt" /></div><h2>1. Se connecter à la plateforme</h2></div>
-          <div className="section-body">
-            <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Accéder à l&apos;application</h4><p>Rendez-vous sur l&apos;adresse de la plateforme communiquée par votre établissement et cliquez sur <strong>Commencer Maintenant</strong>, ou accédez directement à la page de connexion.</p></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Saisir vos identifiants</h4><p>Entrez votre <strong>adresse email institutionnelle</strong> et votre <strong>mot de passe</strong> fournis par l&apos;administration. Si vous n&apos;avez pas de compte, contactez votre administration.</p></div></div>
-            </div>
-            <div className="tip"><i className="fas fa-lightbulb" /> Votre session reste active pendant 30 jours. Déconnectez-vous toujours sur un ordinateur partagé.</div>
+      <div className="section" id="communes">
+        <div className="section-header"><div className="section-icon"><i className="fas fa-list-check" /></div><h2>Les règles valables dans tous les cas</h2></div>
+        <div className="section-body">
+          <div className="rule-grid">
+            <div className="rule-card bad"><i className="fas fa-users" /><p>Soyez seul(e) devant la caméra</p></div>
+            <div className="rule-card bad"><i className="fas fa-user-slash" /><p>Gardez votre visage visible et éclairé de face</p></div>
+            <div className="rule-card bad"><i className="fas fa-mobile-alt" /><p>Aucun téléphone, livre ou note à portée de vue</p></div>
+            <div className="rule-card bad"><i className="fas fa-robot" /><p>Aucun assistant d&apos;IA, traducteur ni moteur de recherche</p></div>
+            <div className="rule-card bad"><i className="fas fa-volume-up" /><p>Ne parlez à personne pendant l&apos;examen</p></div>
+            <div className="rule-card bad"><i className="fas fa-copy" /><p>Pas de copier-coller</p></div>
+            <div className="rule-card good"><i className="fas fa-plug" /><p>Ordinateur sur secteur, connexion stable (1 Mbit/s minimum)</p></div>
+            <div className="rule-card good"><i className="fas fa-comment" /><p>Une question ? Écrivez ou appelez l&apos;enseignant depuis la barre de l&apos;examen</p></div>
+            <div className="rule-card good"><i className="fas fa-key" /><p>Une panne ? Prévenez, puis reprenez avec votre code personnel</p></div>
           </div>
+          <div className="tip"><i className="fas fa-lightbulb" /> Les règles propres à chaque cas (installation, fenêtres, écrans, raccourcis) sont dans le guide correspondant.</div>
         </div>
-
-        <div className="section" id="tableau-bord">
-          <div className="section-header"><div className="section-icon"><i className="fas fa-home" /></div><h2>2. Votre tableau de bord</h2></div>
-          <div className="section-body">
-            <p style={{color:'#475569',marginBottom:16}}>Depuis le menu principal, vous avez accès à :</p>
-            <div className="steps">
-              <div className="step"><div className="step-num"><i className="fas fa-laptop-code" style={{fontSize:17}} /></div><div className="step-content"><h4>Examens en Ligne</h4><p>Liste de tous vos examens avec leur statut : <span style={{color:'#d97706',fontWeight:600}}>Pas encore ouvert</span> · <span style={{color:'#059669',fontWeight:600}}>Composer</span> · <span style={{color:'#94a3b8',fontWeight:600}}>Terminé</span></p></div></div>
-              <div className="step"><div className="step-num"><i className="fas fa-file-alt" style={{fontSize:17}} /></div><div className="step-content"><h4>Mes Copies</h4><p>Consultez vos copies soumises, vos notes et les feedbacks de correction IA.</p></div></div>
-              <div className="step"><div className="step-num"><i className="fas fa-award" style={{fontSize:17}} /></div><div className="step-content"><h4>Relevés de Notes</h4><p>Téléchargez vos relevés semestriels officiels en PDF avec votre GPA et vos crédits.</p></div></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="section" id="application">
-          <div className="section-header"><div className="section-icon" style={{background:'#1d4ed8'}}><i className="fas fa-lock" /></div><h2>2b. Installer l&apos;application CEI Examen (examens verrouillés)</h2></div>
-          <div className="section-body">
-            <p style={{color:'#475569',marginBottom:20}}>Certains examens se passent dans l&apos;application <strong>CEI Examen</strong>, qui verrouille votre ordinateur en plein écran pendant la composition, comme Safe Exam Browser. Votre enseignant vous le précise ; si l&apos;application est exigée et que vous ouvrez l&apos;examen dans un navigateur ordinaire, l&apos;écran <strong>« Application CEI Examen requise »</strong> s&apos;affiche à la place du démarrage.</p>
-            <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Télécharger l&apos;application</h4><p>Rendez-vous sur la page <a href="/telecharger-client" style={{color:'#059669',fontWeight:600}}>Télécharger l&apos;application CEI Examen</a> et choisissez la version de votre ordinateur (Windows, Linux ou Mac quand elle est disponible). Faites-le <strong>bien avant le jour de l&apos;examen</strong>, jamais dix minutes avant.</p></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Installer et ouvrir</h4>
-                <ul>
-                  <li><strong>Windows :</strong> extrayez l&apos;archive ZIP, puis lancez <em>CEI Examen.exe</em>. Si l&apos;écran « Windows a protégé votre ordinateur » apparaît, cliquez sur <em>Informations complémentaires</em> puis <em>Exécuter quand même</em>.</li>
-                  <li><strong>Mac :</strong> clic droit sur l&apos;application, puis <em>Ouvrir</em> (ou, dans le Terminal : <code>xattr -cr &quot;/Applications/CEI Examen.app&quot;</code>).</li>
-                  <li><strong>Linux :</strong> double-cliquez sur le fichier <em>.deb</em> puis <em>Installer</em> (ou <code>sudo apt install ./CEI-Examen-*.deb</code>) : l&apos;application apparaît dans le menu des applications. Variante sans installation : le fichier AppImage (autorisez son exécution ; au besoin <code>sudo apt install libfuse2</code>).</li>
-                </ul></div></div>
-              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Se connecter et tester la veille</h4><p>Connectez-vous dans l&apos;application avec votre compte habituel, comme sur le site. Vérifiez que votre tableau de bord s&apos;affiche : si c&apos;est le cas, vous êtes prêt.</p></div></div>
-              <div className="step"><div className="step-num">3b</div><div className="step-content"><h4>Tester caméra, micro et partage d&apos;écran</h4><p>Lancez le <a href="/test-poste" style={{color:'#059669',fontWeight:600}}>test du poste</a> (dans l&apos;application ou sur le site) : il contrôle votre caméra, votre micro, le partage d&apos;écran complet, votre connexion et la visioconférence, et vous indique précisément quoi corriger. Sur Mac, autorisez à ce moment la caméra, le micro et l&apos;enregistrement de l&apos;écran quand le système le demande, puis relancez l&apos;application. <strong>Ne découvrez pas un problème le jour de l&apos;examen.</strong></p></div></div>
-              <div className="step"><div className="step-num">4</div><div className="step-content"><h4>Le jour de l&apos;examen</h4><p>Ouvrez l&apos;application, allez dans <strong>Mes Examens</strong> et démarrez l&apos;examen comme d&apos;habitude. Depuis le navigateur, le bouton <strong>« Déjà installée : ouvrir dans l&apos;application »</strong> vous y amène directement.</p></div></div>
-              <div className="step"><div className="step-num">5</div><div className="step-content"><h4>Fermer vos autres applications</h4><p>Avant de commencer, l&apos;application affiche la liste des programmes encore ouverts (bloc-notes, Word, navigateurs, assistants d&apos;intelligence artificielle comme Claude ou ChatGPT, messageries…). <strong>Enregistrez votre travail</strong>, puis fermez-les vous-même ou cliquez sur <strong>« Fermer ces applications »</strong>. Le bouton de démarrage reste bloqué tant qu&apos;il en reste.</p>
-                <div className="warn"><i className="fas fa-exclamation-triangle" /><div>Les <strong>navigateurs</strong> sont fermés eux aussi : un chatbot ouvert dans un onglet disparaît avec son navigateur. Un document non enregistré dans une autre application peut être perdu.</div></div></div></div>
-            </div>
-            <div className="tip"><i className="fas fa-rotate" /><div><strong>Mises à jour automatiques.</strong> À partir de la version 1.3.0, l&apos;application vérifie toute seule s&apos;il existe une version plus récente : elle la télécharge, l&apos;installe et redémarre (jamais pendant un examen). Si une fenêtre « Mise à jour » apparaît, laissez-la terminer sans fermer l&apos;application. Une version plus ancienne que la 1.3.0 doit être réinstallée une fois depuis la page de téléchargement.</div></div>
-            <div className="tip"><i className="fas fa-mobile-screen-button" /><div><strong>Une seule application à installer.</strong> CEI Examen sert pour tout : notes, réclamations et examens, verrouillés ou non. Si vous aviez installé la version web de CEI sur votre ordinateur, vous pouvez la désinstaller une fois CEI Examen en place (instructions sur la page de téléchargement). Sur téléphone, gardez la version web : les examens surveillés se passent sur ordinateur.</div></div>
-            <h4 style={{fontSize:16,fontWeight:700,color:'#0f172a',margin:'26px 0 10px'}}>Ce qui se passe pendant l&apos;examen</h4>
-            <ul style={{paddingLeft:20,color:'#475569',fontSize:14,lineHeight:1.8}}>
-              <li>L&apos;écran passe en <strong>plein écran verrouillé</strong> : impossible de réduire, déplacer ou fermer la fenêtre.</li>
-              <li><strong>Alt+Tab, la touche Windows, F5, F12, Ctrl+W…</strong> n&apos;ont plus d&apos;effet ; chaque tentative est signalée au surveillant.</li>
-              <li>Aucun autre site ni aucune autre application ne peut s&apos;ouvrir : toute nouvelle application est fermée aussitôt.</li>
-              <li>Un <strong>second écran</strong> branché est masqué (et signalé) : débranchez-le avant de commencer.</li>
-              <li>Le presse-papiers est vidé en continu : rien d&apos;extérieur ne peut être collé. Les captures d&apos;écran apparaissent noires.</li>
-              <li>Les logiciels de partage d&apos;écran, de contrôle à distance et les <strong>machines virtuelles</strong> sont détectés et signalés : utilisez votre ordinateur réel.</li>
-              <li>Quand vous soumettez votre copie, <strong>votre ordinateur est libéré automatiquement</strong>.</li>
-            </ul>
-            <div className="danger"><i className="fas fa-ban" /><div><strong>Ne tentez pas de contourner l&apos;application.</strong> Toutes les tentatives (changement d&apos;application, raccourcis, second écran, logiciel interdit) sont enregistrées avec l&apos;heure et transmises à l&apos;enseignant ; elles peuvent entraîner des sanctions.</div></div>
-            <div className="tip"><i className="fas fa-life-ring" /><div><strong>En cas de problème :</strong> utilisez le bouton <em>Contacter l&apos;enseignant</em> dans la barre de l&apos;examen (message ou appel). Si l&apos;application doit absolument être quittée (panne), seul un surveillant peut vous donner un <strong>code de sortie d&apos;urgence</strong> (8 chiffres, créé pour vous seul, valable 15 minutes, à usage unique, vérifié par le serveur). Si votre ordinateur redémarre, rouvrez l&apos;application et reprenez l&apos;examen avec votre code personnel (voir section 9) : vos réponses sont conservées.</div></div>
-          </div>
-        </div>
-
-        <div className="section" id="demarrer">
-          <div className="section-header"><div className="section-icon"><i className="fas fa-play" /></div><h2>3. Démarrer un examen</h2></div>
-          <div className="section-body">
-            <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Repérer l&apos;examen disponible</h4><p>Dans <strong>Examens en Ligne</strong>, le bouton <span style={{background:'#10b981',color:'white',padding:'2px 8px',borderRadius:4,fontSize:14.5,fontWeight:700}}>Composer</span> apparaît quand l&apos;examen est en cours. Si trop tôt, cliquez sur <span style={{background:'#fef9c3',color:'#d97706',padding:'2px 8px',borderRadius:4,fontSize:14.5,fontWeight:700,border:'1px solid #fcd34d'}}>Pas encore ouvert</span> pour voir l&apos;heure de début exacte.</p><img className="guide-img" src="/screenshots/capture-8.jpg" alt="Liste des examens en ligne côté étudiant avec le bouton Composer" /></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Vérification d&apos;identité (reconnaissance faciale)</h4><p>Avant chaque accès à un examen, votre identité est vérifiée automatiquement par reconnaissance faciale. La <strong>première fois</strong>, vous êtes redirigé(e) vers un écran d&apos;inscription (une seule fois, modifiable ensuite depuis Paramètres &gt; Sécurité) ; ensuite, la vérification est quasi instantanée à chaque examen.</p><div className="warn"><i className="fas fa-exclamation-triangle" /> Après plusieurs échecs de reconnaissance, un appel vidéo avec votre surveillant s&apos;ouvre automatiquement pour vérifier votre identité manuellement et débloquer l&apos;accès.</div></div></div>
-              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Accepter la surveillance</h4><p>Une fenêtre de consentement s&apos;affiche. Lisez attentivement les conditions de surveillance, puis cliquez sur <strong>J&apos;accepte et je démarre l&apos;examen</strong>. Aucune signature n&apos;est demandée : l&apos;attestation sur l&apos;honneur est validée par ce clic.</p><div className="warn"><i className="fas fa-exclamation-triangle" /> Votre navigateur demandera l&apos;accès à la caméra et au microphone. Vous <strong>devez</strong> les autoriser pour pouvoir composer.</div><img className="guide-img" src="/screenshots/capture-11.jpg" alt="Attestation sur l'honneur à accepter avant de démarrer l'examen, avec le bouton J'accepte et je démarre l'examen" /><img className="guide-img" src="/screenshots/capture-12.jpg" alt="Écran de demande d'accès caméra, microphone et partage d'écran" /></div></div>
-              <div className="step"><div className="step-num">4</div><div className="step-content"><h4>Scan de l&apos;environnement (360°)</h4><p>Avant de démarrer, il vous sera demandé de tourner lentement votre caméra pour montrer votre environnement — cela vérifie qu&apos;aucune autre personne n&apos;est présente à vos côtés. Cette étape dure quelques secondes.</p></div></div>
-              <div className="step"><div className="step-num">5</div><div className="step-content"><h4>Mode plein écran</h4><p>L&apos;examen s&apos;ouvre en plein écran automatiquement. Votre caméra s&apos;active, la surveillance commence. Ne quittez pas le plein écran pendant l&apos;examen.</p></div></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="section" id="camera-secondaire">
-          <div className="section-header"><div className="section-icon" style={{background:'#0d9488'}}><i className="fas fa-mobile-screen" /></div><h2>3b. Caméra secondaire (smartphone)</h2></div>
-          <div className="section-body">
-            <p style={{color:'#475569',marginBottom:16}}>Certains examens exigent une <strong>caméra secondaire</strong> — votre téléphone, filmant votre poste de travail sous un angle latéral que la caméra de l&apos;ordinateur ne couvre pas. Ce n&apos;est pas systématique : le bouton n&apos;apparaît que si l&apos;enseignant l&apos;a activé pour cet examen précis.</p>
-            <img className="guide-img" src="/screenshots/camera-secondaire-etapes.jpg" alt="Les 3 étapes pour ajouter la caméra secondaire : scanner le QR code, trouver un support stable, positionner le téléphone et démarrer l'examen" style={{maxWidth:900}} />
-            <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Après le scan de l&apos;environnement</h4><p>Une fois la vérification de l&apos;environnement (360°) terminée, un bouton <strong>&quot;Ajouter la caméra secondaire&quot;</strong> apparaît sur l&apos;écran. S&apos;il est marqué <strong>&quot;requise pour cet examen&quot;</strong>, le bouton <strong>&quot;Continuer vers l&apos;examen&quot;</strong> reste grisé tant que le téléphone n&apos;est pas connecté.</p></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Scanner le code QR</h4><p>Cliquez sur le bouton : un code QR et un code à 6 chiffres s&apos;affichent, valables 5 minutes. Avec l&apos;appareil photo de votre <strong>téléphone</strong>, scannez le code QR — il ouvre automatiquement la page de couplage dans votre navigateur mobile.</p><div className="tip"><i className="fas fa-keyboard" /> Sans appareil pour scanner, ouvrez le lien affiché sous le code QR directement depuis le navigateur de votre téléphone : le code y est déjà pré-rempli, il ne reste qu&apos;à vérifier et cliquer sur &quot;Se connecter&quot;.</div></div></div>
-              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Positionner le téléphone</h4><p>Une fois connecté, la caméra frontale de votre téléphone occupe tout l&apos;écran. Posez le téléphone (support, étui, objet stable) de façon à couvrir votre poste de travail — bureau, mains, feuilles éventuelles — puis ne le touchez plus pendant l&apos;examen.</p></div></div>
-              <div className="step"><div className="step-num">4</div><div className="step-content"><h4>Pendant la composition</h4><p>Un badge <strong>&quot;Connectée&quot;</strong> (vert) apparaît dans la barre en haut de l&apos;examen. Laissez le téléphone <strong>branché à une source d&apos;alimentation</strong>, connecté au réseau, et ne fermez pas la page — la batterie ou le WiFi peuvent se décharger/couper pendant une session longue.</p></div></div>
-            </div>
-            <div className="warn"><i className="fas fa-exclamation-triangle" /> <span>En cas de coupure réseau côté téléphone, la reconnexion est automatique dans la plupart des cas. Si le badge passe au rouge (<strong>&quot;Déconnectée&quot;</strong>), cliquez dessus pour rouvrir la fenêtre de couplage et reconnecter le téléphone avec un nouveau code — sans quitter l&apos;examen.</span></div>
-          </div>
-        </div>
-
-        <div className="section" id="pendant">
-          <div className="section-header"><div className="section-icon"><i className="fas fa-pen" /></div><h2>4. Pendant l&apos;examen</h2></div>
-          <div className="section-body">
-            <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Lire le sujet</h4><p>Le sujet s&apos;affiche dans le panneau principal. Seules les questions sont visibles — le barème est masqué. Utilisez le bouton <strong>Réduire/Agrandir</strong> pour ajuster l&apos;affichage.</p><img className="guide-img" src="/screenshots/capture-14.jpg" alt="Interface de composition avec surveillance IA active, réponses et bouton Soumettre" /></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Rédiger vos réponses</h4><p>Écrivez vos réponses dans la zone de texte. Indiquez clairement le numéro de chaque question (ex : <em>&quot;Question 1 : ...&quot;</em>). La sauvegarde est automatique toutes les 30 secondes.</p><div className="tip"><i className="fas fa-calculator" /> Si l&apos;enseignant l&apos;a activée pour cet examen, un bouton <strong>Calculatrice</strong> apparaît en haut de la page — calculatrice scientifique intégrée (fonctions, mémoire), à utiliser à la place d&apos;une calculatrice physique ou d&apos;un téléphone, qui ne peuvent pas être vérifiés par le surveillant.</div></div></div>
-              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Partage d&apos;écran complet obligatoire</h4><p>Le partage de votre écran est <strong>obligatoire</strong>. Une boîte de dialogue du navigateur s&apos;affiche — vous <strong>devez</strong> sélectionner l&apos;onglet <strong>&quot;Tout l&apos;écran&quot;</strong> puis choisir votre moniteur entier et confirmer.</p><div className="danger"><i className="fas fa-ban" /> <div><strong>Interdit :</strong> Le partage d&apos;une <strong>fenêtre</strong> ou d&apos;un <strong>onglet</strong> est automatiquement refusé par le système. Seul l&apos;<strong>écran complet (moniteur entier)</strong> est accepté. Si vous partagez une fenêtre, un message d&apos;erreur s&apos;affiche et vous devrez recommencer.</div><img className="guide-img" src="/screenshots/capture-13.jpg" alt="Dialogue du navigateur pour choisir Tout l'écran lors du partage d'écran" /></div></div></div>
-              <div className="step"><div className="step-num">4</div><div className="step-content"><h4>Contacter l&apos;enseignant</h4><p>En cas de question ou problème technique, utilisez la zone <strong>&quot;Contacter l&apos;enseignant&quot;</strong> en bas du panneau de surveillance. L&apos;enseignant verra votre message sur son dashboard et pourra vous répondre.</p><div className="tip"><i className="fas fa-lightbulb" /> Les réponses de l&apos;enseignant apparaissent en bleu dans le panneau gauche (message) ou en orange (avertissement).</div><div className="tip" style={{marginTop:10}}><i className="fas fa-phone" style={{color:'#2563eb'}} /> <span style={{color:'#1e3a8a'}}>Besoin d&apos;une explication orale ? Cliquez sur le bouton <strong>microphone violet</strong> dans la zone de messagerie pour envoyer une demande d&apos;appel vocal à l&apos;enseignant. Si celui-ci accepte, une fenêtre d&apos;appel audio/vidéo privé s&apos;ouvrira automatiquement.</span></div></div></div>
-              <div className="step"><div className="step-num">5</div><div className="step-content"><h4>Si votre connexion Internet faiblit</h4><p>La plateforme détecte une connexion lente et réduit automatiquement la qualité vidéo de surveillance pour préserver l&apos;enregistrement de vos réponses, qui reste toujours prioritaire. Un bandeau discret vous en informe. <strong>Vos réponses sont aussi sauvegardées sur votre appareil</strong> en plus du serveur : même en cas de coupure prolongée, rien n&apos;est perdu.</p><div className="tip"><i className="fas fa-wifi" /> Débit minimum recommandé : environ <strong>300 kbps</strong> en connexion dégradée (caméra + partage d&apos;écran réduits automatiquement), <strong>1 Mbps</strong> en connexion normale pour un confort optimal.</div></div></div>
-              <div className="step"><div className="step-num">6</div><div className="step-content"><h4>Téléchargement de fichiers</h4><p>Si l&apos;enseignant l&apos;a désactivé, le téléchargement des images/vidéos/audios du sujet n&apos;est pas possible (y compris via le bouton natif des lecteurs vidéo).</p></div></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="section" id="pause">
-          <div className="section-header"><div className="section-icon" style={{background:'#0891b2'}}><i className="fas fa-mug-hot" /></div><h2>4b. Faire une pause</h2></div>
-          <div className="section-body">
-            <p style={{color:'#475569',marginBottom:16}}>Un besoin physiologique pendant l&apos;examen ? Vous disposez d&apos;une pause de <strong>3 minutes</strong>, utilisable une seule fois par examen.</p>
-            <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Cliquer sur &quot;Pause (3 min)&quot;</h4><p>Le bouton se trouve dans la barre en haut de l&apos;examen, à côté du chronomètre. Un écran de pause plein écran s&apos;affiche avec un compte à rebours.</p></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>La surveillance est suspendue</h4><p>Pendant la pause, la caméra, la détection de changement d&apos;onglet et le plein écran obligatoire sont temporairement désactivés — vous ne serez pas pénalisé pour vous être absenté(e) de l&apos;écran.</p></div></div>
-              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Le temps de composition est prolongé</h4><p>Dès que vous démarrez la pause, vos 3 minutes sont automatiquement ajoutées au temps restant de votre examen — vous ne perdez rien.</p></div></div>
-              <div className="step"><div className="step-num">4</div><div className="step-content"><h4>Reprendre</h4><p>L&apos;examen reprend automatiquement à la fin des 3 minutes, ou plus tôt si vous cliquez sur <strong>&quot;Reprendre maintenant&quot;</strong>.</p></div></div>
-            </div>
-            <div className="warn"><i className="fas fa-exclamation-triangle" /> Une seule pause par examen — le bouton se grise une fois utilisé.</div>
-          </div>
-        </div>
-
-        <div className="section" id="regles">
-          <div className="section-header"><div className="section-icon"><i className="fas fa-shield-alt" /></div><h2>5. Règles de surveillance à respecter</h2></div>
-          <div className="section-body">
-            <div className="rule-grid">
-              <div className="rule-card bad"><i className="fas fa-window-restore" /><p>Ne changez PAS d&apos;onglet ou de fenêtre</p></div>
-              <div className="rule-card bad"><i className="fas fa-compress" /><p>Ne quittez PAS le plein écran</p></div>
-              <div className="rule-card bad"><i className="fas fa-user-slash" /><p>Gardez votre visage visible en permanence</p></div>
-              <div className="rule-card bad"><i className="fas fa-users" /><p>Soyez seul devant la caméra</p></div>
-              <div className="rule-card bad"><i className="fas fa-terminal" /><p>N&apos;ouvrez PAS les outils développeur</p></div>
-              <div className="rule-card bad"><i className="fas fa-copy" /><p>Le copier/coller est désactivé</p></div>
-              <div className="rule-card bad"><i className="fas fa-window-maximize" /><p>Partage fenêtre/onglet interdit — écran complet uniquement</p></div>
-              <div className="rule-card bad"><i className="fas fa-mobile-alt" /><p>Pas de téléphone, livre ou second écran visible</p></div>
-              <div className="rule-card bad"><i className="fas fa-desktop" /><p>Pas de second écran connecté (détection automatique)</p></div>
-              <div className="rule-card bad"><i className="fas fa-volume-up" /><p>Évitez les bruits/voix prolongés autour de vous</p></div>
-              <div className="rule-card good"><i className="fas fa-check-circle" /><p>Répondez calmement dans la zone de texte</p></div>
-              <div className="rule-card good"><i className="fas fa-comment" /><p>Posez vos questions via la messagerie</p></div>
-              <div className="rule-card good"><i className="fas fa-phone" /><p>Demandez un appel vocal si besoin d&apos;explications</p></div>
-            </div>
-            <div className="danger" style={{marginTop:20}}><i className="fas fa-ban" /> <div><strong>Attention :</strong> Le dépassement des seuils configurés (changements de fenêtre, absence du visage, outils dev) entraîne un <strong>bannissement immédiat et irréversible</strong> de l&apos;examen. Votre tentative sera notée 0.</div></div>
-          </div>
-        </div>
-
-        <div className="section" id="detection-faciale">
-          <div className="section-header"><div className="section-icon"><i className="fas fa-user-check" /></div><h2>5b. Détection faciale — conseils pratiques</h2></div>
-          <div className="section-body">
-            <p style={{color:'#475569',marginBottom:16}}>La plateforme utilise la reconnaissance faciale IA pour vérifier votre présence en continu. Voici comment éviter les alertes.</p>
-            <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Positionnement optimal</h4><p>Placez-vous face à la caméra, à environ <strong>40–80 cm</strong>. Votre visage doit être entièrement visible, bien éclairé (lumière devant vous, non derrière). Évitez les contre-jours ou les casquettes masquant le visage.</p></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Indicateurs de statut (bandeau couleur)</h4><p>Un bandeau coloré sous la caméra vous informe en temps réel :</p><ul><li><span style={{color:'#059669',fontWeight:700}}>Vert</span> — Visage reconnu, tout va bien</li><li><span style={{color:'#d97706',fontWeight:700}}>Jaune</span> — Repositionnez-vous : visage mal détecté</li><li><span style={{color:'#dc2626',fontWeight:700}}>Rouge</span> — Alerte : visage absent ou plusieurs visages détectés</li><li><span style={{color:'#2563eb',fontWeight:700}}>Bleu</span> — Capture de référence en cours, restez immobile</li></ul><img className="guide-img" src="/screenshots/capture-14.jpg" alt="Indicateur Visage OK affiché sur le flux caméra pendant la composition" /></div></div>
-              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Si le système ne vous reconnaît plus</h4><p>Le système tente automatiquement une <strong>recapture de référence</strong> après 5 détections consécutives incorrectes. Suivez les instructions du bandeau jaune (repositionnez-vous, regardez la caméra). Après recapture, la reconnaissance reprend normalement.</p><div className="tip"><i className="fas fa-lightbulb" /> 3 alertes consécutives sont nécessaires avant qu&apos;un incident ne soit enregistré. Un bon repositionnement interrompt le compteur.</div></div></div>
-              <div className="step"><div className="step-num">4</div><div className="step-content"><h4>Visages multiples</h4><p>Si une autre personne apparaît dans le champ de la caméra, une alerte <strong>&quot;Plusieurs visages détectés&quot;</strong> est envoyée immédiatement au surveillant. Assurez-vous d&apos;être <strong>seul</strong> devant la caméra pendant toute la durée de l&apos;examen.</p></div></div>
-              <div className="step"><div className="step-num">5</div><div className="step-content"><h4>Regard, orientation de la tête et objets suspects</h4><p>La plateforme surveille aussi, discrètement, si votre regard reste sur l&apos;écran, si vous détournez la tête de façon prolongée, et si un objet suspect (téléphone, livre) apparaît dans le champ de la caméra.</p><div className="tip"><i className="fas fa-glasses" /> Si vous portez des lunettes ou avez une particularité visuelle, un étalonnage individuel est réalisé automatiquement au début de l&apos;examen pour éviter les fausses alertes — aucune action de votre part n&apos;est nécessaire.</div></div></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="section" id="soumettre">
-          <div className="section-header"><div className="section-icon"><i className="fas fa-paper-plane" /></div><h2>6. Soumettre votre copie</h2></div>
-          <div className="section-body">
-            <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Relire vos réponses (obligatoire)</h4><p>En cliquant sur <span style={{background:'#059669',color:'white',padding:'3px 10px',borderRadius:6,fontSize:14.5,fontWeight:700}}><i className="fas fa-paper-plane" /> Soumettre l&apos;examen</span>, un écran de relecture s&apos;affiche d&apos;abord avec toutes vos réponses — vérifiez qu&apos;aucune question n&apos;a été oubliée. Vous pouvez encore revenir modifier vos réponses, ou confirmer.</p></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Confirmer la soumission</h4><p>Après avoir confirmé depuis l&apos;écran de relecture, signez pour valider la remise. Une confirmation s&apos;affiche. <strong>Cette action est irréversible.</strong></p></div></div>
-              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Soumission automatique</h4><p>Si le temps s&apos;écoule, votre copie est soumise automatiquement avec le contenu sauvegardé. Assurez-vous que la sauvegarde automatique fonctionne (indicateur vert en bas de la zone de réponse).</p></div></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="section" id="resultats">
-          <div className="section-header"><div className="section-icon"><i className="fas fa-star" /></div><h2>7. Consulter vos résultats</h2></div>
-          <div className="section-body">
-            <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Voir la note et le feedback</h4><p>Dans <strong>Mes Copies</strong>, cliquez sur une copie corrigée pour voir votre note, le feedback détaillé de l&apos;IA par question et les commentaires de l&apos;enseignant.</p><div className="warn"><i className="fas fa-clock" /> Même une fois votre copie corrigée, la note reste masquée (affichage <strong>&quot;En attente de publication&quot;</strong>) tant que l&apos;enseignant n&apos;a pas explicitement cliqué sur &quot;Publier les notes&quot; — généralement après délibération. Aucune notification ne vous prévient : revenez consulter la page régulièrement.</div></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Télécharger le relevé de notes</h4><p>Dans <strong>Relevés de Notes</strong>, téléchargez votre relevé semestriel officiel en PDF avec votre GPA, vos crédits obtenus et le détail de toutes les UEs.</p></div></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="section" id="reclamation">
-          <div className="section-header"><div className="section-icon"><i className="fas fa-comment-dots" /></div><h2>8. Faire une réclamation</h2></div>
-          <div className="section-body">
-            <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Contester une note</h4><p>Dans <strong>Réclamations</strong>, cliquez sur <strong>Nouvelle Réclamation</strong>. Sélectionnez la copie concernée et rédigez votre argumentation.</p></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Analyse IA de votre réclamation</h4><p>La plateforme analyse automatiquement vos arguments et les compare au barème. L&apos;enseignant prend la décision finale.</p><div className="warn"><i className="fas fa-info-circle" /> Aucune notification (email ou in-app) n&apos;est envoyée quand la décision est prise — revenez consulter la page <strong>Réclamations</strong> pour voir la réponse et le statut mis à jour.</div></div></div>
-            </div>
-            <div className="tip"><i className="fas fa-lightbulb" /> Soyez précis dans votre argumentation. Référencez les questions spécifiques et expliquez pourquoi vous pensez que votre réponse mérite plus de points.</div>
-          </div>
-        </div>
-
-        <div className="section" id="deconnexion">
-          <div className="section-header"><div className="section-icon" style={{background:'#dc2626'}}><i className="fas fa-key" /></div><h2>9. En cas de déconnexion — reprendre l&apos;examen</h2></div>
-          <div className="section-body">
-            <p style={{color:'#475569',marginBottom:20}}>Si vous êtes déconnecté(e) pendant un examen (fermeture accidentelle de l&apos;onglet, coupure réseau prolongée…), la reprise est <strong>entièrement automatique</strong> — pas besoin d&apos;appeler qui que ce soit.</p>
-            <div className="steps">
-              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Retourner sur l&apos;examen</h4><p>Reconnectez-vous à la plateforme et rouvrez l&apos;examen en cours. Un écran affiche directement <strong>votre code personnel</strong>, généré automatiquement et propre à vous — personne d&apos;autre ne peut l&apos;utiliser.</p></div></div>
-              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Copier-coller le code</h4><p>Cliquez sur l&apos;icône de copie à côté du code, puis collez-le dans le champ juste en dessous.</p></div></div>
-              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Cliquer sur &quot;Reprendre&quot;</h4><p>Vous retrouvez immédiatement votre examen exactement là où vous vous étiez arrêté(e) — vos réponses précédentes sont automatiquement restaurées, rien n&apos;est perdu.</p><div className="tip"><i className="fas fa-bell" /> Votre surveillant est automatiquement notifié de votre reprise (après coup, pas avant) — il peut vous appeler s&apos;il le juge utile, mais ce n&apos;est plus une étape obligatoire pour vous.</div></div></div>
-              <div className="step"><div className="step-num">4</div><div className="step-content"><h4>Si le code ne fonctionne pas</h4><p>Utilisez le bouton <strong>&quot;Retour au tableau de bord&quot;</strong> sur cet écran, puis contactez votre surveillant ou votre enseignant via la messagerie de l&apos;examen.</p></div></div>
-            </div>
-          </div>
-        </div>
-
       </div>
 
-      <footer className="doc-footer">
-        <p>Centre d&apos;Examen Intelligent — <a href="/">Retour à l&apos;accueil</a> · <a href="/guide-enseignant">Guide Enseignant</a> · <a href="/guide-surveillant">Guide Surveillant</a> · <a href="/conditions">Conditions d&apos;Utilisation</a></p>
-        <p style={{marginTop:16,fontSize:14.5,opacity:.8,fontWeight:600}}>Contact</p>
-        <p style={{marginTop:6,fontSize:14.5,opacity:.6}}><i className="fas fa-map-marker-alt" /> Cité du Savoir – Diamniadio, Castors, avenue Bourguiba, rue n°13<br /><i className="fas fa-phone" /> +221 30 108 41 53<br /><i className="fas fa-envelope" /> visioplus@unchk.edu.sn</p>
-        <p style={{marginTop:12,opacity:.6}}>© 2026 CEI — Université Cheikh Hamidou Kane (UNCHK)</p>
-      </footer>
-    </>
+      <Connexion />
+      <TableauBord />
+      <Resultats />
+      <Reclamation />
+    </GuideShell>
   )
 }
