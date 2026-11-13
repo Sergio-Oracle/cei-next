@@ -33,6 +33,7 @@ interface ExamData {
   status: string; questions?: Question[]
   subject_content?: { id: number; title: string; content: string } | string | null
   /** Aperçu enseignant : ce qu'il peut faire du sujet (modifier / valider l'affichage). */
+  structure?: { groups: { label: string; title: string; statement_chars: number; questions: string[] }[]; issues: { level: string; message: string }[] } | null
   subject_edit?: { subject_id: number | null; can_edit: boolean; reason: string | null; validated_at: string | null; validated_by: string | null }
 }
 // Dates du serveur = UTC. Sans « Z » le navigateur les lirait comme l'heure LOCALE de
@@ -419,7 +420,10 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
     const gItems: string[] = []; let gCats: string[] = []; let gGrid: ParsedBlock['grid']
     let uploadMode: ParsedBlock['upload']; let drawN: number | undefined
     while (i < lines.length) {
-      if (isSep(lines[i])) { i++; if (choices.length >= 2 || pairs.length >= 2 || gItems.length >= 2) break; continue }
+      // Une ligne vide ne termine la question qu'APRÈS au moins 2 propositions/paires — comme le lecteur du serveur. Les éléments d'une association
+      // (« - Entonnoir ») sont souvent suivis d'une ligne vide PUIS des définitions « A. … » : les compter ici faisait de ces définitions un faux
+      // « énoncé » affiché au-dessus des questions suivantes (sujet 142, divergence trouvée sur le corpus réel le 13/11/2026).
+      if (isSep(lines[i])) { i++; if (choices.length >= 2 || pairs.length >= 2) break; continue }
       if (isSect(lines[i]) && !isQ(lines[i])) break
       { const um = strip(lines[i]).match(/^\s*(?:Fichier|Pi[èe]ce\s+jointe|D[ée]p[ôo]t)\s*:\s*(oui|obligatoire|facultatif|autoris[ée])\s*$/i); if (um) { uploadMode = um[1].toLowerCase() === 'obligatoire' ? 'required' : 'allowed'; i++; continue } }
       { const tm = q.markerType === 'APPARIEMENT' ? strip(lines[i]).match(/^\s*Tirage\s*:\s*(\d{1,2})\b/i) : null; if (tm) { drawN = parseInt(tm[1], 10); i++; continue } }
@@ -598,6 +602,7 @@ export default function ExamPage() {
   // Aperçu : modifier le sujet depuis les questions affichées, puis valider l'affichage
   const [subjectEditor, setSubjectEditor] = useState<{num: string|null; ctx: boolean}|null>(null)
   const [validating, setValidating] = useState(false)
+  const [showStructure, setShowStructure] = useState(false)
   async function toggleSubjectValidation() {
     if (validating || !exam?.subject_edit) return
     setValidating(true)
@@ -4240,6 +4245,23 @@ export default function ExamPage() {
             focusNum={subjectEditor.num} focusContext={subjectEditor.ctx}
             onClose={()=>setSubjectEditor(null)} onSaved={()=>window.location.reload()}/>
         )}
+        {isPreview && showStructure && exam?.structure && (
+          <div style={{position:'fixed',left:'50%',bottom:64,transform:'translateX(-50%)',zIndex:9997,width:'min(640px,94vw)',maxHeight:'55vh',overflowY:'auto',background:'#fff',color:'#1e293b',border:'1.5px solid #cbd5e1',borderRadius:14,padding:'16px 20px',boxShadow:'0 10px 30px rgba(0,0,0,.25)'}}>
+            <div style={{fontWeight:800,fontSize:17,marginBottom:10}}><i className="fas fa-sitemap" style={{marginRight:8,color:'#0f766e'}}/>Structure du sujet — ce que verront les étudiants</div>
+            {exam.structure.groups.map((g,i)=>(
+              <div key={i} style={{display:'flex',gap:10,alignItems:'baseline',padding:'6px 0',borderTop:i?'1px solid #e2e8f0':'none',fontSize:15.5}}>
+                <strong style={{minWidth:0,flex:1}}>{g.label}</strong>
+                <span style={{color:'#64748b',fontSize:14,whiteSpace:'nowrap'}}>{g.questions.length} question{g.questions.length>1?'s':''}{g.statement_chars?` · énoncé de ${g.statement_chars} caractères`:''}</span>
+              </div>
+            ))}
+            {exam.structure.issues.map((it,i)=>(
+              <div key={i} style={{marginTop:10,padding:'8px 12px',borderRadius:10,background:it.level==='error'?'#fee2e2':'#fef3c7',color:it.level==='error'?'#991b1b':'#92400e',fontSize:14.5,lineHeight:1.5}}>
+                <i className={`fas ${it.level==='error'?'fa-circle-xmark':'fa-triangle-exclamation'}`} style={{marginRight:6}}/>{it.message}
+              </div>
+            ))}
+            <p style={{margin:'12px 0 0',fontSize:13.5,color:'#64748b'}}>Une partie sans titre reprend l&apos;énoncé de la précédente. Pour séparer deux parties, ajoutez un titre (« Exercice 3 ») avant la première question concernée, avec « Modifier le sujet ».</p>
+          </div>
+        )}
         {isPreview && (
           <div style={{position:'fixed',left:'50%',bottom:14,transform:'translateX(-50%)',zIndex:9997,background:'#0f766e',color:'white',padding:'8px 14px 8px 16px',borderRadius:24,boxShadow:'0 6px 20px rgba(0,0,0,.2)',display:'flex',flexWrap:'wrap',justifyContent:'center',alignItems:'center',gap:12,fontSize:14.5,fontWeight:600,maxWidth:'calc(100% - 32px)'}}>
             <span><i className="fas fa-eye" style={{marginRight:6}}/>Prévisualisation — affichage étudiant, sans surveillance, rien n&apos;est enregistré</span>
@@ -4254,6 +4276,12 @@ export default function ExamPage() {
                 <i className={`fas ${exam.subject_edit.validated_at?'fa-circle-check':'fa-clipboard-check'}`} style={{marginRight:6}}/>{exam.subject_edit.validated_at?'Affichage validé':"Valider l'affichage"}
               </button>
             </>)}
+            {exam?.structure && exam.structure.groups.length>0 && (
+              <button onClick={()=>setShowStructure(v=>!v)} title="Ce que les étudiants verront : parties, énoncés et questions"
+                style={{background:exam.structure.issues.length?'#fde68a':'rgba(255,255,255,.18)',color:exam.structure.issues.length?'#92400e':'white',border:'none',borderRadius:16,padding:'4px 12px',fontWeight:700,cursor:'pointer',fontSize:14}}>
+                <i className={`fas ${exam.structure.issues.length?'fa-triangle-exclamation':'fa-sitemap'}`} style={{marginRight:6}}/>Structure du sujet{exam.structure.issues.length?` (${exam.structure.issues.length} à vérifier)`:''}
+              </button>
+            )}
             <button onClick={closePreview} style={{background:'rgba(255,255,255,.18)',color:'white',border:'none',borderRadius:16,padding:'4px 12px',fontWeight:600,cursor:'pointer',fontSize:14}}>Quitter</button>
           </div>
         )}
