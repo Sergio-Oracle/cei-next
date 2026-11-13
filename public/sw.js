@@ -15,6 +15,12 @@ const STATIC_CACHE = 'cei-static-' + BUILD_ID;
 const PAGE_CACHE   = 'cei-pages-' + BUILD_ID;
 const ALL_CACHES   = [STATIC_CACHE, PAGE_CACHE];
 
+// Cache DURABLE des modèles de surveillance par vision (~48 Mo) : volontairement NON rattaché à BUILD_ID, sinon chaque
+// déploiement le viderait et chaque étudiant retélécharge tout. À incrémenter (ici ET dans lib/visionTier.ts) si les
+// fichiers /mediapipe, /models ou /vendor changent. Il est aussi alimenté par le préchargement (lib/visionTier.ts).
+const VISION_CACHE = 'cei-vision-v1';
+const VISION_PREFIXES = ['/mediapipe/', '/models/', '/vendor/'];
+
 // Assets à pré-cacher à l'installation
 const PRECACHE_URLS = [
   '/login',
@@ -49,7 +55,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => !ALL_CACHES.includes(k)).map(k => caches.delete(k))
+        keys.filter(k => !ALL_CACHES.includes(k) && k !== VISION_CACHE).map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );
@@ -86,6 +92,26 @@ self.addEventListener('fetch', event => {
 
   // Jamais de cache pour l'API (données dynamiques + authentification)
   if (url.pathname.startsWith('/api/')) return;
+
+  // Modèles de vision : cache durable, jamais de réponse partielle ni de page d'erreur mise en cache. `?probe=` = mesure de
+  // débit (lib/visionTier.ts) : doit toucher le réseau, donc jamais servie par le cache.
+  if (VISION_PREFIXES.some(p => url.pathname.startsWith(p))) {
+    if (url.searchParams.has('probe') || request.headers.has('range')) return;
+    event.respondWith(
+      caches.match(request).then(cached => {
+        if (cached) return cached;
+        return fetch(request).then(response => {
+          const type = response.headers.get('content-type') || '';
+          if (response.ok && response.status === 200 && !type.includes('text/html')) {
+            const clone = response.clone();
+            caches.open(VISION_CACHE).then(c => c.put(request, clone)).catch(() => {});
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
 
   // Cache-First pour les assets statiques immuables — inclut les modèles de
   // vision par ordinateur hébergés localement (MediaPipe WASM/modèles,

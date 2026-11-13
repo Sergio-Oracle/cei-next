@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { isProctoringVisionReady, initProctoringVision, analyzeFace } from '@/lib/proctoring-vision'
 import { errMsg } from '@/lib/errors'
+import { cachedTier, preloadVision, measureMbps, tierForMbps, VISION_TIERS, type VisionTier } from '@/lib/visionTier'
 
 type Status = 'idle' | 'checking' | 'ok' | 'warning' | 'error'
 
@@ -104,6 +105,27 @@ export default function VerificationPostePage() {
   const [screenMsg, setScreenMsg] = useState(screenShareSupported() ? '' : "Le partage d'écran complet n'est pas disponible sur cet appareil (souvent le cas sur mobile) — un ordinateur est nécessaire pour composer.")
 
   const [netStatus, setNetStatus] = useState<Status>('checking')
+  /* Préparation de la surveillance : fichiers de vision (≈ 48 Mo) téléchargés UNE FOIS dans un cache durable ; ensuite,
+     le jour de l'examen, plus rien à télécharger (même avec une connexion faible). Voir lib/visionTier.ts. */
+  const [visionCached, setVisionCached] = useState<0 | VisionTier>(0)
+  const [visionBusy, setVisionBusy] = useState(false)
+  const [visionProg, setVisionProg] = useState<{ done: number; total: number } | null>(null)
+  const [visionMsg, setVisionMsg] = useState('')
+  useEffect(() => { cachedTier().then(setVisionCached).catch(() => {}) }, [])
+  async function prepareVision() {
+    setVisionBusy(true); setVisionMsg(''); setVisionProg(null)
+    try {
+      const mbps = await measureMbps(true)
+      // Action volontaire de l'étudiant : on vise le niveau complet, mais on le prévient si sa connexion est lente.
+      const top = (4 as VisionTier)
+      if (mbps !== null && tierForMbps(mbps) < 3) setVisionMsg(`Connexion lente (${mbps} Mbit/s) : le téléchargement peut durer plusieurs minutes. Vous pouvez laisser cette page ouverte.`)
+      const reached = await preloadVision(top, p => setVisionProg({ done: p.doneFiles, total: p.totalFiles }))
+      setVisionCached(reached)
+      if (reached >= top) setVisionMsg('')
+      else setVisionMsg('Téléchargement incomplet (connexion interrompue ?). Relancez-le : les fichiers déjà reçus ne sont pas retéléchargés.')
+    } catch (e: unknown) { setVisionMsg(errMsg(e, 'Téléchargement impossible.')) }
+    finally { setVisionBusy(false) }
+  }
   const [netMsg, setNetMsg] = useState('')
   const [netBars, setNetBars] = useState<0 | 1 | 2 | 3 | 4>(0)
 
@@ -388,6 +410,31 @@ export default function VerificationPostePage() {
             )}
           </div>
           <p style={{ fontSize: 14.5, color: 'var(--text-muted)' }}>{netMsg || 'Mesure en cours…'}</p>
+        </div>
+
+        {/* Préparation de la surveillance */}
+        <div className="card" style={{ padding: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: 17 }}><i className="fas fa-download" style={{ marginRight: 8, color: 'var(--primary)' }} />Préparation de la surveillance</h3>
+            <StatusBadge status={visionBusy ? 'checking' : visionCached >= 4 ? 'ok' : visionCached >= 1 ? 'warning' : 'idle'} />
+          </div>
+          <p style={{ fontSize: 14.5, color: 'var(--text-muted)', marginTop: 0 }}>
+            {visionCached >= 4
+              ? 'Tout est déjà enregistré sur cet appareil : le jour de l’examen, rien à télécharger.'
+              : `Téléchargez dès maintenant les outils de surveillance (≈ ${Math.round(Object.values(VISION_TIERS).reduce((a, t) => a + t.mb, 0))} Mo, une seule fois). Le jour de l’examen, tout démarre immédiatement, même avec une connexion lente.`}
+          </p>
+          {visionBusy && visionProg && (
+            <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden', margin: '8px 0' }}>
+              <div style={{ width: `${Math.round((100 * visionProg.done) / Math.max(visionProg.total, 1))}%`, height: '100%', background: 'var(--primary)', transition: 'width .3s' }} />
+            </div>
+          )}
+          {visionMsg && <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>{visionMsg}</p>}
+          {visionCached < 4 && (
+            <button className="btn btn-primary" onClick={prepareVision} disabled={visionBusy} style={{ marginTop: 6 }}>
+              <i className={`fas ${visionBusy ? 'fa-spinner fa-spin' : 'fa-download'}`} style={{ marginRight: 8 }} />
+              {visionBusy ? 'Téléchargement…' : visionCached >= 1 ? 'Terminer le téléchargement' : 'Préparer ma surveillance'}
+            </button>
+          )}
         </div>
       </div>
 

@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { initProctoringVision, isProctoringVisionReady, analyzeFace, analyzeObjects, countPeople } from '@/lib/proctoring-vision'
 import { initYoloDetector, isYoloReady, detectSuspectObjects, type YoloMatch } from '@/lib/yolo-detector'
+import { visionPlan, type VisionPlan } from '@/lib/visionTier'
 import Calculator from '@/components/exam/Calculator'
 import SubjectEditor from '@/components/exam/SubjectEditor'
 import BiometricCallModal from '@/components/exam/BiometricCallModal'
@@ -609,6 +610,16 @@ export default function ExamPage() {
      (Firefox/Safari) sur le comportement normal. */
   const [networkQuality, setNetworkQuality] = useState<'good'|'poor'>('good')
   const networkQualityRef = useRef<'good'|'poor'>('good')
+  // Niveau de surveillance par vision selon le débit réel (lib/visionTier.ts) : null tant que la mesure n'est pas faite.
+  const visionPlanRef = useRef<VisionPlan|null>(null)
+  const [envScanLite, setEnvScanLite] = useState(false)
+  const visionLiteLoggedRef = useRef(false)
+  // Information (poids 0, jamais une pénalité) : ce poste est en surveillance allégée à cause du débit. Une seule fois par session.
+  function logVisionLite(aId:number|null|undefined, detail:string) {
+    if (!aId || visionLiteLoggedRef.current) return
+    visionLiteLoggedRef.current = true
+    logActivity(aId,'vision_profile_lite',detail).catch(()=>{})
+  }
   const saveBackoffRef = useRef(0)
   const saveRetryTimerRef = useRef<ReturnType<typeof setTimeout>|null>(null)
   const submitRetryTimerRef = useRef<ReturnType<typeof setTimeout>|null>(null)
@@ -971,7 +982,13 @@ export default function ExamPage() {
         // le modèle est déjà prêt (ou très avancé) à ce moment-là, sans
         // rien changer au comportement si le chargement échoue (repli local
         // puis CDN déjà géré à l'intérieur, jamais bloquant ici).
-        initProctoringVision().catch(()=>{})
+        // Niveau de surveillance selon le débit RÉEL et le cache (lib/visionTier.ts) : MediaPipe (≈ 23 Mo) n'est préchargé que si
+        // la connexion le permet ou si les fichiers sont déjà en cache (coût nul). Sur connexion faible : surveillance allégée,
+        // l'examen ne les attend jamais.
+        visionPlan().then(plan => {
+          visionPlanRef.current = plan
+          if (plan.tier >= 3) initProctoringVision().catch(()=>{})
+        }).catch(()=>{})
       } catch (e: any) {
         if (cancelled) return
         // Retour #13 — ne pas rebondir systématiquement vers "Mes Notes" sur
@@ -1690,16 +1707,30 @@ export default function ExamPage() {
     // l'instant précis où tous les étudiants d'un même examen programmé
     // démarrent leur scan (yoloLoadJitterMs — étale la demande sur le
     // serveur au lieu d'un pic synchronisé, voir en-tête de ces fonctions).
-    if (!isConnectionPoor()) {
+    // Niveau de surveillance selon le débit réel (lib/visionTier.ts) : sur connexion faible, le scan de la pièce (MediaPipe,
+    // ≈ 23 Mo) n'est PAS tenté — l'étudiant n'attend jamais un téléchargement pour entrer dans l'examen ; la présence du
+    // visage reste surveillée (niveau 1, ≈ 1,5 Mo). Le surveillant en est informé.
+    setEnvScanLite(false)
+    const plan = visionPlanRef.current ?? await visionPlan().catch(()=>null)
+    if (plan) visionPlanRef.current = plan
+    if (plan && plan.tier < 3) {
+      logVisionLite(attemptRef.current, `Connexion limitée (${plan.mbps ?? 'débit inconnu'} Mbit/s) : surveillance allégée, scan de la pièce non réalisé`)
+      setEnvScanLite(true); setEnvScanStatus('degraded')
+      return
+    }
+    if ((plan?.tier ?? 3) >= 4) {
       setTimeout(() => { initYoloDetector().catch(()=>{}) }, yoloLoadJitterMs())
     }
-    const ready = await initProctoringVision()
+    // Plafond d'attente : 30 s. Au-delà, on continue SANS bloquer l'étudiant (le chargement se poursuit en arrière-plan et les
+    // contrôles passent d'eux-mêmes en surveillance complète dès que le moteur est prêt).
+    const ready = await Promise.race([initProctoringVision(), new Promise<boolean>(r => setTimeout(() => r(false), 30_000))])
     if (!ready) {
       // Dégradé : impossible de vérifier par IA, mais on ne bloque pas un
       // étudiant pour une limitation technique hors de son contrôle — on
       // journalise l'indisponibilité pour que le surveillant en soit informé.
       const aId = attemptRef.current
-      if (aId) logActivity(aId,'env_scan_unavailable',"Scan environnement impossible — moteur IA indisponible").catch(()=>{})
+      if (aId) logActivity(aId,'env_scan_unavailable',"Scan environnement impossible — moteur IA indisponible ou encore en chargement (connexion lente)").catch(()=>{})
+      setEnvScanLite(true)
       setEnvScanStatus('degraded')
       return
     }
@@ -3312,7 +3343,10 @@ export default function ExamPage() {
     function loadAndStart() {
       // Généralement déjà chargé pendant le scan environnement (Phase 1) —
       // appel idempotent ici en filet de sécurité si ce n'est pas le cas.
-      initProctoringVision().catch(()=>{})
+      // Niveau de surveillance selon le débit réel (lib/visionTier.ts) : MediaPipe seulement à partir du niveau 3.
+      const visionTierNow = visionPlanRef.current?.tier ?? 3
+      if (visionTierNow >= 3) initProctoringVision().catch(()=>{})
+      else logVisionLite(attemptRef.current||aId, `Connexion limitée (${visionPlanRef.current?.mbps ?? 'débit inconnu'} Mbit/s) : surveillance allégée (présence du visage)`)
       // YOLO26n (31/08) — chargement anticipé en parallèle, non bloquant.
       // Seul le CHARGEMENT est anticipé ici ; l'INFÉRENCE elle-même ne
       // s'exécute jamais en continu (voir visionEnrichedTick) — si le
@@ -3324,7 +3358,7 @@ export default function ExamPage() {
       // effet la plupart du temps ; les mêmes garde-fous montée en charge
       // (isConnectionPoor/yoloLoadJitterMs) sont appliqués par cohérence,
       // au cas où l'examen serait entré directement sans passer par le scan.
-      if (!isConnectionPoor()) {
+      if (visionTierNow >= 4) {
         setTimeout(() => { initYoloDetector().catch(()=>{}) }, yoloLoadJitterMs())
       }
       // Correctif (31/08) — YOLO en second détecteur indépendant (voir
@@ -3340,10 +3374,28 @@ export default function ExamPage() {
       }, 15000)
       const fa=(window as any).faceapi
       if(!fa){setTimeout(loadAndStart,500);return}
-      async function loadModels(baseUrl:string) {
+      // Chargement PROGRESSIF (lib/visionTier.ts) : le détecteur léger (≈ 0,2 Mo) suffit à surveiller présence / absence /
+      // plusieurs visages — la boucle démarre dès qu'il est chargé. Les modèles d'identité (repères + reconnaissance, ≈ 6,4 Mo)
+      // arrivent ensuite, et seulement si la connexion le permet (niveau ≥ 2) ; sans eux, pas de capture de référence ni de
+      // comparaison d'identité (la boucle ne calcule de descripteurs qu'une fois la référence capturée).
+      let faceLoopStarted=false
+      const startFaceLoop=()=>{
+        if(faceLoopStarted) return
+        faceLoopStarted=true
+        setFaceStatus('warn')
+        if(faceIntervalRef.current) clearInterval(faceIntervalRef.current)
+        faceIntervalRef.current=setInterval(faceDetectionTick,5000)
+      }
+      async function loadModels(baseUrl:string):Promise<'full'|'lite'> {
         await fa.nets.tinyFaceDetector.loadFromUri(baseUrl)
+        startFaceLoop()
+        if((visionPlanRef.current?.tier ?? 2) < 2) return 'lite'
         await fa.nets.faceLandmark68Net.loadFromUri(baseUrl)
         await fa.nets.faceRecognitionNet.loadFromUri(baseUrl)
+        return 'full'
+      }
+      const onFaceModelsReady=(mode:'full'|'lite')=>{
+        if(mode==='full') setTimeout(captureReference,3000)
       }
       // Correctif (01/09, audit complet suite à un signalement de détection
       // multi-visages non fiable) — jusqu'ici, un échec RÉSEAU du
@@ -3357,22 +3409,19 @@ export default function ExamPage() {
       // désormais consigné (console + événement informatif horodaté côté
       // serveur) et affiché honnêtement à l'étudiant plutôt que masqué.
       loadModels(FACEAPI_MODEL_URL)
-        .then(()=>{
-          setFaceStatus('warn')
-          setTimeout(captureReference,3000)
-          if(faceIntervalRef.current) clearInterval(faceIntervalRef.current)
-          faceIntervalRef.current=setInterval(faceDetectionTick,5000)
-        })
+        .then(onFaceModelsReady)
         .catch((localErr:any)=>{
           console.warn('[face-detection] échec chargement local des modèles, repli CDN', localErr)
           loadModels(FACEAPI_MODEL_URL_CDN)
-            .then(()=>{
-              setFaceStatus('warn')
-              setTimeout(captureReference,3000)
-              if(faceIntervalRef.current) clearInterval(faceIntervalRef.current)
-              faceIntervalRef.current=setInterval(faceDetectionTick,5000)
-            })
+            .then(onFaceModelsReady)
             .catch((cdnErr:any)=>{
+              if(faceLoopStarted){
+                // Le détecteur léger tourne déjà (présence / plusieurs visages) : seule l'IDENTITÉ est indisponible — ce n'est
+                // pas « détection faciale indisponible ».
+                console.warn('[face-detection] modèles d\'identité indisponibles (local + CDN) — présence/plusieurs visages restent surveillés', cdnErr)
+                logVisionLite(attemptRef.current||aId, 'Modèles d\'identité indisponibles : présence et plusieurs visages restent surveillés')
+                return
+              }
               console.warn('[face-detection] échec chargement CDN également — détection faciale indisponible pour cette session', cdnErr)
               setFaceStatus('unavailable')
               const curAId=attemptRef.current||aId
@@ -3996,7 +4045,9 @@ export default function ExamPage() {
             <div style={{background:'rgba(245,158,11,.12)',border:'1px solid rgba(245,158,11,.3)',borderRadius:10,padding:'14px 16px',marginBottom:16}}>
               <p style={{fontSize:15.5,color:'#fcd34d',margin:0,lineHeight:1.5}}>
                 <i className="fas fa-info-circle" style={{marginRight:6}}/>
-                Vérification automatique incomplète (éclairage, caméra ou navigateur) — vous pouvez continuer, le surveillant en a été informé.
+                {envScanLite
+                  ? "Connexion limitée : la vérification de la pièce est allégée pour ne pas ralentir votre examen. Votre visage reste surveillé — vous pouvez continuer, le surveillant en a été informé."
+                  : "Vérification automatique incomplète (éclairage, caméra ou navigateur) — vous pouvez continuer, le surveillant en a été informé."}
               </p>
             </div>
           )}

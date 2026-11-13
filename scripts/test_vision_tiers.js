@@ -1,0 +1,30 @@
+#!/usr/bin/env node
+// Niveaux de surveillance par vision (lib/visionTier.ts) : décision selon le débit + cohérence des fichiers listés.
+// Usage : cd cei-next && node scripts/test_vision_tiers.js
+const { execSync } = require('child_process'), fs = require('fs'), os = require('os'), path = require('path')
+const root = path.join(__dirname, '..'), out = fs.mkdtempSync(path.join(os.tmpdir(), 'vt-'))
+execSync(`node_modules/.bin/tsc lib/visionTier.ts --outDir ${out} --module commonjs --target es2020 --skipLibCheck --lib es2020,dom`, { cwd: root, stdio: 'pipe' })
+const { tierForMbps, VISION_TIERS } = require(path.join(out, 'visionTier.js'))
+let ok = 0, ko = 0
+const check = (n, c) => { c ? ok++ : ko++; console.log((c ? '  ✔ ' : '  ✘ ') + n) }
+check('0,2 Mbit/s -> niveau 1', tierForMbps(0.2) === 1)
+check('0,9 Mbit/s -> niveau 1', tierForMbps(0.9) === 1)
+check('1 Mbit/s -> niveau 2', tierForMbps(1) === 2)
+check('2,4 Mbit/s -> niveau 2', tierForMbps(2.4) === 2)
+check('2,5 Mbit/s -> niveau 3', tierForMbps(2.5) === 3)
+check('5,9 Mbit/s -> niveau 3', tierForMbps(5.9) === 3)
+check('6 Mbit/s -> niveau 4', tierForMbps(6) === 4)
+check('100 Mbit/s -> niveau 4', tierForMbps(100) === 4)
+check('délai de mesure dépassé (0,1) -> niveau 1', tierForMbps(0.1) === 1)
+check("mesure impossible (null) -> niveau 3, jamais YOLO à l'aveugle", tierForMbps(null) === 3)
+check('mesure impossible mais 3g -> niveau 2', tierForMbps(null, { effectiveType: '3g' }) === 2)
+check('économie de données -> niveau 1 même à 50 Mbit/s', tierForMbps(50, { saveData: true }) === 1)
+check('2g -> niveau 1 même à 50 Mbit/s', tierForMbps(50, { effectiveType: '2g' }) === 1)
+check('slow-2g -> niveau 1', tierForMbps(10, { effectiveType: 'slow-2g' }) === 1)
+check('NaN -> traité comme pas de mesure', tierForMbps(NaN) === 3)
+const urls = Object.values(VISION_TIERS).flatMap(t => t.urls)
+check('aucun fichier en double entre niveaux', new Set(urls).size === urls.length)
+check('4 niveaux, ≈ 48 Mo au total', Object.keys(VISION_TIERS).length === 4 && Math.abs(Object.values(VISION_TIERS).reduce((a, t) => a + t.mb, 0) - 48.3) < 0.5)
+const missing = urls.filter(u => !fs.existsSync(path.join(root, 'public', u)))
+check('tous les fichiers listés existent dans public/' + (missing.length ? ' : ' + missing.join(', ') : ''), missing.length === 0)
+console.log(`\n${ok}/${ok + ko} vérifications réussies`); process.exit(ko ? 1 : 0)

@@ -52,6 +52,7 @@ const SHARED: Record<string, string> = {
   env_scan_completed: 'Scan environnement effectué',
   env_scan_person_detected: 'Personne détectée dans la pièce',
   env_scan_unavailable: 'Scan environnement indisponible',
+  vision_profile_lite: "Surveillance allégée (connexion limitée de l'étudiant) — information, pas une anomalie",
   pattern_multi_face_audio: 'Plusieurs visages et bruit simultanés',
   pattern_head_turned_talking: 'Tête tournée et parole simultanées',
   pattern_gaze_talk_mouth: 'Regard détourné et bouche en mouvement',
