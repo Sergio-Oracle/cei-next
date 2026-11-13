@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { errMsg } from '@/lib/errors'
 
 /* Section « CEI dans Moodle » de la page Moodle (phase 6) :
    bouton « CEI » du menu de Moodle (une ligne), enregistrement de CEI pour
@@ -69,18 +70,18 @@ function InstanceLti({ inst, onChanged, onCopy }: { inst: LtiInstance; onChanged
   async function save(body: Record<string, unknown>, ok: string) {
     setBusy('save')
     try { await api.put(`/api/admin/moodle/instances/${inst.id}`, body); success(ok); onChanged() }
-    catch (e: any) { error(e.message || 'Enregistrement impossible') }
+    catch (e: unknown) { error(errMsg(e) || 'Enregistrement impossible') }
     finally { setBusy(null) }
   }
   async function newSecret() {
     setBusy('hook')
     try { setHook(await api.post<Webhook>(`/api/admin/moodle/instances/${inst.id}/webhook`, {})); success('Nouvelle adresse créée : mettez-la à jour dans Moodle') }
-    catch (e: any) { error(e.message) } finally { setBusy(null) }
+    catch (e: unknown) { error(errMsg(e)) } finally { setBusy(null) }
   }
   async function runFull() {
     setBusy('full')
     try { await api.post(`/api/admin/moodle/instances/${inst.id}/auto-sync/run`, {}); success('Synchronisation complète demandée : le service la lance dans les 30 secondes (plusieurs minutes)'); setTimeout(onChanged, 4000) }
-    catch (e: any) { error(e.message) } finally { setBusy(null) }
+    catch (e: unknown) { error(errMsg(e)) } finally { setBusy(null) }
   }
 
   const report = inst.auto_sync_last_report
@@ -192,7 +193,7 @@ export default function LtiPanel({ instances, onChanged }: { instances: LtiInsta
       else if (r.skipped) error(`Non envoyé : ${r.skipped}`)
       else success(`${r.pushed} note(s) déposée(s) dans Moodle${r.not_in_moodle?.length ? ` — ${r.not_in_moodle.length} étudiant(s) absent(s) du cours Moodle` : ''}`)
       loadGrades()
-    } catch (e: any) { error(e.message || 'Envoi impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Envoi impossible') }
     finally { setPushing(null) }
   }
 

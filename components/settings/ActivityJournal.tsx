@@ -12,6 +12,7 @@ import { useToast } from '@/contexts/ToastContext'
 import Pager from '@/components/ui/Pager'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { errMsg } from '@/lib/errors'
 
 interface Account {
   id: number; name: string; email: string; role: string; is_active: boolean
@@ -79,7 +80,7 @@ function AccessPanel() {
     try {
       const r = await api.get<{ owners: Person[]; grants: Person[] }>('/api/audit/grants')
       setOwners(r.owners); setGrants(r.grants)
-    } catch (e: any) { error(e?.message || 'Chargement impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Chargement impossible') }
   }, [error])
   useEffect(() => { if (open) load() }, [open, load])
   useEffect(() => {
@@ -93,13 +94,13 @@ function AccessPanel() {
   async function grant(p: Person) {
     setBusy(true)
     try { await api.post('/api/audit/grants', { user_id: p.id }); success(`${p.name} peut maintenant consulter le journal`); setQ(''); await load() }
-    catch (e: any) { error(e?.message || 'Opération impossible') } finally { setBusy(false) }
+    catch (e: unknown) { error(errMsg(e) || 'Opération impossible') } finally { setBusy(false) }
   }
   async function revoke(p: Person) {
     if (!confirm(`Retirer l'accès au journal à ${p.name} ? Son bouton disparaît immédiatement.`)) return
     setBusy(true)
     try { await api.delete(`/api/audit/grants/${p.id}`); success(`Accès retiré à ${p.name}`); await load() }
-    catch (e: any) { error(e?.message || 'Opération impossible') } finally { setBusy(false) }
+    catch (e: unknown) { error(errMsg(e) || 'Opération impossible') } finally { setBusy(false) }
   }
 
   return (
@@ -184,7 +185,7 @@ export default function ActivityJournal() {
     try {
       const r = await api.get<{ accounts: Account[]; online: number }>('/api/audit/accounts')
       setAccounts(r.accounts); setOnlineCount(r.online)
-    } catch (e: any) { error(e?.message || 'Chargement impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Chargement impossible') }
   }, [error])
 
   const loadRows = useCallback(async (silent = false) => {
@@ -193,7 +194,7 @@ export default function ActivityJournal() {
       const p = new URLSearchParams(qs); p.set('page', String(page)); p.set('limit', '25')
       const r = await api.get<{ rows: Row[]; total: number; total_pages: number }>(`/api/audit/activity?${p.toString()}`)
       setRows(r.rows); setTotal(r.total); setPages(r.total_pages)
-    } catch (e: any) { if (!silent) error(e?.message || 'Chargement impossible') }
+    } catch (e: unknown) { if (!silent) error(errMsg(e) || 'Chargement impossible') }
     finally { setLoading(false) }
   }, [qs, page, error])
 
@@ -214,7 +215,7 @@ export default function ActivityJournal() {
       const a = document.createElement('a')
       a.href = url; a.download = `journal_activite_${new Date().toISOString().slice(0, 10)}.csv`; a.click()
       URL.revokeObjectURL(url)
-    } catch (e: any) { error(e?.message || 'Export impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Export impossible') }
   }
 
   const sel = accounts.find(a => a.id === userId)

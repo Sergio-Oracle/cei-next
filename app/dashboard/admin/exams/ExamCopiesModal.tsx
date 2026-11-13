@@ -10,6 +10,7 @@ import { StatsModal, PlagiatModal, BilanModal } from './ExamToolbarModals'
 import { eventLabel } from '@/lib/eventLabels'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { errMsg } from '@/lib/errors'
 
 /* Le serveur plafonne /attempts à 200 copies par page : charge toutes les pages
    (sinon un examen de 1 499 copies n'en montrait que 200). */
@@ -71,7 +72,7 @@ function ManualGradeModal({ attempt, onClose, onDone }: { attempt: RichAttempt; 
       await api.put(`/api/exam_attempts/${attempt.id}/manual-grade`, { score: s, feedback: fb })
       success('Note enregistrée')
       onDone()
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setSaving(false) }
   }
 
@@ -140,7 +141,7 @@ function ProctorNotesModal({ attemptId, studentName, onClose }: { attemptId: num
       await api.post(`/api/exam_attempts/${attemptId}/proctor-note`, { note: text })
       success('Note ajoutée')
       setText(''); await load()
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setSaving(false) }
   }
 
@@ -194,7 +195,7 @@ function ExtraTimeModal({ attemptId, studentName, onClose, onDone }: { attemptId
       await api.put(`/api/exam_attempts/${attemptId}/extra-time`, { minutes: m })
       success(`${m} min accordées à ${studentName}`)
       onDone()
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setSaving(false) }
   }
 
@@ -283,7 +284,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
       await api.post(`/api/exam_attempts/${id}/correct`, {})
       success('Correction IA lancée — actualisez dans quelques instants')
       await load()
-    } catch (e: any) { error(e.message || 'Erreur correction') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur correction') }
     finally { setActing(null) }
   }
 
@@ -294,7 +295,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
       await api.post(`/api/exam_attempts/${id}/unban`, {})
       success(`${name} a été débanni(e)`)
       await load()
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setActing(null) }
   }
 
@@ -305,7 +306,7 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
       const safeName = studentName.trim().replace(/\s+/g, '_') || String(id)
       Object.assign(document.createElement('a'), { href: url, download: `rapport_integrite_${safeName}.pdf` }).click()
       URL.revokeObjectURL(url)
-    } catch (e: any) { error(e.message || 'Rapport non disponible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Rapport non disponible') }
   }
 
   async function exportCsv() {

@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import api from '@/lib/api'
 import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
 import ClientAssistSettings from '@/components/shared/ClientAssistSettings'
+import { errMsg } from '@/lib/errors'
 
 interface Policy {
   success: boolean; status: 'draft' | 'scheduled' | 'active' | 'closed'; attempts: number; by_waves: boolean
@@ -40,7 +41,7 @@ export default function ExamSettingsModal({ examId, onClose, onSaved }: {
         setPol(p); setForm(v); setOrig(v)
         setRaw({ max_tab_switches: String(v.max_tab_switches ?? ''), max_no_face_count: String(v.max_no_face_count ?? ''), questions_per_page: String(v.questions_per_page ?? ''), time_per_question_seconds: String(v.time_per_question_seconds ?? 0) })
         try { const s = await api.get<any>('/api/subjects'); if (alive) setSubjects((Array.isArray(s) ? s : s.subjects ?? []).map((x: any) => ({ id: x.id, title: x.title }))) } catch {}
-      } catch (e: any) { if (alive) setErr(e?.message || 'Réglages indisponibles') } finally { if (alive) setLoading(false) }
+      } catch (e: unknown) { if (alive) setErr(errMsg(e) || 'Réglages indisponibles') } finally { if (alive) setLoading(false) }
     })()
     return () => { alive = false }
   }, [examId])
@@ -75,7 +76,7 @@ export default function ExamSettingsModal({ examId, onClose, onSaved }: {
       const r = await api.put<{ exam: any; changes: string[] }>(`/api/admin/online_exams/${examId}`, body)
       onSaved?.(r.exam)
       onClose()
-    } catch (e: any) { setErr(e?.message || 'Enregistrement impossible') } finally { setBusy(false) }
+    } catch (e: unknown) { setErr(errMsg(e) || 'Enregistrement impossible') } finally { setBusy(false) }
   }
 
   const row = (k: string, label: string, hint?: string, helpOn?: React.ReactNode) => (

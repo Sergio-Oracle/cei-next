@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { errMsg } from '@/lib/errors'
 
 // Chargé seulement quand le propriétaire révèle l'onglet : le code du journal n'est pas envoyé aux autres comptes.
 const ActivityJournal = dynamic(() => import('@/components/settings/ActivityJournal'), { ssr: false })
@@ -98,8 +99,8 @@ export default function SettingsPage() {
       await api.put('/api/profile', { full_name: fullName })
       setProfile(p => p ? { ...p, full_name: fullName } : p)
       success('Profil mis à jour avec succès')
-    } catch (err: any) {
-      error(err.message || 'Erreur lors de la sauvegarde')
+    } catch (err: unknown) {
+      error(errMsg(err) || 'Erreur lors de la sauvegarde')
     } finally { setSaving(false) }
   }
 
@@ -117,8 +118,8 @@ export default function SettingsPage() {
       })
       success('Mot de passe modifié avec succès')
       setCurrentPwd(''); setNewPwd(''); setConfirmPwd('')
-    } catch (err: any) {
-      error(err.message || 'Mot de passe actuel incorrect')
+    } catch (err: unknown) {
+      error(errMsg(err) || 'Mot de passe actuel incorrect')
     } finally { setChangingPwd(false) }
   }
 

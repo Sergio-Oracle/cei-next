@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { errMsg } from '@/lib/errors'
 
 declare global { interface Window { LivekitClient: any } }
 
@@ -80,8 +81,8 @@ export default function AnswerSupervisorCallModal({ proctorId, supervisorName, o
           micTrackRef.current = mic
           setMicOn(true)
         } catch { /* micro optionnel */ }
-      } catch (e: any) {
-        if (!cancelled) { setStatus('error'); toastErr(e.message || "Impossible de rejoindre l'appel") }
+      } catch (e: unknown) {
+        if (!cancelled) { setStatus('error'); toastErr(errMsg(e) || "Impossible de rejoindre l'appel") }
       }
     }
 
@@ -104,7 +105,7 @@ export default function AnswerSupervisorCallModal({ proctorId, supervisorName, o
         camTrackRef.current = t
         if (localVidRef.current) t.attach(localVidRef.current)
         setCamOn(true)
-      } catch (e: any) { toastErr(e.message || 'Caméra indisponible') }
+      } catch (e: unknown) { toastErr(errMsg(e) || 'Caméra indisponible') }
     } else {
       if (localVidRef.current && camTrackRef.current) camTrackRef.current.detach(localVidRef.current)
       if (camTrackRef.current) { await roomRef.current.localParticipant.unpublishTrack(camTrackRef.current); camTrackRef.current.stop(); camTrackRef.current = null }

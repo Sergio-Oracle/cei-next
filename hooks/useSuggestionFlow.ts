@@ -6,6 +6,7 @@
  */
 import { useRef, useState } from 'react'
 import api from '@/lib/api'
+import { errMsg } from '@/lib/errors'
 
 export interface Suggestion {
   title: string
@@ -107,8 +108,8 @@ export function useSuggestionFlow(): UseSuggestionFlowReturn {
 
       const data = await api.upload<SuggestionResult>('/api/ai/generate-exam-suggestions', fd)
       setResult(data)
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la génération')
+    } catch (err: unknown) {
+      setError(errMsg(err) || 'Erreur lors de la génération')
     } finally {
       if (timerRef.current) clearInterval(timerRef.current)
       setGenerating(false)

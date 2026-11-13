@@ -8,6 +8,7 @@ import Modal from '@/components/ui/Modal'
 import type { Reclamation, ReclamationStatus } from '@/types'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { errMsg } from '@/lib/errors'
 
 const AI_STEPS = [
   { at: 0,  label: 'Lecture de la réclamation et du barème…' },
@@ -86,8 +87,8 @@ export default function AdminReclamationsPage() {
       setSelected(null)
       setResponse(''); setRespondStatus(''); setNewScore('')
       load()
-    } catch (e: any) {
-      error(e.message || 'Erreur')
+    } catch (e: unknown) {
+      error(errMsg(e) || 'Erreur')
     } finally {
       setSubmitting(false)
     }
@@ -106,8 +107,8 @@ export default function AdminReclamationsPage() {
       setAiModal(null)
       if (updated) setAiResult(updated)
       success('Analyse IA terminée')
-    } catch (e: any) {
-      error(e.message || 'Erreur analyse IA')
+    } catch (e: unknown) {
+      error(errMsg(e) || 'Erreur analyse IA')
       setAiModal(null)
       load() // état potentiellement périmé (déjà traitée entretemps) — resynchroniser la liste
     } finally {
@@ -137,7 +138,7 @@ export default function AdminReclamationsPage() {
       success('Réclamation supprimée')
       setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n })
       load()
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
   }
 
   async function deleteSelected() {
@@ -151,7 +152,7 @@ export default function AdminReclamationsPage() {
       success(`${res.deleted} réclamation${res.deleted > 1 ? 's' : ''} supprimée${res.deleted > 1 ? 's' : ''}${res.skipped ? ` — ${res.skipped} ignorée${res.skipped > 1 ? 's' : ''} (non autorisée${res.skipped > 1 ? 's' : ''})` : ''}`)
       setSelectedIds(new Set())
       load()
-    } catch (e: any) { error(e.message || 'Erreur lors de la suppression') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur lors de la suppression') }
     finally { setDeleting(false) }
   }
 

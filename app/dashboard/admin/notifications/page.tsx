@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { errMsg } from '@/lib/errors'
 
 interface Notification {
   id: number
@@ -35,7 +36,7 @@ export default function AdminNotificationsPage() {
       success('Toutes les notifications marquées comme lues')
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
       window.dispatchEvent(new CustomEvent('cei:notifications-read'))
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
   }
 
   const unread = notifications.filter(n => !n.is_read).length

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
+import { errMsg } from '@/lib/errors'
 
 interface Student {
   attempt_id:       number
@@ -83,7 +84,7 @@ export default function ProctorPage() {
     try {
       const res = await api.get<Data>(`/api/online_exams/${id}/active_proctoring`)
       setData(res)
-    } catch (e: any) { toastErr(e.message || 'Erreur de chargement') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur de chargement') }
     finally { setLoading(false); setRefreshing(false) }
   }, [id])
 
@@ -123,7 +124,7 @@ export default function ProctorPage() {
       await api.post(`/api/exam_attempts/${warnModal.attemptId}/send_warning`, { message: warnText, type: warnModal.type })
       success(warnModal.type === 'warning' ? 'Avertissement envoyé' : 'Message envoyé')
       setWarnModal(null); setWarnText('')
-    } catch (e: any) { toastErr(e.message || 'Erreur') } finally { setSending(false) }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') } finally { setSending(false) }
   }
 
   async function confirmBan() {
@@ -131,7 +132,7 @@ export default function ProctorPage() {
     try {
       await api.post(`/api/exam_attempts/${banModal.attemptId}/proctor_ban`, { reason: banReason })
       success(`${banModal.name} exclu`); setBanModal(null); setBanReason(''); load()
-    } catch (e: any) { toastErr(e.message || 'Erreur') } finally { setBanning(false) }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') } finally { setBanning(false) }
   }
 
   async function sendNote() {
@@ -139,7 +140,7 @@ export default function ProctorPage() {
     try {
       await api.post(`/api/exam_attempts/${noteModal.attemptId}/proctor-note`, { note: noteText })
       success('Note enregistrée'); setNoteModal(null); setNoteText('')
-    } catch (e: any) { toastErr(e.message || 'Erreur') } finally { setNoteSending(false) }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') } finally { setNoteSending(false) }
   }
 
   async function grantTime() {
@@ -147,14 +148,14 @@ export default function ProctorPage() {
     try {
       await api.put(`/api/exam_attempts/${timeModal.attemptId}/extra-time`, { minutes: timeMin })
       success(`+${timeMin} min accordées à ${timeModal.name}`); setTimeModal(null); load()
-    } catch (e: any) { toastErr(e.message || 'Erreur') } finally { setTimeSending(false) }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') } finally { setTimeSending(false) }
   }
 
   async function toggleRec(attemptId: number) {
     try {
       await api.post(`/api/exam_attempts/${attemptId}/recording`, {})
       success('Enregistrement basculé'); load()
-    } catch (e: any) { toastErr(e.message || 'Erreur') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') }
   }
 
   async function openLogs(attemptId: number, name: string) {

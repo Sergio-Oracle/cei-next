@@ -7,6 +7,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { MOODLE_UI, RAG_UI } from '@/lib/features'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { errMsg } from '@/lib/errors'
 
 /* Page Administration → Moteur RAG. Relie CEI à un serveur RAGFlow de façon
    graphique : adresse + clé API (chiffrée côté serveur), test de connexion,
@@ -61,7 +62,7 @@ function DatasetDetails({ engineId, datasetId }: { engineId: number; datasetId: 
   const load = useCallback(async () => {
     setLoading(true); setErr(null)
     try { setData(await api.get<DatasetDetail>(`/api/admin/rag/engines/${engineId}/datasets/${datasetId}/documents`)) }
-    catch (e: any) { setErr(e.message || 'Détail indisponible') }
+    catch (e: unknown) { setErr(errMsg(e) || 'Détail indisponible') }
     finally { setLoading(false) }
   }, [engineId, datasetId])
   useEffect(() => { load() }, [load])
@@ -236,7 +237,7 @@ function AdminRagPageInner() {
   const loadEcs = useCallback(async () => {
     setEcsError(null)
     try { setRagEcs((await api.get<{ ecs: RagEc[] }>('/api/admin/rag/ecs')).ecs || []) }
-    catch (e: any) { setRagEcs([]); setEcsError(e.message || 'Cours Moodle indisponibles') }
+    catch (e: unknown) { setRagEcs([]); setEcsError(errMsg(e) || 'Cours Moodle indisponibles') }
   }, [])
   useEffect(() => { if (active) loadEcs(); else setRagEcs(null) }, [active?.id, loadEcs]) // eslint-disable-line
 
@@ -252,7 +253,7 @@ function AdminRagPageInner() {
       const ec = ecTargets[i]
       setDocProgress({ done: i, total: ecTargets.length, current: ec.ec_code })
       try { acc.push(await api.aiPost<EcReport>('/api/admin/rag/sync/ec', { ec_code: ec.ec_code, dry_run: mode === 'dry' })) }
-      catch (e: any) { acc.push({ ec_code: ec.ec_code, error: e.message || 'Erreur' }) }
+      catch (e: unknown) { acc.push({ ec_code: ec.ec_code, error: errMsg(e) || 'Erreur' }) }
       setDocResults([...acc])
     }
     setDocProgress(p => ({ ...p, done: acc.length, current: '' }))
@@ -269,7 +270,7 @@ function AdminRagPageInner() {
       await api.post(`/api/admin/rag/engines/${active.id}/auto-index`, { enabled })
       success(enabled ? 'Indexation automatique activée' : 'Indexation automatique désactivée')
       await loadEngines()
-    } catch (e: any) { error(e.message || 'Modification impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Modification impossible') }
     finally { setBusy(null) }
   }
 
@@ -285,14 +286,14 @@ function AdminRagPageInner() {
     try {
       const res = await api.get<{ engines: Engine[] }>('/api/admin/rag/engines')
       setEngines(res.engines || [])
-    } catch (e: any) { error(e.message || 'Chargement des moteurs impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Chargement des moteurs impossible') }
     finally { setLoading(false) }
   }, []) // eslint-disable-line
 
   const loadStatus = useCallback(async (id: number) => {
     setStatusLoading(true); setStatusError(null)
     try { const r = await api.get<{ datasets: DatasetStatus[]; ledger?: { ready: number; indexing: number; failed: number; no_text: number } }>(`/api/admin/rag/engines/${id}/status`); setStatus(r.datasets || []); setLedger(r.ledger || null) }
-    catch (e: any) { setStatus(null); setStatusError(e.message || 'État indisponible') }
+    catch (e: unknown) { setStatus(null); setStatusError(errMsg(e) || 'État indisponible') }
     finally { setStatusLoading(false) }
   }, [])
 
@@ -323,7 +324,7 @@ function AdminRagPageInner() {
       if (!res.diagnosis || res.diagnosis.ok) setFormOpen(false)
       success(editId ? 'Moteur modifié' : res.engine.is_active ? 'Moteur ajouté et mis en service' : 'Moteur ajouté')
       await loadEngines()
-    } catch (e: any) { error(e.message || 'Enregistrement impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Enregistrement impossible') }
     finally { setSaving(false) }
   }
 
@@ -335,7 +336,7 @@ function AdminRagPageInner() {
       if (action === 'activate') success(`« ${e.name} » est maintenant en service`)
       if (action === 'deactivate') success('Moteur retiré du service : CEI n’utilise plus de RAG')
       await loadEngines()
-    } catch (err: any) { error(err.message || 'Action impossible'); await loadEngines() }
+    } catch (err: unknown) { error(errMsg(err) || 'Action impossible'); await loadEngines() }
     finally { setBusy(null) }
   }
 
@@ -344,7 +345,7 @@ function AdminRagPageInner() {
       await api.delete(`/api/admin/rag/engines/${id}`)
       success('Moteur supprimé'); setConfirmDelete(null)
       await loadEngines()
-    } catch (e: any) { error(e.message || 'Suppression impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Suppression impossible') }
   }
 
   async function reindex(scope: 'failed' | 'all') {
@@ -354,7 +355,7 @@ function AdminRagPageInner() {
       const r = await api.post<{ documents: number; datasets: number }>(`/api/admin/rag/engines/${active.id}/reindex`, { scope })
       r.documents ? success(`Indexation relancée : ${r.documents} document(s) dans ${r.datasets} base(s)`) : success('Aucun document à ré-indexer')
       await loadStatus(active.id)
-    } catch (e: any) { error(e.message || 'Ré-indexation impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Ré-indexation impossible') }
     finally { setBusy(null) }
   }
 

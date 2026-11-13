@@ -10,6 +10,7 @@
  */
 import { useState } from 'react'
 import { evaluateExpression } from '@/lib/safeMathEval'
+import { errMsg } from '@/lib/errors'
 
 interface Props { onClose: () => void }
 
@@ -37,8 +38,8 @@ export default function Calculator({ onClose }: Props) {
       const rounded = Math.round(v * 1e10) / 1e10
       setResult(String(rounded))
       setErr('')
-    } catch (e: any) {
-      setErr(e.message || 'Expression invalide')
+    } catch (e: unknown) {
+      setErr(errMsg(e) || 'Expression invalide')
       setResult('')
     }
   }

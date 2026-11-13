@@ -18,6 +18,7 @@ import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
 import { activateExam } from '@/lib/activateExam'
 import SubjectCheckBanner from '@/components/exam/SubjectCheckBanner'
+import { errMsg } from '@/lib/errors'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -132,7 +133,7 @@ export default function ProfessorExamDetailPage() {
       await activateExam(id)
       success('Examen activé')
       setExam(e => e ? { ...e, status: 'active' as ExamStatus } : e)
-    } catch (e: any) { error(e.message) } finally { setActioning(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setActioning(false) }
   }
 
   async function handleClose() {
@@ -142,7 +143,7 @@ export default function ProfessorExamDetailPage() {
       await api.post(`/api/online_exams/${id}/close`)
       success('Examen clôturé')
       setExam(e => e ? { ...e, status: 'closed' as ExamStatus } : e)
-    } catch (e: any) { error(e.message) } finally { setActioning(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setActioning(false) }
   }
 
   // Retour #6 — reprogrammation d'un examen déjà planifié, sans repasser par
@@ -182,7 +183,7 @@ export default function ProfessorExamDetailPage() {
       success('Examen reprogrammé')
       setExam(e => e && res.exam ? { ...e, ...res.exam } : e)
       setRescheduleModal(false)
-    } catch (e: any) { error(e.message) } finally { setRescheduling(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setRescheduling(false) }
   }
 
   function openCompositionModal() {
@@ -203,7 +204,7 @@ export default function ProfessorExamDetailPage() {
       success('Paramètres de composition enregistrés')
       setExam(e => e && res.exam ? { ...e, ...res.exam } : e)
       setCompositionModal(false)
-    } catch (e: any) { error(e.message) } finally { setSavingComposition(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setSavingComposition(false) }
   }
 
   // Point 19 / Retour #29 — les notes restent invisibles aux étudiants tant
@@ -224,7 +225,7 @@ export default function ProfessorExamDetailPage() {
       if (published === null) return
       setExam(e => e ? { ...e, results_published: published } : e)
       success(published ? 'Résultats publiés' : 'Résultats dépubliés')
-    } catch (e: any) { error(e.message) } finally { setPublishing(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setPublishing(false) }
   }
 
   async function openGradeModal(a: AttemptWithMeta) {
@@ -247,7 +248,7 @@ export default function ProfessorExamDetailPage() {
         ? { ...a, score: s, feedback: gradeForm.feedback, needs_correction: false }
         : a))
       setGradeModal(null)
-    } catch (e: any) { error(e.message || 'Erreur') } finally { setGrading(false) }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') } finally { setGrading(false) }
   }
 
   async function autoCorrect(attemptId: number) {
@@ -256,7 +257,7 @@ export default function ProfessorExamDetailPage() {
       await api.post(`/api/exam_attempts/${attemptId}/correct`)
       success('Correction IA lancée')
       load()
-    } catch (e: any) { error(e.message || 'Erreur') } finally { setCorrecting(null) }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') } finally { setCorrecting(null) }
   }
 
   async function unban(a: AttemptWithMeta) {
@@ -265,7 +266,7 @@ export default function ProfessorExamDetailPage() {
       await api.post(`/api/exam_attempts/${a.id}/unban`)
       success('Étudiant réintégré')
       setAttempts(prev => prev.map(x => x.id === a.id ? { ...x, status: 'in_progress' } : x))
-    } catch (e: any) { error(e.message) }
+    } catch (e: unknown) { error(errMsg(e)) }
   }
 
   async function submitBan() {
@@ -276,7 +277,7 @@ export default function ProfessorExamDetailPage() {
       success('Étudiant exclu')
       setAttempts(prev => prev.map(x => x.id === banModal.id ? { ...x, status: 'banned' } : x))
       setBanModal(null); setBanReason('')
-    } catch (e: any) { error(e.message) } finally { setBanning(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setBanning(false) }
   }
 
   async function submitExtraTime() {
@@ -286,7 +287,7 @@ export default function ProfessorExamDetailPage() {
       await api.put(`/api/exam_attempts/${extraModal.id}/extra-time`, { minutes: extraMin })
       success(`+${extraMin} min accordées`)
       setExtraModal(null)
-    } catch (e: any) { error(e.message) } finally { setAddingExtra(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setAddingExtra(false) }
   }
 
   async function downloadCsv() {
@@ -299,7 +300,7 @@ export default function ProfessorExamDetailPage() {
       a.download = `examen_${id}_notes.xlsx`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (e: any) { error(e.message || 'Erreur export') } finally { setDownloading(false) }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur export') } finally { setDownloading(false) }
   }
 
   async function downloadSecurityReport() {
@@ -312,7 +313,7 @@ export default function ProfessorExamDetailPage() {
       a.download = `examen_${id}_rapport_securite.pdf`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (e: any) { error(e.message || 'Erreur rapport sécurité') } finally { setDownloadingSecurity(false) }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur rapport sécurité') } finally { setDownloadingSecurity(false) }
   }
 
   async function handleImportGrades(file: File) {
@@ -326,7 +327,7 @@ export default function ProfessorExamDetailPage() {
       success(`Import terminé : ${res.created} note(s) créée(s), ${res.updated} mise(s) à jour${res.errors.length ? `, ${res.errors.length} erreur(s)` : ''}`)
       if (res.errors.length) console.warn('Erreurs import notes:', res.errors)
       await load()
-    } catch (e: any) { error(e.message || 'Erreur import') } finally {
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur import') } finally {
       setImportingGrades(false)
       if (gradesFileRef.current) gradesFileRef.current.value = ''
     }

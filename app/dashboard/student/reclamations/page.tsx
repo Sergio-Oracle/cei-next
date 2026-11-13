@@ -8,6 +8,7 @@ import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { errMsg } from '@/lib/errors'
 
 interface Reclamation {
   id: number
@@ -91,7 +92,7 @@ function ReclamationsContent() {
       setShowCreate(false)
       setCreateForm({ reason: '', attempt_id: '', paper_id: '' })
       load()
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setSubmitting(false) }
   }
 

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { errMsg } from '@/lib/errors'
 
 interface ECAssignmentRef { id: number; professor_id: number; kind?: 'responsable' | 'tuteur'; source?: string | null }
 interface EC {
@@ -92,7 +93,7 @@ export default function AdminAffectationsPage() {
       success('EC assigné avec succès')
       setSelections(prev => { const n = { ...prev }; delete n[ecId]; return n })
       load()
-    } catch (e: any) { error(e.message || 'Erreur affectation') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur affectation') }
     finally { setAssigning(null) }
   }
 
@@ -113,7 +114,7 @@ export default function AdminAffectationsPage() {
         return { ...prev, assignedIds: prev.assignedIds.filter(id => id !== Number(profId)), assignmentIdByProf: rest }
       })
       load()
-    } catch (e: any) { error(e.message || 'Erreur retrait') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur retrait') }
     finally { setUnassigning(null) }
   }
 

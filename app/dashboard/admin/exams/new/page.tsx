@@ -7,6 +7,7 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
 import ClientAssistSettings from '@/components/shared/ClientAssistSettings'
+import { errMsg } from '@/lib/errors'
 
 interface Subject { id: number; title: string }
 
@@ -109,8 +110,8 @@ export default function NewExamPage() {
       const pc = res.proctor_conflicts?.[0]
       if (pc) showToast(`Attention : le groupe « ${pc.group} » surveille déjà ${pc.with_exam} sur ce créneau. Rattachez un autre groupe à cet examen.`, 'warning', 10000)
       router.push('/dashboard/admin/exams')
-    } catch (e: any) {
-      error(e.message || 'Erreur lors de la création')
+    } catch (e: unknown) {
+      error(errMsg(e) || 'Erreur lors de la création')
     } finally {
       setLoading(false)
     }

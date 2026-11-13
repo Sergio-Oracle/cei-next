@@ -6,6 +6,7 @@ import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { loadFaceApi, captureFrame, captureDescriptorFromImage, loadImageFile, loadImageFromUrl, warmupFaceApi } from '@/lib/faceCapture'
+import { errMsg } from '@/lib/errors'
 
 // Sous-étapes du flux visage : choisir la source de la photo, capturer en
 // direct, ou relire/valider la photo obtenue (caméra ou upload) avant de
@@ -62,8 +63,8 @@ function BiometricEnrollInner() {
       if (videoRef.current) await warmupFaceApi(videoRef.current)
       setFaceReady(true)
       setStatusMsg('Regardez la caméra, restez immobile quelques secondes…')
-    } catch (e: any) {
-      toastErr(e.message || "Impossible d'accéder à la caméra")
+    } catch (e: unknown) {
+      toastErr(errMsg(e) || "Impossible d'accéder à la caméra")
       setFacePhase('pick')
     }
   }
@@ -96,8 +97,8 @@ function BiometricEnrollInner() {
       }
       setPreview(result)
       setFacePhase('preview')
-    } catch (e: any) {
-      toastErr(e.message || "Impossible d'analyser cette photo")
+    } catch (e: unknown) {
+      toastErr(errMsg(e) || "Impossible d'analyser cette photo")
     } finally {
       setBusy(false)
     }
@@ -130,8 +131,8 @@ function BiometricEnrollInner() {
       await api.post('/api/biometric/enroll/face', { descriptor, image_data: snapshotDataUrl })
       setDone(true)
       success('Reconnaissance faciale enregistrée')
-    } catch (e: any) {
-      toastErr(e.message || "Échec de l'inscription")
+    } catch (e: unknown) {
+      toastErr(errMsg(e) || "Échec de l'inscription")
     } finally {
       setBusy(false)
     }

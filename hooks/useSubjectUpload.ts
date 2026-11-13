@@ -6,6 +6,7 @@
  */
 import { useRef, useState } from 'react'
 import api, { AI_TIMEOUT_MS } from '@/lib/api'
+import { errMsg } from '@/lib/errors'
 
 export interface CreatedSubject {
   id: number
@@ -111,8 +112,8 @@ export function useSubjectUpload(
       setEditRubric(res.subject.rubric ?? '')
       onSuccess?.(res.subject)
       if (res.duplicates && res.duplicates.length > 0) onDuplicates?.(res.duplicates)
-    } catch (err: any) {
-      onError?.(err.message || 'Erreur lors de la création')
+    } catch (err: unknown) {
+      onError?.(errMsg(err) || 'Erreur lors de la création')
     } finally {
       if (t1.current) clearTimeout(t1.current)
       if (t2.current) clearTimeout(t2.current)

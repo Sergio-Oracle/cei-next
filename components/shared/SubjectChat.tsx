@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useRef, useState } from 'react'
 import api from '@/lib/api'
+import { errMsg } from '@/lib/errors'
 
 export interface ChatDraft {
   title: string; content: string; rubric: string
@@ -62,7 +63,7 @@ export default function SubjectChat({ storageKey, context, draft, onUseDraft, us
       const bad = r.files.filter(f => !f.id)
       setAtts(a => [...a, ...ok])
       if (bad.length) setErr(`Fichier illisible : ${bad.map(b => b.name).join(', ')}`)
-    } catch (ex: any) { setErr(ex?.message || 'Envoi du fichier impossible') } finally { setUpBusy(false) }
+    } catch (ex: unknown) { setErr(errMsg(ex) || 'Envoi du fichier impossible') } finally { setUpBusy(false) }
   }
 
   async function send(preset?: string) {
@@ -76,8 +77,8 @@ export default function SubjectChat({ storageKey, context, draft, onUseDraft, us
         file_ids: atts.map(a => a.id), context: context ?? '', draft: draft ?? null,
       })
       setMsgs([...next, { role: 'assistant', content: r.reply, draft: r.draft ?? null }])
-    } catch (ex: any) {
-      setErr(ex?.message || "L'assistant est indisponible, réessayez")
+    } catch (ex: unknown) {
+      setErr(errMsg(ex) || "L'assistant est indisponible, réessayez")
       setMsgs(next)
     } finally { setBusy(false) }
   }

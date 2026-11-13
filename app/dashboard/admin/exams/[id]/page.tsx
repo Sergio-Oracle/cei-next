@@ -18,6 +18,7 @@ import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
 import { activateExam } from '@/lib/activateExam'
 import SubjectCheckBanner from '@/components/exam/SubjectCheckBanner'
+import { errMsg } from '@/lib/errors'
 
 /* Le serveur plafonne /attempts à 200 copies par page : charge toutes les pages
    (sinon un examen de 1 499 copies n'en montrait que 200). */
@@ -108,13 +109,13 @@ export default function AdminExamDetailPage() {
   async function activate() {
     setActing(true)
     try { await activateExam(id); success('Activé'); setExam(e => e && { ...e, status: 'active' as ExamStatus }) }
-    catch (e: any) { error(e.message) } finally { setActing(false) }
+    catch (e: unknown) { error(errMsg(e)) } finally { setActing(false) }
   }
   async function close() {
     if (!confirm('Clôturer cet examen ?')) return
     setActing(true)
     try { await api.post(`/api/online_exams/${id}/close`); success('Clôturé'); setExam(e => e && { ...e, status: 'closed' as ExamStatus }) }
-    catch (e: any) { error(e.message) } finally { setActing(false) }
+    catch (e: unknown) { error(errMsg(e)) } finally { setActing(false) }
   }
 
   // Retour #6 — reprogrammation d'un examen déjà planifié, sans recréer l'examen.
@@ -154,7 +155,7 @@ export default function AdminExamDetailPage() {
       success('Examen reprogrammé')
       setExam(e => e && res.exam ? { ...e, ...res.exam } : e)
       setRescheduleModal(false)
-    } catch (e: any) { error(e.message) } finally { setRescheduling(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setRescheduling(false) }
   }
 
   function openCompositionModal() {
@@ -175,13 +176,13 @@ export default function AdminExamDetailPage() {
       success('Paramètres de composition enregistrés')
       setExam(e => e && res.exam ? { ...e, ...res.exam } : e)
       setCompositionModal(false)
-    } catch (e: any) { error(e.message) } finally { setSavingComposition(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setSavingComposition(false) }
   }
   async function del() {
     if (!confirm('Supprimer définitivement ?')) return
     setActing(true)
     try { await api.delete(`/api/online_exams/${id}`); success('Supprimé'); router.push('/dashboard/admin/exams') }
-    catch (e: any) { error(e.message); setActing(false) }
+    catch (e: unknown) { error(errMsg(e)); setActing(false) }
   }
 
   // Point 19 / Retour #29 — les notes restent invisibles aux étudiants tant
@@ -202,7 +203,7 @@ export default function AdminExamDetailPage() {
       if (published === null) return
       setExam(e => e ? { ...e, results_published: published } : e)
       success(published ? 'Résultats publiés' : 'Résultats dépubliés')
-    } catch (e: any) { error(e.message) } finally { setPublishing(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setPublishing(false) }
   }
 
   async function unban(a: AttemptEx) {
@@ -211,7 +212,7 @@ export default function AdminExamDetailPage() {
       await api.post(`/api/exam_attempts/${a.id}/unban`)
       success('Étudiant réintégré')
       setAttempts(prev => prev.map(x => x.id === a.id ? { ...x, status: 'in_progress', banned: false } : x))
-    } catch (e: any) { error(e.message) }
+    } catch (e: unknown) { error(errMsg(e)) }
   }
 
   async function submitBan() {
@@ -222,7 +223,7 @@ export default function AdminExamDetailPage() {
       success('Étudiant exclu')
       setAttempts(prev => prev.map(x => x.id === banModal.id ? { ...x, status: 'banned', banned: true } : x))
       setBanModal(null); setBanReason('')
-    } catch (e: any) { error(e.message) } finally { setBanning(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setBanning(false) }
   }
 
   async function submitExtraTime() {
@@ -233,7 +234,7 @@ export default function AdminExamDetailPage() {
       success(`+${extraMin} min accordées`)
       setAttempts(prev => prev.map(x => x.id === extraModal.id ? { ...x, extra_minutes: (x.extra_minutes ?? 0) + extraMin } : x))
       setExtraModal(null)
-    } catch (e: any) { error(e.message) } finally { setAddingExtra(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setAddingExtra(false) }
   }
 
   async function submitGrade() {
@@ -246,13 +247,13 @@ export default function AdminExamDetailPage() {
       success('Note enregistrée')
       setAttempts(prev => prev.map(x => x.id === gradeModal.id ? { ...x, score: s, feedback: gradeForm.feedback, needs_correction: false } : x))
       setGradeModal(null)
-    } catch (e: any) { error(e.message) } finally { setGrading(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setGrading(false) }
   }
 
   async function autoCorrect(attemptId: number) {
     setCorrectingId(attemptId)
     try { await api.post(`/api/exam_attempts/${attemptId}/correct`); success('Correction IA lancée'); load() }
-    catch (e: any) { error(e.message) } finally { setCorrectingId(null) }
+    catch (e: unknown) { error(errMsg(e)) } finally { setCorrectingId(null) }
   }
 
   async function downloadCsv() {
@@ -262,7 +263,7 @@ export default function AdminExamDetailPage() {
       const url = URL.createObjectURL(blob)
       Object.assign(document.createElement('a'), { href: url, download: `examen_${id}.xlsx` }).click()
       URL.revokeObjectURL(url)
-    } catch (e: any) { error(e.message) } finally { setDownloading(false) }
+    } catch (e: unknown) { error(errMsg(e)) } finally { setDownloading(false) }
   }
 
   async function downloadPdf() {
@@ -271,7 +272,7 @@ export default function AdminExamDetailPage() {
       const url = URL.createObjectURL(blob)
       Object.assign(document.createElement('a'), { href: url, download: `bilan_examen_${id}.pdf` }).click()
       URL.revokeObjectURL(url)
-    } catch (e: any) { error('PDF non disponible') }
+    } catch (e: unknown) { error('PDF non disponible') }
   }
 
   async function downloadSecurityReport() {
@@ -281,7 +282,7 @@ export default function AdminExamDetailPage() {
       const url = URL.createObjectURL(blob)
       Object.assign(document.createElement('a'), { href: url, download: `examen_${id}_rapport_securite.pdf` }).click()
       URL.revokeObjectURL(url)
-    } catch (e: any) { error(e.message || 'Erreur rapport sécurité') } finally { setDownloadingSecurity(false) }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur rapport sécurité') } finally { setDownloadingSecurity(false) }
   }
 
   async function handleImportGrades(file: File) {
@@ -295,7 +296,7 @@ export default function AdminExamDetailPage() {
       success(`Import terminé : ${res.created} note(s) créée(s), ${res.updated} mise(s) à jour${res.errors.length ? `, ${res.errors.length} erreur(s)` : ''}`)
       if (res.errors.length) console.warn('Erreurs import notes:', res.errors)
       await load()
-    } catch (e: any) { error(e.message || 'Erreur import') } finally {
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur import') } finally {
       setImportingGrades(false)
       if (gradesFileRef.current) gradesFileRef.current.value = ''
     }

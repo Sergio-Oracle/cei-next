@@ -5,6 +5,7 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { errMsg } from '@/lib/errors'
 
 interface Transcript {
   id:               number
@@ -131,8 +132,8 @@ export default function ProfessorTranscriptsPage() {
         setFormError(msg)
         document.getElementById('form-error-box')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       }
-    } catch (err: any) {
-      const msg = err.message || 'Erreur de génération'
+    } catch (err: unknown) {
+      const msg = errMsg(err) || 'Erreur de génération'
       setFormError(msg)
     } finally { setGenerating(false) }
   }
@@ -142,8 +143,8 @@ export default function ProfessorTranscriptsPage() {
     try {
       await downloadBlob(`/api/transcripts/${id}/pdf`, `releve_notes_${studentName}.pdf`)
       success('Relevé téléchargé avec succès !')
-    } catch (err: any) {
-      toastErr(err.message?.includes('404') ? 'Fichier PDF introuvable' : err.message || 'Erreur de téléchargement')
+    } catch (err: unknown) {
+      toastErr(errMsg(err)?.includes('404') ? 'Fichier PDF introuvable' : errMsg(err) || 'Erreur de téléchargement')
     } finally { setDownloading(null) }
   }
 
@@ -155,7 +156,7 @@ export default function ProfessorTranscriptsPage() {
         setTranscripts(prev => prev.map(t => t.id === id ? { ...t, is_published: np } : t))
         success(np ? 'Relevé publié' : 'Relevé masqué')
       } else { toastErr(res.error || 'Erreur') }
-    } catch (e: any) { toastErr(e.message || 'Erreur') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') }
   }
 
   async function deleteTranscript(id: number, name: string) {
@@ -164,7 +165,7 @@ export default function ProfessorTranscriptsPage() {
       await api.delete(`/api/transcripts/${id}`)
       success('Relevé supprimé')
       setTranscripts(prev => prev.filter(t => t.id !== id))
-    } catch (e: any) { toastErr(e.message || 'Erreur') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') }
   }
 
   async function downloadBulk(semesterId: number, semesterName: string) {
@@ -172,7 +173,7 @@ export default function ProfessorTranscriptsPage() {
     try {
       await downloadBlob(`/api/transcripts/bulk-pdf?semester_id=${semesterId}`, `releves_${semesterName.replace(/\s+/g,'_')}.zip`)
       success('Archive ZIP téléchargée !')
-    } catch (e: any) { toastErr(e.message || 'Erreur téléchargement ZIP') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur téléchargement ZIP') }
     finally { setDownloading(null) }
   }
 

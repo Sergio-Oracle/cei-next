@@ -5,6 +5,7 @@ import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { localInputToIso } from '@/lib/datetime'
+import { errMsg } from '@/lib/errors'
 
 interface Candidate { id: number; name: string; email: string; absent: boolean; below_average: boolean; composed: boolean; score: number | null; makeup: string | null }
 interface CandidatesResponse { candidates: Candidate[]; total: number; priority_total: number; absent_total: number; below_total: number; composed_total: number }
@@ -44,7 +45,7 @@ export default function ExamMakeupPanel({ examId, durationMinutes, makeupOfId, b
       if (q.trim()) params.set('search', q.trim())
       if (all) params.set('include_composed', '1')
       setData(await api.get<CandidatesResponse>(`/api/online_exams/${examId}/makeup/candidates?${params.toString()}`))
-    } catch (e: any) { error(e?.message || 'Chargement impossible') } finally { setLoading(false) }
+    } catch (e: unknown) { error(errMsg(e) || 'Chargement impossible') } finally { setLoading(false) }
   }
   useEffect(() => { if (open) load(search, everyone) }, [open, everyone]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -89,7 +90,7 @@ export default function ExamMakeupPanel({ examId, durationMinutes, makeupOfId, b
         await loadMakeups()
       }
       setPicked(new Set()); setStart(''); setEnd(''); setOpen(false)
-    } catch (e: any) { error(e?.message || 'Opération impossible') } finally { setBusy(false) }
+    } catch (e: unknown) { error(errMsg(e) || 'Opération impossible') } finally { setBusy(false) }
   }
 
   // Lien direct depuis la liste des examens (#rattrapage) : amène le bloc à l'écran

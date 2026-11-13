@@ -7,6 +7,7 @@ import Modal from '@/components/ui/Modal'
 import type { GradeTranscript } from '@/types'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { errMsg } from '@/lib/errors'
 
 export default function AdminTranscriptsPage() {
   const { success, error } = useToast()
@@ -35,8 +36,8 @@ export default function AdminTranscriptsPage() {
       await api.put(`/api/transcripts/${t.id}/publish`, { is_published: !t.is_published })
       success(t.is_published ? 'Relevé dépublié' : 'Relevé publié')
       setTranscripts(prev => prev.map(tr => tr.id === t.id ? { ...tr, is_published: !tr.is_published } : tr))
-    } catch (e: any) {
-      error(e.message || 'Erreur')
+    } catch (e: unknown) {
+      error(errMsg(e) || 'Erreur')
     } finally {
       setActioning(null)
     }
@@ -51,8 +52,8 @@ export default function AdminTranscriptsPage() {
       a.download = `transcript_${id}.pdf`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (e: any) {
-      error(e.message || 'Erreur téléchargement')
+    } catch (e: unknown) {
+      error(errMsg(e) || 'Erreur téléchargement')
     }
   }
 
@@ -65,8 +66,8 @@ export default function AdminTranscriptsPage() {
       setShowGenModal(false)
       setGenForm({ student_id: '', semester_id: '' })
       load()
-    } catch (e: any) {
-      error(e.message || 'Erreur génération')
+    } catch (e: unknown) {
+      error(errMsg(e) || 'Erreur génération')
     } finally {
       setGenerating(false)
     }

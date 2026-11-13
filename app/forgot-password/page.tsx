@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { errMsg } from '@/lib/errors'
 
 export default function ForgotPasswordPage() {
   const { success, error } = useToast()
@@ -20,8 +21,8 @@ export default function ForgotPasswordPage() {
       await api.post('/api/auth/forgot-password', { email })
       setSent(true)
       success('Instructions envoyées par email')
-    } catch (e: any) {
-      error(e.message || 'Erreur lors de l\'envoi')
+    } catch (e: unknown) {
+      error(errMsg(e) || 'Erreur lors de l\'envoi')
     } finally {
       setSubmitting(false)
     }

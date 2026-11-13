@@ -10,6 +10,7 @@ import Modal from '@/components/ui/Modal'
 import type { RestitutionExample, ExampleLabel } from '@/types'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { errMsg } from '@/lib/errors'
 
 interface CorrectedPaper {
   id: number
@@ -102,7 +103,7 @@ export default function CorrectedPage() {
       const res = await api.aiPost<{ success: boolean; example: RestitutionExample }>('/api/restitution_examples', body)
       setCreatedExample(res.example)
       toastOk('Copie-exemple anonymisée — vérifiez-la avant de la publier au groupe')
-    } catch (e: any) { toastErr(e.message || "Impossible de créer l'exemple") } finally { setCreatingExample(false) }
+    } catch (e: unknown) { toastErr(errMsg(e) || "Impossible de créer l'exemple") } finally { setCreatingExample(false) }
   }
 
   function openDetail(paper: CorrectedPaper) {

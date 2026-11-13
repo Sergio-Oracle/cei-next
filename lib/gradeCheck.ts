@@ -1,4 +1,5 @@
 import api from '@/lib/api'
+import { errMsg } from '@/lib/errors'
 
 export interface GradeCheckSummary {
   copies: number; checked: number; changed: number; lower: number; higher: number; unchanged: number
@@ -32,8 +33,8 @@ export async function recomputeGrades(examId: number | string, notify: Notify): 
     const res = await api.post<{ summary: GradeCheckSummary }>(`/api/online_exams/${examId}/recompute_grades`, { apply: true, confirm_published: !!sim.published })
     notify.success(`${res.summary.changed} note(s) recalculée(s)`)
     return true
-  } catch (e: any) {
-    notify.error(e?.message || 'Vérification des notes impossible')
+  } catch (e: unknown) {
+    notify.error(errMsg(e) || 'Vérification des notes impossible')
     return false
   }
 }

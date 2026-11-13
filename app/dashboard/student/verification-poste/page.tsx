@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { isProctoringVisionReady, initProctoringVision, analyzeFace } from '@/lib/proctoring-vision'
+import { errMsg } from '@/lib/errors'
 
 type Status = 'idle' | 'checking' | 'ok' | 'warning' | 'error'
 
@@ -216,8 +217,8 @@ export default function VerificationPostePage() {
           rafRef.current = requestAnimationFrame(tick)
         }
         tick()
-      } catch (e: any) {
-        setMicDiag(`erreur AudioContext : ${e?.message || e}`)
+      } catch (e: unknown) {
+        setMicDiag(`erreur AudioContext : ${errMsg(e) || e}`)
       }
 
       // Détection de visage en direct (même moteur que pendant l'examen)

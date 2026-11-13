@@ -13,6 +13,7 @@ import Calculator from '@/components/exam/Calculator'
 import SubjectEditor from '@/components/exam/SubjectEditor'
 import BiometricCallModal from '@/components/exam/BiometricCallModal'
 import { loadFaceApi, captureSingleDescriptor, warmupFaceApi } from '@/lib/faceCapture'
+import { errMsg } from '@/lib/errors'
 // Correctif montée en charge (29/08, audit) : import statique retiré —
 // 'qrcode' n'est utilisé que dans openPhoneCameraModal() ci-dessous
 // (fonctionnalité optionnelle, caméra secondaire par smartphone), pourtant
@@ -585,7 +586,7 @@ export default function ExamPage() {
     try {
       const r = await api.post<any>(`/api/online_exams/${id}/subject_validation`, { validated: !exam.subject_edit.validated_at })
       setExam(prev => prev ? { ...prev, subject_edit: { ...prev.subject_edit!, validated_at: r.validated_at, validated_by: r.validated_by } } : prev)
-    } catch (e: any) { toastErr(e?.message || 'La validation a échoué') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'La validation a échoué') }
     finally { setValidating(false) }
   }
   const previewSeedRef = useRef<number|null>(null)
@@ -1975,7 +1976,7 @@ export default function ExamPage() {
     } catch (e:any) {
       breakActiveRef.current = false
       pauseUsedRef.current = false
-      toastErr(e.message || 'Impossible de démarrer la pause')
+      toastErr(errMsg(e) || 'Impossible de démarrer la pause')
     }
   }
 
@@ -2026,8 +2027,8 @@ export default function ExamPage() {
           }
         } catch {}
       }, 3000)
-    } catch (e: any) {
-      toastErr(e.message || 'Échec de la génération du code')
+    } catch (e: unknown) {
+      toastErr(errMsg(e) || 'Échec de la génération du code')
       setShowPhoneCamModal(false)
     } finally {
       setPhoneCamBusy(false)
@@ -2685,7 +2686,7 @@ export default function ExamPage() {
       setAlerts(a=>[{type:'private_call',msg:"Appel privé avec le surveillant en cours",at:new Date().toLocaleTimeString('fr-FR')},...a])
     } catch(e:any) {
       setPrivateCallActive(false)
-      toastErr(e.message || "Impossible de rejoindre l'appel privé")
+      toastErr(errMsg(e) || "Impossible de rejoindre l'appel privé")
     }
   }
 
@@ -2722,7 +2723,7 @@ export default function ExamPage() {
         const t = await LK.createLocalAudioTrack()
         await privateRoomRef.current.localParticipant.publishTrack(t)
         privateMicTrackRef.current = t; setPrivateMicOn(true)
-      } catch(e:any) { toastErr(e.message || 'Micro indisponible') }
+      } catch(e:any) { toastErr(errMsg(e) || 'Micro indisponible') }
     }
   }
 
@@ -3471,7 +3472,7 @@ export default function ExamPage() {
       try {
         await api.post(`/api/exam_attempts/${aId}/submit`,{answers:JSON.stringify(answersRef.current)})
         return 'ok'
-      } catch (e: any) {
+      } catch (e: unknown) {
         const v = verdict(e); if (v) return v
         try{ await api.post(`/api/exam_attempts/${aId}/save`,{answers:JSON.stringify(answersRef.current)}); return 'ok' }
         catch (e2: any) { return verdict(e2) ?? 'retry' }
@@ -3527,7 +3528,7 @@ export default function ExamPage() {
       setAnswers({}); answersRef.current = {}
       setPreviewResult(null); setShowPart2(false); setQcmIdx(0); setP2PageIdx(0); setShowReview(false)
       startPreview(res)
-    } catch (e: any) { toastErr(e.message || 'Erreur chargement') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur chargement') }
   }
 
   async function submitPreview(withAi = false) {
@@ -3537,7 +3538,7 @@ export default function ExamPage() {
       const res = await api.aiPost<PreviewResult>(`/api/online_exams/${id}/preview/grade`, { answers: answersRef.current, with_ai: withAi, seed: previewSeedRef.current })
       setPreviewResult(res)
       setPhase('submitted')
-    } catch (e: any) { toastErr(e.message || 'Erreur de correction') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur de correction') }
     finally { setSubmitting(false); setPreviewAiLoading(false) }
   }
 
@@ -4823,7 +4824,7 @@ function AttachmentBox({ attemptId, num, answers, setAnswers, required }: {
       const fd = new FormData(); fd.append('file', f); fd.append('num', String(num))
       const r = await api.upload<{ file: { key: string; name: string; size: number } }>(`/api/exam_attempts/${attemptId}/attachments`, fd, 'POST', { timeoutMs: 120000 })
       save([...files, r.file])
-    } catch (ex: any) { setErr(ex?.message || "Envoi impossible, réessayez") } finally { setBusy(false) }
+    } catch (ex: unknown) { setErr(errMsg(ex) || "Envoi impossible, réessayez") } finally { setBusy(false) }
   }
   const kb = (n: number) => n > 1048576 ? `${(n / 1048576).toFixed(1)} Mo` : `${Math.max(1, Math.round(n / 1024))} Ko`
   return (

@@ -14,6 +14,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
 import { eventLabel } from '@/lib/eventLabels'
+import { errMsg } from '@/lib/errors'
 
 interface EventSummary  { event: string; count: number }
 interface HighRiskAttempt {
@@ -231,7 +232,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
       a.download = `securite-${targetExamId}.pdf`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (e: any) { error(e.message || 'Erreur téléchargement PDF') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur téléchargement PDF') }
     finally { setDownloadingPdf(false) }
   }
 

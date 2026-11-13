@@ -5,6 +5,7 @@ import Link from 'next/link'
 import api, { AI_TIMEOUT_MS } from '@/lib/api'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
+import { errMsg } from '@/lib/errors'
 
 interface Subject {
   id: number
@@ -117,8 +118,8 @@ export default function ProfessorPapersPage() {
       } else {
         setSingleError(res.error || 'Impossible de corriger la copie.')
       }
-    } catch (err: any) {
-      setSingleError(err.message || 'Erreur réseau. Vérifiez votre connexion.')
+    } catch (err: unknown) {
+      setSingleError(errMsg(err) || 'Erreur réseau. Vérifiez votre connexion.')
     } finally {
       setSingleSubmitting(false)
     }
@@ -146,8 +147,8 @@ export default function ProfessorPapersPage() {
       } else {
         setBatchError(res.error || 'Impossible de corriger les copies.')
       }
-    } catch (err: any) {
-      setBatchError(err.message || 'Erreur réseau. Vérifiez votre connexion.')
+    } catch (err: unknown) {
+      setBatchError(errMsg(err) || 'Erreur réseau. Vérifiez votre connexion.')
     } finally {
       setBatchSubmitting(false)
     }

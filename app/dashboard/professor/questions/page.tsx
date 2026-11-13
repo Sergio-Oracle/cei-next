@@ -5,6 +5,7 @@ import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { errMsg } from '@/lib/errors'
 
 interface Question {
   id: number
@@ -169,7 +170,7 @@ export default function ProfessorQuestionsPage() {
       success('Question mise à jour')
       setEditQ(null)
       load()
-    } catch (e: any) { toastErr(e.message || 'Erreur lors de la mise à jour') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur lors de la mise à jour') }
     finally { setSavingEdit(false) }
   }
 
@@ -180,7 +181,7 @@ export default function ProfessorQuestionsPage() {
       await api.post(`/api/question_bank/${id}/duplicate`)
       success('Question dupliquée')
       load()
-    } catch (e: any) { toastErr(e.message || 'Erreur lors de la duplication') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur lors de la duplication') }
     finally { setBusyIds(prev => { const n = new Set(prev); n.delete(id); return n }) }
   }
 
@@ -192,7 +193,7 @@ export default function ProfessorQuestionsPage() {
       await api.put(`/api/question_bank/${q.id}`, { status: newStatus })
       success(newStatus === 'hidden' ? 'Question masquée' : 'Question réactivée')
       load()
-    } catch (e: any) { toastErr(e.message || 'Erreur') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') }
     finally { setBusyIds(prev => { const n = new Set(prev); n.delete(q.id); return n }) }
   }
 
@@ -208,7 +209,7 @@ export default function ProfessorQuestionsPage() {
       success(`${res.moved} question(s) déplacée(s)${res.skipped ? ` (${res.skipped} ignorée(s))` : ''}`)
       setMoveModal(false); setMoveEcId(''); setSelected(new Set())
       load()
-    } catch (e: any) { toastErr(e.message || 'Erreur lors du déplacement') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur lors du déplacement') }
     finally { setMoving(false) }
   }
 
@@ -223,7 +224,7 @@ export default function ProfessorQuestionsPage() {
       success(`${res.deleted} question(s) supprimée(s)${res.skipped ? ` (${res.skipped} ignorée(s))` : ''}`)
       setSelected(new Set())
       load()
-    } catch (e: any) { toastErr(e.message || 'Erreur lors de la suppression groupée') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur lors de la suppression groupée') }
     finally { setBulkDeleting(false) }
   }
 
@@ -244,8 +245,8 @@ export default function ProfessorQuestionsPage() {
       setAssembleModal(false)
       setSelected(new Set())
       setTimeout(() => router.push('/dashboard/professor/subjects'), 1200)
-    } catch (e: any) {
-      toastErr(e.message || 'Erreur lors de la création du sujet')
+    } catch (e: unknown) {
+      toastErr(errMsg(e) || 'Erreur lors de la création du sujet')
     } finally { setAssembling(false) }
   }
 

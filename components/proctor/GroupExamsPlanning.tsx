@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import SearchableSelect from '@/components/ui/SearchableSelect'
+import { errMsg } from '@/lib/errors'
 
 export interface PlannedExam {
   id: number; title: string; status: string | null; start_time: string; end_time: string; effective_end_time: string
@@ -70,7 +71,7 @@ export default function GroupExamsPlanning({ groupId, minGap, refreshKey, onGrou
       success(`Repos minimum entre deux examens : ${gapLabel(minutes)}`)
       setTick(t => t + 1)
       onGroupChanged(res)
-    } catch (e: any) { error(e.message || 'Erreur mise à jour') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur mise à jour') }
     finally { setSavingGap(false) }
   }
 
@@ -97,7 +98,7 @@ export default function GroupExamsPlanning({ groupId, minGap, refreshKey, onGrou
       warnMembers(res.member_warnings)
       setTick(t => t + 1)
       onGroupChanged(res)
-    } catch (e: any) { error(conflictMessage(e, 'Erreur rattachement')) }
+    } catch (e: unknown) { error(conflictMessage(e, 'Erreur rattachement')) }
     finally { setLinkingExam(false) }
   }
 
@@ -106,7 +107,7 @@ export default function GroupExamsPlanning({ groupId, minGap, refreshKey, onGrou
       await api.delete(`/api/admin/proctor_groups/${groupId}/exams/${examId}`)
       setTick(t => t + 1)
       onGroupChanged(null)
-    } catch (e: any) { error(e.message || 'Erreur retrait') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur retrait') }
   }
 
   const direct = schedule.filter(e => e.source === 'exam')

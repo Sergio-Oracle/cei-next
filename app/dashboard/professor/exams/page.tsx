@@ -9,6 +9,7 @@ import type { OnlineExam, ExamStatus } from '@/types'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
 import { activateExam } from '@/lib/activateExam'
+import { errMsg } from '@/lib/errors'
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string; bar: string; icon: string }> = {
   draft:     { label: 'Brouillon', color: '#64748b', bg: '#f1f5f9', bar: '#cbd5e1', icon: 'fa-edit' },
@@ -58,7 +59,7 @@ export default function ProfessorExamsPage() {
       await activateExam(id)
       success('Examen activé')
       setExams(prev => prev.map(e => e.id === id ? { ...e, status: 'active' as ExamStatus } : e))
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setActioning(null) }
   }
 
@@ -69,7 +70,7 @@ export default function ProfessorExamsPage() {
       await api.post(`/api/online_exams/${id}/close`)
       success('Examen clôturé')
       setExams(prev => prev.map(e => e.id === id ? { ...e, status: 'closed' as ExamStatus } : e))
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setActioning(null) }
   }
 
@@ -82,7 +83,7 @@ export default function ProfessorExamsPage() {
     try {
       await api.post(`/api/online_exams/${id}/extend`, { extra_minutes: minutes })
       success(`+${minutes} min ajoutées`)
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setActioning(null) }
   }
 
@@ -93,7 +94,7 @@ export default function ProfessorExamsPage() {
       await api.delete(`/api/online_exams/${id}`)
       success('Examen supprimé')
       setExams(prev => prev.filter(e => e.id !== id))
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setActioning(null) }
   }
 

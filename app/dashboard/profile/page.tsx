@@ -5,6 +5,7 @@ import api from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import type { User } from '@/types'
+import { errMsg } from '@/lib/errors'
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth()
@@ -37,7 +38,7 @@ export default function ProfilePage() {
       await api.put('/api/profile', profileForm)
       updateUser(profileForm)
       success('Profil mis à jour')
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setSavingProfile(false) }
   }
 
@@ -53,7 +54,7 @@ export default function ProfilePage() {
       })
       success('Mot de passe modifié')
       setPwForm({ current_password: '', new_password: '', confirm_password: '' })
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setSavingPw(false) }
   }
 

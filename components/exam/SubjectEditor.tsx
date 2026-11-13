@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import api from '@/lib/api'
+import { errMsg } from '@/lib/errors'
 
 interface Issue { level: 'error' | 'warn' | 'info'; message: string }
 interface Row {
@@ -50,7 +51,7 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
         const s = r.subject || r
         if (!alive) return
         setTitle(s.title || ''); setOrig(s.content || ''); setText(s.content || ''); setRubricOrig(s.rubric || ''); setRubric(s.rubric || '')
-      } catch (e: any) { if (alive) setErr(e?.message || 'Impossible de charger le sujet') }
+      } catch (e: unknown) { if (alive) setErr(errMsg(e) || 'Impossible de charger le sujet') }
       finally { if (alive) setLoading(false) }
     })()
     return () => { alive = false }
@@ -102,7 +103,7 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
     try {
       const r = await api.post<Check>('/api/subjects/check', { content: text, rubric, subject_id: subjectId, edits: { [num]: ed } })
       setRubric(r.rubric_text); setCheck(r)
-    } catch (e: any) { setErr(e?.message || 'Modification impossible') }
+    } catch (e: unknown) { setErr(errMsg(e) || 'Modification impossible') }
   }
   function commitPoints(num: string) {
     const raw = ptsRaw[num]; if (raw === undefined) return
@@ -118,7 +119,7 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
     if (errors.length && !window.confirm(`Le contrôle signale ${errors.length} erreur(s) :\n\n- ${errors.map(e => e.message).join('\n- ')}\n\nEnregistrer quand même ?`)) return
     setBusy(true); setErr('')
     try { await api.put(`/api/subjects/${subjectId}`, { content: text, rubric }); onSaved() }
-    catch (e: any) { setErr(e?.message || "L'enregistrement a échoué"); setBusy(false) }
+    catch (e: unknown) { setErr(errMsg(e) || "L'enregistrement a échoué"); setBusy(false) }
   }
 
   function close() {

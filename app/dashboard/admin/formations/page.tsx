@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { errMsg } from '@/lib/errors'
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
 interface Pole {
@@ -197,7 +198,7 @@ export default function AdminFormationsPage() {
       await loadPoles()
       setWizardCtx(c => ({ ...c, poleId: res.id }))
       setWizardStep('niveau'); setWizardCreatingNew(false); setWizardForm({})
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setWizardBusy(false) }
   }
 
@@ -210,7 +211,7 @@ export default function AdminFormationsPage() {
       await loadNiveaux()
       setWizardCtx(c => ({ ...c, niveauId: res.id }))
       setWizardStep('formation'); setWizardCreatingNew(false); setWizardForm({})
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setWizardBusy(false) }
   }
 
@@ -223,7 +224,7 @@ export default function AdminFormationsPage() {
       await load()
       setWizardCtx(c => ({ ...c, formationId: res.formation.id }))
       setWizardStep('semester'); setWizardCreatingNew(true); setWizardForm({ number: 1, total_credits: 30 })
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setWizardBusy(false) }
   }
 
@@ -240,7 +241,7 @@ export default function AdminFormationsPage() {
       setWizardCtx(c => ({ ...c, semesterId: res.semester.id }))
       setExcelSemesterId(String(res.semester.id))
       setWizardStep('ue'); setWizardCreatingNew(true); setWizardUeMode('manual'); setWizardForm({ credits: 6, ue_type: 'obligatoire' })
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setWizardBusy(false) }
   }
 
@@ -257,7 +258,7 @@ export default function AdminFormationsPage() {
       setWizardCtx(c => ({ ...c, ueId: res.ue.id }))
       setWizardStep('ec'); setWizardCreatingNew(true)
       setWizardForm({ cm: 0, td: 0, tp: 0, tpe: 0, projets: 0, vht: 0, coefficient: 1, cc_percentage: 40, ex_percentage: 60 })
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setWizardBusy(false) }
   }
 
@@ -276,7 +277,7 @@ export default function AdminFormationsPage() {
       } else {
         setModal(null)
       }
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setWizardBusy(false) }
   }
 
@@ -290,7 +291,7 @@ export default function AdminFormationsPage() {
       setForm((p: any) => ({ ...p, pole_id: res.id }))
       setInlinePoleForm({ code: '', name: '', description: '' })
       setInlinePoleOpen(false)
-    } catch (e: any) { error(e.message || 'Erreur lors de la création du pôle') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur lors de la création du pôle') }
     finally { setInlinePoleBusy(false) }
   }
 
@@ -305,7 +306,7 @@ export default function AdminFormationsPage() {
       setForm((p: any) => ({ ...p, niveau_id: res.id }))
       setInlineNiveauForm({ code: '', name: '', description: '' })
       setInlineNiveauOpen(false)
-    } catch (e: any) { error(e.message || 'Erreur lors de la création du niveau') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur lors de la création du niveau') }
     finally { setInlineNiveauBusy(false) }
   }
 
@@ -329,7 +330,7 @@ export default function AdminFormationsPage() {
     try {
       const res = await api.get<{ semesters: Semester[] }>(`/api/admin/formations/${fid}/tree`)
       setTrees(t => ({ ...t, [fid]: res.semesters ?? [] }))
-    } catch (e: any) { error(e.message || 'Erreur chargement de la maquette') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur chargement de la maquette') }
     finally { setTreeLoading(l => (l === fid ? null : l)) }
   }, []) // eslint-disable-line
 
@@ -850,14 +851,14 @@ export default function AdminFormationsPage() {
       success('Enregistré avec succès')
       setModal(null)
       load()
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setSubmitting(false) }
   }
 
   async function del(endpoint: string, msg: string) {
     if (!confirm(msg)) return
     try { await api.delete(endpoint); success('Supprimé'); load() }
-    catch (e: any) { error(e.message || 'Erreur suppression') }
+    catch (e: unknown) { error(errMsg(e) || 'Erreur suppression') }
   }
 
   async function confirmSemester(s: Semester, n: number) {
@@ -865,13 +866,13 @@ export default function AdminFormationsPage() {
     try {
       const r = await api.post<any>(`/api/admin/semesters/${s.id}/confirm-values`, {})
       success(`Valeurs confirmées : ${r.confirmed_ues} UE et ${r.confirmed_ecs} EC`); load()
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
   }
 
   async function deletePole(id: number, code: string) {
     if (!confirm(`Supprimer définitivement le pôle ${code} et tous ses niveaux ?\n\nLes formations qui en dépendaient seront conservées (juste détachées, à retrouver sous "Formations sans niveau").`)) return
     try { await api.delete(`/api/admin/poles/${id}`); success('Pôle et ses niveaux supprimés'); load() }
-    catch (e: any) { error(e.message || 'Erreur') }
+    catch (e: unknown) { error(errMsg(e) || 'Erreur') }
   }
 
   /* ── Niveau creation inline ───────────────────────────────────────────────── */
@@ -885,14 +886,14 @@ export default function AdminFormationsPage() {
       setQuickNiveauPoleId(null)
       loadNiveaux()
       load()
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setNiveauSubmitting(false) }
   }
 
   async function deleteNiveau(id: number, code: string) {
     if (!confirm(`Supprimer définitivement le niveau ${code} ?\n\nLes formations qui en dépendaient seront conservées (juste détachées, à retrouver sous "Formations sans niveau").`)) return
     try { await api.delete(`/api/admin/niveaux/${id}`); success('Niveau supprimé'); load() }
-    catch (e: any) { error(e.message || 'Erreur') }
+    catch (e: unknown) { error(errMsg(e) || 'Erreur') }
   }
 
   /* ── CSV ──────────────────────────────────────────────────────────────────── */
@@ -924,7 +925,7 @@ export default function AdminFormationsPage() {
       const { formations: f = 0, semesters: s = 0, ues: u = 0, ecs: e = 0 } = res.created || {}
       success(`Import réussi — Formations: ${f}, Semestres: ${s}, UEs: ${u}, ECs: ${e}`)
       setTimeout(() => { setModal(null); load() }, 2000)
-    } catch (e: any) { error(e.message) }
+    } catch (e: unknown) { error(errMsg(e)) }
     finally { setImporting(false) }
   }
 
@@ -938,7 +939,7 @@ export default function AdminFormationsPage() {
     try {
       const res = await api.upload<any>('/api/admin/maquette/import-excel-preview', fd)
       setExcelPreview(res)
-    } catch (e: any) { error(e.message) }
+    } catch (e: unknown) { error(errMsg(e)) }
     finally { setExcelBusy(false) }
   }
 
@@ -952,7 +953,7 @@ export default function AdminFormationsPage() {
       success(`Import réussi — UEs créées: ${res.created_ues}, ECs créés: ${res.created_ecs}${res.completed_ues || res.completed_ecs ? `, complétés : ${res.completed_ues} UE et ${res.completed_ecs} EC` : ''}`)
       setModal(null); setExcelPreview(null); setExcelFile(null); setExcelSemesterId('')
       load()
-    } catch (e: any) { error(e.message) }
+    } catch (e: unknown) { error(errMsg(e)) }
     finally { setExcelBusy(false) }
   }
 

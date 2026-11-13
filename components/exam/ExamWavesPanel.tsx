@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { localInputToIso, isoToLocalInput } from '@/lib/datetime'
+import { errMsg } from '@/lib/errors'
 
 interface Wave {
   id: number; position: number; name: string
@@ -55,7 +56,7 @@ export default function ExamWavesPanel({ examId, durationMinutes, locked }: {
       if (form.window) body.window_minutes = parseInt(form.window, 10)
       const r = await api.post<Summary>(`/api/online_exams/${examId}/waves/plan`, body)
       setSum(r); success('Vagues créées')
-    } catch (e: any) { error(e?.message || 'Création impossible') } finally { setBusy(false) }
+    } catch (e: unknown) { error(errMsg(e) || 'Création impossible') } finally { setBusy(false) }
   }
 
   async function saveEdit() {
@@ -66,7 +67,7 @@ export default function ExamWavesPanel({ examId, durationMinutes, locked }: {
         name: edit.name, start_time: localInputToIso(edit.start), end_time: localInputToIso(edit.end),
       })
       setSum(r); setEdit(null); success('Vague mise à jour')
-    } catch (e: any) { error(e?.message || 'Modification impossible') } finally { setBusy(false) }
+    } catch (e: unknown) { error(errMsg(e) || 'Modification impossible') } finally { setBusy(false) }
   }
 
   async function attachUnassigned() {
@@ -75,7 +76,7 @@ export default function ExamWavesPanel({ examId, durationMinutes, locked }: {
     try {
       const r = await api.post<Summary>(`/api/online_exams/${examId}/waves/${targetWave}/students`, { student_ids: sum!.unassigned_ids })
       setSum(r); success('Étudiants rattachés')
-    } catch (e: any) { error(e?.message || 'Rattachement impossible') } finally { setBusy(false) }
+    } catch (e: unknown) { error(errMsg(e) || 'Rattachement impossible') } finally { setBusy(false) }
   }
 
   async function extendWave(w: Wave) {
@@ -88,14 +89,14 @@ export default function ExamWavesPanel({ examId, durationMinutes, locked }: {
       await api.post(`/api/online_exams/${examId}/extend`, { extra_minutes: minutes, wave_id: w.id })
       success(`${w.name} : +${minutes} min`)
       await load()
-    } catch (e: any) { error(e?.message || 'Prolongation impossible') } finally { setBusy(false) }
+    } catch (e: unknown) { error(errMsg(e) || 'Prolongation impossible') } finally { setBusy(false) }
   }
 
   async function removeAll() {
     if (!confirm('Supprimer toutes les vagues ? L’examen retrouvera une seule fenêtre.')) return
     setBusy(true)
     try { setSum(await api.delete<Summary>(`/api/online_exams/${examId}/waves`)); success('Vagues supprimées') }
-    catch (e: any) { error(e?.message || 'Suppression impossible') } finally { setBusy(false) }
+    catch (e: unknown) { error(errMsg(e) || 'Suppression impossible') } finally { setBusy(false) }
   }
 
   return (

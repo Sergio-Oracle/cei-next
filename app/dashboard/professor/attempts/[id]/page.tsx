@@ -8,6 +8,7 @@ import { openAttachment, type AttemptAttachment } from '@/lib/attachments'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import { eventLabel } from '@/lib/eventLabels'
+import { errMsg } from '@/lib/errors'
 
 interface Incident {
   timestamp: string
@@ -203,7 +204,7 @@ export default function AttemptDetailPage() {
       setData(d => d ? { ...d, score: scoreNum, feedback: editFeedback, corrector_name: 'vous', question_scores: null } : d)
       setEditing(false)
       success('Correction enregistrée')
-    } catch (e: any) { toastErr(e.message || 'Erreur lors de l\'enregistrement') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur lors de l\'enregistrement') }
     finally { setSaving(false) }
   }
 
@@ -235,7 +236,7 @@ export default function AttemptDetailPage() {
       setData(d => d ? { ...d, score: res.score, question_scores: res.question_scores, feedback: res.feedback, corrector_name: 'vous' } : d)
       setEditingQuestions(false)
       success('Corrections enregistrées — note totale recalculée')
-    } catch (e: any) { toastErr(e.message || 'Erreur lors de l\'enregistrement') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur lors de l\'enregistrement') }
     finally { setSavingQ(false) }
   }
 

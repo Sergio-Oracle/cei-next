@@ -6,6 +6,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { useAuth } from '@/contexts/AuthContext'
 import type { User, UserRole } from '@/types'
 import Pager from '@/components/ui/Pager'
+import { errMsg } from '@/lib/errors'
 
 /* ── Couleurs & icônes par rôle ─────────────────────────────────────────── */
 const ROLE_META: Record<string, { label: string; plural: string; color: string; bg: string; icon: string }> = {
@@ -235,7 +236,7 @@ export default function AdminUsersPage() {
       }
       setModal(null)
       reloadVisible(); loadCounts()
-    } catch (e: any) { error(e.message) }
+    } catch (e: unknown) { error(errMsg(e)) }
     finally { setSaving(false) }
   }
 
@@ -246,7 +247,7 @@ export default function AdminUsersPage() {
       await api.delete(`/api/admin/users/${id}`)
       success('Utilisateur supprimé')
       reloadVisible(); loadCounts()
-    } catch (e: any) { error(e.message) }
+    } catch (e: unknown) { error(errMsg(e)) }
     finally { setDeleting(null) }
   }
 
@@ -257,7 +258,7 @@ export default function AdminUsersPage() {
       await api.put(`/api/admin/users/${id}`, { is_active: !currentlyActive })
       success(currentlyActive ? 'Compte désactivé' : 'Compte réactivé')
       reloadVisible()
-    } catch (e: any) { error(e.message) }
+    } catch (e: unknown) { error(errMsg(e)) }
     finally { setTogglingActive(null) }
   }
 
@@ -271,7 +272,7 @@ export default function AdminUsersPage() {
       })
       setNoEmailResult({ email: res.user?.email || '', temp_password: res.temp_password || '' })
       reloadVisible(); loadCounts()
-    } catch (e: any) { error(e.message) }
+    } catch (e: unknown) { error(errMsg(e)) }
     finally { setSaving(false) }
   }
 
@@ -297,7 +298,7 @@ export default function AdminUsersPage() {
       setImportResult(res)
       success(`${res.created || res.imported || 0} utilisateur(s) créé(s)`)
       setTimeout(() => { setModal(null); reloadVisible(); loadCounts() }, 2000)
-    } catch (e: any) { error(e.message) }
+    } catch (e: unknown) { error(errMsg(e)) }
     finally { setImporting(false) }
   }
 

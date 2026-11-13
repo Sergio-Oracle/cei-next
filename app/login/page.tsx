@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import api from '@/lib/api'
 import Link from 'next/link'
+import { errMsg } from '@/lib/errors'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dev-cei.ddns.net'
 
@@ -199,8 +200,8 @@ export default function LoginPage() {
         await login(email, password, true)
         setSessionConflict(null)
       }
-    } catch (err: any) {
-      showError(err.message || 'Identifiants invalides')
+    } catch (err: unknown) {
+      showError(errMsg(err) || 'Identifiants invalides')
     } finally {
       setLoading(false)
     }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import type { GradeTranscript } from '@/types'
+import { errMsg } from '@/lib/errors'
 
 export default function StudentTranscriptsPage() {
   const { error } = useToast()
@@ -32,7 +33,7 @@ export default function StudentTranscriptsPage() {
       a.download = `releve_notes_${id}.pdf`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (e: any) { error(e.message || 'Erreur téléchargement') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur téléchargement') }
     finally { setDownloading(null) }
   }
 

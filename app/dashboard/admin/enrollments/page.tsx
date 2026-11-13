@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import Pager from '@/components/ui/Pager'
+import { errMsg } from '@/lib/errors'
 
 interface Formation {
   id: number
@@ -313,7 +314,7 @@ export default function AdminEnrollmentsPage() {
       setModal(null)
       setAssignFormationId('')
       reloadVisible()
-    } catch (e: any) { toastErr(e.message || 'Erreur') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') }
     finally { setAssigningFormation(false) }
   }
 
@@ -361,7 +362,7 @@ export default function AdminEnrollmentsPage() {
       }
       setModal(null)
       reloadVisible()
-    } catch (e: any) { toastErr(e.message || 'Erreur') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') }
     finally { setSaving(false) }
   }
 
@@ -383,7 +384,7 @@ export default function AdminEnrollmentsPage() {
       success(`${res.enrolled} étudiant(s) inscrit(s)${res.already_enrolled ? ` (${res.already_enrolled} déjà inscrit(s))` : ''}`)
       setBulkSel(new Set()); setBulkUeId('')
       reloadVisible()
-    } catch (e: any) { toastErr(e.message || "Erreur lors de l'inscription groupée") }
+    } catch (e: unknown) { toastErr(errMsg(e) || "Erreur lors de l'inscription groupée") }
     finally { setBulkBusy(false) }
   }
 
@@ -403,7 +404,7 @@ export default function AdminEnrollmentsPage() {
       setBulkSel(prev => { const n = new Set(prev); ids.forEach(id => n.delete(id)); return n })
       setBulkUeIdByFormation(prev => ({ ...prev, [formationId]: '' }))
       reloadVisible()
-    } catch (e: any) { toastErr(e.message || "Erreur lors de l'inscription groupée") }
+    } catch (e: unknown) { toastErr(errMsg(e) || "Erreur lors de l'inscription groupée") }
     finally { setBulkBusy(false) }
   }
 
@@ -422,7 +423,7 @@ export default function AdminEnrollmentsPage() {
       setBulkSel(prev => { const n = new Set(prev); ids.forEach(id => n.delete(id)); return n })
       setBulkUeIdByFormation(prev => ({ ...prev, [formationId]: '' }))
       reloadVisible()
-    } catch (e: any) { toastErr(e.message || "Erreur lors de la désinscription groupée") }
+    } catch (e: unknown) { toastErr(errMsg(e) || "Erreur lors de la désinscription groupée") }
     finally { setBulkBusy(false) }
   }
 

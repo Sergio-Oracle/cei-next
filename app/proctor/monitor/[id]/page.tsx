@@ -7,6 +7,7 @@ import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import { initProctoringVision, analyzeFace } from '@/lib/proctoring-vision'
 import { eventLabel } from '@/lib/eventLabels'
+import { errMsg } from '@/lib/errors'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 
@@ -415,8 +416,8 @@ export default function ProctorMonitorPage() {
           if (track) attachVideo(s.livekit_identity, track)
         })
       }, 100)
-    } catch (e: any) {
-      if (!bg) toastErr(e.message || 'Erreur de chargement')
+    } catch (e: unknown) {
+      if (!bg) toastErr(errMsg(e) || 'Erreur de chargement')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -952,7 +953,7 @@ export default function ProctorMonitorPage() {
         setCamOn(false)
         success('Caméra coupée')
       }
-    } catch (e: any) { toastErr(e.message || 'Caméra non disponible') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Caméra non disponible') }
   }
 
   async function toggleMic() {
@@ -975,7 +976,7 @@ export default function ProctorMonitorPage() {
         setMicOn(false)
         success('Microphone coupé')
       }
-    } catch (e: any) { toastErr(e.message || 'Microphone non disponible') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Microphone non disponible') }
   }
 
   async function toggleGroupRec() {
@@ -994,7 +995,7 @@ export default function ProctorMonitorPage() {
         roomEgressRef.current = null
         setRecording(false); success('Enregistrement arrêté')
       }
-    } catch (e: any) { toastErr(e.message || 'Erreur enregistrement') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur enregistrement') }
   }
 
   /* ── Enregistrement individuel ──────────────────────────────────────────── */
@@ -1010,7 +1011,7 @@ export default function ProctorMonitorPage() {
         setRecSet(prev => { const n = new Set(prev); n.delete(attemptId); return n })
         success('Enregistrement arrêté')
       }
-    } catch (e: any) { toastErr(e.message || 'Erreur REC') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur REC') }
   }
 
   /* ── Actions message / avertissement / exclusion ─────────────────────────── */
@@ -1047,7 +1048,7 @@ export default function ProctorMonitorPage() {
       broadcastToStudent(msgModal.identity, { type: msgModal.type, message: msgText })
       success(msgModal.type === 'warning' ? 'Avertissement envoyé' : 'Message envoyé')
       setMsgModal(null); setMsgText('')
-    } catch (e: any) { toastErr(e.message || 'Erreur') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') }
     finally { setSending(false) }
   }
 
@@ -1060,7 +1061,7 @@ export default function ProctorMonitorPage() {
       success(`${banModal.name} exclu`)
       setBanModal(null); setBanReason('')
       loadData(true)
-    } catch (e: any) { toastErr(e.message || 'Erreur') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') }
     finally { setBanning(false) }
   }
 
@@ -1076,7 +1077,7 @@ export default function ProctorMonitorPage() {
       success(verdict === 'confirmed' ? `Identité confirmée — ${identityModal.name} peut continuer` : `${identityModal.name} exclu`)
       setIdentityModal(null)
       loadData(true)
-    } catch (e: any) { toastErr(e.message || 'Erreur') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') }
     finally { setIdentityVerifying(false) }
   }
 
@@ -1088,7 +1089,7 @@ export default function ProctorMonitorPage() {
       const res = await api.put<any>(`/api/exam_attempts/${extraModal.attemptId}/extra-time`, { minutes: mins })
       success(`+${res.added ?? mins} min accordées à ${extraModal.name}${res.total_extra ? ` (total : ${res.total_extra} min)` : ''}`)
       setExtraModal(null); setExtraMins('15')
-    } catch (e: any) { toastErr(e.message || 'Erreur temps supplémentaire') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur temps supplémentaire') }
     finally { setGrantingTime(false) }
   }
 
@@ -1099,7 +1100,7 @@ export default function ProctorMonitorPage() {
       await api.post(`/api/exam_attempts/${noteModal.attemptId}/proctor-note`, { note: noteText })
       success('Note enregistrée')
       setNoteModal(null); setNoteText('')
-    } catch (e: any) { toastErr(e.message || 'Erreur note') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur note') }
     finally { setSavingNote(false) }
   }
 
@@ -1323,7 +1324,7 @@ export default function ProctorMonitorPage() {
     try {
       const r = await api.post<{ code: string; expires_in: number }>(`/api/exam_attempts/${attemptId}/client_exit_code`, {})
       setExitCodeModal({ attemptId, name, code: r.code, expiresAt: Date.now() + r.expires_in * 1000 })
-    } catch (e: any) { setExitCodeModal({ attemptId, name, error: e?.message || 'Impossible de générer le code' }) }
+    } catch (e: unknown) { setExitCodeModal({ attemptId, name, error: errMsg(e) || 'Impossible de générer le code' }) }
   }
   function openExitCode(s: Student) {
     if (!confirm(`Générer un code de sortie d'urgence pour ${s.student_name} ?\n\nÀ donner seulement après avoir vérifié une vraie panne (appel ou message). Le code est à usage unique et vaut 15 minutes.`)) return
@@ -1407,8 +1408,8 @@ export default function ProctorMonitorPage() {
       await pr.localParticipant.publishTrack(micTrack)
       privateMicRef.current = micTrack
       setPrivateMicOn(true)
-    } catch (e: any) {
-      toastErr(e.message || 'Erreur appel privé')
+    } catch (e: unknown) {
+      toastErr(errMsg(e) || 'Erreur appel privé')
       setPrivateCall(null)
     }
   }
@@ -1419,7 +1420,7 @@ export default function ProctorMonitorPage() {
     try {
       const res = await api.post<{ code: string; expires_at: string }>(`/api/exam_attempts/${privateCall.attemptId}/access_code`, {})
       setAccessCode({ code: res.code, expires_at: res.expires_at })
-    } catch (e: any) { toastErr(e.message || 'Erreur génération du code') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur génération du code') }
     finally { setGeneratingCode(false) }
   }
 
@@ -1456,7 +1457,7 @@ export default function ProctorMonitorPage() {
         const prev = document.getElementById('private-my-preview') as HTMLVideoElement | null
         if (prev) t.attach(prev)
         setPrivateCamOn(true)
-      } catch (e: any) { toastErr(e.message || 'Caméra indisponible') }
+      } catch (e: unknown) { toastErr(errMsg(e) || 'Caméra indisponible') }
     } else {
       const prev = document.getElementById('private-my-preview') as HTMLVideoElement | null
       if (prev && privateCamRef.current) privateCamRef.current.detach(prev)
@@ -1474,7 +1475,7 @@ export default function ProctorMonitorPage() {
         await privateRoomRef.current.localParticipant.publishTrack(t)
         privateMicRef.current = t
         setPrivateMicOn(true)
-      } catch (e: any) { toastErr(e.message || 'Micro indisponible') }
+      } catch (e: unknown) { toastErr(errMsg(e) || 'Micro indisponible') }
     } else {
       if (privateMicRef.current) { await privateRoomRef.current?.localParticipant.unpublishTrack(privateMicRef.current); privateMicRef.current.stop(); privateMicRef.current = null }
       setPrivateMicOn(false)
@@ -1493,8 +1494,8 @@ export default function ProctorMonitorPage() {
     try {
       const data = await api.get<any>(`/api/online_exams/${id}/video_recordings`)
       setVideoRecs(data)
-    } catch (e: any) {
-      setVideoRecs({ error: e.message, videos: [] })
+    } catch (e: unknown) {
+      setVideoRecs({ error: errMsg(e), videos: [] })
     } finally { setLoadingRecs(false) }
   }
 
@@ -1503,8 +1504,8 @@ export default function ProctorMonitorPage() {
     try {
       const data = await api.get<any>(`/api/online_exams/${id}/recordings`)
       setSnapRecs(data)
-    } catch (e: any) {
-      setSnapRecs({ error: e.message, students: [] })
+    } catch (e: unknown) {
+      setSnapRecs({ error: errMsg(e), students: [] })
     } finally { setLoadingRecs(false) }
   }
 

@@ -5,6 +5,7 @@ import api from '@/lib/api'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import type { RestitutionExample } from '@/types'
+import { errMsg } from '@/lib/errors'
 
 const LABEL_META: Record<string, { text: string; icon: string; bg: string; color: string }> = {
   best:    { text: 'Meilleure copie',    icon: 'fa-star',            bg: '#d1fae5', color: '#059669' },
@@ -46,7 +47,7 @@ export default function RestitutionPage() {
       await api.put(`/api/restitution_examples/${e.id}`, { anonymized_content: ed.content, anonymized_feedback: ed.feedback })
       toastOk('Modifications enregistrées')
       load()
-    } catch (err: any) { toastErr(err.message || 'Erreur') } finally { setSavingId(null) }
+    } catch (err: unknown) { toastErr(errMsg(err) || 'Erreur') } finally { setSavingId(null) }
   }
 
   async function togglePublish(e: RestitutionExample) {
@@ -55,7 +56,7 @@ export default function RestitutionPage() {
       await api.put(`/api/restitution_examples/${e.id}/publish`, { published: !e.is_published })
       toastOk(e.is_published ? 'Exemple dépublié' : 'Exemple publié — visible par les étudiants du sujet')
       load()
-    } catch (err: any) { toastErr(err.message || 'Erreur') } finally { setPublishingId(null) }
+    } catch (err: unknown) { toastErr(errMsg(err) || 'Erreur') } finally { setPublishingId(null) }
   }
 
   async function deleteExample(e: RestitutionExample) {
@@ -65,7 +66,7 @@ export default function RestitutionPage() {
       await api.delete(`/api/restitution_examples/${e.id}`)
       toastOk('Exemple supprimé')
       load()
-    } catch (err: any) { toastErr(err.message || 'Erreur') } finally { setDeletingId(null) }
+    } catch (err: unknown) { toastErr(errMsg(err) || 'Erreur') } finally { setDeletingId(null) }
   }
 
   const groups = examples.reduce<Record<string, RestitutionExample[]>>((acc, e) => {

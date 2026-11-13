@@ -8,6 +8,7 @@ import { MOODLE_UI } from '@/lib/features'
 import { useAuth } from '@/contexts/AuthContext'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { errMsg } from '@/lib/errors'
 
 /* Page Administration → Moodle (phase 2 de la feuille de route CEI–UNCHK).
    Plateformes Moodle ajoutées sans code, correspondance cours ↔ EC, et
@@ -137,16 +138,16 @@ function AdminMoodlePageInner() {
       const res = await api.get<{ instances: Instance[] }>('/api/admin/moodle/instances')
       setInstances(res.instances || [])
       setDisabled(false)
-    } catch (e: any) {
-      if (String(e.message || '').includes('désactivée')) setDisabled(true)
-      else error(e.message || 'Chargement des plateformes impossible')
+    } catch (e: unknown) {
+      if (String(errMsg(e) || '').includes('désactivée')) setDisabled(true)
+      else error(errMsg(e) || 'Chargement des plateformes impossible')
     } finally { setLoading(false) }
   }, []) // eslint-disable-line
 
   const loadMapping = useCallback(async () => {
     setMappingLoading(true)
     try { setMapping(await api.get<Mapping>('/api/admin/moodle/courses')) }
-    catch (e: any) { error(e.message || 'Correspondance indisponible') }
+    catch (e: unknown) { error(errMsg(e) || 'Correspondance indisponible') }
     finally { setMappingLoading(false) }
   }, []) // eslint-disable-line
 
@@ -179,7 +180,7 @@ function AdminMoodlePageInner() {
       if (!res.diagnosis || res.diagnosis.ok) setFormOpen(false)
       success(editId ? 'Plateforme modifiée' : 'Plateforme ajoutée')
       await loadInstances()
-    } catch (e: any) { error(e.message || 'Enregistrement impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Enregistrement impossible') }
     finally { setSaving(false) }
   }
 
@@ -189,7 +190,7 @@ function AdminMoodlePageInner() {
       const res = await api.post<{ diagnosis: Diagnosis }>(`/api/admin/moodle/instances/${id}/test`)
       res.diagnosis.ok ? success('Plateforme prête') : error('Des réglages manquent dans Moodle')
       await loadInstances()
-    } catch (e: any) { error(e.message || 'Test impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Test impossible') }
     finally { setTesting(null) }
   }
 
@@ -198,7 +199,7 @@ function AdminMoodlePageInner() {
       await api.put(`/api/admin/moodle/instances/${i.id}`, { is_active: !i.is_active })
       success(i.is_active ? 'Plateforme suspendue' : 'Plateforme réactivée')
       await loadInstances()
-    } catch (e: any) { error(e.message || 'Modification impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Modification impossible') }
   }
 
   async function deleteInstance(id: number) {
@@ -206,7 +207,7 @@ function AdminMoodlePageInner() {
       await api.delete(`/api/admin/moodle/instances/${id}`)
       success('Plateforme supprimée'); setConfirmDelete(null)
       await loadInstances()
-    } catch (e: any) { error(e.message || 'Suppression impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Suppression impossible') }
   }
 
   /* ── Maquette depuis Moodle ── */
@@ -217,7 +218,7 @@ function AdminMoodlePageInner() {
         { dry_run: mode === 'dry', ...(syncInstance ? { instance_id: Number(syncInstance) } : {}) })
       setStructResult(r)
       if (mode === 'apply') { success('Maquette complétée depuis Moodle'); setResults([]); setLastMode(null); loadMapping() }
-    } catch (e: any) { error(e.message || 'Création de la maquette impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Création de la maquette impossible') }
     finally { setStructRunning(null) }
   }
   const structTotals = (structResult?.instances || []).reduce((t, r) => ({
@@ -234,7 +235,7 @@ function AdminMoodlePageInner() {
       const r = await api.aiPost<CalendarReport>('/api/admin/moodle/calendar/sync', { dry_run: mode === 'dry' })
       setCalResult(r)
       if (mode === 'apply') r.errors.length ? error(`${r.errors.length} examen(s) non publiés, voir le détail`) : success('Calendriers Moodle à jour')
-    } catch (e: any) { error(e.message || 'Publication impossible') }
+    } catch (e: unknown) { error(errMsg(e) || 'Publication impossible') }
     finally { setCalRunning(null) }
   }
 
@@ -254,8 +255,8 @@ function AdminMoodlePageInner() {
       try {
         const r = await api.aiPost<CourseResult>('/api/admin/moodle/sync/course', { ec_code: c.ec_code, instance_id: c.instance_id, dry_run: mode === 'dry' })
         acc.push({ ...r, instance: c.instance })
-      } catch (e: any) {
-        acc.push({ ec_code: c.ec_code, instance: c.instance, error: e.message || 'Erreur' })
+      } catch (e: unknown) {
+        acc.push({ ec_code: c.ec_code, instance: c.instance, error: errMsg(e) || 'Erreur' })
       }
       setResults([...acc])
     }

@@ -7,6 +7,7 @@ import { useToast } from '@/contexts/ToastContext'
 import Modal from '@/components/ui/Modal'
 import { fmtScore } from '@/lib/format'
 import Progressive from '@/components/ui/Progressive'
+import { errMsg } from '@/lib/errors'
 
 interface Attempt {
   id: number
@@ -129,7 +130,7 @@ export default function OnlineCorrectionPage() {
         ...e,
         attempts: e.attempts.map(a => a.id === attempt.id ? { ...a, score: res.attempt.score, needs_correction: false } : a),
       })))
-    } catch (e: any) { error(e.message || 'Erreur de correction') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur de correction') }
     finally { setCorrecting(null); setProgress(null); stopTimer() }
   }
 
@@ -148,8 +149,8 @@ export default function OnlineCorrectionPage() {
       try {
         const res = await api.aiPost<{ success: boolean; attempt: { score: number } }>(`/api/exam_attempts/${attempt.id}/correct`, {})
         items.push({ student_name: attempt.student_name, score: res.attempt.score, success: true })
-      } catch (e: any) {
-        items.push({ student_name: attempt.student_name, score: null, success: false, reason: e?.message || 'Erreur de correction' })
+      } catch (e: unknown) {
+        items.push({ student_name: attempt.student_name, score: null, success: false, reason: errMsg(e) || 'Erreur de correction' })
       }
     }
     stopTimer()

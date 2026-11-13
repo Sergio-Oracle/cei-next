@@ -8,6 +8,7 @@ import Modal from '@/components/ui/Modal'
 import type { StudentPaper } from '@/types'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { errMsg } from '@/lib/errors'
 
 export default function StudentPapersPage() {
   const { success, error } = useToast()
@@ -49,7 +50,7 @@ export default function StudentPapersPage() {
       setReclamationText('')
       setSelected(null)
       load()
-    } catch (e: any) { error(e.message || 'Erreur') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur') }
     finally { setSubmitting(false) }
   }
 

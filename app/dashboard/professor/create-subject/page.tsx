@@ -9,6 +9,7 @@ import { AI_TIMEOUT_MS } from '@/lib/api'
 import { useSubjectUpload, type QTypes } from '@/hooks/useSubjectUpload'
 import { useQuestionBank, BankQuestion } from '@/hooks/useQuestionBank'
 import SearchableSelect from '@/components/ui/SearchableSelect'
+import { errMsg } from '@/lib/errors'
 
 /* ── Types ────────────────────────────────────────────────────── */
 interface ECItem {
@@ -122,7 +123,7 @@ export default function ProfessorCreateSubjectPage() {
       const r = await api.upload<{ questions: number; declared?: number | null; by_type?: Record<string, number> }>('/api/subjects/count-questions', fd, 'POST', { timeoutMs: 120000 })
       setExpectedQ(String(r.questions))
       toastOk(`${r.questions} question(s) reconnue(s) dans votre fichier${r.declared ? ` (le document en annonce ${r.declared})` : ''}`)
-    } catch (e: any) { toastErr(e?.message || 'Comptage impossible') } finally { setCounting(false) }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Comptage impossible') } finally { setCounting(false) }
   }
 
   /* Assistant IA (discussion) : le brouillon retenu devient un sujet enregistré, modifiable comme après un import. */
@@ -134,7 +135,7 @@ export default function ProfessorCreateSubjectPage() {
       })
       setCreated(res.subject); setEditContent(res.subject.content || ''); setEditRubric(res.subject.rubric || '')
       toastOk(`Sujet créé avec l'assistant — ${d.report.questions} question(s). Vérifiez-le avant de le valider.`)
-    } catch (e: any) { toastErr(e?.message || 'Création du sujet impossible (choisissez un EC si nécessaire)') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Création du sujet impossible (choisissez un EC si nécessaire)') }
   }
 
   function resetForm() { setCreated(null); setTitle(''); setFiles([]); setEcId(''); setEditContent(''); setEditRubric(''); setMediaMarker('') }
@@ -145,14 +146,14 @@ export default function ProfessorCreateSubjectPage() {
       if (dirty) await api.put(`/api/subjects/${created.id}`, { title: created.title, content: editContent, rubric: editRubric })
       toastOk(dirty ? 'Sujet enregistré avec vos modifications' : 'Sujet enregistré')
       router.push('/dashboard/professor/subjects')
-    } catch (e: any) { toastErr(e.message || "Enregistrement impossible") }
+    } catch (e: unknown) { toastErr(errMsg(e) || "Enregistrement impossible") }
     finally { setFinishing(false) }
   }
   async function handleCancelSubject() {
     if (!created) return
     if (!window.confirm('Annuler ce sujet ? Il sera supprimé définitivement, avec son barème.')) return
     try { await api.delete(`/api/subjects/${created.id}`); toastOk('Sujet annulé et supprimé'); resetForm() }
-    catch (e: any) { toastErr(e.message || 'Suppression impossible') }
+    catch (e: unknown) { toastErr(errMsg(e) || 'Suppression impossible') }
   }
 
 
@@ -259,7 +260,7 @@ export default function ProfessorCreateSubjectPage() {
         toastOk('Sauvegardé dans la banque de questions')
       }
       setShowBankModal(false)
-    } catch (err: any) { toastErr(err.message || 'Erreur sauvegarde banque') }
+    } catch (err: unknown) { toastErr(errMsg(err) || 'Erreur sauvegarde banque') }
     finally { setBankSaving(false) }
   }
 
@@ -289,7 +290,7 @@ export default function ProfessorCreateSubjectPage() {
       setEditContent(res.subject.content || '')
       setEditRubric(res.subject.rubric || '')
       setMode('upload')
-    } catch (err: any) { toastErr(err.message || 'Erreur création') }
+    } catch (err: unknown) { toastErr(errMsg(err) || 'Erreur création') }
     finally { setAssembling(false) }
   }
 
@@ -299,7 +300,7 @@ export default function ProfessorCreateSubjectPage() {
       await deleteQuestion(id)
       setBankSel(p=>{ const n=new Set(p); n.delete(id); return n })
       toastOk('Question supprimée')
-    } catch (err: any) { toastErr(err.message||'Erreur') }
+    } catch (err: unknown) { toastErr(errMsg(err)||'Erreur') }
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -454,7 +455,7 @@ export default function ProfessorCreateSubjectPage() {
                     const fd = new FormData(); fd.append('file', f); fd.append('media_type', kind); fd.append('subject_id', String(created.id))
                     const r = await api.upload<{ media: { marker: string } }>('/api/subjects/upload_media', fd, 'POST', { timeoutMs: AI_TIMEOUT_MS })
                     setMediaMarker(r.media.marker)
-                  } catch (err: any) { setMediaMarker('Erreur : ' + (err.message || 'envoi impossible')) }
+                  } catch (err: unknown) { setMediaMarker('Erreur : ' + (errMsg(err) || 'envoi impossible')) }
                   finally { setMediaBusy(false) }
                 }}/>
               </label>

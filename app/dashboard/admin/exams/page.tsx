@@ -11,6 +11,7 @@ import ExamCopiesModal from './ExamCopiesModal'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
 import { activateExam } from '@/lib/activateExam'
+import { errMsg } from '@/lib/errors'
 
 /* ── Helpers ───────────────────────────────────────────────────── */
 type ExamStatus = 'draft' | 'scheduled' | 'active' | 'closed'
@@ -99,7 +100,7 @@ export default function AdminExamsPage() {
       await activateExam(id)
       success('Examen activé — les étudiants peuvent maintenant le rejoindre')
       setExams(prev => prev.map(e => e.id === id ? { ...e, status: 'active' as ExamStatus } : e))
-    } catch (e: any) { error(e.message || 'Erreur lors de l\'activation') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur lors de l\'activation') }
     finally { setActioning(null) }
   }
 
@@ -110,7 +111,7 @@ export default function AdminExamsPage() {
       await api.post(`/api/online_exams/${id}/close`, {})
       success('Examen clôturé')
       setExams(prev => prev.map(e => e.id === id ? { ...e, status: 'closed' as ExamStatus } : e))
-    } catch (e: any) { error(e.message || 'Erreur clôture') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur clôture') }
     finally { setActioning(null) }
   }
 
@@ -121,7 +122,7 @@ export default function AdminExamsPage() {
       await api.delete(`/api/online_exams/${id}`)
       success('Examen supprimé')
       setExams(prev => prev.filter(e => e.id !== id))
-    } catch (e: any) { error(e.message || 'Erreur suppression') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur suppression') }
     finally { setActioning(null) }
   }
 
@@ -135,7 +136,7 @@ export default function AdminExamsPage() {
       success(`Examen rallongé de ${min} minutes`)
       await load()
       setExtendId(null)
-    } catch (e: any) { error(e.message || 'Erreur rallonge') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur rallonge') }
     finally { setExtending(false) }
   }
 

@@ -7,6 +7,7 @@ import { useToast } from '@/contexts/ToastContext'
 import type { Subject } from '@/types'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
+import { errMsg } from '@/lib/errors'
 
 interface Props {
   initialSubjects: Subject[]
@@ -65,7 +66,7 @@ export default function SubjectsClient({ initialSubjects }: Props) {
       setSubjects(prev => prev.map(s => s.id === res.subject.id ? res.subject : s))
       setEditMode(false)
       success('Sujet mis à jour')
-    } catch (e: any) { error(e.message || 'Erreur lors de la mise à jour') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur lors de la mise à jour') }
     finally { setSaving(false) }
   }
 
@@ -75,7 +76,7 @@ export default function SubjectsClient({ initialSubjects }: Props) {
       await api.delete(`/api/subjects/${id}`)
       success('Sujet supprimé')
       setSubjects(prev => prev.filter(s => s.id !== id))
-    } catch (e: any) { error(e.message || 'Erreur suppression') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur suppression') }
   }
 
   return (

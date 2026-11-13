@@ -5,6 +5,7 @@ import api from '@/lib/api'
 import SearchField, { matchesQuery } from '@/components/shared/SearchField'
 import { useToast } from '@/contexts/ToastContext'
 import GroupExamsPlanning, { conflictMessage, useMemberWarnings } from '@/components/proctor/GroupExamsPlanning'
+import { errMsg } from '@/lib/errors'
 
 interface Member { id: number; proctor_id: number; proctor_name: string; proctor_email: string; proctor_last_login?: string | null }
 interface SupervisorLink { id: number; supervisor_id: number; supervisor_name: string; supervisor_email: string }
@@ -90,7 +91,7 @@ export default function ProfessorProctorGroupsPage() {
       success('Groupe créé')
       setNewName('')
       load()
-    } catch (e: any) { error(e.message || 'Erreur création') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur création') }
     finally { setCreating(false) }
   }
 
@@ -100,7 +101,7 @@ export default function ProfessorProctorGroupsPage() {
       await api.delete(`/api/admin/proctor_groups/${g.id}`)
       success('Groupe supprimé')
       load()
-    } catch (e: any) { error(e.message || 'Erreur suppression') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur suppression') }
   }
 
   function openManage(g: Group) {
@@ -124,7 +125,7 @@ export default function ProfessorProctorGroupsPage() {
       setManageGroup(res.group)
       setMemberSelected(new Set())
       load()
-    } catch (e: any) { error(e.message || 'Erreur ajout') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur ajout') }
     finally { setAddingMembers(false) }
   }
 
@@ -134,7 +135,7 @@ export default function ProfessorProctorGroupsPage() {
       await api.delete(`/api/admin/proctor_groups/${manageGroup.id}/members/${m.id}`)
       setManageGroup(g => g ? { ...g, members: g.members.filter(x => x.id !== m.id) } : g)
       load()
-    } catch (e: any) { error(e.message || 'Erreur retrait') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur retrait') }
   }
 
   async function addSupervisors() {
@@ -146,7 +147,7 @@ export default function ProfessorProctorGroupsPage() {
       setManageGroup(res.group)
       setSupervisorSelected(new Set())
       load()
-    } catch (e: any) { error(e.message || 'Erreur ajout') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur ajout') }
     finally { setAddingSupervisors(false) }
   }
 
@@ -156,7 +157,7 @@ export default function ProfessorProctorGroupsPage() {
       await api.delete(`/api/admin/proctor_groups/${manageGroup.id}/supervisors/${s.id}`)
       setManageGroup(g => g ? { ...g, supervisors: g.supervisors.filter(x => x.id !== s.id) } : g)
       load()
-    } catch (e: any) { error(e.message || 'Erreur retrait') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur retrait') }
   }
 
   async function assignVigilance(level: 'A' | 'B' | 'C') {
@@ -167,7 +168,7 @@ export default function ProfessorProctorGroupsPage() {
       setManageGroup(res)
       success('Niveau de vigilance mis à jour')
       load()
-    } catch (e: any) { error(e.message || 'Erreur mise à jour') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur mise à jour') }
     finally { setAssigningVigilance(false) }
   }
 
@@ -181,7 +182,7 @@ export default function ProfessorProctorGroupsPage() {
       success('EC rattaché au groupe')
       warnMembers((res as any).member_warnings)
       load()
-    } catch (e: any) { error(conflictMessage(e, 'Erreur rattachement')) }
+    } catch (e: unknown) { error(conflictMessage(e, 'Erreur rattachement')) }
     finally { setLinkingEc(false) }
   }
 
@@ -191,7 +192,7 @@ export default function ProfessorProctorGroupsPage() {
       await api.delete(`/api/admin/proctor_groups/${manageGroup.id}/ecs/${ecId}`)
       setManageGroup(g => g ? { ...g, ec_ids: g.ec_ids.filter(x => x !== ecId) } : g)
       load()
-    } catch (e: any) { error(e.message || 'Erreur retrait') }
+    } catch (e: unknown) { error(errMsg(e) || 'Erreur retrait') }
   }
 
   const ecName = (id: number) => { const e = ecs.find(x => x.id === id); return e ? `${e.code} — ${e.name}` : `EC #${id}` }

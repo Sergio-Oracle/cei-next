@@ -11,6 +11,7 @@ import { MOODLE_UI } from '@/lib/features'
 import MoodleSourcePicker, { MoodleSelection } from '@/components/shared/MoodleSourcePicker'
 import RagSourcesList from '@/components/shared/RagSourcesList'
 import RagGroundingBanner, { Grounding } from '@/components/shared/RagGroundingBanner'
+import { errMsg } from '@/lib/errors'
 
 /* ── Types ─────────────────────────────────────────────────────── */
 interface EC {
@@ -210,7 +211,7 @@ export default function AdminSuggestionsPage() {
       })
       setQuestionCount(res.suggested_count)
       success(`Suggestion IA : ${res.suggested_count} questions (pour un examen de ${duration} min, difficulté ${difficulty})`)
-    } catch (e: any) { toastErr(e.message || 'Erreur de suggestion') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur de suggestion') }
     finally { setSuggestingCount(false) }
   }
 
@@ -411,7 +412,7 @@ export default function AdminSuggestionsPage() {
       if (data.duplicates && data.duplicates.length > 0) {
         toastErr(`${data.duplicates.length} question(s) générée(s) se ressemblent fortement entre elles (jusqu'à ${Math.max(...data.duplicates.map(d=>d.similarity))}% similaire) — vérifiez avant de valider.`)
       }
-    } catch (e: any) { toastErr(e.message || 'Erreur génération du sujet') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur génération du sujet') }
     finally {
       setCreating(null); setGenFull(false)
       if (genFullTimer.current) { clearInterval(genFullTimer.current); genFullTimer.current = null }
@@ -442,7 +443,7 @@ export default function AdminSuggestionsPage() {
       setCreatedSubject(res.subject)
       setStep('created')
       success('Sujet enregistré avec succès')
-    } catch (e: any) { toastErr(e.message || 'Erreur enregistrement') }
+    } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur enregistrement') }
     finally { setSavingSubject(false) }
   }
 
@@ -465,8 +466,8 @@ export default function AdminSuggestionsPage() {
       setMediaInstructions('')
       const mediaLabel = mediaType === 'image' ? 'Image' : mediaType === 'video' ? 'Vidéo' : 'Audio'
       success(`${mediaLabel} analysé(e) — sera intégré(e) au sujet généré : ${res.media.filename}`)
-    } catch (e: any) {
-      toastErr(e.message || 'Erreur upload média')
+    } catch (e: unknown) {
+      toastErr(errMsg(e) || 'Erreur upload média')
     } finally {
       setUploadingMedia(false)
     }
@@ -497,8 +498,8 @@ export default function AdminSuggestionsPage() {
       } else {
         success(`${data.count_generated} question(s) ajoutée(s) au sujet — points redistribués sur ${totalPoints}`)
       }
-    } catch (e: any) {
-      toastErr(e.message || 'Erreur lors de la génération des questions supplémentaires')
+    } catch (e: unknown) {
+      toastErr(errMsg(e) || 'Erreur lors de la génération des questions supplémentaires')
     } finally {
       setGeneratingMore(false)
     }
@@ -598,7 +599,7 @@ export default function AdminSuggestionsPage() {
         }
       }
       setShowBankModal(false)
-    } catch (err: any) { toastErr(err.message || 'Erreur sauvegarde banque') }
+    } catch (err: unknown) { toastErr(errMsg(err) || 'Erreur sauvegarde banque') }
     finally { setBankSaving(false) }
   }
 

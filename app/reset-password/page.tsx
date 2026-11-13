@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { errMsg } from '@/lib/errors'
 
 function ResetPasswordInner() {
   const router = useRouter()
@@ -27,8 +28,8 @@ function ResetPasswordInner() {
       await api.post('/api/auth/reset-password', { token, new_password: password })
       setDone(true)
       success('Mot de passe mis à jour avec succès')
-    } catch (e: any) {
-      error(e.message || 'Erreur lors de la réinitialisation')
+    } catch (e: unknown) {
+      error(errMsg(e) || 'Erreur lors de la réinitialisation')
     } finally {
       setSubmitting(false)
     }
