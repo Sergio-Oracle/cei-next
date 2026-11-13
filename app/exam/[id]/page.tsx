@@ -802,7 +802,9 @@ export default function ExamPage() {
   useEffect(() => {
     const off = onCeiClientEvent(evt => {
       const aId = attemptRef.current
-      if (evt.type === 'client_forbidden_app') warning(`Fermez le logiciel « ${evt.data?.name} » : il est interdit pendant l'examen.`)
+      // Déjà arrêté par le client (Teams, Zoom… laissés en tâche de fond) : rien à demander à l'étudiant, qui n'a plus rien à fermer.
+      // Sinon (ancien client, ou logiciel qui résiste) : message précis, car le logiciel peut tourner SANS fenêtre (icône près de l'horloge).
+      if (evt.type === 'client_forbidden_app' && !evt.data?.killed) warning(`Quittez complètement le logiciel « ${evt.data?.name} » (même s'il n'a plus de fenêtre : icône près de l'horloge, « Quitter ») : il est interdit pendant l'examen.`)
       if (evt.type === 'client_second_display') warning('Un second écran est branché : il est masqué. Débranchez-le.')
       if (evt.type === 'client_usb_storage') warning("Une clé ou un disque USB est branché : il est éjecté. Débranchez-le, les périphériques de stockage sont interdits pendant l'examen.")
       if (evt.type === 'client_external_display') warning('Un écran externe ou un câble de projection (HDMI, VGA…) est branché : débranchez-le tout de suite.')
