@@ -42,16 +42,6 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
   const taRef = useRef<HTMLTextAreaElement>(null)
   const focused = useRef(false)
   const dirty = text !== orig || rubric !== rubricOrig
-  const [rescaling, setRescaling] = useState(false)
-  // Ramène la somme des points sur 20 (mêmes proportions) : le résultat remplace le texte à l'écran, l'enseignant relit puis enregistre
-  async function rescaleTo20() {
-    setRescaling(true); setErr('')
-    try {
-      const r = await api.post<{ content: string; rubric: string }>('/api/subjects/rescale_points', { content: text, rubric, total_points: 20 })
-      setText(r.content); setRubric(r.rubric)
-    } catch (e: any) { setErr(e?.message || 'Ajustement impossible') } finally { setRescaling(false) }
-  }
-
   useEffect(() => {
     let alive = true
     ;(async () => {
@@ -251,12 +241,6 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
                     ))}
                     <div style={{ padding: '9px 12px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', fontSize: 13.5, color: '#334155' }}>
                       <b>Total : {String(check.grading.total_points).replace('.', ',')} points</b> (ramenés sur 20) · {check.grading.auto_count} question(s) corrigée(s) automatiquement · {check.grading.ai_count}{' '}par l&apos;IA
-                      {canEdit && Math.abs(check.grading.total_points - 20) > 0.01 && (
-                        <button onClick={rescaleTo20} disabled={busy || rescaling} title="Répartit 20 points sur les questions en gardant leurs proportions ; vous relisez puis enregistrez"
-                          style={{ marginLeft: 12, background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: 8, padding: '4px 12px', fontWeight: 600, cursor: 'pointer', fontSize: 13.5 }}>
-                          <i className={`fas ${rescaling ? 'fa-spinner fa-spin' : 'fa-scale-balanced'}`} style={{ marginRight: 6 }} />Ramener sur 20 points
-                        </button>
-                      )}
                     </div>
                   </div>
                 )}
