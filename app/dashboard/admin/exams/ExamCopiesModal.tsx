@@ -52,6 +52,16 @@ function ManualGradeModal({ attempt, onClose, onDone }: { attempt: RichAttempt; 
   const [fb,    setFb]        = useState(attempt.feedback ?? '')
   const [saving, setSaving]   = useState(false)
   const { success, error }    = useToast()
+  // La copie de l'étudiant est affichée dans la fenêtre : on ne note pas sans lire (avant, seuls la note et le commentaire apparaissaient).
+  const [copy, setCopy]       = useState<ReviewData | null>(null)
+  const [copyState, setCopyState] = useState<'loading' | 'ok' | 'error'>('loading')
+  useEffect(() => {
+    let alive = true
+    api.get<ReviewData>(`/api/exam_attempts/${attempt.id}/review`)
+      .then(d => { if (alive) { setCopy(d); setCopyState('ok') } })
+      .catch(() => { if (alive) setCopyState('error') })
+    return () => { alive = false }
+  }, []) // eslint-disable-line
 
   async function save() {
     const s = parseFloat(score)
@@ -68,13 +78,21 @@ function ManualGradeModal({ attempt, onClose, onDone }: { attempt: RichAttempt; 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ background: 'var(--surface)', borderRadius: 14, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,.3)', overflow: 'hidden' }}>
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 14, width: '100%', maxWidth: 780, maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.3)', overflow: 'hidden' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <i className="fas fa-pen" style={{ color: 'var(--primary)' }} />
           <span style={{ fontWeight: 700, fontSize:17 }}>Correction manuelle — {attempt.student_name}</span>
           <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize:19, cursor: 'pointer', color: 'var(--text-muted)' }}><i className="fas fa-times" /></button>
         </div>
-        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto', minHeight: 0 }}>
+          <div>
+            <div style={{ fontSize:15.5, fontWeight: 600, marginBottom: 6 }}>Copie de l&apos;étudiant</div>
+            <div style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', maxHeight: '42vh', overflowY: 'auto', background: '#ffffff', color: '#0f172a' }}>
+              {copyState === 'loading' && <div style={{ textAlign: 'center', color: '#94a3b8' }}><i className="fas fa-spinner fa-spin" /></div>}
+              {copyState === 'error' && <em style={{ color: '#b91c1c', fontSize:15.5 }}>Impossible de charger la copie. Fermez et rouvrez cette fenêtre.</em>}
+              {copyState === 'ok' && copy && renderAnswers(copy.raw_answers, copy.student_answer, copy.question_scores)}
+            </div>
+          </div>
           <label style={{ fontSize:15.5, fontWeight: 600 }}>Note /20
             <input type="number" min={0} max={20} step={0.5} value={score} onChange={e => setScore(e.target.value)}
               className="form-control" style={{ marginTop: 6, fontSize:21.5, fontWeight: 800, textAlign: 'center' }} />
@@ -490,6 +508,10 @@ export default function ExamCopiesModal({ examId, examTitle, onClose }: Props) {
                                 </td>
                                 <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize:15.5 }}>
                                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                    {a.needs_correction && <button onClick={() => setReviewAttemptId(a.id)} title="Lire la copie de l'étudiant"
+                                          style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', borderRadius: 6, padding: '4px 8px', fontSize:12, cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                          <i className="fas fa-eye" />Voir
+                                        </button>}
                                     {a.needs_correction
                                       ? <button onClick={() => correctAttempt(a.id)} disabled={busy}
                                           style={{ background: '#eff6ff', color: 'var(--primary)', border: '1px solid #bfdbfe', borderRadius: 6, padding: '4px 8px', fontSize:12, cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 700 }}>
