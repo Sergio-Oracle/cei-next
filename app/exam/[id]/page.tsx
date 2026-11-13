@@ -321,6 +321,20 @@ function CrosswordGrid({ grid, items, answers, setAnswers, keyPrefix }: {
   )
 }
 
+/* En-tête de DOCUMENT (université, master, session, durée, enseignant…) placé avant la question 1 : à montrer UNE fois (sur la première
+   question), pas en haut de chaque page comme un énoncé de partie. Mêmes motifs que le lecteur du serveur (routes/exams.py,
+   _looks_like_doc_header) : test_enonces.py vérifie qu'ils donnent le même résultat. */
+const DOC_HEADER_CUES = [
+  /universit|facult[ée]|institut|[ée]cole/i, /\b(?:master|licence|doctorat|l[1-3]|m[1-2])\b/i, /\bsession\b/i, /dur[ée]e/i,
+  /\b(?:enseignant|professeur|pr|dr)\b\.?\s/i, /[ée]preuve|\bexamen\b|\bdevoir\b|contr[ôo]le|[ée]valuation|\bsujet\b/i,
+  /semestre|ann[ée]e universitaire/i, /questions?\s+[àa]\s+choix/i, /\b(?:nom|pr[ée]nom|matricule)\s*:/i,
+]
+const STATEMENT_CUES = /(?:^|[^a-zà-ÿ])(?:on note|rappel|soit|soient|consid[ée]r|hypoth[èe]se|pr[ée]dicats?|d[ée]finitions?|[ée]nonc[ée])/i
+function looksLikeDocHeader(lines: string[]): boolean {
+  const t = lines.join('\n')
+  return !STATEMENT_CUES.test(t) && DOC_HEADER_CUES.filter(c => c.test(t)).length >= 2
+}
+
 function parseExamBlocks(raw: string): ParsedBlock[] {
   const VF_RE = /\bvrai\s*[\/|ou]\s*faux\b|\bV\s*[\/|]\s*F\b/i
   const strip = (s: string) => s.trim().replace(/^[*_]{1,2}\s*/,'').replace(/\s*[*_]{1,2}$/,'').trim()
@@ -371,6 +385,7 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
   if (preamble.join('').trim()) blocks.push({ type: 'text', content: preamble.join('\n') })
   // Énoncé d'une partie : rattaché à chaque question de la partie (champ `context`), comme le lecteur du serveur.
   let ctxTitle = '', ctxText: string[] = [], pending: string[] = []
+  let headerOnce = false                      // le paragraphe avant la question 1 est un en-tête de document : une seule question le reçoit
   const lastSectIdx = (() => { let k = -1; preamble.forEach((l, j) => { if (isSect(l)) k = j }); return k })()
   if (lastSectIdx >= 0) {
     ctxTitle = strip(preamble[lastSectIdx])
@@ -379,7 +394,7 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
     let para: string[] = [], lastPara: string[] = []
     for (const l of preamble) { if (l.trim()) para.push(l.replace(/\s+$/, '')); else if (para.length) { lastPara = para; para = [] } }
     para = (para.length ? para : lastPara).filter(l => !isNoise(l))
-    if (para.join(' ').length >= 40) pending = para
+    if (para.join(' ').length >= 40) { pending = para; headerOnce = looksLikeDocHeader(para) }
   }
 
   while (i < lines.length) {
@@ -390,9 +405,9 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       blocks.push({ type: 'description', title: dm[1].trim(), text: body.join('\n').trim() })
       continue
     }
-    if (isSect(lines[i])) { blocks.push({ type: 'section', title: strip(lines[i]) }); ctxTitle = strip(lines[i]); ctxText = []; pending = []; i++; continue }
+    if (isSect(lines[i])) { blocks.push({ type: 'section', title: strip(lines[i]) }); ctxTitle = strip(lines[i]); ctxText = []; pending = []; headerOnce = false; i++; continue }
     if (isSep(lines[i]) && !isQ(lines[i])) { i++; continue }
-    if (!isQ(lines[i])) { if (!isNoise(lines[i])) pending.push(lines[i].replace(/\s+$/, '')); i++; continue }
+    if (!isQ(lines[i])) { if (!isNoise(lines[i])) { pending.push(lines[i].replace(/\s+$/, '')); headerOnce = false } i++; continue }
     const q = getQ(lines[i]); if (!q) { i++; continue }
     const isPairMode = q.markerType === 'APPARIEMENT'
     const isGrid = !!q.markerType && GRID.includes(q.markerType)
@@ -519,8 +534,10 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       }
       blk.choices = []
     }
-    if (pending.length) { ctxText = pending; pending = [] }
+    let once = false
+    if (pending.length) { ctxText = pending; pending = []; once = headerOnce; headerOnce = false }
     if (ctxTitle || ctxText.length) blk.context = { title: ctxTitle, text: ctxText.join('\n').trim() }
+    if (once) ctxText = []                      // en-tête de document : montré sur cette question seulement
     blocks.push(blk)
   }
   return blocks
