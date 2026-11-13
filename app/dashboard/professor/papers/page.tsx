@@ -211,7 +211,7 @@ export default function ProfessorPapersPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                   <div>
                     <label style={{ display: 'block', fontWeight: 600, fontSize:15.5, marginBottom: 7, color: 'var(--text)' }}>
-                      <i className="fas fa-book" style={{ marginRight: 6, color: '#94a3b8' }} />Sujet d'examen *
+                      <i className="fas fa-book" style={{ marginRight: 6, color: '#94a3b8' }} />Sujet d&apos;examen *
                     </label>
                     <select value={singleSubjectId} onChange={e => setSingleSubjectId(e.target.value)} required
                       style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize:17, color: 'var(--text)', background: 'var(--surface)', outline: 'none', boxSizing: 'border-box' }}>
@@ -227,7 +227,7 @@ export default function ProfessorPapersPage() {
 
                   <div>
                     <label style={{ display: 'block', fontWeight: 600, fontSize:15.5, marginBottom: 7, color: 'var(--text)' }}>
-                      <i className="fas fa-user" style={{ marginRight: 6, color: '#94a3b8' }} />Nom de l'étudiant *
+                      <i className="fas fa-user" style={{ marginRight: 6, color: '#94a3b8' }} />Nom de l&apos;étudiant *
                     </label>
                     <input type="text" placeholder="Ex : Dupont Jean" value={singleStudentName} onChange={e => setSingleStudentName(e.target.value)} required
                       style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize:17, color: 'var(--text)', background: 'var(--surface)', outline: 'none', boxSizing: 'border-box' }} />
@@ -283,7 +283,7 @@ export default function ProfessorPapersPage() {
                     style={{ padding: '12px 24px', background: singleSubmitting ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, fontSize:18, cursor: singleSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
                     {singleSubmitting
                       ? <><i className="fas fa-spinner fa-spin" />Correction en cours…</>
-                      : <><i className="fas fa-magic" />Corriger avec l'IA</>}
+                      : <><i className="fas fa-magic" />Corriger avec l&apos;IA</>}
                   </button>
                 </div>
               </form>
@@ -295,7 +295,7 @@ export default function ProfessorPapersPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                   <div>
                     <label style={{ display: 'block', fontWeight: 600, fontSize:15.5, marginBottom: 7, color: 'var(--text)' }}>
-                      <i className="fas fa-book" style={{ marginRight: 6, color: '#94a3b8' }} />Sujet d'examen *
+                      <i className="fas fa-book" style={{ marginRight: 6, color: '#94a3b8' }} />Sujet d&apos;examen *
                     </label>
                     <select value={batchSubjectId} onChange={e => setBatchSubjectId(e.target.value)} required
                       style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize:17, color: 'var(--text)', background: 'var(--surface)', outline: 'none', boxSizing: 'border-box' }}>
@@ -359,7 +359,7 @@ export default function ProfessorPapersPage() {
                     <div>
                       <div style={{ fontWeight: 600, fontSize:15.5, color: 'var(--text)' }}>Extraction automatique des noms</div>
                       <div style={{ fontSize:14.5, color: 'var(--text-muted)', marginTop: 2 }}>
-                        L'IA extraira les noms des étudiants depuis les fichiers. Désactivez si les noms figurent dans les noms de fichiers.
+                        L&apos;IA extraira les noms des étudiants depuis les fichiers. Désactivez si les noms figurent dans les noms de fichiers.
                       </div>
                     </div>
                   </label>
@@ -430,7 +430,7 @@ export default function ProfessorPapersPage() {
                 <i className="fas fa-layer-group" style={{ marginRight: 5 }} />Lot de copies
               </div>
               <div style={{ fontSize:14.5, color: '#475569', lineHeight: 1.5 }}>
-                Pour corriger toute une promo d'un coup. L'IA traite chaque fichier séparément.
+                Pour corriger toute une promo d&apos;un coup. L&apos;IA traite chaque fichier séparément.
               </div>
             </div>
           </div>
@@ -500,7 +500,7 @@ export default function ProfessorPapersPage() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <i className="fas fa-comment-dots" style={{ color: '#2563eb' }} />
-                    <span style={{ fontWeight: 700, fontSize:17 }}>Feedback détaillé de l'IA</span>
+                    <span style={{ fontWeight: 700, fontSize:17 }}>Feedback détaillé de l&apos;IA</span>
                   </div>
                   <div style={{ padding: '14px 16px', background: '#f8fafc', borderRadius: 8, fontSize:15.5, lineHeight: 1.8, color: '#334155', maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
                     {singleResult.feedback}

@@ -193,7 +193,7 @@ export default function AnswerCallModal({ attemptId, examTitle, studentName, onC
           ) : (
             <button onClick={() => { void generateAccessCode() }} disabled={generatingCode}
               style={{ width: '100%', background: 'rgba(217,119,6,.25)', color: '#fcd34d', border: '1px solid rgba(217,119,6,.4)', borderRadius: 8, padding: '9px', cursor: 'pointer', fontWeight: 700, fontSize:14.5 }}>
-              <i className={`fas ${generatingCode ? 'fa-spinner fa-spin' : 'fa-key'}`} /> Générer un code de reprise (après vérification d'identité)
+              <i className={`fas ${generatingCode ? 'fa-spinner fa-spin' : 'fa-key'}`} /> Générer un code de reprise (après vérification d&apos;identité)
             </button>
           )}
         </div>

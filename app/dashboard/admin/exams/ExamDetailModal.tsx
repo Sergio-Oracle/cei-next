@@ -50,7 +50,7 @@ export default function ExamDetailModal({ exam, onClose, onViewCopies, onActivat
             <i className="fas fa-desktop" style={{ color: 'var(--primary)' }} />
           </div>
           <div style={{ flex: 1 }}>
-            <h3 style={{ margin: 0, fontSize:19, fontWeight: 700 }}>Détails de l'Examen</h3>
+            <h3 style={{ margin: 0, fontSize:19, fontWeight: 700 }}>Détails de l&apos;Examen</h3>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize:21.5, cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}>
             <i className="fas fa-times" />
@@ -127,7 +127,7 @@ export default function ExamDetailModal({ exam, onClose, onViewCopies, onActivat
               <>
                 <button onClick={() => { onClose(); onClose_(exam.id) }}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontWeight: 600, fontSize:15.5, color: '#dc2626', cursor: 'pointer' }}>
-                  <i className="fas fa-flag-checkered" />Clôturer l'Examen
+                  <i className="fas fa-flag-checkered" />Clôturer l&apos;Examen
                 </button>
               </>
             )}
@@ -135,7 +135,7 @@ export default function ExamDetailModal({ exam, onClose, onViewCopies, onActivat
               <>
                 <button onClick={() => { onClose(); onActivate(exam.id) }}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontWeight: 700, fontSize:15.5, color: '#059669', cursor: 'pointer' }}>
-                  <i className="fas fa-play" />Activer l'Examen
+                  <i className="fas fa-play" />Activer l&apos;Examen
                 </button>
                 <button onClick={() => { onClose(); onDelete(exam.id) }}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontWeight: 600, fontSize:15.5, color: '#dc2626', cursor: 'pointer' }}>

@@ -20,11 +20,13 @@ export default function AdminSurveillancePage() {
   const [exams, setExams] = useState<OnlineExam[]>([])
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
 
   async function load() {
     try {
       const res = await api.get<OnlineExam[]>('/api/online_exams')
       setExams(Array.isArray(res) ? res : (res as any).exams ?? [])
+      setNow(Date.now())
       setFailed(false)
     } catch { setFailed(true) }
     finally { setLoading(false) }
@@ -35,7 +37,6 @@ export default function AdminSurveillancePage() {
     return () => clearInterval(t)
   }, [])
 
-  const now = Date.now()
   const active = exams.filter(e => e.status === 'active')
   const soon = exams
     .filter(e => e.status === 'scheduled' && e.start_time && new Date(e.start_time).getTime() - now < SOON_MS && new Date(e.start_time).getTime() > now - 3600_000)

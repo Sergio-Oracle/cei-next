@@ -1960,7 +1960,7 @@ export default function ProctorMonitorPage() {
               <Section title="Exclus" count={banned.length} icon="fa-ban" iconColor="#ef4444" badgeBg="rgba(239,68,68,.2)" badgeColor="#fca5a5">
                 <table className="mon-tbl">
                   <thead>
-                    <tr><th>Étudiant</th><th>Motif d'exclusion</th><th>Risque</th><th>Surveillant</th></tr>
+                    <tr><th>Étudiant</th><th>Motif d&apos;exclusion</th><th>Risque</th><th>Surveillant</th></tr>
                   </thead>
                   <tbody>
                     {banned.length === 0 ? (
@@ -2005,7 +2005,7 @@ export default function ProctorMonitorPage() {
             </div>
             <PagerBar pg={pgOff} sizes={[12, 24, 50, 100]} step={12} />
             <div style={{ fontSize:12, color: 'rgba(255,255,255,.35)', marginTop: 8 }}>
-              Une déconnexion ne compte jamais comme une violation — l'étudiant conserve son code de reprise et sera signalé à sa reconnexion.
+              Une déconnexion ne compte jamais comme une violation — l&apos;étudiant conserve son code de reprise et sera signalé à sa reconnexion.
             </div>
           </div>
         )}
@@ -2098,14 +2098,14 @@ export default function ProctorMonitorPage() {
           <h2 style={{ fontSize:21.5, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: '#fca5a5' }}>
             <i className="fas fa-ban" /> Exclure {banModal.name}
           </h2>
-          <p style={{ fontSize:15.5, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>Cette action est définitive. L'étudiant ne pourra plus continuer son examen.</p>
+          <p style={{ fontSize:15.5, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>Cette action est définitive. L&apos;étudiant ne pourra plus continuer son examen.</p>
           <input value={banReason} onChange={e => setBanReason(e.target.value)} placeholder="Motif d'exclusion (optionnel)"
             style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,.05)', border: '2px solid rgba(255,255,255,.12)', color: 'white', borderRadius: 8, fontSize:15.5, marginBottom: 16, outline: 'none', boxSizing: 'border-box' }} />
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={() => setBanModal(null)} style={btnSecondary}>Annuler</button>
             <button onClick={banStudent} disabled={banning}
               style={{ ...btnPrimary, background: '#ef4444', opacity: banning ? .5 : 1 }}>
-              {banning ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-ban" />} Confirmer l'exclusion
+              {banning ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-ban" />} Confirmer l&apos;exclusion
             </button>
           </div>
         </Modal>
@@ -2121,7 +2121,7 @@ export default function ProctorMonitorPage() {
             <i className="fas fa-user-shield" /> Identité non confirmée — {identityModal.name}
           </h2>
           <p style={{ fontSize:15.5, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>
-            La caméra n'a plus reconnu cet étudiant pendant environ 25 secondes (5 vérifications consécutives). Vérifiez la vidéo en direct — s'il s'agit bien de la même personne (éclairage, angle, lunettes...), confirmez. Sinon, excluez la tentative.
+            La caméra n&apos;a plus reconnu cet étudiant pendant environ 25 secondes (5 vérifications consécutives). Vérifiez la vidéo en direct — s&apos;il s&apos;agit bien de la même personne (éclairage, angle, lunettes...), confirmez. Sinon, excluez la tentative.
           </p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={() => setIdentityModal(null)} style={btnSecondary}>Annuler</button>
@@ -2131,7 +2131,7 @@ export default function ProctorMonitorPage() {
             </button>
             <button onClick={() => verifyIdentity('confirmed')} disabled={identityVerifying}
               style={{ ...btnPrimary, background: '#10b981', opacity: identityVerifying ? .5 : 1 }}>
-              {identityVerifying ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-user-check" />} Confirmer l'identité
+              {identityVerifying ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-user-check" />} Confirmer l&apos;identité
             </button>
           </div>
         </Modal>
@@ -2228,7 +2228,7 @@ export default function ProctorMonitorPage() {
               {!screenTracksRef.current.has(screenModal.identity) && (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.4)', gap: 10 }}>
                   <i className="fas fa-desktop" style={{ fontSize: 53 }} />
-                  <span style={{ fontSize:15.5 }}>Partage d'écran non disponible</span>
+                  <span style={{ fontSize:15.5 }}>Partage d&apos;écran non disponible</span>
                 </div>
               )}
             </div>
@@ -2318,7 +2318,7 @@ export default function ProctorMonitorPage() {
                     {isCallRequest && (
                       <button onClick={() => { setStudentMsgsModal(false); startPrivateCall(m.attempt_id, m.student_name) }}
                         style={{ fontSize:13, background: 'rgba(16,185,129,.4)', color: '#a7f3d0', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
-                        <i className="fas fa-phone" /> Rejoindre l'appel
+                        <i className="fas fa-phone" /> Rejoindre l&apos;appel
                       </button>
                     )}
                   </div>
@@ -2385,22 +2385,22 @@ export default function ProctorMonitorPage() {
                           {videoRecs?.error || 'Aucun enregistrement vidéo pour cet examen'}
                         </div>
                         <div style={{ fontSize:14.5, lineHeight: 1.8, maxWidth: 420, margin: '0 auto', color: 'rgba(255,255,255,.45)' }}>
-                          L'enregistrement ne fonctionne que <strong style={{ color: 'rgba(255,255,255,.7)' }}>pendant que l'examen est en cours</strong> et que les étudiants sont connectés à la salle de surveillance.
+                          L&apos;enregistrement ne fonctionne que <strong style={{ color: 'rgba(255,255,255,.7)' }}>pendant que l&apos;examen est en cours</strong> et que les étudiants sont connectés à la salle de surveillance.
                         </div>
                         <div style={{ marginTop: 20, background: 'rgba(245,158,11,.08)', border: '1px solid rgba(245,158,11,.25)', borderRadius: 10, padding: '14px 16px', textAlign: 'left', maxWidth: 420, margin: '20px auto 0' }}>
                           <div style={{ fontSize:13, fontWeight: 700, color: '#f59e0b', marginBottom: 10, letterSpacing: '.5px' }}>
                             <i className="fas fa-info-circle" /> COMMENT ENREGISTRER
                           </div>
                           <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.6)', lineHeight: 1.8 }}>
-                            1. Ouvrez ce tableau de bord <strong style={{ color: 'rgba(255,255,255,.8)' }}>pendant l'examen</strong><br />
+                            1. Ouvrez ce tableau de bord <strong style={{ color: 'rgba(255,255,255,.8)' }}>pendant l&apos;examen</strong><br />
                             2. Cliquez sur <span style={{ background: 'rgba(239,68,68,.3)', color: '#fca5a5', padding: '1px 7px', borderRadius: 4, fontWeight: 700 }}>REC Salle</span> (en-tête) pour enregistrer toute la salle<br />
-                            3. Cliquez sur <span style={{ background: 'rgba(239,68,68,.5)', color: '#fca5a5', padding: '1px 7px', borderRadius: 4, fontWeight: 700 }}>STOP Salle</span> avant la fin de l'examen<br />
+                            3. Cliquez sur <span style={{ background: 'rgba(239,68,68,.5)', color: '#fca5a5', padding: '1px 7px', borderRadius: 4, fontWeight: 700 }}>STOP Salle</span> avant la fin de l&apos;examen<br />
                             4. Revenez ici — la vidéo apparaîtra automatiquement
                           </div>
                         </div>
                         <button onClick={() => { setRecModal(false); toggleGroupRec() }}
                           style={{ marginTop: 20, background: 'rgba(239,68,68,.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,.4)', padding: '10px 20px', fontSize:15.5, borderRadius: 8, cursor: 'pointer' }}>
-                          <i className="fas fa-circle" style={{ marginRight: 7 }} />Démarrer l'enregistrement maintenant
+                          <i className="fas fa-circle" style={{ marginRight: 7 }} />Démarrer l&apos;enregistrement maintenant
                         </button>
                         {(videoRecs?.attempts_total || 0) > 0 && (
                           <div style={{ marginTop: 14, fontSize:13, color: 'rgba(255,255,255,.25)' }}>
@@ -2667,7 +2667,7 @@ export default function ProctorMonitorPage() {
             {accessCode ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
                 <div>
-                  <div style={{ fontSize:12, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>Code de reprise — à communiquer à l'étudiant</div>
+                  <div style={{ fontSize:12, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>Code de reprise — à communiquer à l&apos;étudiant</div>
                   <div style={{ fontSize:28.5, fontWeight: 800, color: '#fbbf24', letterSpacing: 6 }}>{accessCode.code}</div>
                   <div style={{ fontSize:13, color: '#94a3b8' }}>Expire à {new Date(accessCode.expires_at).toLocaleTimeString('fr-FR')} — usage unique</div>
                 </div>
@@ -2679,7 +2679,7 @@ export default function ProctorMonitorPage() {
             ) : (
               <button onClick={generateAccessCode} disabled={generatingCode}
                 style={{ width: '100%', background: 'rgba(217,119,6,.25)', color: '#fcd34d', border: '1px solid rgba(217,119,6,.4)', borderRadius: 8, padding: '9px', cursor: 'pointer', fontWeight: 700, fontSize:14.5 }}>
-                <i className={`fas ${generatingCode ? 'fa-spinner fa-spin' : 'fa-key'}`} /> Générer un code de reprise (après vérification d'identité)
+                <i className={`fas ${generatingCode ? 'fa-spinner fa-spin' : 'fa-key'}`} /> Générer un code de reprise (après vérification d&apos;identité)
               </button>
             )}
           </div>

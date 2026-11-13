@@ -214,7 +214,7 @@ export default function ProfessorProctorGroupsPage() {
           <p>Regroupez des surveillants par EC — ils sont automatiquement affectés à tout examen (nouveau ou déjà planifié) de cet EC, avec répartition des étudiants entre eux</p>
           <p style={{ fontSize:14.5, color: 'var(--text-muted)', margin: '4px 0 0' }}>
             <i className="fas fa-circle-info" style={{ marginRight: 4 }} />
-            Vous ne voyez que les groupes que vous créez, et vous ne pouvez les rattacher qu'à vos propres ECs. Ajouter un surveillant en renfort ici le propage immédiatement à tous les examens planifiés de l'EC.
+            Vous ne voyez que les groupes que vous créez, et vous ne pouvez les rattacher qu&apos;à vos propres ECs. Ajouter un surveillant en renfort ici le propage immédiatement à tous les examens planifiés de l&apos;EC.
           </p>
         </div>
         <button className="btn btn-secondary" onClick={load}>
@@ -299,7 +299,7 @@ export default function ProfessorProctorGroupsPage() {
                   Superviseurs ({manageGroup.supervisors.length})
                 </div>
                 {manageGroup.supervisors.length === 0 ? (
-                  <p style={{ fontSize:15.5, color: 'var(--text-muted)' }}>Aucun superviseur pour l'instant</p>
+                  <p style={{ fontSize:15.5, color: 'var(--text-muted)' }}>Aucun superviseur pour l&apos;instant</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {manageGroup.supervisors.map(s => (
@@ -354,7 +354,7 @@ export default function ProfessorProctorGroupsPage() {
               )}
               {superviseurs.length === 0 && (
                 <p style={{ fontSize:14.5, color: 'var(--text-muted)', margin: '-12px 0 0' }}>
-                  Aucun compte superviseur — un administrateur doit d'abord en créer un depuis « Utilisateurs ».
+                  Aucun compte superviseur — un administrateur doit d&apos;abord en créer un depuis « Utilisateurs ».
                 </p>
               )}
 
@@ -379,7 +379,7 @@ export default function ProfessorProctorGroupsPage() {
                   Membres ({manageGroup.members.length})
                 </div>
                 {manageGroup.members.length === 0 ? (
-                  <p style={{ fontSize:15.5, color: 'var(--text-muted)' }}>Aucun membre pour l'instant</p>
+                  <p style={{ fontSize:15.5, color: 'var(--text-muted)' }}>Aucun membre pour l&apos;instant</p>
                 ) : (
                   <>
                   {manageGroup.members.length > 5 && <SearchField value={fMembers} onChange={setFMembers} placeholder="Rechercher parmi les membres (nom ou courriel)…" shown={shownMembers.length} total={manageGroup.members.length} />}

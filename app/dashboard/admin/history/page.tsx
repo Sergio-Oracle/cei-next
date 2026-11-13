@@ -55,8 +55,6 @@ export default function AdminHistoryPage() {
   const [incidentsId,    setIncidentsId]      = useState<number | null>(null)
   const [incidentsTitle, setIncidentsTitle]   = useState('')
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     setLoading(true)
     try {
@@ -65,6 +63,8 @@ export default function AdminHistoryPage() {
     } catch { error('Erreur de chargement') }
     finally { setLoading(false) }
   }
+
+  useEffect(() => { load() }, [])
 
   async function openDetail(id: number) {
     setDetailLoading(id)
@@ -130,7 +130,7 @@ export default function AdminHistoryPage() {
                 <tr><td colSpan={7} style={{ padding: '56px', textAlign: 'center' }}>
                   <i className="fas fa-folder-open" style={{ fontSize: 53, color: 'var(--text-muted)', display: 'block', marginBottom: 14 }} />
                   <h3 style={{ color: 'var(--text)', margin: '0 0 8px' }}>Aucun examen terminé</h3>
-                  <p style={{ color: 'var(--text-muted)', margin: 0 }}>L'historique s'alimentera automatiquement dès qu'un examen sera clôturé.</p>
+                  <p style={{ color: 'var(--text-muted)', margin: 0 }}>L&apos;historique s&apos;alimentera automatiquement dès qu&apos;un examen sera clôturé.</p>
                 </td></tr>
               ) : exams_pg.shown.map(exam => {
                 const sc       = exam.average_score

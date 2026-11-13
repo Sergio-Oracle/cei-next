@@ -11,8 +11,6 @@ export default function StudentTranscriptsPage() {
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState<number | null>(null)
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     setLoading(true)
     try {
@@ -21,6 +19,8 @@ export default function StudentTranscriptsPage() {
     } catch { error('Erreur de chargement') }
     finally { setLoading(false) }
   }
+
+  useEffect(() => { load() }, [])
 
   async function downloadPdf(id: number) {
     setDownloading(id)
@@ -51,7 +51,7 @@ export default function StudentTranscriptsPage() {
         <div className="card" style={{ textAlign: 'center', padding: 60 }}>
           <i className="fa-solid fa-scroll" style={{ fontSize: 53, color: 'var(--text-muted)', marginBottom: 16, display: 'block' }} />
           <h3>Aucun relevé disponible</h3>
-          <p style={{ color: 'var(--text-muted)' }}>Vos relevés apparaîtront ici lorsqu'ils seront publiés.</p>
+          <p style={{ color: 'var(--text-muted)' }}>Vos relevés apparaîtront ici lorsqu&apos;ils seront publiés.</p>
         </div>
       ) : (
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>

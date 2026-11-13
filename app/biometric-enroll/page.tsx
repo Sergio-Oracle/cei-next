@@ -144,7 +144,7 @@ function BiometricEnrollInner() {
           <div style={{ width: 64, height: 64, background: 'var(--primary)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <i className="fa-solid fa-camera" style={{ fontSize: 31, color: 'white' }} />
           </div>
-          <h1 style={{ fontSize: 26.5, fontWeight: 700, marginBottom: 4 }}>Vérification d'identité</h1>
+          <h1 style={{ fontSize: 26.5, fontWeight: 700, marginBottom: 4 }}>Vérification d&apos;identité</h1>
           <p style={{ color: 'var(--text-muted)' }}>Requise pour accéder à vos examens</p>
         </div>
 
@@ -152,7 +152,7 @@ function BiometricEnrollInner() {
           {!done && facePhase === 'pick' && (
             <div>
               <p style={{ color: 'var(--text-muted)', marginBottom: 20, fontSize: 15.5, lineHeight: 1.6 }}>
-                Votre identification se fera par reconnaissance faciale avant chaque examen. Cette étape n'est à faire qu'une seule fois — vous pourrez la refaire depuis vos paramètres si besoin. Prenez une photo avec votre caméra, ou téléversez-en une déjà existante.
+                Votre identification se fera par reconnaissance faciale avant chaque examen. Cette étape n&apos;est à faire qu&apos;une seule fois — vous pourrez la refaire depuis vos paramètres si besoin. Prenez une photo avec votre caméra, ou téléversez-en une déjà existante.
               </p>
               <button className="btn btn-primary btn-block" style={{ marginBottom: 12 }} disabled={busy} onClick={startCameraCapture}>
                 <i className="fa-solid fa-camera" style={{ marginRight: 8 }} />Prendre une photo

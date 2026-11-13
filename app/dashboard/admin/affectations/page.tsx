@@ -214,7 +214,7 @@ export default function AdminAffectationsPage() {
         ) : ecs.length === 0 ? (
           <div className="empty-message" style={{ padding: '48px 20px' }}>
             <i className="fas fa-inbox" style={{ fontSize: 35, display: 'block', marginBottom: 10 }} />
-            Aucun EC disponible. Créez d'abord des formations et des UEs.
+            Aucun EC disponible. Créez d&apos;abord des formations et des UEs.
           </div>
         ) : (
           <div className="table-responsive">
@@ -375,7 +375,7 @@ export default function AdminAffectationsPage() {
               ) : professors.every(p => multiModal.assignedIds.includes(p.id)) ? (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 10, fontSize:15.5, color: 'var(--text-muted)' }}>
                   <i className="fas fa-circle-info" style={{ marginTop: 2 }} />
-                  <span>Tous les professeurs disponibles sont déjà affectés à cet EC. Créez d'abord un nouveau compte professeur pour pouvoir en affecter un supplémentaire.</span>
+                  <span>Tous les professeurs disponibles sont déjà affectés à cet EC. Créez d&apos;abord un nouveau compte professeur pour pouvoir en affecter un supplémentaire.</span>
                 </div>
               ) : null}
               {professors.length > 0 && professors.map(p => {

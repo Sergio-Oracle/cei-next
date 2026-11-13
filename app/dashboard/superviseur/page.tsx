@@ -131,7 +131,7 @@ export default function SuperviseurDashboard() {
         <div style={{ background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 16, padding: '16px 20px', marginBottom: 24 }}>
           <h3 style={{ margin: '0 0 12px', fontSize:17, fontWeight: 700, color: '#92400e', display: 'flex', alignItems: 'center', gap: 8 }}>
             <i className="fas fa-phone-volume" style={{ animation: 'pulse 1.5s infinite' }} />
-            Demande(s) d'appel — reprise après déconnexion
+            Demande(s) d&apos;appel — reprise après déconnexion
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {callRequests.map(r => (
@@ -141,7 +141,7 @@ export default function SuperviseurDashboard() {
                   <div style={{ fontSize:14.5, color: '#64748b' }}>{r.exam_title} — {new Date(r.timestamp).toLocaleTimeString('fr-FR')}</div>
                 </div>
                 <button onClick={() => setActiveCall(r)} style={{ fontSize:14.5, fontWeight: 700, color: 'white', background: '#d97706', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <i className="fas fa-phone" /> Répondre à l'appel
+                  <i className="fas fa-phone" /> Répondre à l&apos;appel
                 </button>
               </div>
             ))}

@@ -122,11 +122,15 @@ export default function AdminFormationsPage() {
   // formation, par semestre et par UE) à chaque ouverture de la page.
   const [formationList, setFormationList] = useState<Formation[]>([])
   const [trees, setTrees] = useState<Record<number, Semester[]>>({})
-  const treesRef = useRef(trees); treesRef.current = trees
+  const treesRef = useRef(trees)
+  // eslint-disable-next-line react-hooks/refs -- motif « dernière valeur » : le rappel lit toujours la version la plus récente
+  treesRef.current = trees
   const [treeLoading, setTreeLoading] = useState<number | null>(null)
   const formations = useMemo(() => formationList.map(f => ({ ...f, semesters: trees[f.id] ?? [] })), [formationList, trees])
   const [maqSel, setMaqSel] = useState<{ pole: number | null; niveau: number | null; formation: number | null }>({ pole: null, niveau: null, formation: null })
-  const selRef = useRef(maqSel); selRef.current = maqSel
+  const selRef = useRef(maqSel)
+  // eslint-disable-next-line react-hooks/refs -- motif « dernière valeur » : le rappel lit toujours la version la plus récente
+  selRef.current = maqSel
   const [poles, setPoles] = useState<Pole[]>([])
   const [niveaux, setNiveaux] = useState<Niveau[]>([])
   const [loading, setLoading] = useState(true)
@@ -548,7 +552,7 @@ export default function AdminFormationsPage() {
         </div>
         <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '12px 16px', marginTop: 4 }}>
           <div style={{ fontWeight: 700, fontSize:15.5, color: '#0369a1', marginBottom: 10 }}>
-            <i className="fas fa-percentage" style={{ marginRight: 6 }} />Modalité d'évaluation
+            <i className="fas fa-percentage" style={{ marginRight: 6 }} />Modalité d&apos;évaluation
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {inp('cc_percentage', 'CC % (contrôle continu)', { type: 'number', min: 0, max: 100 })}

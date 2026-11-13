@@ -207,7 +207,7 @@ export default function ProctorGroupsPage() {
             <i className="fas fa-user-shield" style={{ marginRight: 10, color: 'var(--primary)' }} />
             Groupes de Surveillants
           </h2>
-          <p>Regroupez des surveillants par EC — ils sont automatiquement affectés à tout examen (nouveau ou déjà planifié) de cet EC, avec répartition des étudiants entre eux. Ajouter un surveillant en renfort le propage immédiatement à tous les examens planifiés de l'EC.</p>
+          <p>Regroupez des surveillants par EC — ils sont automatiquement affectés à tout examen (nouveau ou déjà planifié) de cet EC, avec répartition des étudiants entre eux. Ajouter un surveillant en renfort le propage immédiatement à tous les examens planifiés de l&apos;EC.</p>
         </div>
         <button className="btn btn-secondary" onClick={load}>
           <i className="fas fa-rotate" /> Actualiser
@@ -291,7 +291,7 @@ export default function ProctorGroupsPage() {
                   Superviseurs ({manageGroup.supervisors.length})
                 </div>
                 {manageGroup.supervisors.length === 0 ? (
-                  <p style={{ fontSize:15.5, color: 'var(--text-muted)' }}>Aucun superviseur pour l'instant</p>
+                  <p style={{ fontSize:15.5, color: 'var(--text-muted)' }}>Aucun superviseur pour l&apos;instant</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {manageGroup.supervisors.map(s => (
@@ -371,7 +371,7 @@ export default function ProctorGroupsPage() {
                   Membres ({manageGroup.members.length})
                 </div>
                 {manageGroup.members.length === 0 ? (
-                  <p style={{ fontSize:15.5, color: 'var(--text-muted)' }}>Aucun membre pour l'instant</p>
+                  <p style={{ fontSize:15.5, color: 'var(--text-muted)' }}>Aucun membre pour l&apos;instant</p>
                 ) : (
                   <>
                   {manageGroup.members.length > 5 && <SearchField value={fMembers} onChange={setFMembers} placeholder="Rechercher parmi les membres (nom ou courriel)…" shown={shownMembers.length} total={manageGroup.members.length} />}

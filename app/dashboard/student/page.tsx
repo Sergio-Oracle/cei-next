@@ -196,7 +196,7 @@ export default function StudentDashboard() {
                 </div>
               </div>
               <button onClick={() => setCallExam(e)} title="Besoin d'aide ? Appeler votre surveillant" style={{ fontSize:14.5, fontWeight: 700, color: '#b45309', background: 'white', border: '1.5px solid #fbbf24', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <i className="fas fa-phone-volume" /> Besoin d'aide ?
+                <i className="fas fa-phone-volume" /> Besoin d&apos;aide ?
               </button>
               <Link href={`/exam/${e.id}`} style={{ fontSize:14.5, fontWeight: 700, color: 'white', background: '#d97706', border: 'none', borderRadius: 8, padding: '8px 14px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <i className="fas fa-arrow-right" /> Reprendre

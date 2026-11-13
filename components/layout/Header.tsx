@@ -214,7 +214,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             <i className="fas fa-bars" />
           </button>
           <i className="fas fa-graduation-cap header-icon" />
-          <h1>Centre d'Examen Intelligent</h1>
+          <h1>Centre d&apos;Examen Intelligent</h1>
         </div>
 
         {/* Contrôles à droite */}
@@ -423,7 +423,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
       <div style={{ position: 'fixed', top: 70, right: 20, zIndex: 9400, background: '#0f172a', color: 'white', borderRadius: 12, padding: '14px 18px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(96,165,250,.4)' }}>
         <i className="fas fa-camera fa-shake" style={{ color: '#60a5fa', fontSize: 24 }} />
         <div>
-          <div style={{ fontWeight: 700, fontSize:15.5 }}>Vérification d'identité</div>
+          <div style={{ fontWeight: 700, fontSize:15.5 }}>Vérification d&apos;identité</div>
           <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.7)' }}>{incomingBiometricCall.studentName}</div>
         </div>
         <button onClick={() => setAnsweringBiometricCall(true)}

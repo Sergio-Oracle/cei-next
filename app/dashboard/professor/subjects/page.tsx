@@ -84,7 +84,7 @@ export default function ProfessorSubjectsPage() {
             <i className="fa-solid fa-file-lines" style={{ marginRight: 10, color: 'var(--primary)' }} />
             Mes Sujets
           </h2>
-          <p>Consultez, prévisualisez et gérez vos sujets d'examen</p>
+          <p>Consultez, prévisualisez et gérez vos sujets d&apos;examen</p>
         </div>
       </div>
 
@@ -118,9 +118,9 @@ export default function ProfessorSubjectsPage() {
             <i className="fas fa-wand-magic-sparkles" style={{ color: '#d97706', fontSize: 24 }} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize:18, color: 'var(--text)', marginBottom: 4 }}>Générer avec l'IA</div>
+            <div style={{ fontWeight: 700, fontSize:18, color: 'var(--text)', marginBottom: 4 }}>Générer avec l&apos;IA</div>
             <div style={{ fontSize:14.5, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              Uploadez un cours — l'IA propose 3 sujets complets avec questions et barème
+              Uploadez un cours — l&apos;IA propose 3 sujets complets avec questions et barème
             </div>
           </div>
           <i className="fas fa-arrow-right" style={{ color: '#d97706', marginLeft: 'auto', fontSize: 17 }} />
@@ -169,14 +169,14 @@ export default function ProfessorSubjectsPage() {
                       </div>
                       <div style={{ fontWeight: 700, fontSize:18, marginBottom: 6 }}>Aucun sujet pour le moment</div>
                       <div style={{ fontSize:15.5, color: 'var(--text-muted)', marginBottom: 18 }}>
-                        Créez votre premier sujet en uploadant un fichier ou en laissant l'IA vous aider.
+                        Créez votre premier sujet en uploadant un fichier ou en laissant l&apos;IA vous aider.
                       </div>
                       <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
                         <button className="btn btn-secondary" onClick={() => router.push('/dashboard/professor/create-subject')}>
                           <i className="fas fa-upload" /> Créer un sujet
                         </button>
                         <button className="btn btn-primary" onClick={() => router.push('/dashboard/professor/suggestions')}>
-                          <i className="fas fa-wand-magic-sparkles" /> Générer avec l'IA
+                          <i className="fas fa-wand-magic-sparkles" /> Générer avec l&apos;IA
                         </button>
                       </div>
                     </div>

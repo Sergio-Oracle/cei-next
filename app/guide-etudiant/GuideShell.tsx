@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 
 export type TocItem = { id: string; icon: string; label: string }
 
@@ -89,7 +90,7 @@ export default function GuideShell({ badge, title, subtitle, toc, children }: { 
 
       <div className="topbar">
         <div className="topbar-brand"><i className="fas fa-graduation-cap" /> Centre d&apos;Examen Intelligent</div>
-        <a href="/" className="btn-back"><i className="fas fa-arrow-left" /> Retour à l&apos;accueil</a>
+        <Link href="/" className="btn-back"><i className="fas fa-arrow-left" /> Retour à l&apos;accueil</Link>
       </div>
 
       <div className="hero-doc">
@@ -110,7 +111,7 @@ export default function GuideShell({ badge, title, subtitle, toc, children }: { 
       </div>
 
       <footer className="doc-footer">
-        <p>Centre d&apos;Examen Intelligent — <a href="/">Retour à l&apos;accueil</a> · <a href="/guide-enseignant">Guide Enseignant</a> · <a href="/guide-surveillant">Guide Surveillant</a> · <a href="/conditions">Conditions d&apos;Utilisation</a></p>
+        <p>Centre d&apos;Examen Intelligent — <Link href="/">Retour à l&apos;accueil</Link> · <a href="/guide-enseignant">Guide Enseignant</a> · <a href="/guide-surveillant">Guide Surveillant</a> · <a href="/conditions">Conditions d&apos;Utilisation</a></p>
         <p style={{marginTop:16,fontSize:14.5,opacity:.8,fontWeight:600}}>Contact</p>
         <p style={{marginTop:6,fontSize:14.5,opacity:.6}}><i className="fas fa-map-marker-alt" /> Cité du Savoir – Diamniadio, Castors, avenue Bourguiba, rue n°13<br /><i className="fas fa-phone" /> +221 30 108 41 53<br /><i className="fas fa-envelope" /> visioplus@unchk.edu.sn</p>
         <p style={{marginTop:12,opacity:.6}}>© 2026 CEI — Université Cheikh Hamidou Kane (UNCHK)</p>

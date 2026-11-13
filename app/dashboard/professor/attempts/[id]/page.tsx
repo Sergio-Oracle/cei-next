@@ -271,7 +271,7 @@ export default function AttemptDetailPage() {
           <i className="fas fa-triangle-exclamation" style={{ fontSize: 31, color: '#d97706' }} />
         </div>
         <h3 style={{ margin: '0 0 8px', color: 'var(--text)' }}>Correction introuvable</h3>
-        <p style={{ color: '#64748b', marginBottom: 24 }}>Cette tentative n'existe pas ou vous n'y avez pas accès.</p>
+        <p style={{ color: '#64748b', marginBottom: 24 }}>Cette tentative n&apos;existe pas ou vous n&apos;y avez pas accès.</p>
         <Link href="/dashboard/professor/corrected"
           style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 22px', background: '#2563eb', color: 'white', borderRadius: 8, fontWeight: 600, textDecoration: 'none', fontSize:17 }}>
           <i className="fas fa-arrow-left" />Retour aux copies corrigées
@@ -526,7 +526,7 @@ export default function AttemptDetailPage() {
           <div style={{ width: 32, height: 32, background: '#f1f5f9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <i className="fas fa-pencil-alt" style={{ color: '#475569', fontSize: 16 }} />
           </div>
-          <span style={{ fontWeight: 700, fontSize:17, color: 'var(--text)' }}>Réponse de l'étudiant</span>
+          <span style={{ fontWeight: 700, fontSize:17, color: 'var(--text)' }}>Réponse de l&apos;étudiant</span>
         </div>
         <div style={{ padding: '18px 20px' }}>
           {displayAnswer && displayAnswer.trim() !== '' ? (
@@ -535,7 +535,7 @@ export default function AttemptDetailPage() {
             </pre>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize:15.5, padding: '8px 0' }}>
-              <i className="fas fa-inbox" />L'étudiant n'a pas rédigé de réponse
+              <i className="fas fa-inbox" />L&apos;étudiant n&apos;a pas rédigé de réponse
             </div>
           )}
         </div>

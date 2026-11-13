@@ -175,9 +175,9 @@ export default function OnlineCorrectionPage() {
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h2 style={{ margin: '0 0 4px', fontSize:24, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <i className="fas fa-check-circle" style={{ color: 'var(--primary)' }} />Corrections d'Examens en Ligne
+          <i className="fas fa-check-circle" style={{ color: 'var(--primary)' }} />Corrections d&apos;Examens en Ligne
         </h2>
-        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize:17 }}>Corrigez automatiquement les examens soumis avec l'IA</p>
+        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize:17 }}>Corrigez automatiquement les examens soumis avec l&apos;IA</p>
       </div>
 
       {loading ? (
@@ -340,7 +340,7 @@ export default function OnlineCorrectionPage() {
               {[...CORRECTION_STEPS].reverse().find(s => elapsed >= s.at)?.label}
             </p>
             <p style={{ fontSize:14.5, color: 'var(--text-muted)', marginTop: 12 }}>
-              Peut prendre jusqu'à 3 minutes par copie selon la charge du modèle IA.
+              Peut prendre jusqu&apos;à 3 minutes par copie selon la charge du modèle IA.
             </p>
           </div>
         </Modal>

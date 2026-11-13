@@ -18,8 +18,6 @@ export default function AdminNotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     setLoading(true)
     try {
@@ -28,6 +26,8 @@ export default function AdminNotificationsPage() {
     } catch { error('Erreur de chargement') }
     finally { setLoading(false) }
   }
+
+  useEffect(() => { load() }, [])
 
   async function markAllRead() {
     try {

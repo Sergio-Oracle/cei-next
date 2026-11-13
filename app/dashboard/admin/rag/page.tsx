@@ -189,7 +189,7 @@ function DiagnosisBox({ d, live, checkedAt }: { d: Diagnosis; live?: { datasets:
         </div>
       ) : (
         <div style={{ color: 'var(--text-muted)' }}>
-          Les volumes (bases, documents, fragments) s'affichent en direct une fois le moteur mis en service
+          Les volumes (bases, documents, fragments) s&apos;affichent en direct une fois le moteur mis en service
           {checkedAt ? ` — aucun chiffre ancien n'est conservé ici.` : '.'}
         </div>
       )}

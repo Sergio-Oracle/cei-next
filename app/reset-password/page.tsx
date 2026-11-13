@@ -43,7 +43,7 @@ function ResetPasswordInner() {
             <i className="fa-solid fa-key" style={{ fontSize: 31, color: 'white' }} />
           </div>
           <h1 style={{ fontSize: 26.5, fontWeight: 700, marginBottom: 4 }}>Réinitialiser le mot de passe</h1>
-          <p style={{ color: 'var(--text-muted)' }}>CEI – Centre d'Examen Intelligent</p>
+          <p style={{ color: 'var(--text-muted)' }}>CEI – Centre d&apos;Examen Intelligent</p>
         </div>
 
         <div className="card" style={{ padding: 32 }}>

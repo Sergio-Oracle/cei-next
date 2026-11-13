@@ -121,6 +121,25 @@ function yoloLoadJitterMs(): number {
   return Math.floor(Math.random() * 4000)
 }
 type PermStatus = 'pending' | 'loading' | 'ok' | 'error'
+
+const pCol = (s:PermStatus)=>s==='ok'?'#10b981':s==='error'?'#ef4444':'#94a3b8'
+const pBorder = (s:PermStatus)=>s==='ok'?'#10b981':s==='error'?'#ef4444':'#334155'
+
+function PermItem({icon,label,desc,status}:{icon:string;label:string;desc:string;status:PermStatus}){
+  return(
+    <div style={{display:'flex',alignItems:'center',gap:14,background:'#0f172a',border:`1px solid ${pBorder(status)}`,borderRadius:12,padding:'14px 16px'}}>
+      <div style={{width:40,height:40,minWidth:40,borderRadius:10,background:status==='ok'?'rgba(16,185,129,.15)':status==='error'?'rgba(239,68,68,.15)':'#1e293b',display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <i className={`fas ${icon}`} style={{color:pCol(status),fontSize:22}}/>
+      </div>
+      <div style={{flex:1}}><div style={{fontSize:17,fontWeight:700,color:'white',marginBottom:3}}>{label}</div><div style={{fontSize:14.5,color:status==='loading'?'#94a3b8':pCol(status)}}>{status==='loading'?'Demande en cours…':desc}</div></div>
+      <div style={{width:24,height:24,minWidth:24,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,background:status==='ok'?'#10b981':status==='error'?'#ef4444':'#334155',color:'white'}}>
+        {status==='ok'&&<i className="fas fa-check"/>}{status==='error'&&<i className="fas fa-times"/>}
+        {status==='loading'&&<i className="fas fa-spinner fa-spin" style={{fontSize:11}}/>}{status==='pending'&&<i className="fas fa-clock" style={{fontSize:11}}/>}
+      </div>
+    </div>
+  )
+}
+
 declare global { interface Window { LivekitClient: any } }
 
 /* Seuils de luminosité (0-255) en deçà/au-delà desquels la détection faciale
@@ -2141,10 +2160,10 @@ export default function ExamPage() {
       // toute la référence pour le reste de l'examen.
       const CALIBRATION_MS = 5_000
       const calibrationStart = Date.now()
-      let calibSamples: number[] = []
+      const calibSamples: number[] = []
       let ambientBaseline: number | null = null
-      let talkWindow: boolean[] = []
-      let whisperWindow: boolean[] = []
+      const talkWindow: boolean[] = []
+      const whisperWindow: boolean[] = []
       const tick = () => {
         if (sessionEndedRef.current) return
         const an = audioAnalyserRef.current
@@ -3548,7 +3567,7 @@ export default function ExamPage() {
   /* ══════════════════════════════════════════════════════════════════════ */
   if(phase==='loading') return(
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f8fafc'}}>
-      <div style={{textAlign:'center'}}><i className="fas fa-spinner fa-spin" style={{fontSize:53,color:'#2563eb',marginBottom:16,display:'block'}}/><p style={{color:'#64748b'}}>Chargement de l'examen…</p></div>
+      <div style={{textAlign:'center'}}><i className="fas fa-spinner fa-spin" style={{fontSize:53,color:'#2563eb',marginBottom:16,display:'block'}}/><p style={{color:'#64748b'}}>Chargement de l&apos;examen…</p></div>
     </div>
   )
 
@@ -3655,7 +3674,7 @@ export default function ExamPage() {
         </div>
         <h2 style={{fontSize:23,fontWeight:800,margin:'0 0 10px'}}>Ordinateur requis</h2>
         <p style={{fontSize:15.5,color:'#94a3b8',lineHeight:1.7,marginBottom:24}}>
-          Cet examen exige le partage de l'écran complet pendant toute la durée de la composition, une fonctionnalité que les téléphones et tablettes ne permettent pas.
+          Cet examen exige le partage de l&apos;écran complet pendant toute la durée de la composition, une fonctionnalité que les téléphones et tablettes ne permettent pas.
           Merci de vous connecter depuis un <strong style={{color:'#e2e8f0'}}>ordinateur (Windows, Mac ou Linux)</strong> avec un navigateur récent (Chrome, Edge ou Firefox).
         </p>
         <button onClick={()=>router.push('/dashboard/student')} style={{width:'100%',padding:13,background:'#2563eb',color:'white',border:'none',borderRadius:10,fontWeight:700,fontSize:17,cursor:'pointer'}}>
@@ -3674,8 +3693,8 @@ export default function ExamPage() {
             <i className="fas fa-camera"/>
           </div>
           <div>
-            <h2 style={{margin:'0 0 3px',fontSize:21.5,fontWeight:700,color:'#1e293b'}}>Vérification d'identité</h2>
-            <p style={{margin:0,color:'#64748b',fontSize:15.5}}>Requise avant chaque accès à l'examen</p>
+            <h2 style={{margin:'0 0 3px',fontSize:21.5,fontWeight:700,color:'#1e293b'}}>Vérification d&apos;identité</h2>
+            <p style={{margin:0,color:'#64748b',fontSize:15.5}}>Requise avant chaque accès à l&apos;examen</p>
           </div>
         </div>
 
@@ -3693,7 +3712,7 @@ export default function ExamPage() {
             <i className="fas fa-arrow-left" style={{marginRight:6}}/>Retour
           </button>
           <button onClick={()=>{ stopBiometricCamera(); setShowBiometricCall(true) }} style={{flex:1,padding:'11px',background:'#fff8ed',color:'#d97706',border:'1px solid #f59e0b',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:15}}>
-            <i className="fas fa-phone" style={{marginRight:6}}/>Besoin d'aide ?
+            <i className="fas fa-phone" style={{marginRight:6}}/>Besoin d&apos;aide ?
           </button>
         </div>
       </div>
@@ -3712,12 +3731,12 @@ export default function ExamPage() {
             <i className="fas fa-key"/>
           </div>
           <div>
-            <h2 style={{margin:'0 0 3px',fontSize:21.5,fontWeight:700,color:'#1e293b'}}>Reprise de l'examen</h2>
-            <p style={{margin:0,color:'#64748b',fontSize:15.5}}>Vous avez quitté l'examen — voici votre code personnel pour continuer</p>
+            <h2 style={{margin:'0 0 3px',fontSize:21.5,fontWeight:700,color:'#1e293b'}}>Reprise de l&apos;examen</h2>
+            <p style={{margin:0,color:'#64748b',fontSize:15.5}}>Vous avez quitté l&apos;examen — voici votre code personnel pour continuer</p>
           </div>
         </div>
         <div style={{background:'#fff8ed',border:'1px solid #f59e0b',borderRadius:10,padding:'14px 16px',marginBottom:14,fontSize:15.5,color:'#78350f',lineHeight:1.6}}>
-          Ce code vous est propre — personne d'autre ne peut l'utiliser. Copiez-le, collez-le dans le champ ci-dessous, puis cliquez sur « Reprendre ». Votre surveillant sera automatiquement informé de votre retour.
+          Ce code vous est propre — personne d&apos;autre ne peut l&apos;utiliser. Copiez-le, collez-le dans le champ ci-dessous, puis cliquez sur « Reprendre ». Votre surveillant sera automatiquement informé de votre retour.
         </div>
         <label style={{fontSize:14.5,fontWeight:700,color:'#334155',display:'block',marginBottom:8}}>1. Votre code (à copier)</label>
         <div style={{display:'flex',gap:8,marginBottom:18}}>
@@ -3757,7 +3776,7 @@ export default function ExamPage() {
             <i className="fas fa-shield-alt"/>
           </div>
           <div>
-            <h2 style={{margin:'0 0 3px',fontSize:21.5,fontWeight:700,color:'#1e293b'}}>Examen Surveillé — Attestation d'honneur</h2>
+            <h2 style={{margin:'0 0 3px',fontSize:21.5,fontWeight:700,color:'#1e293b'}}>Examen Surveillé — Attestation d&apos;honneur</h2>
             <p style={{margin:0,color:'#64748b',fontSize:15.5}}>Lisez les conditions avant de démarrer</p>
           </div>
         </div>
@@ -3797,11 +3816,11 @@ export default function ExamPage() {
         {/* Attestation d'honneur */}
         <div style={{background:'#fff8ed',border:'1px solid #f59e0b',borderRadius:10,padding:'14px 16px',marginBottom:18}}>
           <p style={{margin:'0 0 4px',fontSize:15.5,fontWeight:700,color:'#92400e'}}>
-            <i className="fas fa-file-signature" style={{marginRight:6}}/>Attestation sur l'honneur
+            <i className="fas fa-file-signature" style={{marginRight:6}}/>Attestation sur l&apos;honneur
           </p>
           <p style={{margin:0,fontSize:14.5,color:'#78350f',lineHeight:1.65}}>
             Je soussigné(e) <strong>{user?.full_name}</strong>, certifie que je composerai cet examen seul(e),
-            sans aide extérieure, sans document non autorisé, et sans aucun outil d'intelligence artificielle.
+            sans aide extérieure, sans document non autorisé, et sans aucun outil d&apos;intelligence artificielle.
             Je reconnais que tout manquement à ces règles constitue une fraude académique passible de sanctions.
           </p>
         </div>
@@ -3832,7 +3851,7 @@ export default function ExamPage() {
             style={{flex:2,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:(starting||otherApps.length>0)?'not-allowed':'pointer',opacity:(starting||otherApps.length>0)?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:17}}>
             {starting
               ?<><i className="fas fa-spinner fa-spin"/>Démarrage en cours…</>
-              :<><i className="fas fa-check"/>J'accepte et je démarre l'examen</>}
+              :<><i className="fas fa-check"/>J&apos;accepte et je démarre l&apos;examen</>}
           </button>
         </div>
       </div>
@@ -3842,29 +3861,15 @@ export default function ExamPage() {
   /* ── PERMISSIONS ──────────────────────────────────────────────────────── */
   if(phase==='permissions') {
     const isHttp=typeof window!=='undefined'&&window.location.protocol==='http:'&&window.location.hostname!=='localhost'
-    const pCol=(s:PermStatus)=>s==='ok'?'#10b981':s==='error'?'#ef4444':'#94a3b8'
-    const pBorder=(s:PermStatus)=>s==='ok'?'#10b981':s==='error'?'#ef4444':'#334155'
-    const PI=({icon,label,desc,status}:{icon:string;label:string;desc:string;status:PermStatus})=>(
-      <div style={{display:'flex',alignItems:'center',gap:14,background:'#0f172a',border:`1px solid ${pBorder(status)}`,borderRadius:12,padding:'14px 16px'}}>
-        <div style={{width:40,height:40,minWidth:40,borderRadius:10,background:status==='ok'?'rgba(16,185,129,.15)':status==='error'?'rgba(239,68,68,.15)':'#1e293b',display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <i className={`fas ${icon}`} style={{color:pCol(status),fontSize:22}}/>
-        </div>
-        <div style={{flex:1}}><div style={{fontSize:17,fontWeight:700,color:'white',marginBottom:3}}>{label}</div><div style={{fontSize:14.5,color:status==='loading'?'#94a3b8':pCol(status)}}>{status==='loading'?'Demande en cours…':desc}</div></div>
-        <div style={{width:24,height:24,minWidth:24,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,background:status==='ok'?'#10b981':status==='error'?'#ef4444':'#334155',color:'white'}}>
-          {status==='ok'&&<i className="fas fa-check"/>}{status==='error'&&<i className="fas fa-times"/>}
-          {status==='loading'&&<i className="fas fa-spinner fa-spin" style={{fontSize:11}}/>}{status==='pending'&&<i className="fas fa-clock" style={{fontSize:11}}/>}
-        </div>
-      </div>
-    )
     return(
       <div style={{minHeight:'100vh',background:'#0f172a',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
         <div style={{background:'#1e293b',border:'1px solid #334155',borderRadius:20,padding:'40px 36px',maxWidth:500,width:'100%',color:'white'}}>
           <h2 style={{fontSize:24,fontWeight:800,margin:'0 0 8px'}}>Accès requis</h2>
-          <p style={{fontSize:15.5,color:'#94a3b8',lineHeight:1.6,marginBottom:28}}>Autorisez les 3 accès ci-dessous pour démarrer l'examen.</p>
+          <p style={{fontSize:15.5,color:'#94a3b8',lineHeight:1.6,marginBottom:28}}>Autorisez les 3 accès ci-dessous pour démarrer l&apos;examen.</p>
           <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:32}}>
-            <PI icon="fa-video"      label="Caméra"               desc={permCam==='ok'?'Accès accordé':permCam==='error'?'Accès refusé':'Obligatoire — surveillance vidéo'}        status={permCam}/>
-            <PI icon="fa-microphone" label="Microphone"           desc={permMic==='ok'?'Accès accordé':permMic==='error'?'Accès refusé':'Obligatoire — surveillance audio'}         status={permMic}/>
-            <PI icon="fa-desktop"    label="Partage d'écran entier" desc={permScreen==='ok'?'Accès accordé':permScreen==='error'?'Refusé ou fenêtre sélectionnée':'Sélectionnez « Écran entier »'} status={permScreen}/>
+            <PermItem icon="fa-video"      label="Caméra"               desc={permCam==='ok'?'Accès accordé':permCam==='error'?'Accès refusé':'Obligatoire — surveillance vidéo'}        status={permCam}/>
+            <PermItem icon="fa-microphone" label="Microphone"           desc={permMic==='ok'?'Accès accordé':permMic==='error'?'Accès refusé':'Obligatoire — surveillance audio'}         status={permMic}/>
+            <PermItem icon="fa-desktop"    label="Partage d'écran entier" desc={permScreen==='ok'?'Accès accordé':permScreen==='error'?'Refusé ou fenêtre sélectionnée':'Sélectionnez « Écran entier »'} status={permScreen}/>
           </div>
           <button onClick={requestAllPermissions} disabled={permBusy||isHttp}
             style={{width:'100%',padding:15,background:permBusy||isHttp?'#334155':'#2563eb',color:permBusy||isHttp?'#64748b':'white',border:'none',borderRadius:12,fontSize:18,fontWeight:700,cursor:permBusy||isHttp?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
@@ -3925,8 +3930,8 @@ export default function ExamPage() {
                 <i className="fas fa-house-signal" style={{color:'#3b82f6'}}/> Vérification de votre environnement
               </h2>
               <p style={{fontSize:15.5,color:'#94a3b8',lineHeight:1.6,marginBottom:20}}>
-                Tournez lentement votre caméra (ou votre ordinateur) pour montrer l'ensemble de la pièce autour de vous,
-                afin de confirmer qu'aucune autre personne n'est présente.
+                Tournez lentement votre caméra (ou votre ordinateur) pour montrer l&apos;ensemble de la pièce autour de vous,
+                afin de confirmer qu&apos;aucune autre personne n&apos;est présente.
               </p>
               <div style={{borderRadius:14,overflow:'hidden',background:'#000',position:'relative',aspectRatio:'4/3',marginBottom:18}}>
                 <video ref={el=>{scanVideoRef.current=el;if(el&&camStream.current&&el.srcObject!==camStream.current)el.srcObject=camStream.current}}
@@ -3981,7 +3986,7 @@ export default function ExamPage() {
                 {envScanMaxPeople} personnes détectées dans la pièce
               </div>
               <p style={{fontSize:15.5,color:'#fca5a5',margin:0,lineHeight:1.5}}>
-                Assurez-vous d'être seul(e) dans la pièce avant de commencer l'examen, puis relancez la vérification.
+                Assurez-vous d&apos;être seul(e) dans la pièce avant de commencer l&apos;examen, puis relancez la vérification.
               </p>
             </div>
           )}
@@ -3999,13 +4004,13 @@ export default function ExamPage() {
             <>
               {envScanEnabled && (
                 <div style={{display:'flex',alignItems:'center',gap:10,color:'#10b981',fontSize:17,fontWeight:700,marginBottom:8}}>
-                  <i className="fas fa-check-circle"/> Vérifié — cliquez pour démarrer l'examen en plein écran
+                  <i className="fas fa-check-circle"/> Vérifié — cliquez pour démarrer l&apos;examen en plein écran
                 </div>
               )}
               {envScanObjects.length>0 && (
                 <div style={{background:'rgba(245,158,11,.12)',border:'1px solid rgba(245,158,11,.3)',borderRadius:10,padding:'10px 14px',marginBottom:8,fontSize:14.5,color:'#fcd34d'}}>
                   <i className="fas fa-triangle-exclamation" style={{marginRight:6}}/>
-                  Objet(s) repéré(s) dans la pièce : {envScanObjects.join(', ')} — signalé à votre surveillant, veillez à ne pas l'utiliser pendant l'examen.
+                  Objet(s) repéré(s) dans la pièce : {envScanObjects.join(', ')} — signalé à votre surveillant, veillez à ne pas l&apos;utiliser pendant l&apos;examen.
                 </div>
               )}
               {/* Caméra secondaire — proposée ICI, avant l'accès à l'examen
@@ -4059,7 +4064,7 @@ export default function ExamPage() {
         <i className="fas fa-mug-hot" style={{fontSize:53,color:'#38bdf8',marginBottom:20,display:'block'}}/>
         <h2 style={{color:'white',fontSize:24,fontWeight:700,marginBottom:10}}>En pause</h2>
         <p style={{color:'rgba(255,255,255,.65)',fontSize:15.5,lineHeight:1.6,marginBottom:24}}>
-          La surveillance est suspendue et votre temps d'examen est reporté d'autant. Reprenez quand vous êtes prêt·e.
+          La surveillance est suspendue et votre temps d&apos;examen est reporté d&apos;autant. Reprenez quand vous êtes prêt·e.
         </p>
         <div style={{fontSize:44,fontWeight:700,color:'#38bdf8',fontVariantNumeric:'tabular-nums',marginBottom:28}}>
           {fmtTimer(breakSecondsLeft)}
@@ -4199,7 +4204,7 @@ export default function ExamPage() {
         {!networkOffline && networkQuality==='poor' && (
           <div style={{position:'fixed',top:0,left:0,right:0,zIndex:9998,background:'#fef3c7',color:'#92400e',padding:'6px 16px',textAlign:'center',fontSize:14.5,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
             <i className="fas fa-signal" style={{opacity:.85}} />
-            Connexion lente détectée — qualité vidéo réduite automatiquement pour préserver l'enregistrement de vos réponses.
+            Connexion lente détectée — qualité vidéo réduite automatiquement pour préserver l&apos;enregistrement de vos réponses.
           </div>
         )}
 
@@ -4257,7 +4262,7 @@ export default function ExamPage() {
           {identityUnderReview && (
             <div style={{margin:'0 12px 8px',padding:'8px 10px',borderRadius:8,background:'#fef3c7',border:'1px solid #fde68a',color:'#92400e',fontSize:12.5,lineHeight:1.4,display:'flex',gap:8,alignItems:'flex-start'}}>
               <i className="fas fa-user-shield" style={{marginTop:1}}/>
-              <span>Votre identité est en cours de vérification par un surveillant. Continuez de composer normalement — cela n'interrompt pas votre examen.</span>
+              <span>Votre identité est en cours de vérification par un surveillant. Continuez de composer normalement — cela n&apos;interrompt pas votre examen.</span>
             </div>
           )}
           {/* Vidéo enseignant — toujours dans le DOM pour que le ref soit disponible */}
@@ -4314,7 +4319,7 @@ export default function ExamPage() {
           {/* Contacter enseignant */}
           <div style={{padding:'8px 12px',borderTop:'1px solid #e2e8f0'}}>
             <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px',color:'#64748b',marginBottom:6}}>
-              <i className="fas fa-comment-dots"/> Contacter l'enseignant
+              <i className="fas fa-comment-dots"/> Contacter l&apos;enseignant
             </div>
             <textarea value={msgText} onChange={e=>setMsgText(e.target.value)} placeholder="Question ou réclamation…"
               rows={2}
@@ -4533,7 +4538,7 @@ export default function ExamPage() {
             </button>
             <button onClick={()=>setShowReview(true)} disabled={submitting}
               style={{padding:'10px 24px',background:'#10b981',color:'white',border:'none',borderRadius:8,fontWeight:700,fontSize:17,cursor:submitting?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:7}}>
-              <i className="fas fa-paper-plane"/> Soumettre l'examen
+              <i className="fas fa-paper-plane"/> Soumettre l&apos;examen
             </button>
           </div>
         </div>
@@ -4597,7 +4602,7 @@ export default function ExamPage() {
                   {structuredQs.length>0
                     ? `${structAnswered} / ${structuredQs.length} question(s) répondue(s)`
                     : `${parsedAnswered} / ${allQBlocks.length} question(s) répondue(s)`}
-                  {' '}— vérifiez qu'aucune réponse n'a été oubliée avant de confirmer.
+                  {' '}— vérifiez qu&apos;aucune réponse n&apos;a été oubliée avant de confirmer.
                 </p>
               </div>
               <div style={{overflowY:'auto',flex:1,padding:'20px 26px',background:'#f8fafc'}}>
@@ -4653,7 +4658,7 @@ export default function ExamPage() {
               <h2 style={{fontSize:24,fontWeight:700,marginBottom:12}}>Session terminée</h2>
               <p style={{fontSize:17,color:'#475569',marginBottom:24,lineHeight:1.5}}>Vous avez été exclu de cet examen.<br/><strong>Votre tentative sera notée 0.</strong></p>
               <button onClick={()=>router.push('/dashboard/student')} style={{padding:'10px 28px',background:'#ef4444',color:'white',border:'none',borderRadius:8,fontWeight:700,cursor:'pointer',fontSize:17}}>
-                <i className="fas fa-arrow-left" style={{marginRight:6}}/>Retourner à l'application
+                <i className="fas fa-arrow-left" style={{marginRight:6}}/>Retourner à l&apos;application
               </button>
             </div>
           </div>
@@ -4747,7 +4752,7 @@ function Modal({border,icon,iconBg,iconColor,title,titleColor,msg,msgColor,bold,
         <div style={{width:64,height:64,margin:'0 auto 20px',background:iconBg,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:35,color:iconColor}}><i className={`fas ${icon}`}/></div>
         <h2 style={{fontSize:24,fontWeight:700,marginBottom:12,color:titleColor}}>{title}</h2>
         <p style={{fontSize:17,color:msgColor||'#475569',marginBottom:24,lineHeight:1.5,fontWeight:bold?600:400}}>{msg}</p>
-        <button onClick={onClose} style={{padding:'10px 28px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:700,cursor:'pointer',fontSize:17}}>J'ai compris</button>
+        <button onClick={onClose} style={{padding:'10px 28px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:700,cursor:'pointer',fontSize:17}}>J&apos;ai compris</button>
       </div>
     </div>
   )

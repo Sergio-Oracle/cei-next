@@ -36,7 +36,7 @@ export default function AdminDashboard() {
     <div>
       <div className="page-header">
         <h2><i className="fa-solid fa-gauge" style={{ marginRight: 10, color: 'var(--primary)' }} />Tableau de bord</h2>
-        <p>Vue d'ensemble de la plateforme CEI</p>
+        <p>Vue d&apos;ensemble de la plateforme CEI</p>
       </div>
 
       {/* Stats */}

@@ -261,7 +261,7 @@ export default function CorrectedPage() {
                           {!paper.is_published && (
                             <Link href={`/dashboard/professor/exams/${paper.exam_id}`}
                               style={{ fontSize:13, color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>
-                              Publier l'examen →
+                              Publier l&apos;examen →
                             </Link>
                           )}
                         </span>
@@ -339,7 +339,7 @@ export default function CorrectedPage() {
       {exampleModal && !createdExample && (
         <Modal title="Créer une copie-exemple" onClose={() => !creatingExample && setExampleModal(null)} maxWidth={480}>
           <p style={{ fontSize:16, color: 'var(--text-muted, #64748b)', marginBottom: 18 }}>
-            L'IA va anonymiser le contenu de la copie de <b>{exampleModal.student_name}</b> (nom, prénom et toute mention identifiante retirés) pour un partage en séance de restitution. Vous pourrez relire et modifier le texte avant de le publier au groupe.
+            L&apos;IA va anonymiser le contenu de la copie de <b>{exampleModal.student_name}</b> (nom, prénom et toute mention identifiante retirés) pour un partage en séance de restitution. Vous pourrez relire et modifier le texte avant de le publier au groupe.
           </p>
           {creatingExample ? (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>

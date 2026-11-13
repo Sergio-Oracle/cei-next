@@ -83,7 +83,7 @@ export default function ExamCalendar({ apiPath = '/api/online_exams', role = 'ad
       <div className="page-header">
         <div>
           <h2><i className="fas fa-calendar-alt" style={{ marginRight: 10, color: 'var(--primary)' }} />Calendrier des Examens</h2>
-          <p>Vue d'ensemble des examens planifiés</p>
+          <p>Vue d&apos;ensemble des examens planifiés</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => setView('calendar')} className={`btn ${view === 'calendar' ? 'btn-primary' : 'btn-secondary'}`}>

@@ -16,14 +16,6 @@ export default function StudentExamsPage() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const refreshRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  useEffect(() => {
-    load()
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-      if (refreshRef.current) clearInterval(refreshRef.current)
-    }
-  }, []) // eslint-disable-line
-
   async function load() {
     setLoading(true)
     try {
@@ -50,6 +42,14 @@ export default function StudentExamsPage() {
     } catch { error('Erreur de chargement des examens') }
     finally { setLoading(false) }
   }
+
+  useEffect(() => {
+    load()
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+      if (refreshRef.current) clearInterval(refreshRef.current)
+    }
+  }, []) // eslint-disable-line
 
   return (
     <div>
@@ -78,7 +78,7 @@ export default function StudentExamsPage() {
         <div style={{ textAlign: 'center', padding: '64px 24px', background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)' }}>
           <i className="fas fa-laptop-code" style={{ fontSize: 57, color: '#cbd5e1', display: 'block', marginBottom: 16 }} />
           <h3 style={{ color: '#475569', fontSize:21.5, fontWeight: 600, margin: '0 0 8px' }}>Aucun examen disponible</h3>
-          <p style={{ color: '#94a3b8', fontSize:17, margin: 0 }}>Vos examens apparaîtront ici lorsqu'ils seront planifiés.</p>
+          <p style={{ color: '#94a3b8', fontSize:17, margin: 0 }}>Vos examens apparaîtront ici lorsqu&apos;ils seront planifiés.</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>

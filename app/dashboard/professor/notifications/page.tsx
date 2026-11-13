@@ -202,7 +202,7 @@ export default function ProfessorNotificationsPage() {
         <div>
           <h1 style={{ fontSize:24, fontWeight: 800, color: '#0f172a', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <i className="fas fa-bell" style={{ color: '#2563eb' }} />
-            Notifications d'Incidents
+            Notifications d&apos;Incidents
           </h1>
           <p style={{ color: '#64748b', margin: 0, fontSize:17 }}>Incidents détectés lors de vos examens dans les dernières 24h</p>
         </div>

@@ -564,7 +564,7 @@ export default function AdminExamDetailPage() {
       {rescheduleModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 28, width: 380, maxWidth: '95vw' }}>
-            <h3 style={{ marginBottom: 20 }}><i className="fas fa-calendar-days" /> Reprogrammer l'examen</h3>
+            <h3 style={{ marginBottom: 20 }}><i className="fas fa-calendar-days" /> Reprogrammer l&apos;examen</h3>
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 6 }}>Nouvelle date/heure de début</label>
               <input type="datetime-local" className="form-control" value={rescheduleForm.start_time}
@@ -590,7 +590,7 @@ export default function AdminExamDetailPage() {
       {compositionModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 28, width: 420, maxWidth: '95vw' }}>
-            <h3 style={{ marginBottom: 20 }}><i className="fas fa-random" /> Composition de l'examen</h3>
+            <h3 style={{ marginBottom: 20 }}><i className="fas fa-random" /> Composition de l&apos;examen</h3>
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 6 }}>Questions par page</label>
               <input type="number" min={0} max={50} className="form-control"
@@ -605,7 +605,7 @@ export default function AdminExamDetailPage() {
                 style={{ width: 'auto', marginTop: 3, flexShrink: 0 }} />
               <div>
                 <label htmlFor="comp_randomize_admin" style={{ fontSize:15.5, fontWeight: 600, cursor: 'pointer' }}>Ordre des questions aléatoire</label>
-                <small style={{ color: 'var(--text-muted)', fontSize:14.5, display: 'block' }}>Chaque étudiant reçoit un ordre différent, stable une fois l'examen commencé</small>
+                <small style={{ color: 'var(--text-muted)', fontSize:14.5, display: 'block' }}>Chaque étudiant reçoit un ordre différent, stable une fois l&apos;examen commencé</small>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
@@ -645,7 +645,7 @@ export default function AdminExamDetailPage() {
           <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 28, width: 420, maxWidth: '95vw' }}>
             <h3 style={{ marginBottom: 20, color: '#ef4444' }}><i className="fas fa-ban" /> Exclure {banModal.student_name}</h3>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 6 }}>Motif d'exclusion</label>
+              <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 6 }}>Motif d&apos;exclusion</label>
               <textarea value={banReason} onChange={e => setBanReason(e.target.value)} rows={3} placeholder="Fraude, comportement suspect…"
                 style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #ef4444', fontSize:17, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box', resize: 'vertical' }} />
             </div>

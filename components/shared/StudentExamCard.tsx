@@ -51,7 +51,7 @@ export default function ExamCard({ exam }: { exam: OnlineExam }) {
     if (att.status === 'in_progress' && canCompose) {
       actionNode = (
         <Link href={`/exam/${exam.id}`} style={btnStyle('#f59e0b', 'white')}>
-          <i className="fas fa-redo" /> Reprendre l'examen
+          <i className="fas fa-redo" /> Reprendre l&apos;examen
         </Link>
       )
     } else if (att.corrected_at && att.score !== null) {
@@ -75,7 +75,7 @@ export default function ExamCard({ exam }: { exam: OnlineExam }) {
     } else if (att.status === 'banned') {
       actionNode = (
         <span style={{ color: '#ef4444', fontSize:15.5, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <i className="fas fa-ban" /> Exclu de l'examen
+          <i className="fas fa-ban" /> Exclu de l&apos;examen
         </span>
       )
     } else if (att.submitted_at) {

@@ -237,7 +237,7 @@ export default function ProfessorReclamationsPage() {
               {selected.ia_proposed_status === 'resolved' ? 'Accepter' : 'Rejeter'}
               {selected.ia_proposed_score != null && ` — Note proposée : ${fmtScore(selected.ia_proposed_score)}/20`}
               {selected.ia_proposed_reason && <div style={{ marginTop: 4, fontSize:15.5 }}>{selected.ia_proposed_reason}</div>}
-              <div style={{ marginTop: 6, fontSize:14.5, opacity: .8 }}>Pré-remplie ci-dessous — modifiez-la si vous n'êtes pas d'accord.</div>
+              <div style={{ marginTop: 6, fontSize:14.5, opacity: .8 }}>Pré-remplie ci-dessous — modifiez-la si vous n&apos;êtes pas d&apos;accord.</div>
             </div>
           )}
           <div className="form-group">
@@ -288,7 +288,7 @@ export default function ProfessorReclamationsPage() {
               {[...AI_STEPS].reverse().find(s => aiElapsed >= s.at)?.label}
             </p>
             <p style={{ fontSize:14.5, color: 'var(--text-muted)', marginTop: 12 }}>
-              Peut prendre jusqu'à 3 minutes selon la charge du modèle IA — vous pouvez fermer cette fenêtre, l'analyse continue en arrière-plan.
+              Peut prendre jusqu&apos;à 3 minutes selon la charge du modèle IA — vous pouvez fermer cette fenêtre, l&apos;analyse continue en arrière-plan.
             </p>
           </div>
         </Modal>
@@ -310,7 +310,7 @@ export default function ProfessorReclamationsPage() {
             <div style={{ fontSize:20.5, fontWeight: 700, color: tint }}>
               {accepted ? 'Réclamation à accepter' : 'Réclamation à rejeter'}
             </div>
-            <div style={{ fontSize:14.5, color: 'var(--text-muted)', marginTop: 2 }}>Proposition de l'IA — {aiResult.student_name ?? `Étudiant #${aiResult.student_id}`}</div>
+            <div style={{ fontSize:14.5, color: 'var(--text-muted)', marginTop: 2 }}>Proposition de l&apos;IA — {aiResult.student_name ?? `Étudiant #${aiResult.student_id}`}</div>
           </div>
 
           <div style={{ marginBottom: 16 }}>

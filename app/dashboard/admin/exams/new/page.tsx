@@ -154,7 +154,7 @@ export default function NewExamPage() {
 
             {/* Titre */}
             <div style={{ gridColumn: '1 / -1', marginBottom: 18 }}>
-              <label style={lbl}><i className="fas fa-heading" /> Titre de l'Examen <span style={{ color: '#ef4444' }}>*</span></label>
+              <label style={lbl}><i className="fas fa-heading" /> Titre de l&apos;Examen <span style={{ color: '#ef4444' }}>*</span></label>
               <input type="text" value={form.title} onChange={e => set('title', e.target.value)} placeholder="Ex: Examen Final Blockchain" required style={inp} />
             </div>
 
@@ -207,7 +207,7 @@ export default function NewExamPage() {
               <input type="checkbox" id="a_randomize" checked={form.randomize_questions} onChange={e => set('randomize_questions', e.target.checked)} style={{ width: 'auto', marginTop: 3, flexShrink: 0 }} />
               <div>
                 <label htmlFor="a_randomize" style={lbl}><i className="fas fa-random" /> Ordre des questions aléatoire</label>
-                <small style={{ color: 'var(--text-muted)', fontSize:14.5, display: 'block' }}>Chaque étudiant reçoit un ordre différent (QCM/Vrai-Faux/Appariement et leurs choix) — stable une fois l'examen commencé</small>
+                <small style={{ color: 'var(--text-muted)', fontSize:14.5, display: 'block' }}>Chaque étudiant reçoit un ordre différent (QCM/Vrai-Faux/Appariement et leurs choix) — stable une fois l&apos;examen commencé</small>
               </div>
             </div>
           </div>
@@ -270,7 +270,7 @@ export default function NewExamPage() {
                 <label htmlFor="ban_devtools" style={{ fontSize:15.5, fontWeight: 600, color: '#0f172a', cursor: 'pointer', margin: 0, display: 'block' }}>
                   <i className="fas fa-terminal" style={{ color: '#64748b' }} /> {form.auto_ban_enabled ? 'Bannir immédiatement' : 'Alerter'} si outils développeur ouverts
                 </label>
-                <small style={{ color: '#64748b' }}>Tentative d'accès aux outils développeur détectée (F12, Ctrl+Shift+I…)</small>
+                <small style={{ color: '#64748b' }}>Tentative d&apos;accès aux outils développeur détectée (F12, Ctrl+Shift+I…)</small>
               </div>
             </div>
 
@@ -322,7 +322,7 @@ export default function NewExamPage() {
             </div>
             {form.enable_calculator && (
               <p style={{ margin: '-8px 0 16px', fontSize:14, color: '#64748b' }}>
-                <i className="fas fa-info-circle" style={{ marginRight: 4 }} />Les étudiants pourront utiliser une calculatrice scientifique directement sur la page d'examen — utile pour éviter le recours à une calculatrice physique ou un téléphone pendant la composition.
+                <i className="fas fa-info-circle" style={{ marginRight: 4 }} />Les étudiants pourront utiliser une calculatrice scientifique directement sur la page d&apos;examen — utile pour éviter le recours à une calculatrice physique ou un téléphone pendant la composition.
               </p>
             )}
             {form.allow_secondary_camera && (
@@ -351,7 +351,7 @@ export default function NewExamPage() {
                 <i className="fas fa-robot" style={{ color: '#64748b' }} /> Activer la correction automatique par IA
               </label>
               <small style={{ color: '#64748b', lineHeight: 1.5, display: 'block', marginTop: 3 }}>
-                Dès qu'un étudiant soumet sa copie, l'IA la corrige automatiquement.<br />
+                Dès qu&apos;un étudiant soumet sa copie, l&apos;IA la corrige automatiquement.<br />
                 <strong>Désactivé par défaut</strong> — le professeur peut toujours réviser ou corriger manuellement après.
               </small>
             </div>
@@ -366,7 +366,7 @@ export default function NewExamPage() {
               onChange={e => set('scheduled_correction_at', e.target.value)}
               style={{ width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize:16, boxSizing: 'border-box' }} />
             <small style={{ color: '#64748b', lineHeight: 1.5, display: 'block', marginTop: 6 }}>
-              À l'heure indiquée, toutes les copies soumises et pas encore corrigées de cet examen seront corrigées automatiquement en une fois — utile pour attendre la fin de TOUTES les sessions avant de lancer la correction en bloc, plutôt que copie par copie. Indépendant de la correction automatique immédiate ci-dessus.
+              À l&apos;heure indiquée, toutes les copies soumises et pas encore corrigées de cet examen seront corrigées automatiquement en une fois — utile pour attendre la fin de TOUTES les sessions avant de lancer la correction en bloc, plutôt que copie par copie. Indépendant de la correction automatique immédiate ci-dessus.
             </small>
           </div>
         </div>
@@ -379,7 +379,7 @@ export default function NewExamPage() {
           <button type="submit" disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: loading ? '#93c5fd' : '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontSize:17, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {loading
               ? <><i className="fas fa-spinner fa-spin" /> Création...</>
-              : <><i className="fas fa-check" /> Créer l'Examen</>
+              : <><i className="fas fa-check" /> Créer l&apos;Examen</>
             }
           </button>
         </div>

@@ -151,7 +151,7 @@ export default function AnswerBiometricCallModal({ examId, studentId, studentNam
         <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="fas fa-camera" style={{ color: '#60a5fa' }} />
           <div>
-            <div style={{ color: 'white', fontWeight: 700, fontSize:17 }}>Vérification d'identité — {studentName}</div>
+            <div style={{ color: 'white', fontWeight: 700, fontSize:17 }}>Vérification d&apos;identité — {studentName}</div>
             <div style={{ color: 'rgba(255,255,255,.5)', fontSize:13 }}>{examTitle}</div>
           </div>
         </div>
@@ -187,12 +187,12 @@ export default function AnswerBiometricCallModal({ examId, studentId, studentNam
         <div style={{ padding: '12px 20px 18px', borderTop: '1px solid rgba(255,255,255,.08)' }}>
           {verified ? (
             <div style={{ textAlign: 'center', color: '#6ee7b7', fontWeight: 700, fontSize:15 }}>
-              <i className="fas fa-circle-check" style={{ marginRight: 8 }} />Identité validée — l'étudiant peut réessayer d'accéder à l'examen
+              <i className="fas fa-circle-check" style={{ marginRight: 8 }} />Identité validée — l&apos;étudiant peut réessayer d&apos;accéder à l&apos;examen
             </div>
           ) : (
             <button onClick={() => { void confirmIdentity() }} disabled={verifying}
               style={{ width: '100%', background: 'rgba(37,99,235,.25)', color: '#93c5fd', border: '1px solid rgba(37,99,235,.4)', borderRadius: 8, padding: '9px', cursor: 'pointer', fontWeight: 700, fontSize:14.5 }}>
-              <i className={`fas ${verifying ? 'fa-spinner fa-spin' : 'fa-check'}`} /> Valider l'identité (après vérification pendant l'appel)
+              <i className={`fas ${verifying ? 'fa-spinner fa-spin' : 'fa-check'}`} /> Valider l&apos;identité (après vérification pendant l&apos;appel)
             </button>
           )}
         </div>

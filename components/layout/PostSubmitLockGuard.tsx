@@ -32,7 +32,7 @@ function formatRemaining(ms: number): string {
 export default function PostSubmitLockGuard() {
   const { user } = useAuth()
   const [status, setStatus] = useState<LockStatus | null>(null)
-  const [now, setNow] = useState(Date.now())
+  const [now, setNow] = useState(() => Date.now())
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
 

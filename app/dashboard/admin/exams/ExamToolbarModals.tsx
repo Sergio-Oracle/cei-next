@@ -67,6 +67,15 @@ interface StatsData {
   avg_risk?: number; high_risk_count?: number; pre_sig_rate?: number;
 }
 
+function Kpi({ label, value, color = '#1e293b' }: { label: string; value?: string | number | null; color?: string }) {
+  return (
+    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 16px', flex: 1, minWidth: 100 }}>
+      <div style={{ fontSize:24, fontWeight: 800, color: color ?? '#1e293b' }}>{value ?? '—'}</div>
+      <div style={{ fontSize:12, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 3 }}>{label}</div>
+    </div>
+  )
+}
+
 export function StatsModal({ examId, examTitle, onClose }: { examId: number; examTitle: string; onClose: () => void }) {
   const { error }               = useToast()
   const [data, setData]         = useState<StatsData | null>(null)
@@ -94,15 +103,6 @@ export function StatsModal({ examId, examTitle, onClose }: { examId: number; exa
     return (
       <div style={{ height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden', marginTop: 3, flex: 1 }}>
         <div style={{ width: `${Math.min(pct, 100)}%`, height: '100%', background: color, borderRadius: 4 }} />
-      </div>
-    )
-  }
-
-  function Kpi({ label, value, color = '#1e293b' }: { label: string; value?: string | number | null; color?: string }) {
-    return (
-      <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 16px', flex: 1, minWidth: 100 }}>
-        <div style={{ fontSize:24, fontWeight: 800, color: color ?? '#1e293b' }}>{value ?? '—'}</div>
-        <div style={{ fontSize:12, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 3 }}>{label}</div>
       </div>
     )
   }

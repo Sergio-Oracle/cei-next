@@ -97,7 +97,7 @@ export default function VerificationPostePage() {
   const micStartRef = useRef(0)
   const micSmoothRef = useRef(0)
   const [micBars, setMicBars] = useState<number[]>(Array(8).fill(0))
-  const micBarPhaseRef = useRef<number[]>(Array.from({ length: 8 }, () => Math.random() * 10))
+  const [micBarPhase] = useState<number[]>(() => Array.from({ length: 8 }, () => Math.random() * 10))   // tirage unique au premier rendu
 
   const [screenStatus, setScreenStatus] = useState<Status>(screenShareSupported() ? 'idle' : 'error')
   const [screenMsg, setScreenMsg] = useState(screenShareSupported() ? '' : "Le partage d'écran complet n'est pas disponible sur cet appareil (souvent le cas sur mobile) — un ordinateur est nécessaire pour composer.")
@@ -198,7 +198,7 @@ export default function VerificationPostePage() {
           // vivant façon égaliseur plutôt que 8 barres qui bougent à
           // l'identique.
           const now = Date.now()
-          setMicBars(micBarPhaseRef.current.map(phase => {
+          setMicBars(micBarPhase.map(phase => {
             const wobble = 0.55 + 0.45 * Math.sin(now / 180 + phase * 10)
             return Math.max(0.04, Math.min(1, smoothed * (0.5 + wobble * 0.9)))
           }))
@@ -316,7 +316,7 @@ export default function VerificationPostePage() {
       <div className="page-header">
         <div>
           <h2><i className="fas fa-shield-halved" style={{ marginRight: 10, color: 'var(--primary)' }} />Vérifier mon poste</h2>
-          <p>Testez votre caméra, micro, partage d'écran et connexion avant le jour de l'examen — pas besoin d'attendre l'examen blanc pour savoir si tout fonctionne.</p>
+          <p>Testez votre caméra, micro, partage d&apos;écran et connexion avant le jour de l&apos;examen — pas besoin d&apos;attendre l&apos;examen blanc pour savoir si tout fonctionne.</p>
         </div>
       </div>
 
@@ -361,12 +361,12 @@ export default function VerificationPostePage() {
         {/* Partage d'écran */}
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 17 }}><i className="fas fa-desktop" style={{ marginRight: 8, color: 'var(--primary)' }} />Partage d'écran</h3>
+            <h3 style={{ margin: 0, fontSize: 17 }}><i className="fas fa-desktop" style={{ marginRight: 8, color: 'var(--primary)' }} />Partage d&apos;écran</h3>
             <StatusBadge status={screenStatus} />
           </div>
-          <p style={{ fontSize: 14.5, color: 'var(--text-muted)', marginBottom: 12 }}>Le jour de l'examen, vous devrez partager votre <strong>écran entier</strong> (pas juste un onglet).</p>
+          <p style={{ fontSize: 14.5, color: 'var(--text-muted)', marginBottom: 12 }}>Le jour de l&apos;examen, vous devrez partager votre <strong>écran entier</strong> (pas juste un onglet).</p>
           <button className="btn btn-secondary" onClick={testScreenShare} disabled={screenStatus === 'checking' || !screenShareSupported()} style={{ width: '100%' }}>
-            {screenStatus === 'checking' ? <><i className="fas fa-spinner fa-spin" /> Vérification…</> : <><i className="fas fa-play" /> Tester le partage d'écran</>}
+            {screenStatus === 'checking' ? <><i className="fas fa-spinner fa-spin" /> Vérification…</> : <><i className="fas fa-play" /> Tester le partage d&apos;écran</>}
           </button>
           {screenMsg && <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 10 }}>{screenMsg}</p>}
         </div>
@@ -395,7 +395,7 @@ export default function VerificationPostePage() {
         <div>
           <strong style={{ fontSize: 16 }}>{allGood ? 'Votre poste semble prêt pour composer.' : "Terminez les vérifications ci-dessus avant le jour de l'examen."}</strong>
           <p style={{ margin: '4px 0 0', fontSize: 14.5, color: 'var(--text-muted)' }}>
-            En cas de problème persistant, contactez votre surveillant ou l'administration avant le jour de l'examen — voir la page <a href="/dashboard/student/aide">Aide</a>.
+            En cas de problème persistant, contactez votre surveillant ou l&apos;administration avant le jour de l&apos;examen — voir la page <a href="/dashboard/student/aide">Aide</a>.
           </p>
         </div>
       </div>

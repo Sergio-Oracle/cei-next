@@ -138,7 +138,7 @@ export default function BiometricCallModal({ examId, studentId, examTitle, onClo
         <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="fas fa-user-shield" style={{ color: '#f59e0b' }} />
           <div>
-            <div style={{ color: 'white', fontWeight: 700, fontSize: 17 }}>Appel — vérification d'identité</div>
+            <div style={{ color: 'white', fontWeight: 700, fontSize: 17 }}>Appel — vérification d&apos;identité</div>
             <div style={{ color: 'rgba(255,255,255,.5)', fontSize: 13 }}>{examTitle}</div>
           </div>
         </div>

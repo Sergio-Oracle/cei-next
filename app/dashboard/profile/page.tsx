@@ -17,8 +17,6 @@ export default function ProfilePage() {
   const [savingPw, setSavingPw] = useState(false)
   const [tab, setTab] = useState<'profile' | 'password'>('profile')
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     setLoading(true)
     try {
@@ -29,6 +27,8 @@ export default function ProfilePage() {
     } catch { error('Erreur de chargement') }
     finally { setLoading(false) }
   }
+
+  useEffect(() => { load() }, [])
 
   async function saveProfile() {
     if (!profileForm.full_name.trim()) { error('Le nom est requis'); return }

@@ -432,7 +432,7 @@ export default function AdminEnrollmentsPage() {
       <div className="page-header">
         <div>
           <h2><i className="fas fa-user-graduate" style={{ marginRight: 10, color: 'var(--primary)' }} />Inscriptions UE des Étudiants</h2>
-          <p>Gérez les inscriptions des étudiants aux Unités d'Enseignement selon la maquette pédagogique</p>
+          <p>Gérez les inscriptions des étudiants aux Unités d&apos;Enseignement selon la maquette pédagogique</p>
         </div>
       </div>
 
@@ -455,7 +455,7 @@ export default function AdminEnrollmentsPage() {
       {formations.length === 0 && !hierarchyLoading && (
         <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <i className="fas fa-triangle-exclamation" style={{ color: '#f59e0b', fontSize: 22, flexShrink: 0 }} />
-          <p style={{ margin: 0, fontSize:15.5, color: '#92400e' }}>Créez d'abord des formations et des UEs dans <strong>Maquette Pédagogique</strong> avant d'inscrire des étudiants.</p>
+          <p style={{ margin: 0, fontSize:15.5, color: '#92400e' }}>Créez d&apos;abord des formations et des UEs dans <strong>Maquette Pédagogique</strong> avant d&apos;inscrire des étudiants.</p>
         </div>
       )}
 
@@ -515,7 +515,7 @@ export default function AdminEnrollmentsPage() {
             {bulkSel.size > 0 && (
               <>
                 <select value={bulkUeId} onChange={e => setBulkUeId(e.target.value)} className="form-control" style={{ maxWidth: 320, fontSize:14.5, padding: '6px 10px' }}>
-                  <option value="">— Choisir l'UE cible —</option>
+                  <option value="">— Choisir l&apos;UE cible —</option>
                   {allUes.map(u => <option key={u.id} value={String(u.id)}>{u.label}</option>)}
                 </select>
                 <button onClick={bulkEnroll} disabled={!bulkUeId || bulkBusy} className="btn btn-sm btn-primary"
@@ -663,7 +663,7 @@ export default function AdminEnrollmentsPage() {
                         <>
                           <select value={fUeId} onChange={e => setBulkUeIdByFormation(p => ({ ...p, [g.formation_id!]: e.target.value }))}
                             className="form-control" style={{ maxWidth: 320, fontSize:14.5, padding: '6px 10px' }}>
-                            <option value="">— Choisir l'UE de {g.formation_code} —</option>
+                            <option value="">— Choisir l&apos;UE de {g.formation_code} —</option>
                             {fUes.map(u => <option key={u.id} value={String(u.id)}>{u.code} — {u.name} ({u.sem})</option>)}
                           </select>
                           <button onClick={() => bulkEnrollFormation(g.formation_id!)} disabled={!fUeId || bulkBusy} className="btn btn-sm btn-primary"

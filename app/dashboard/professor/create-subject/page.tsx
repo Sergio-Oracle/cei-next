@@ -316,7 +316,7 @@ export default function ProfessorCreateSubjectPage() {
         <div className="page-header">
           <div>
             <h2 style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <i className="fas fa-file-circle-plus" style={{ color:'var(--primary)' }} />Créer un Sujet d'Examen
+              <i className="fas fa-file-circle-plus" style={{ color:'var(--primary)' }} />Créer un Sujet d&apos;Examen
             </h2>
             <p>Uploadez un fichier ou assemblez des questions depuis la banque</p>
           </div>
@@ -329,7 +329,7 @@ export default function ProfessorCreateSubjectPage() {
               </div>
               <h3 style={{ margin:0, fontSize:20.5, fontWeight:700, color:'#fff' }}>Analyse IA en cours…</h3>
               <p style={{ margin:'6px 0 0', color:'rgba(255,255,255,.75)', fontSize:15.5 }}>
-                L'IA analyse votre fichier et génère le barème de notation
+                L&apos;IA analyse votre fichier et génère le barème de notation
               </p>
             </div>
             <div style={{ padding:'24px 28px', display:'flex', flexDirection:'column', gap:10 }}>
@@ -385,7 +385,7 @@ export default function ProfessorCreateSubjectPage() {
       <div className="page-header">
         <div>
           <h2 style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <i className="fas fa-file-circle-plus" style={{ color:'var(--primary)' }} />Créer un Sujet d'Examen
+            <i className="fas fa-file-circle-plus" style={{ color:'var(--primary)' }} />Créer un Sujet d&apos;Examen
           </h2>
           <p>Uploadez un fichier ou assemblez des questions depuis la banque</p>
         </div>
@@ -398,7 +398,7 @@ export default function ProfessorCreateSubjectPage() {
             </div>
             <div>
               <div style={{ fontWeight:700, fontSize:19 }}>Sujet créé avec succès</div>
-              <div style={{ fontSize:15.5, color:'var(--text-muted)' }}>Barème généré automatiquement par l'IA — modifiable ci-dessous</div>
+              <div style={{ fontSize:15.5, color:'var(--text-muted)' }}>Barème généré automatiquement par l&apos;IA — modifiable ci-dessous</div>
             </div>
           </div>
           <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
@@ -425,8 +425,8 @@ export default function ProfessorCreateSubjectPage() {
                 Épreuve reconnue automatiquement : {created.normalization[0].questions} question(s)
                 {' — '}{Object.entries(created.normalization[0].counts).map(([k,v])=>`${v} ${({qcm:'QCM',vf:'vrai/faux',association:'association',tri:'tri',open:'ouverte(s)'} as Record<string,string>)[k]??k}`).join(', ')}.
                 {created.rubric_source==='corrigé' && <> Barème écrit <b>directement depuis votre corrigé</b> (sans IA).</>}
-                {created.has_corrige && created.rubric_source!=='corrigé' && <> Corrigé lu par l'IA : <b>vérifiez le barème ci-dessous</b>{created.corrige_warnings && created.corrige_warnings.length>0 ? ` (${created.corrige_warnings.length} point(s) à contrôler : ${created.corrige_warnings.slice(0,2).join(' ; ')})` : ''}.</>}
-                {!created.has_corrige && <> Aucun corrigé fourni : barème proposé par l'IA, à vérifier.</>}
+                {created.has_corrige && created.rubric_source!=='corrigé' && <> Corrigé lu par l&apos;IA : <b>vérifiez le barème ci-dessous</b>{created.corrige_warnings && created.corrige_warnings.length>0 ? ` (${created.corrige_warnings.length} point(s) à contrôler : ${created.corrige_warnings.slice(0,2).join(' ; ')})` : ''}.</>}
+                {!created.has_corrige && <> Aucun corrigé fourni : barème proposé par l&apos;IA, à vérifier.</>}
                 {created.normalization[0].warnings.length>0 && <div style={{ color:'#b45309' }}>À contrôler : {created.normalization[0].warnings.join(' ; ')}</div>}
               </div>
             )}
@@ -469,7 +469,7 @@ export default function ProfessorCreateSubjectPage() {
         <div style={{ background:'var(--surface)', borderRadius:12, border:'1px solid var(--border)', overflow:'hidden', boxShadow:'var(--shadow-sm)', marginBottom:14 }}>
           <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, background:'var(--background)' }}>
             <i className="fas fa-file-lines" style={{ color:'var(--primary)' }} />
-            <span style={{ fontWeight:600, fontSize:15.5 }}>Sujet d'Examen &amp; Questions</span>
+            <span style={{ fontWeight:600, fontSize:15.5 }}>Sujet d&apos;Examen &amp; Questions</span>
             <span style={{ marginLeft:'auto', background:'#eff6ff', color:'var(--primary)', padding:'2px 8px', borderRadius:99, fontSize:13, fontWeight:600 }}>Généré par IA — modifiable</span>
           </div>
           <div style={{ padding:'0 14px 14px' }}>
@@ -610,12 +610,12 @@ export default function ProfessorCreateSubjectPage() {
       <div className="page-header">
         <div>
           <h2 style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <i className="fas fa-file-circle-plus" style={{ color:'var(--primary)' }} />Créer un Sujet d'Examen
+            <i className="fas fa-file-circle-plus" style={{ color:'var(--primary)' }} />Créer un Sujet d&apos;Examen
           </h2>
           <p>Uploadez un fichier ou assemblez des questions depuis la banque</p>
           <p style={{ fontSize:14.5, color:'var(--text-muted)', marginTop:2 }}>
             <i className="fas fa-circle-info" style={{ marginRight:5 }} />
-            Utilise un contenu <strong>déjà existant</strong> (fichier déjà rédigé ou questions déjà en banque) — l'IA analyse et note, sans générer de nouvelles questions. Pour générer de nouvelles questions à partir de rien, utilisez plutôt « Générer Suggestions ».
+            Utilise un contenu <strong>déjà existant</strong> (fichier déjà rédigé ou questions déjà en banque) — l&apos;IA analyse et note, sans générer de nouvelles questions. Pour générer de nouvelles questions à partir de rien, utilisez plutôt « Générer Suggestions ».
           </p>
         </div>
       </div>
@@ -676,7 +676,7 @@ export default function ProfessorCreateSubjectPage() {
                 </div>
                 <p style={{ margin:'8px 0 0', fontSize:14, color:'var(--text-muted)' }}>
                   <i className="fas fa-circle-info" style={{ marginRight:4 }} />
-                  Facultatif : ces cases guident la lecture, mais ne limitent plus rien. Même si vous ne cochez rien, la plateforme lit le fichier complet (Word, PDF ou texte), reconnaît le type de chaque question d'après sa structure et reproduit le sujet tel qu'il est. L'encadré après l'import indique ce qui a été trouvé. Si vous déposez aussi le corrigé (nom de fichier contenant « corrigé »), le barème en recopie les réponses sans jamais les afficher aux étudiants.</p>
+                  Facultatif : ces cases guident la lecture, mais ne limitent plus rien. Même si vous ne cochez rien, la plateforme lit le fichier complet (Word, PDF ou texte), reconnaît le type de chaque question d&apos;après sa structure et reproduit le sujet tel qu&apos;il est. L&apos;encadré après l&apos;import indique ce qui a été trouvé. Si vous déposez aussi le corrigé (nom de fichier contenant « corrigé »), le barème en recopie les réponses sans jamais les afficher aux étudiants.</p>
               </div>
 
               {/* Nombre de questions — facultatif : sert à CONTRÔLER que toutes les questions du document ont été reconnues */}
@@ -844,7 +844,7 @@ export default function ProfessorCreateSubjectPage() {
             </div>
             <div style={{ background:'var(--surface)', borderRadius:12, border:'1px solid var(--border)', borderTop:'3px solid var(--primary)', padding:18 }}>
               <h4 style={{ margin:'0 0 12px', fontSize:15.5, fontWeight:700, display:'flex', alignItems:'center', gap:7 }}>
-                <i className="fas fa-robot" style={{ color:'var(--primary)' }} />Ce que fait l'IA
+                <i className="fas fa-robot" style={{ color:'var(--primary)' }} />Ce que fait l&apos;IA
               </h4>
               {[{icon:'fa-magnifying-glass',text:'Analyse le contenu et la structure des questions'},{icon:'fa-scale-balanced',text:'Attribue des points selon la difficulté et les types choisis'},{icon:'fa-list-check',text:'Génère un barème détaillé adapté aux types sélectionnés'}].map(item=>(
                 <div key={item.icon} style={{ display:'flex', gap:9, alignItems:'flex-start', marginBottom:9 }}>
@@ -855,7 +855,7 @@ export default function ProfessorCreateSubjectPage() {
             </div>
             <div style={{ padding:14, background:'#fffbeb', border:'1px solid #fde68a', borderRadius:10 }}>
               <p style={{ margin:'0 0 5px', fontWeight:600, fontSize:14.5, color:'#92400e' }}><i className="fas fa-lightbulb" style={{ color:'#f59e0b', marginRight:5 }} />Conseil</p>
-              <p style={{ margin:0, fontSize:14.5, color:'#78350f', lineHeight:1.6 }}>Sélectionnez les types de questions présents dans votre document pour que l'IA génère un barème adapté.</p>
+              <p style={{ margin:0, fontSize:14.5, color:'#78350f', lineHeight:1.6 }}>Sélectionnez les types de questions présents dans votre document pour que l&apos;IA génère un barème adapté.</p>
             </div>
           </div>
         </div>
@@ -991,7 +991,7 @@ export default function ProfessorCreateSubjectPage() {
               <button onClick={()=>setShowAssemble(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:21.5, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>
             </div>
             <div style={{ padding:'20px 24px', overflowY:'auto', flex:1, display:'flex', flexDirection:'column', gap:14 }}>
-              <div><label style={{ fontSize:15.5, fontWeight:600, display:'block', marginBottom:6 }}>Titre de l'examen *</label>
+              <div><label style={{ fontSize:15.5, fontWeight:600, display:'block', marginBottom:6 }}>Titre de l&apos;examen *</label>
                 <input type="text" value={asmTitle} onChange={e=>setAsmTitle(e.target.value)} style={{ width:'100%', padding:'10px 12px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:17, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }} onFocus={e=>e.target.style.borderColor='var(--primary)'} onBlur={e=>e.target.style.borderColor='var(--border)'} /></div>
               <div className="grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div><label style={{ fontSize:15.5, fontWeight:600, display:'block', marginBottom:6 }}>Durée (min)</label><input type="number" value={asmDuration} onChange={e=>setAsmDuration(e.target.value)} min="15" max="360" style={{ width:'100%', padding:'10px 12px', border:'1.5px solid var(--border)', borderRadius:8, fontSize:17, background:'var(--background)', color:'var(--text)', outline:'none', boxSizing:'border-box' }} /></div>

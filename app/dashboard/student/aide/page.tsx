@@ -119,7 +119,7 @@ export default function StudentAidePage() {
     <div>
       <div className="page-header">
         <div>
-          <h2><i className="fas fa-question-circle" style={{ marginRight: 10, color: 'var(--primary)' }} />Centre d'Aide</h2>
+          <h2><i className="fas fa-question-circle" style={{ marginRight: 10, color: 'var(--primary)' }} />Centre d&apos;Aide</h2>
           <p>Guides et réponses aux questions fréquentes</p>
         </div>
       </div>
@@ -130,7 +130,7 @@ export default function StudentAidePage() {
           <i className="fas fa-headset" style={{ fontSize: 24, color: 'white' }} />
         </div>
         <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontWeight: 700, color: 'white', fontSize:18, marginBottom: 3 }}>Besoin d'une aide personnalisée ?</div>
+          <div style={{ fontWeight: 700, color: 'white', fontSize:18, marginBottom: 3 }}>Besoin d&apos;une aide personnalisée ?</div>
           <div style={{ color: 'rgba(255,255,255,.75)', fontSize:15.5 }}>Contactez votre administration pour toute question sur vos examens ou vos notes.</div>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -217,7 +217,7 @@ export default function StudentAidePage() {
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <i className="fas fa-shield-alt" style={{ color: '#2563eb', fontSize: 22 }} />
-          <span style={{ fontWeight: 700, fontSize:18, color: '#1e293b' }}>Règles à respecter pendant l'examen</span>
+          <span style={{ fontWeight: 700, fontSize:18, color: '#1e293b' }}>Règles à respecter pendant l&apos;examen</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
           {RULES.map((r, i) => (
@@ -234,7 +234,7 @@ export default function StudentAidePage() {
         <div style={{ marginTop: 14, background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'flex-start', fontSize:15.5, color: '#92400e' }}>
           <i className="fas fa-exclamation-triangle" style={{ color: '#f59e0b', marginTop: 1, flexShrink: 0 }} />
           <span>
-            <strong>Important :</strong> Le dépassement des seuils configurés (changements de fenêtre, absence du visage, outils développeur) entraîne un <strong>bannissement immédiat et irréversible</strong> de l'examen. Votre tentative sera notée 0.
+            <strong>Important :</strong> Le dépassement des seuils configurés (changements de fenêtre, absence du visage, outils développeur) entraîne un <strong>bannissement immédiat et irréversible</strong> de l&apos;examen. Votre tentative sera notée 0.
           </span>
         </div>
       </div>

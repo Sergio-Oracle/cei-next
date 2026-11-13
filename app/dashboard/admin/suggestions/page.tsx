@@ -363,7 +363,7 @@ export default function AdminSuggestionsPage() {
   }
 
   /* ── Use suggestion → generate full exam → show preview ── */
-  async function useSuggestion(s: Suggestion, i: number) {
+  async function createFromSuggestion(s: Suggestion, i: number) {
     // Barème — la répartition par type doit totaliser exactement le total
     // choisi avant de lancer une génération coûteuse (mieux vaut bloquer ici
     // que de laisser le backend improviser une répartition différente de
@@ -612,7 +612,7 @@ export default function AdminSuggestionsPage() {
       </div>
       <div style={{ textAlign:'center' }}>
         <h3 style={{ margin:'0 0 8px', fontSize:24 }}>Analyse IA en cours…</h3>
-        <p style={{ margin:0, color:'var(--text-muted)', fontSize:17 }}>L'IA lit et analyse votre cours. Cela peut prendre 1 à 2 minutes.</p>
+        <p style={{ margin:0, color:'var(--text-muted)', fontSize:17 }}>L&apos;IA lit et analyse votre cours. Cela peut prendre 1 à 2 minutes.</p>
       </div>
       <div style={{ width:320, height:6, background:'var(--border)', borderRadius:99, overflow:'hidden' }}>
         <div style={{ height:'100%', borderRadius:99, background:'var(--primary)', animation:'aibar 2s ease-in-out infinite alternate', width:'60%' }} />
@@ -634,7 +634,7 @@ export default function AdminSuggestionsPage() {
       </div>
       <div style={{ textAlign:'center' }}>
         <h3 style={{ margin:'0 0 8px', fontSize:24 }}>Génération du sujet en cours…</h3>
-        <p style={{ margin:0, color:'var(--text-muted)', fontSize:17 }}>L'IA génère les questions et le barème. Cela peut prendre 1 à 5 minutes selon le nombre de questions et de types combinés.</p>
+        <p style={{ margin:0, color:'var(--text-muted)', fontSize:17 }}>L&apos;IA génère les questions et le barème. Cela peut prendre 1 à 5 minutes selon le nombre de questions et de types combinés.</p>
       </div>
       <div style={{ width:320, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 18px', display:'flex', flexDirection:'column', gap:10 }}>
         {[
@@ -670,7 +670,7 @@ export default function AdminSuggestionsPage() {
       <div className="page-header">
         <div>
           <h2><i className="fas fa-eye" style={{ marginRight:10, color:'var(--primary)' }} />Aperçu du Sujet Généré</h2>
-          <p>L'IA a créé un sujet complet avec questions et barème de notation</p>
+          <p>L&apos;IA a créé un sujet complet avec questions et barème de notation</p>
         </div>
       </div>
       <div style={{ maxWidth:900, margin:'0 auto' }}>
@@ -707,7 +707,7 @@ export default function AdminSuggestionsPage() {
         <div style={{ background:'var(--surface)', borderRadius:12, border:'1px solid var(--border)', overflow:'hidden', boxShadow:'var(--shadow-sm)', marginBottom:14 }}>
           <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, background:'var(--background)' }}>
             <i className="fas fa-file-lines" style={{ color:'var(--primary)' }} />
-            <span style={{ fontWeight:600, fontSize:15.5 }}>Sujet d'Examen &amp; Questions</span>
+            <span style={{ fontWeight:600, fontSize:15.5 }}>Sujet d&apos;Examen &amp; Questions</span>
             <span style={{ marginLeft:'auto', background:'#eff6ff', color:'var(--primary)', padding:'2px 8px', borderRadius:99, fontSize:13, fontWeight:600 }}>
               <i className="fas fa-robot" style={{ marginRight:4 }} />Généré par IA — modifiable
             </span>
@@ -718,7 +718,7 @@ export default function AdminSuggestionsPage() {
               onFocus={e=>e.target.style.borderColor='var(--primary)'} onBlur={e=>e.target.style.borderColor='var(--border)'} />
             {preGenMedia.length > 0 && (
               <p style={{ margin:'6px 0 14px', fontSize:13, color:'var(--text-muted)' }}>
-                <i className="fas fa-info-circle" style={{ marginRight:4 }} />{preGenMedia.length} média(s) joint(s) avant génération — l'IA a placé les marqueurs <code>[IMAGE:...]</code>/<code>[AUDIO:...]</code>/<code>[VIDEO:...]</code> dans le sujet ci-dessus.
+                <i className="fas fa-info-circle" style={{ marginRight:4 }} />{preGenMedia.length} média(s) joint(s) avant génération — l&apos;IA a placé les marqueurs <code>[IMAGE:...]</code>/<code>[AUDIO:...]</code>/<code>[VIDEO:...]</code> dans le sujet ci-dessus.
               </p>
             )}
             {preGenMedia.length === 0 && <div style={{ height:14 }} />}
@@ -772,7 +772,7 @@ export default function AdminSuggestionsPage() {
 
         <div style={{ padding:12, background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:8, marginBottom:18, fontSize:15.5, color:'#92400e' }}>
           <i className="fas fa-info-circle" style={{ marginRight:6 }} />
-          <strong>Information :</strong> Ce sujet et son barème seront sauvegardés. Les étudiants verront les questions avec leurs points lors de l'examen en ligne.
+          <strong>Information :</strong> Ce sujet et son barème seront sauvegardés. Les étudiants verront les questions avec leurs points lors de l&apos;examen en ligne.
         </div>
 
         <div style={{ display:'flex', gap:10, justifyContent:'flex-end', flexWrap:'wrap' }}>
@@ -790,7 +790,7 @@ export default function AdminSuggestionsPage() {
             <i className="fas fa-database" /> Banque
           </button>
           <button onClick={() => setShowMoreModal(true)} style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', border:'1px solid #bae6fd', background:'#e0f2fe', color:'#0369a1', borderRadius:8, fontSize:15.5, fontWeight:600, cursor:'pointer' }}>
-            <i className="fas fa-wand-magic-sparkles" /> Générer d'autres questions
+            <i className="fas fa-wand-magic-sparkles" /> Générer d&apos;autres questions
           </button>
           <button onClick={handleSaveSubject} disabled={savingSubject} className="btn btn-primary" style={{ fontSize:15.5, minWidth:180 }}>
             {savingSubject ? <><i className="fas fa-spinner fa-spin" style={{ marginRight:6 }} />Enregistrement…</> : <><i className="fas fa-save" style={{ marginRight:6 }} />Enregistrer ce Sujet</>}
@@ -853,7 +853,7 @@ export default function AdminSuggestionsPage() {
           <div style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:440, boxShadow:'var(--shadow-lg)', overflow:'hidden' }}>
             <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 }}>
               <i className="fas fa-wand-magic-sparkles" style={{ color:'#0369a1', fontSize:19 }} />
-              <h3 style={{ margin:0, fontSize:18, fontWeight:700 }}>Générer d'autres questions</h3>
+              <h3 style={{ margin:0, fontSize:18, fontWeight:700 }}>Générer d&apos;autres questions</h3>
               {!generatingMore && <button onClick={() => setShowMoreModal(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:20.5, cursor:'pointer', color:'var(--text-muted)' }}><i className="fas fa-times" /></button>}
             </div>
             {generatingMore ? (
@@ -861,13 +861,13 @@ export default function AdminSuggestionsPage() {
                 <i className="fas fa-wand-magic-sparkles fa-spin" style={{ fontSize:31, color:'#0369a1' }} />
                 <div>
                   <div style={{ fontWeight:700, fontSize:17, marginBottom:4 }}>Génération en cours…</div>
-                  <div style={{ fontSize:14.5, color:'var(--text-muted)' }}>L'IA rédige {moreCount} nouvelle{moreCount>1?'s':''} question{moreCount>1?'s':''} en évitant les doublons avec le sujet existant.</div>
+                  <div style={{ fontSize:14.5, color:'var(--text-muted)' }}>L&apos;IA rédige {moreCount} nouvelle{moreCount>1?'s':''} question{moreCount>1?'s':''} en évitant les doublons avec le sujet existant.</div>
                 </div>
               </div>
             ) : (<>
               <div style={{ padding:'18px 22px', display:'flex', flexDirection:'column', gap:14 }}>
                 <p style={{ margin:0, fontSize:15.5, color:'var(--text-muted)' }}>
-                  Les nouvelles questions seront <strong>ajoutées</strong> à la fin du sujet actuel (rien n'est remplacé).
+                  Les nouvelles questions seront <strong>ajoutées</strong> à la fin du sujet actuel (rien n&apos;est remplacé).
                 </p>
                 <div>
                   <label style={{ fontSize:15.5, fontWeight:600, display:'block', marginBottom:8 }}>
@@ -956,8 +956,8 @@ export default function AdminSuggestionsPage() {
     <div>
       <div className="page-header">
         <div>
-          <h2><i className="fas fa-magic" style={{ marginRight:10, color:'var(--primary)' }} />Générer des Suggestions d'Examen avec IA</h2>
-          <p>Uploadez votre cours, l'IA analysera le contenu et proposera des sujets d'examen adaptés</p>
+          <h2><i className="fas fa-magic" style={{ marginRight:10, color:'var(--primary)' }} />Générer des Suggestions d&apos;Examen avec IA</h2>
+          <p>Uploadez votre cours, l&apos;IA analysera le contenu et proposera des sujets d&apos;examen adaptés</p>
         </div>
       </div>
       <div style={{ display:'flex', flexDirection:'column', gap:20, maxWidth:900, margin:'0 auto' }}>
@@ -1034,11 +1034,11 @@ export default function AdminSuggestionsPage() {
     <div>
       <div className="page-header">
         <div>
-          <h2><i className="fas fa-magic" style={{ marginRight:10, color:'var(--primary)' }} />Générer des Suggestions d'Examen avec IA</h2>
-          <p>Uploadez votre cours, l'IA analysera le contenu et proposera des sujets d'examen adaptés</p>
+          <h2><i className="fas fa-magic" style={{ marginRight:10, color:'var(--primary)' }} />Générer des Suggestions d&apos;Examen avec IA</h2>
+          <p>Uploadez votre cours, l&apos;IA analysera le contenu et proposera des sujets d&apos;examen adaptés</p>
           <p style={{ fontSize:14.5, color:'var(--text-muted)', marginTop:2 }}>
             <i className="fas fa-circle-info" style={{ marginRight:5 }} />
-            L'IA <strong>génère de nouvelles questions</strong> à partir de votre cours. Pour importer un examen déjà rédigé ou réutiliser des questions existantes, utilisez plutôt « Créer Sujet ».
+            L&apos;IA <strong>génère de nouvelles questions</strong> à partir de votre cours. Pour importer un examen déjà rédigé ou réutiliser des questions existantes, utilisez plutôt « Créer Sujet ».
           </p>
         </div>
         {step === 'results' && (
@@ -1135,7 +1135,7 @@ export default function AdminSuggestionsPage() {
                             </div>
                           ))}
                         </div>
-                        <div style={{ fontSize:14.5, color:'#10b981', marginTop:10 }}>Cliquez pour ajouter d'autres fichiers</div>
+                        <div style={{ fontSize:14.5, color:'#10b981', marginTop:10 }}>Cliquez pour ajouter d&apos;autres fichiers</div>
                       </>
                     ) : (
                       <>
@@ -1222,7 +1222,7 @@ export default function AdminSuggestionsPage() {
 
                 <div>
                   <label style={{ display:'block', fontSize:15.5, fontWeight:600, color:'var(--text)', marginBottom:10 }}>
-                    <i className="fas fa-clock" style={{ color:'var(--primary)', marginRight:6 }} />Durée souhaitée de l'examen
+                    <i className="fas fa-clock" style={{ color:'var(--primary)', marginRight:6 }} />Durée souhaitée de l&apos;examen
                   </label>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                     <input type="number" className="form-control" min={15} max={480} step={5}
@@ -1233,7 +1233,7 @@ export default function AdminSuggestionsPage() {
                     <span style={{ fontSize:15.5, color:'var(--text-muted)' }}>minutes</span>
                   </div>
                   <p style={{ margin:'6px 0 0', fontSize:14, color:'var(--text-muted)' }}>
-                    <i className="fas fa-info-circle" style={{ marginRight:4 }} />Fixée par vous, pas par l'IA — les suggestions générées respecteront exactement cette durée (nombre et complexité des questions adaptés en conséquence).
+                    <i className="fas fa-info-circle" style={{ marginRight:4 }} />Fixée par vous, pas par l&apos;IA — les suggestions générées respecteront exactement cette durée (nombre et complexité des questions adaptés en conséquence).
                   </p>
                 </div>
 
@@ -1269,7 +1269,7 @@ export default function AdminSuggestionsPage() {
                     </div>
                     {qTypes.subopen && (
                       <p style={{ margin:0, fontSize:14, color:'var(--text-muted)' }}>
-                        <i className="fas fa-info-circle" style={{ marginRight:4 }} />Exercices en plusieurs parties (a, b, c...) où chaque sous-question s'appuie explicitement sur le résultat de la précédente — la correction applique l'erreur reportée (une erreur en a) n'invalide pas une méthode correcte en b) appliquée à ce résultat).
+                        <i className="fas fa-info-circle" style={{ marginRight:4 }} />Exercices en plusieurs parties (a, b, c...) où chaque sous-question s&apos;appuie explicitement sur le résultat de la précédente — la correction applique l&apos;erreur reportée (une erreur en a) n&apos;invalide pas une méthode correcte en b) appliquée à ce résultat).
                       </p>
                     )}
                     {qTypes.qcm && (
@@ -1394,7 +1394,7 @@ export default function AdminSuggestionsPage() {
                   </label>
                   <p style={{ margin:'0 0 10px', fontSize:14.5, color:'var(--text-muted)' }}>
                     <i className="fas fa-info-circle" style={{ marginRight:4 }} />
-                    Joignez une image, un audio ou une vidéo : l'IA l'analyse selon votre consigne et l'intègre elle-même à la question la plus pertinente du sujet généré.
+                    Joignez une image, un audio ou une vidéo : l&apos;IA l&apos;analyse selon votre consigne et l&apos;intègre elle-même à la question la plus pertinente du sujet généré.
                   </p>
                   <textarea value={mediaInstructions} onChange={e => setMediaInstructions(e.target.value)}
                     placeholder="Consigne pour l'IA sur le prochain média ajouté (ex : « ce schéma représente un circuit RLC, demande d'en identifier les composants »)…"
@@ -1568,7 +1568,7 @@ export default function AdminSuggestionsPage() {
                 </div>
                 <div>
                   <h3 style={{ margin:0, fontSize:18 }}>Résumé du cours analysé</h3>
-                  <p style={{ margin:0, fontSize:14.5, color:'var(--text-muted)' }}>Contenu extrait et analysé par l'IA</p>
+                  <p style={{ margin:0, fontSize:14.5, color:'var(--text-muted)' }}>Contenu extrait et analysé par l&apos;IA</p>
                 </div>
               </div>
             </div>
@@ -1595,9 +1595,9 @@ export default function AdminSuggestionsPage() {
                 <i className="fas fa-wand-magic-sparkles" style={{ color:'#d97706', fontSize:19 }} />
               </div>
               <div>
-                <h3 style={{ margin:0 }}>Suggestions de Sujets d'Examen</h3>
+                <h3 style={{ margin:0 }}>Suggestions de Sujets d&apos;Examen</h3>
                 <p style={{ margin:0, fontSize:15.5, color:'var(--text-muted)' }}>
-                  {result.suggestions.length} suggestion(s) — cliquez "Utiliser" pour générer le sujet complet avec questions et barème
+                  {result.suggestions.length} suggestion(s) — cliquez &quot;Utiliser&quot; pour générer le sujet complet avec questions et barème
                 </p>
               </div>
             </div>
@@ -1703,7 +1703,7 @@ export default function AdminSuggestionsPage() {
                       </div>
                     )}
 
-                    <button onClick={() => useSuggestion(s, i)} disabled={creating !== null}
+                    <button onClick={() => createFromSuggestion(s, i)} disabled={creating !== null}
                       className="btn btn-primary" style={{ marginTop:'auto', width:'100%', padding:'12px 22px', fontSize:17, fontWeight:700 }}>
                       <i className={`fas ${creating === i ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`} />
                       {creating === i ? 'Génération…' : 'Utiliser ce Sujet'}

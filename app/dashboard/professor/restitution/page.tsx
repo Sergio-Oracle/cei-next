@@ -81,7 +81,7 @@ export default function RestitutionPage() {
           <i className="fas fa-people-group" style={{ color: '#0f766e' }} />Restitution — copies-exemples
         </h1>
         <p style={{ color: '#64748b', margin: 0, fontSize:17 }}>
-          Sélectionnez des copies corrigées comme exemples anonymisés pour une séance de restitution collective. Rien n'est visible aux étudiants tant que vous n'avez pas publié.
+          Sélectionnez des copies corrigées comme exemples anonymisés pour une séance de restitution collective. Rien n&apos;est visible aux étudiants tant que vous n&apos;avez pas publié.
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export default function RestitutionPage() {
       ) : examples.length === 0 ? (
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '60px 24px', textAlign: 'center', color: '#64748b' }}>
           <i className="fas fa-inbox" style={{ fontSize: 40, display: 'block', marginBottom: 14, opacity: .4 }} />
-          <p style={{ margin: '0 0 6px', fontWeight: 600 }}>Aucune copie-exemple pour l'instant</p>
+          <p style={{ margin: '0 0 6px', fontWeight: 600 }}>Aucune copie-exemple pour l&apos;instant</p>
           <p style={{ margin: 0, fontSize:15.5 }}>Créez-en une depuis <b>Copies Corrigées</b>, avec le bouton « Exemple » sur une copie notée.</p>
         </div>
       ) : (

@@ -75,7 +75,9 @@ export default function MoodleSourcePicker({ value, onChange, onLoaded }: {
   // les documents exploitables. Faux lors d'une restauration de brouillon,
   // pour garder sa sélection.
   const autoSelectRef = useRef(false)
-  const valueRef = useRef(value); valueRef.current = value
+  const valueRef = useRef(value)
+  // eslint-disable-next-line react-hooks/refs -- motif « dernière valeur » : le rappel lit toujours la version la plus récente
+  valueRef.current = value
 
   useEffect(() => {
     api.get<{ ecs: MoodleEc[] }>('/api/moodle/ecs')

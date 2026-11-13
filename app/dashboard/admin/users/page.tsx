@@ -335,7 +335,7 @@ export default function AdminUsersPage() {
             <i className="fas fa-eye" /> Surveillant
           </button>
           <button onClick={() => openCreate('responsable_examen')} style={btnStyle('#0d9488')}>
-            <i className="fas fa-user-gear" /> Responsable d'examen
+            <i className="fas fa-user-gear" /> Responsable d&apos;examen
           </button>
           <button onClick={() => openCreate('superviseur')} style={btnStyle('#0891b2')}>
             <i className="fas fa-user-shield" /> Superviseur
@@ -608,7 +608,7 @@ export default function AdminUsersPage() {
                 <option value="professor">Professeur</option>
                 <option value="surveillant">Surveillant</option>
                 <option value="superviseur">Superviseur</option>
-                <option value="responsable_examen">Responsable d'examen</option>
+                <option value="responsable_examen">Responsable d&apos;examen</option>
                 <option value="admin">Administrateur</option>
               </select>
             )}

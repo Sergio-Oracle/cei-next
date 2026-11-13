@@ -69,15 +69,6 @@ export default function SettingsPage() {
   const [highContrast, setHighContrast]   = useState(false)
   const [reducedMotion, setReducedMotion] = useState(false)
 
-  useEffect(() => {
-    setDark(localStorage.getItem('theme') === 'dark')
-    setFontSize((localStorage.getItem('fontSize') as 'sm' | 'md' | 'lg') || 'md')
-    setHighContrast(localStorage.getItem('highContrast') === '1')
-    setReducedMotion(localStorage.getItem('reducedMotion') === '1')
-    loadProfile()
-    if (user?.role === 'student') fetchBioStatus()
-  }, [])
-
   async function loadProfile() {
     try {
       const res = await api.get<any>('/api/auth/me')
@@ -89,6 +80,15 @@ export default function SettingsPage() {
       if (user) { setFullName(user.full_name || ''); setEmail(user.email || '') }
     }
   }
+
+  useEffect(() => {
+    setDark(localStorage.getItem('theme') === 'dark')
+    setFontSize((localStorage.getItem('fontSize') as 'sm' | 'md' | 'lg') || 'md')
+    setHighContrast(localStorage.getItem('highContrast') === '1')
+    setReducedMotion(localStorage.getItem('reducedMotion') === '1')
+    loadProfile()
+    if (user?.role === 'student') fetchBioStatus()
+  }, [])
 
   /* Profil */
   async function saveProfile(e: React.FormEvent) {
@@ -135,6 +135,7 @@ export default function SettingsPage() {
     setFontSize(size)
     localStorage.setItem('fontSize', size)
     const map = { sm: '13px', md: '15px', lg: '17px' }
+    // eslint-disable-next-line react-hooks/immutability -- réglage volontaire du texte de la page (DOM global, pas un état React)
     document.documentElement.style.fontSize = map[size]
   }
 

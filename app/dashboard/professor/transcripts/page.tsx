@@ -235,10 +235,10 @@ export default function ProfessorTranscriptsPage() {
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 10, padding: 20 }}>
               <i className="fas fa-file-circle-plus" style={{ fontSize: 40, color: '#94a3b8', flexShrink: 0, marginTop: 4 }} />
               <div>
-                <strong style={{ fontSize: '1.21em', color: '#334155' }}>Aucun relevé n'a encore été généré</strong>
-                <p style={{ margin: '8px 0 4px', color: '#64748b' }}>Pour créer le premier relevé d'un étudiant, utilisez le formulaire ci-dessous. Assurez-vous que :</p>
+                <strong style={{ fontSize: '1.21em', color: '#334155' }}>Aucun relevé n&apos;a encore été généré</strong>
+                <p style={{ margin: '8px 0 4px', color: '#64748b' }}>Pour créer le premier relevé d&apos;un étudiant, utilisez le formulaire ci-dessous. Assurez-vous que :</p>
                 <ul style={{ margin: '6px 0 0 20px', color: '#64748b', lineHeight: 1.9 }}>
-                  <li>L'étudiant a passé au moins un examen pour ce semestre</li>
+                  <li>L&apos;étudiant a passé au moins un examen pour ce semestre</li>
                   <li>Les copies ont été corrigées (note attribuée)</li>
                   <li>Les UEs/ECs du semestre ont des coefficients renseignés</li>
                 </ul>
@@ -330,9 +330,9 @@ export default function ProfessorTranscriptsPage() {
             <div style={{ fontSize: '1.07em' }}>
               <strong style={{ color: '#1e40af' }}>Prérequis avant de générer un relevé :</strong>
               <ol style={{ margin: '6px 0 0 18px', lineHeight: 1.8, color: '#3b5998' }}>
-                <li>Sélectionnez l'étudiant concerné dans la liste</li>
+                <li>Sélectionnez l&apos;étudiant concerné dans la liste</li>
                 <li>Choisissez le semestre pour lequel vous souhaitez générer le relevé</li>
-                <li>Assurez-vous que les copies de l'étudiant pour ce semestre ont été corrigées (sinon le relevé ne peut pas être calculé)</li>
+                <li>Assurez-vous que les copies de l&apos;étudiant pour ce semestre ont été corrigées (sinon le relevé ne peut pas être calculé)</li>
               </ol>
               <p style={{ margin: '8px 0 0', color: '#475569' }}>Le relevé sera calculé automatiquement à partir des notes des examens corrigés, puis téléchargé en PDF.</p>
             </div>
@@ -348,7 +348,7 @@ export default function ProfessorTranscriptsPage() {
               {students.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
             </select>
             <small style={{ color: '#64748b', fontSize:14.5, marginTop: 4, display: 'block' }}>
-              <i className="fas fa-info-circle" style={{ marginRight: 4 }} />Sélectionnez d'abord l'étudiant pour charger ses semestres disponibles
+              <i className="fas fa-info-circle" style={{ marginRight: 4 }} />Sélectionnez d&apos;abord l&apos;étudiant pour charger ses semestres disponibles
             </small>
           </div>
 
@@ -358,7 +358,7 @@ export default function ProfessorTranscriptsPage() {
               {semLoading
                 ? <option>Chargement des semestres…</option>
                 : semesters.length === 0
-                  ? <option value="">-- D'abord sélectionner un étudiant --</option>
+                  ? <option value="">-- D&apos;abord sélectionner un étudiant --</option>
                   : <>
                       <option value="">-- Sélectionner un semestre --</option>
                       {Object.entries(semGroups).map(([fName, sems]) => (
@@ -372,7 +372,7 @@ export default function ProfessorTranscriptsPage() {
             <small style={{ color: semesters.length > 0 ? '#10b981' : '#64748b', fontSize:14.5, marginTop: 4, display: 'block' }}>
               {semesters.length > 0
                 ? <><i className="fas fa-check" style={{ marginRight: 4 }} />{semesters.length} semestre(s) disponible(s)</>
-                : <><i className="fas fa-arrow-up" style={{ marginRight: 4 }} />Sélectionnez d'abord un étudiant pour activer ce champ</>}
+                : <><i className="fas fa-arrow-up" style={{ marginRight: 4 }} />Sélectionnez d&apos;abord un étudiant pour activer ce champ</>}
             </small>
           </div>
 

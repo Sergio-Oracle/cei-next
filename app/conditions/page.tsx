@@ -1,3 +1,4 @@
+import Link from 'next/link'
 export default function Conditions() {
   return (
     <>
@@ -30,7 +31,7 @@ export default function Conditions() {
 
       <div className="topbar">
         <div className="topbar-brand"><i className="fas fa-graduation-cap" /> Centre d&apos;Examen Intelligent</div>
-        <a href="/" className="btn-back"><i className="fas fa-arrow-left" /> Retour à l&apos;accueil</a>
+        <Link href="/" className="btn-back"><i className="fas fa-arrow-left" /> Retour à l&apos;accueil</Link>
       </div>
 
       <div className="hero-doc">
@@ -65,7 +66,7 @@ export default function Conditions() {
       </div>
 
       <footer className="doc-footer">
-        <p><a href="/">Accueil</a> &nbsp;·&nbsp; <a href="/guide-enseignant">Guide Enseignant</a> &nbsp;·&nbsp; <a href="/guide-etudiant">Guide Étudiant</a></p>
+        <p><Link href="/">Accueil</Link> &nbsp;·&nbsp; <a href="/guide-enseignant">Guide Enseignant</a> &nbsp;·&nbsp; <a href="/guide-etudiant">Guide Étudiant</a></p>
         <p style={{marginTop:8,opacity:.5}}>© 2026 CEI — Université Cheikh Hamidou Kane (UNCHK)</p>
       </footer>
     </>

@@ -22,10 +22,6 @@ export default function SurveillantMessagesPage() {
   const [loadingExams, setLoadingExams] = useState(true)
   const [loadingMessages, setLoadingMessages] = useState(false)
 
-  useEffect(() => {
-    loadExams()
-  }, [])
-
   async function loadExams() {
     setLoadingExams(true)
     try {
@@ -40,6 +36,10 @@ export default function SurveillantMessagesPage() {
     } catch { error('Erreur chargement examens') }
     finally { setLoadingExams(false) }
   }
+
+  useEffect(() => {
+    loadExams()
+  }, [])
 
   async function loadMessages(examId: number) {
     setSelectedExamId(examId)

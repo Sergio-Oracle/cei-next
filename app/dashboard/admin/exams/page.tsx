@@ -383,7 +383,7 @@ export default function AdminExamsPage() {
                 <i className="fas fa-clock" style={{ color: '#d97706' }} />
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize:18, fontWeight: 700 }}>Rallonger l'examen</h3>
+                <h3 style={{ margin: 0, fontSize:18, fontWeight: 700 }}>Rallonger l&apos;examen</h3>
                 <p style={{ margin: 0, fontSize:14.5, color: 'var(--text-muted)' }}>Ajouter du temps supplémentaire</p>
               </div>
               <button onClick={() => setExtendId(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize:20.5, cursor: 'pointer', color: 'var(--text-muted)' }}>

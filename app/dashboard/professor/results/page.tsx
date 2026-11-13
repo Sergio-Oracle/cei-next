@@ -327,7 +327,7 @@ function SubjectEmpty({ subject, onClose }: { subject: Subject; onClose: () => v
         <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: 18, color: '#0f172a' }}>Aucune copie corrigée pour ce sujet</p>
         <p style={{ margin: '0 0 18px', fontSize: 15.5, color: '#64748b' }}>
           {subject.ec_name ? `${subject.ec_code ? subject.ec_code + ' — ' : ''}${subject.ec_name}. ` : ''}
-          Les statistiques (moyenne, réussite, distribution des notes) apparaîtront dès qu'une copie sera corrigée.
+          Les statistiques (moyenne, réussite, distribution des notes) apparaîtront dès qu&apos;une copie sera corrigée.
         </p>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link href="/dashboard/professor/online-correction" style={{ ...linkStyle, background: '#2563eb', color: 'white' }}>
@@ -419,7 +419,7 @@ export default function ProfessorResultsPage() {
           {hasGlobal && (
             <div style={{ background: '#2563eb', borderRadius: 14, padding: '20px 22px' }}>
               <p style={{ color: '#bfdbfe', fontSize:13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 0 14px' }}>
-                <i className="fas fa-globe-africa" style={{ marginRight: 6 }} />Vue d'ensemble globale
+                <i className="fas fa-globe-africa" style={{ marginRight: 6 }} />Vue d&apos;ensemble globale
               </p>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 {[

@@ -63,7 +63,8 @@ export function useNotificationPoll(
   const activeRef  = useRef(false)
   const onEventRef = useRef(onEvent)
   const timeoutRef = useRef<number | null>(null)
-  onEventRef.current = onEvent   // toujours la version la plus récente
+  // eslint-disable-next-line react-hooks/refs -- motif « dernière valeur » : le rappel lit toujours la version la plus récente
+  onEventRef.current = onEvent
 
   useEffect(() => {
     if (!enabled) {

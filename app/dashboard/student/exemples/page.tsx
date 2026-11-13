@@ -17,8 +17,6 @@ export default function StudentExemplesPage() {
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     setLoading(true)
     try {
@@ -26,6 +24,8 @@ export default function StudentExemplesPage() {
       setExamples(Array.isArray(res) ? res : [])
     } catch { error('Erreur de chargement') } finally { setLoading(false) }
   }
+
+  useEffect(() => { load() }, [])
 
   function toggle(id: number) {
     setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
@@ -42,7 +42,7 @@ export default function StudentExemplesPage() {
       <div className="page-header">
         <div>
           <h2><i className="fa-solid fa-people-group" style={{ marginRight: 10, color: 'var(--primary)' }} />Copies-exemples</h2>
-          <p>Exemples de copies anonymisées partagés par vos enseignants — un support pour comprendre ce qui distingue une bonne réponse d'une réponse à améliorer.</p>
+          <p>Exemples de copies anonymisées partagés par vos enseignants — un support pour comprendre ce qui distingue une bonne réponse d&apos;une réponse à améliorer.</p>
         </div>
       </div>
 
@@ -51,7 +51,7 @@ export default function StudentExemplesPage() {
       ) : examples.length === 0 ? (
         <div className="card empty-message" style={{ textAlign: 'center', padding: 40 }}>
           <i className="fa-solid fa-inbox" style={{ fontSize: 35, opacity: .4, display: 'block', marginBottom: 12 }} />
-          Aucune copie-exemple partagée pour l'instant.
+          Aucune copie-exemple partagée pour l&apos;instant.
         </div>
       ) : (
         Object.entries(groups).map(([subjectTitle, list]) => (
@@ -80,7 +80,7 @@ export default function StudentExemplesPage() {
                         {e.anonymized_feedback && (
                           <div style={{ marginTop: 10 }}>
                             <div style={{ fontSize:13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>
-                              <i className="fas fa-comment-dots" style={{ marginRight: 5 }} />Retour de l'enseignant
+                              <i className="fas fa-comment-dots" style={{ marginRight: 5 }} />Retour de l&apos;enseignant
                             </div>
                             <div style={{ padding: 14, background: 'var(--background)', borderRadius: 8, fontSize:16, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                               {e.anonymized_feedback}

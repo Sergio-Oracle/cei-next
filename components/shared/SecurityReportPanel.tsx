@@ -281,7 +281,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
         <div className="page-header">
           <div>
             <h2><i className="fas fa-shield-alt" style={{ marginRight: 10, color: 'var(--primary)' }} />Rapport de sécurité</h2>
-            <p>{report?.exam_title ? <>Incidents pour l'examen <strong>{report.exam_title}</strong></> : 'Incidents et comportements suspects — tous examens confondus'}</p>
+            <p>{report?.exam_title ? <>Incidents pour l&apos;examen <strong>{report.exam_title}</strong></> : 'Incidents et comportements suspects — tous examens confondus'}</p>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {!fixedExamId && (
@@ -530,7 +530,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
               </button>
             </div>
             <p style={{ margin: '0 0 16px', fontSize:14.5, color: 'var(--text-muted)' }}>
-              {report.reference_photos.length} étudiant(s) — capturées au démarrage de l'examen
+              {report.reference_photos.length} étudiant(s) — capturées au démarrage de l&apos;examen
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14 }}>
               {report.reference_photos.map(p => (
@@ -595,7 +595,7 @@ export default function SecurityReportPanel({ fixedExamId, hideHeader = false }:
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 <i className="fas fa-camera-slash" style={{ fontSize: 35, color: '#94a3b8' }} />
                 <span style={{ fontSize:15.5, color: '#64748b' }}>Photo non disponible</span>
-                <span style={{ fontSize:13, color: '#94a3b8' }}>Les photos sont capturées au démarrage de l'examen</span>
+                <span style={{ fontSize:13, color: '#94a3b8' }}>Les photos sont capturées au démarrage de l&apos;examen</span>
               </div>
             )}
             <p style={{ fontSize:13, color: 'var(--text-muted)', marginTop: 10, textAlign: 'center' }}>
