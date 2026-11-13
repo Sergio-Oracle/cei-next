@@ -296,6 +296,14 @@ export default function AdminExamsPage() {
                     <i className="fas fa-display" />Prévisualiser
                   </Link>
 
+                  {/* Surveiller — examen en cours : page de surveillance en direct */}
+                  {isActive && (
+                    <Link href={`/proctor/monitor/${exam.id}`} title="Suivre l'examen en direct"
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', background: '#1e3a8a', border: '1px solid #1e3a8a', borderRadius: 8, fontSize:14.5, fontWeight: 600, color: '#ffffff', textDecoration: 'none' }}>
+                      <i className="fas fa-shield-alt" />Surveiller
+                    </Link>
+                  )}
+
                   {/* Copies (clôturé uniquement) */}
                   {isClosed && (
                     <button onClick={() => { setCopiesExamId(exam.id); setCopiesTitle(exam.title) }}

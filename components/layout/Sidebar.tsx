@@ -32,6 +32,7 @@ const adminNav: NavEntry[] = [
   { label: 'Créer Sujet',         href: '/dashboard/admin/create-subject', icon: 'fa-plus-circle' },
   { label: 'Sujets',              href: '/dashboard/admin/subjects',       icon: 'fa-file-alt' },
   { label: 'Examens en Ligne',    href: '/dashboard/admin/exams',          icon: 'fa-laptop-code' },
+  { label: 'Surveillance',        href: '/dashboard/admin/surveillance',   icon: 'fa-shield-alt' },
   { label: 'Historique Examens',  href: '/dashboard/admin/history',        icon: 'fa-history' },
   { label: 'Calendrier',          href: '/dashboard/admin/calendar',       icon: 'fa-calendar-alt' },
   { divider: 'Évaluations' },
