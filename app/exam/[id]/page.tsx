@@ -645,12 +645,10 @@ export default function ExamPage() {
   const [screenOn,     setScreenOn]     = useState(false)
   const [faceStatus,   setFaceStatus]   = useState<'init'|'ok'|'warn'|'bad'|'unavailable'>('init')
   const [faceIssue,    setFaceIssue]    = useState<'none'|'no_face'|'multiple'|'mismatch'>('none')
-  // Côté étudiant (alertes de détection coupées, voir SHOW_DETECTION_ALERTS_TO_STUDENT) : ni « Visage absent », ni rouge,
-  // ni « plusieurs visages » (le surveillant garde le détail). Seule une aide discrète « Repositionnez votre visage »
-  // s'affiche quand le visage est simplement hors cadre ; tout autre cas reste un « Caméra active » neutre.
-  const faceBadge = (!SHOW_DETECTION_ALERTS_TO_STUDENT && (faceStatus==='warn'||faceStatus==='bad'))
-    ? ((faceIssue==='multiple'||faceIssue==='mismatch') ? 'neutral' : 'hint')
-    : faceStatus
+  // Côté étudiant (alertes de détection coupées, voir SHOW_DETECTION_ALERTS_TO_STUDENT) : plus AUCUN message de visage — ni « Visage absent »,
+  // ni rouge, ni « plusieurs visages », ni l'aide orange « Repositionnez votre visage » (retirée le 13/11/2026 à la demande du propriétaire :
+  // les étudiants la recevaient encore). Un simple « Caméra active » neutre ; le surveillant garde tout le détail.
+  const faceBadge = (!SHOW_DETECTION_ALERTS_TO_STUDENT && (faceStatus==='warn'||faceStatus==='bad')) ? 'neutral' : faceStatus
   const [warnText,     setWarnText]     = useState('')
   const [showWarnModal,setShowWarnModal]= useState(false)
   const [msgModalText, setMsgModalText] = useState('')
@@ -4235,16 +4233,16 @@ export default function ExamPage() {
                 le flux vidéo lui-même (même principe que les plateformes de
                 surveillance standard) montre concrètement OÙ replacer son
                 visage, pas seulement QU'il manque. */}
-            {((SHOW_DETECTION_ALERTS_TO_STUDENT && (faceStatus==='warn'||faceStatus==='bad')) || (faceBadge==='hint' && !identityUnderReview)) && (
+            {(SHOW_DETECTION_ALERTS_TO_STUDENT && (faceStatus==='warn'||faceStatus==='bad')) && (
               <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',pointerEvents:'none',padding:8,gap:6}}>
-                <div style={{width:'52%',aspectRatio:'3/4',borderRadius:'50%',border:`2px dashed ${faceBadge!=='hint'&&faceStatus==='bad'?'#ef4444':'#f59e0b'}`,animation:faceBadge!=='hint'&&faceStatus==='bad'?'faceRingBad 1.4s ease-in-out infinite':'faceRingWarn 1.6s ease-in-out infinite'}}/>
+                <div style={{width:'52%',aspectRatio:'3/4',borderRadius:'50%',border:`2px dashed ${faceStatus==='bad'?'#ef4444':'#f59e0b'}`,animation:faceStatus==='bad'?'faceRingBad 1.4s ease-in-out infinite':'faceRingWarn 1.6s ease-in-out infinite'}}/>
                 <div style={{background:'rgba(15,23,42,.78)',color:'#fff',fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:6,textAlign:'center',lineHeight:1.3}}>
-                  <i className={`fas ${identityUnderReview?'fa-user-shield':faceBadge==='hint'?'fa-eye-slash':faceIssue==='multiple'?'fa-user-group':faceStatus==='bad'?'fa-user-slash':'fa-eye-slash'}`} style={{marginRight:4}}/>
-                  {identityUnderReview ? 'Vérification en cours — continuez de composer' : faceBadge==='hint' ? 'Repositionnez votre visage dans le cadre' : faceIssue==='multiple' ? 'Éloignez toute autre personne' : faceStatus==='bad' ? 'Recentrez votre visage ici' : 'Repositionnez-vous dans le cadre'}
+                  <i className={`fas ${identityUnderReview?'fa-user-shield':faceIssue==='multiple'?'fa-user-group':faceStatus==='bad'?'fa-user-slash':'fa-eye-slash'}`} style={{marginRight:4}}/>
+                  {identityUnderReview ? 'Vérification en cours — continuez de composer' : faceIssue==='multiple' ? 'Éloignez toute autre personne' : faceStatus==='bad' ? 'Recentrez votre visage ici' : 'Repositionnez-vous dans le cadre'}
                 </div>
               </div>
             )}
-            <div style={{position:'absolute',top:6,right:6,padding:'3px 7px',background:identityUnderReview?'rgba(217,119,6,.92)':faceBadge==='ok'?'rgba(16,185,129,.9)':faceBadge==='warn'||faceBadge==='hint'?'rgba(245,158,11,.9)':faceBadge==='bad'?'rgba(239,68,68,.9)':'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',borderRadius:4,color:'white',fontSize:11,fontWeight:600,display:'flex',alignItems:'center',gap:4,animation:faceBadge==='bad'?'faceRingBad 1.4s ease-in-out infinite':faceBadge==='warn'||faceBadge==='hint'?'faceRingWarn 1.6s ease-in-out infinite':'none'}}>
+            <div style={{position:'absolute',top:6,right:6,padding:'3px 7px',background:identityUnderReview?'rgba(217,119,6,.92)':faceBadge==='ok'?'rgba(16,185,129,.9)':faceBadge==='warn'?'rgba(245,158,11,.9)':faceBadge==='bad'?'rgba(239,68,68,.9)':'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',borderRadius:4,color:'white',fontSize:11,fontWeight:600,display:'flex',alignItems:'center',gap:4,animation:faceBadge==='bad'?'faceRingBad 1.4s ease-in-out infinite':faceBadge==='warn'?'faceRingWarn 1.6s ease-in-out infinite':'none'}}>
               {identityUnderReview&&<><i className="fas fa-user-shield"/>Identité en vérification</>}
               {!identityUnderReview&&faceBadge==='init'&&<><i className="fas fa-sync fa-spin"/>Init…</>}
               {!identityUnderReview&&faceBadge==='ok'&&<><i className="fas fa-user-check"/>Visage OK</>}
@@ -4252,7 +4250,6 @@ export default function ExamPage() {
               {!identityUnderReview&&faceBadge==='warn'&&faceIssue!=='multiple'&&<><i className="fas fa-eye-slash"/>Repositionnez…</>}
               {!identityUnderReview&&faceBadge==='bad'&&faceIssue==='multiple'&&<><i className="fas fa-user-group"/>Plusieurs visages</>}
               {!identityUnderReview&&faceBadge==='bad'&&faceIssue!=='multiple'&&<><i className="fas fa-times"/>Visage absent</>}
-              {!identityUnderReview&&faceBadge==='hint'&&<><i className="fas fa-eye-slash"/>Repositionnez votre visage</>}
               {!identityUnderReview&&faceBadge==='neutral'&&<><i className="fas fa-video"/>Caméra active</>}
               {!identityUnderReview&&faceStatus==='unavailable'&&<><i className="fas fa-triangle-exclamation"/>Vérification indisponible</>}
             </div>
