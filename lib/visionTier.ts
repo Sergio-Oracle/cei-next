@@ -163,8 +163,11 @@ export async function preloadVision(upTo: VisionTier, onProgress?: (p: PreloadPr
 
 /** Faut-il lancer seul le préchargement (sans que l'étudiant le demande) ? Jamais sur données mobiles / économie de données. */
 export function mayAutoPrefetch(): boolean {
+  // Jamais sur téléphone / tablette : un examen se compose sur ordinateur, et Safari/Firefox ne disent pas si la connexion est mobile
+  // (données facturées). Les étudiants sur mobile peuvent toujours lancer le téléchargement à la main (« Vérifier mon poste »).
+  if (typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return false
   const c = connection()
-  if (!c) return true                                          // Firefox/Safari : pas d'information ; la mesure de débit tranchera ensuite
+  if (!c) return true                                          // Firefox/Safari sur ordinateur : pas d'information ; la mesure de débit tranchera ensuite
   if (c.saveData || c.type === 'cellular') return false
   return !(c.effectiveType && ['slow-2g', '2g'].includes(c.effectiveType))
 }
