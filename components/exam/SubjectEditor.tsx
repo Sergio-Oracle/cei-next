@@ -118,7 +118,13 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
     const errors = (check?.issues || []).filter(i => i.level === 'error')
     if (errors.length && !window.confirm(`Le contrôle signale ${errors.length} erreur(s) :\n\n- ${errors.map(e => e.message).join('\n- ')}\n\nEnregistrer quand même ?`)) return
     setBusy(true); setErr('')
-    try { await api.put(`/api/subjects/${subjectId}`, { content: text, rubric }); onSaved() }
+    try {
+      const res = await api.put<{ rubric_sync?: { summary?: string; review?: string[] } }>(`/api/subjects/${subjectId}`, { content: text, rubric })
+      // Le barème suit le sujet : le serveur dit ce qu'il a ajusté (questions retirées, renumérotées, total) et ce qui reste à vérifier
+      const rs = res?.rubric_sync
+      if (rs?.summary) window.alert([rs.summary, ...(rs.review || [])].join('\n\n'))
+      onSaved()
+    }
     catch (e: unknown) { setErr(errMsg(e) || "L'enregistrement a échoué"); setBusy(false) }
   }
 
