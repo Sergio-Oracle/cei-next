@@ -694,6 +694,18 @@ export default function ExamPage() {
   const [phoneCamModalConnected, setPhoneCamModalConnected] = useState(false)
   const [phoneCamBusy, setPhoneCamBusy] = useState(false)
   const phoneCamPollRef = useRef<ReturnType<typeof setInterval>|null>(null)
+  // Caméra secondaire EXIGÉE (14/11/2026) : une seule règle, partout. « Dispensé » = le personnel a levé l'exigence pour cet étudiant
+  // (téléphone en panne). « Manquante » = exigée, absente avec certitude depuis ~1 min, ou refusée par le serveur à l'ouverture de la copie :
+  // un écran de reconnexion recouvre la copie jusqu'au retour du téléphone.
+  const [phoneCamWaived, setPhoneCamWaived] = useState(false)
+  const [phoneCamMissing, setPhoneCamMissing] = useState(false)
+  const phoneCamMissingRef = useRef(false)
+  const phoneCamMissRef = useRef(0)
+  const phoneCamOkRef = useRef(false)
+  // Code de sortie d'urgence émis pour CET étudiant : affiché sur son écran (le surveillant n'a pas toujours de moyen de le lui transmettre)
+  const [exitCode, setExitCode] = useState<string|null>(null)
+  const [exitCodeOpen, setExitCodeOpen] = useState(false)
+  const exitCodeRef = useRef<string|null>(null)
   const [msgText,      setMsgText]      = useState('')
   const [msgSent,      setMsgSent]      = useState<{text:string;time:string}[]>([])
   const [camOn,        setCamOn]        = useState(false)
@@ -1081,7 +1093,7 @@ export default function ExamPage() {
      (heartbeat de la page d'examen, première sauvegarde de réponses). ─────────────────────────────────────────────── */
   const seenSentRef = useRef(false)
   useEffect(() => {
-    if (phase !== 'exam' || isPreview || seenSentRef.current) return
+    if (phase !== 'exam' || isPreview || seenSentRef.current || phoneCamMissing) return
     if (parsedBlocks.length === 0 && shuffledBlocks.length === 0) return            // les questions ne sont pas encore à l'écran
     const attId = attemptRef.current ?? attempt?.id
     if (!attId) return
@@ -1091,7 +1103,13 @@ export default function ExamPage() {
       seenSentRef.current = true
       let tries = 0
       const post = () => {
-        api.post<{elapsed_seconds?: number}>(`/api/exam_attempts/${attId}/seen`, {}).then(r => noteSeenClock(r?.elapsed_seconds)).catch(() => {
+        api.post<{elapsed_seconds?: number}>(`/api/exam_attempts/${attId}/seen`, {}).then(r => noteSeenClock(r?.elapsed_seconds)).catch((e: unknown) => {
+          if ((e as {status?:number})?.status === 409 && (e as {data?:{secondary_camera_required?:boolean}})?.data?.secondary_camera_required) {
+            // Le serveur constate l'absence du téléphone : la copie reste masquée (écran de reconnexion) ; elle sera re-déclarée dès son retour
+            seenSentRef.current = false; setPhoneCamLinked(false); phoneCamMissRef.current = 3
+            flagPhoneCamMissing(attId, true, 'Copie refusée par le serveur : caméra secondaire absente')
+            return
+          }
           if (++tries < 6 && !sessionEndedRef.current) setTimeout(post, 3000 * tries)
           else seenSentRef.current = false                                           // abandon : le prochain rendu réessaiera
         })
@@ -1099,7 +1117,7 @@ export default function ExamPage() {
       post()
     }, 400)
     return () => clearTimeout(t)
-  }, [phase, parsedBlocks.length, shuffledBlocks.length, attempt?.id]) // eslint-disable-line
+  }, [phase, parsedBlocks.length, shuffledBlocks.length, attempt?.id, phoneCamMissing]) // eslint-disable-line
 
   /* ── Pagination façon Moodle calculée côté serveur ───────────────────── */
   useEffect(() => {
@@ -1590,27 +1608,54 @@ export default function ExamPage() {
   // pour la caméra principale) — seulement une notification non bloquante,
   // et le badge devient cliquable pour permettre une reconnexion sans
   // quitter l'examen (retour utilisateur du 25/08).
+  useEffect(() => { phoneCamOkRef.current = phoneCamLinked || phoneCamWaived }, [phoneCamLinked, phoneCamWaived])
+  // Avant l'entrée dans l'examen (caméra qui bloque, scan qui n'aboutit pas…) le heartbeat ne tourne pas : sondage dédié, dans l'application seulement.
+  useEffect(() => {
+    if (!attempt?.id || phase === 'exam' || phase === 'submitted' || isPreview || !isCeiClient()) return
+    const aId = attempt.id
+    let stop = false
+    const poll = () => api.get<{code?:string|null}>(`/api/exam_attempts/${aId}/client_exit_code/mine`).then(r => { if (!stop) applyExitCode(aId, r?.code ?? null) }).catch(()=>{})
+    const iv = setInterval(poll, 15000)
+    return () => { stop = true; clearInterval(iv) }
+  }, [attempt?.id, phase]) // eslint-disable-line
+  const flagPhoneCamMissing = (aId:number, missing:boolean, why:string) => {
+    if (phoneCamMissingRef.current === missing) return
+    phoneCamMissingRef.current = missing
+    setPhoneCamMissing(missing)
+    logActivity(aId, missing ? 'secondary_camera_missing' : 'secondary_camera_restored', why).catch(()=>{})
+  }
   useEffect(() => {
     if (!attempt?.id || !exam?.allow_secondary_camera) return
     let cancelled = false
+    const aId = attempt.id
     const check = () => {
-      api.get<{linked:boolean}>(`/api/exam_attempts/${attempt.id}/phone_camera/status`)
+      api.get<{linked:boolean; unknown?:boolean; waived?:boolean}>(`/api/exam_attempts/${aId}/phone_camera/status`)
         .then(st => {
           if (cancelled) return
+          if (st.unknown) return                 // LiveKit injoignable côté serveur : on ne sait pas — jamais bloquer pour un incident du serveur
+          setPhoneCamWaived(!!st.waived)
           setPhoneCamLinked(prev => {
-            if (prev && !st.linked && phase === 'exam') {
-              warning('Caméra secondaire déconnectée — cliquez sur le badge pour la reconnecter')
+            if (prev && !st.linked && !st.waived && phase === 'exam') {
+              warning('Caméra secondaire déconnectée — reconnectez-la, la copie sera masquée si elle reste absente')
             }
             return st.linked
           })
+          if (phase !== 'exam') return
+          if (st.linked || st.waived) {
+            phoneCamMissRef.current = 0
+            flagPhoneCamMissing(aId, false, 'Caméra secondaire reconnectée')
+          } else if (++phoneCamMissRef.current >= 3) {          // 3 constats d'absence de suite (≈ 1 min) : une coupure de quelques secondes ne bloque pas
+            flagPhoneCamMissing(aId, true, 'Caméra secondaire absente depuis plus d\'une minute — copie masquée jusqu\'à la reconnexion')
+          }
         })
         .catch(() => {})
     }
     check()
-    if (phase !== 'exam') return
-    const iv = setInterval(check, 20000)
+    if (phase !== 'exam' && phase !== 'env_scan') return
+    // 5 s avant l'examen et pendant l'écran de reconnexion (une dispense du surveillant ou le retour du téléphone se voit aussitôt), 20 s sinon
+    const iv = setInterval(check, phase === 'env_scan' || phoneCamMissing ? 5000 : 20000)
     return () => { cancelled = true; clearInterval(iv) }
-  }, [attempt?.id, exam?.allow_secondary_camera, phase])
+  }, [attempt?.id, exam?.allow_secondary_camera, phase, phoneCamMissing]) // eslint-disable-line
 
   async function submitAccessCode() {
     if (!pastedCode.trim()) { toastErr('Collez le code affiché ci-dessus.'); return }
@@ -1973,6 +2018,7 @@ export default function ExamPage() {
 
   function enterExam() {
     if (!exam||!attempt) return
+    if (exam.allow_secondary_camera && !phoneCamOkRef.current) { toastErr('Connectez la caméra secondaire avant de continuer.'); return }   // filet : aucune voie ne contourne l'exigence
     examEnterTimeRef.current = Date.now()
     clockEnterAtRef.current = performance.now()
     document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
@@ -1999,7 +2045,7 @@ export default function ExamPage() {
       // redescendait jamais vraiment.
       if(sessionEndedRef.current){if(heartbeatRef.current)clearInterval(heartbeatRef.current);return}
       const aId = attemptRef.current
-      if (aId && navigator.onLine) api.post(`/api/exam_attempts/${aId}/heartbeat`, {}).catch(()=>{})
+      if (aId && navigator.onLine) api.post<{exit_code?:string}>(`/api/exam_attempts/${aId}/heartbeat`, {}).then(r => applyExitCode(aId, r?.exit_code ?? null)).catch(()=>{})
     }
     sendHeartbeat()
     heartbeatRef.current = setInterval(sendHeartbeat, 20000)
@@ -2583,6 +2629,16 @@ export default function ExamPage() {
       if(res.risk_score!=null) setRiskScore(res.risk_score)
       if(res.banned) triggerBan()
     } catch {}
+  }
+  /** Code de sortie d'urgence émis pour CET étudiant (reçu par le heartbeat ou par la route dédiée avant l'examen). */
+  function applyExitCode(aId:number, code:string|null) {
+    if (code) {
+      if (exitCodeRef.current === code) return
+      exitCodeRef.current = code; setExitCode(code); setExitCodeOpen(true)
+      logActivity(aId,'client_exit_code_shown',"Code de sortie d'urgence affiché à l'étudiant").catch(()=>{})
+    } else if (exitCodeRef.current) {
+      exitCodeRef.current = null; setExitCode(null); setExitCodeOpen(false)          // utilisé, expiré ou remplacé : il disparaît de l'écran
+    }
   }
   async function logActivity(aId:number,eventType:string,eventData:string) {
     if(sessionEndedRef.current) return
@@ -3954,6 +4010,7 @@ export default function ExamPage() {
             <i className="fas fa-exclamation-triangle" style={{marginRight:6}}/>{permError}
           </div>}
         </div>
+        <ExitCodePanel code={exitCode} open={exitCodeOpen} onOpen={()=>setExitCodeOpen(true)} onClose={()=>setExitCodeOpen(false)}/>
       </div>
     )
   }
@@ -3980,7 +4037,20 @@ export default function ExamPage() {
     // comme ce qui existait") — "Continuer vers l'examen" reste bloqué tant
     // qu'elle n'est pas connectée, uniquement si l'option est activée pour
     // cet examen ; sinon comportement inchangé.
-    const needsPhoneCam = envScanStatus==='ok' && !!exam?.allow_secondary_camera && !phoneCamLinked
+    const phoneCamButtonEl = exam?.allow_secondary_camera ? (
+      phoneCamWaived && !phoneCamLinked ? (
+        <div style={{width:'100%',padding:11,background:'#fef3c7',color:'#92400e',borderRadius:10,fontSize:15,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:8}}>
+          <i className="fas fa-user-check"/> Dispensé de la caméra secondaire par le surveillant
+        </div>
+      ) : (
+        <button onClick={openPhoneCameraModal}
+          style={{width:'100%',padding:11,background:phoneCamLinked?'#dcfce7':'#f1f5f9',color:phoneCamLinked?'#15803d':'#334155',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:8}}>
+          <i className={`fas ${phoneCamLinked?'fa-circle-check':'fa-mobile-screen'}`}/>
+          {phoneCamLinked ? 'Caméra secondaire connectée — revoir / reconnecter' : 'Ajouter la caméra secondaire (requise pour cet examen)'}
+        </button>
+      )
+    ) : null
+    const needsPhoneCam = !!exam?.allow_secondary_camera && !phoneCamLinked && !phoneCamWaived   // quel que soit le résultat du scan (ok / dégradé) : voir services/phonecam.py
     const scanStageAnim = scanStage.dir==='left' ? 'scanArrowLeft 1.1s ease-in-out infinite'
       : scanStage.dir==='right' ? 'scanArrowRight 1.1s ease-in-out infinite'
       : scanStage.dir==='down' ? 'scanArrowDown 1.1s ease-in-out infinite'
@@ -4073,6 +4143,7 @@ export default function ExamPage() {
                 {envScanLite
                   ? "Connexion limitée : la vérification de la pièce est allégée pour ne pas ralentir votre examen. Votre visage reste surveillé — vous pouvez continuer, le surveillant en a été informé."
                   : "Vérification automatique incomplète (éclairage, caméra ou navigateur) — vous pouvez continuer, le surveillant en a été informé."}
+                {exam?.allow_secondary_camera && !phoneCamLinked && !phoneCamWaived && " La caméra secondaire reste obligatoire : connectez-la ci-dessous."}
               </p>
             </div>
           )}
@@ -4098,24 +4169,19 @@ export default function ExamPage() {
                   "connectée" atteint (retour utilisateur du 24/08 : le bouton
                   n'affichait plus jamais le QR une fois lié, sans possibilité
                   de le rouvrir). */}
-              {exam?.allow_secondary_camera && (
-                <button onClick={openPhoneCameraModal}
-                  style={{width:'100%',padding:11,background:phoneCamLinked?'#dcfce7':'#f1f5f9',color:phoneCamLinked?'#15803d':'#334155',border:'none',borderRadius:10,fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:8}}>
-                  <i className={`fas ${phoneCamLinked?'fa-circle-check':'fa-mobile-screen'}`}/>
-                  {phoneCamLinked ? 'Caméra secondaire connectée — revoir / reconnecter' : 'Ajouter la caméra secondaire (requise pour cet examen)'}
-                </button>
-              )}
+              {phoneCamButtonEl}
             </>
           )}
+          {envScanStatus==='degraded' && phoneCamButtonEl}
 
           {(envScanStatus==='ok' || envScanStatus==='blocked' || envScanStatus==='degraded') && (
             <>
-              <button onClick={envScanStatus==='blocked' ? runEnvironmentScan : enterExam} disabled={needsPhoneCam}
-                style={{width:'100%',padding:14,background:'#2563eb',color:'white',border:'none',borderRadius:12,fontSize:17,fontWeight:700,cursor:needsPhoneCam?'not-allowed':'pointer',opacity:needsPhoneCam?.5:1,display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+              <button onClick={envScanStatus==='blocked' ? runEnvironmentScan : enterExam} disabled={needsPhoneCam && envScanStatus!=='blocked'}
+                style={{width:'100%',padding:14,background:'#2563eb',color:'white',border:'none',borderRadius:12,fontSize:17,fontWeight:700,cursor:(needsPhoneCam && envScanStatus!=='blocked')?'not-allowed':'pointer',opacity:(needsPhoneCam && envScanStatus!=='blocked')?.5:1,display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
                 <i className={`fas ${envScanStatus==='blocked'?'fa-rotate':'fa-arrow-right'}`}/>
                 {envScanStatus==='blocked' ? 'Relancer la vérification' : "Continuer vers l'examen"}
               </button>
-              {needsPhoneCam && (
+              {needsPhoneCam && envScanStatus!=='blocked' && (
                 <p style={{fontSize:13,color:'#94a3b8',textAlign:'center',margin:'8px 0 0'}}>
                   Connectez la caméra secondaire ci-dessus pour continuer.
                 </p>
@@ -4125,6 +4191,7 @@ export default function ExamPage() {
         </div>
         <PhoneCameraModal show={showPhoneCamModal} busy={phoneCamBusy} connected={phoneCamModalConnected}
           code={phoneCamCode} url={phoneCamUrl} qr={phoneCamQr} onClose={closePhoneCameraModal}/>
+        <ExitCodePanel code={exitCode} open={exitCodeOpen} onOpen={()=>setExitCodeOpen(true)} onClose={()=>setExitCodeOpen(false)}/>
       </div>
     )
   }
@@ -4657,9 +4724,23 @@ export default function ExamPage() {
         {/* Calculatrice intégrée (Retour DFIP — évite la calculatrice physique/téléphone) */}
         {exam.enable_calculator&&showCalculator&&<Calculator onClose={()=>setShowCalculator(false)}/>}
 
+        {phoneCamMissing && exam?.allow_secondary_camera && !phoneCamWaived && !phoneCamLinked && (
+          <div role="alertdialog" aria-live="assertive" style={{position:'fixed',inset:0,zIndex:9500,background:'rgba(15,23,42,.97)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+            <div style={{maxWidth:460,width:'100%',background:'#1e293b',border:'1px solid #475569',borderRadius:14,padding:'28px 26px',textAlign:'center',color:'#e2e8f0'}}>
+              <div style={{fontSize:40,color:'#f59e0b',marginBottom:10}}><i className="fas fa-mobile-screen"/></div>
+              <h2 style={{margin:'0 0 10px',fontSize:21,fontWeight:700,color:'white'}}>Caméra secondaire déconnectée</h2>
+              <p style={{margin:'0 0 8px',fontSize:15.5,lineHeight:1.55}}>Cet examen exige la caméra secondaire. Votre copie est masquée tant qu&apos;elle n&apos;est pas reconnectée. <strong>Vos réponses sont conservées</strong> ; le temps continue de s&apos;écouler.</p>
+              <p style={{margin:'0 0 18px',fontSize:14.5,lineHeight:1.5,color:'#94a3b8'}}>Téléphone en panne ou batterie vide ? Prévenez le surveillant : il peut vous dispenser de la caméra secondaire.</p>
+              <button onClick={openPhoneCameraModal} style={{width:'100%',padding:13,background:'#2563eb',color:'white',border:'none',borderRadius:10,fontSize:16,fontWeight:700,cursor:'pointer'}}>
+                <i className="fas fa-qrcode" style={{marginRight:8}}/>Reconnecter la caméra secondaire
+              </button>
+            </div>
+          </div>
+        )}
         {/* Couplage caméra secondaire (smartphone, angle latéral) */}
         <PhoneCameraModal show={showPhoneCamModal} busy={phoneCamBusy} connected={phoneCamModalConnected}
           code={phoneCamCode} url={phoneCamUrl} qr={phoneCamQr} onClose={closePhoneCameraModal}/>
+        <ExitCodePanel code={exitCode} open={exitCodeOpen} onOpen={()=>setExitCodeOpen(true)} onClose={()=>setExitCodeOpen(false)}/>
 
         {/* Modal appel privé entrant */}
         {showPrivateCallModal&&(
@@ -5251,6 +5332,33 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+/** Code de sortie d'urgence affiché à l'étudiant lui-même (émis par un surveillant : personne n'a à le lui transmettre). */
+function ExitCodePanel({code,open,onOpen,onClose}:{code:string|null;open:boolean;onOpen:()=>void;onClose:()=>void}) {
+  if (!code) return null
+  const mac = typeof navigator!=='undefined' && /Mac/i.test(navigator.platform||'')
+  if (!open) return (
+    <button onClick={onOpen} style={{position:'fixed',left:16,bottom:16,zIndex:10001,padding:'10px 16px',background:'#f59e0b',color:'#1c1917',border:'none',borderRadius:10,fontWeight:700,fontSize:15,cursor:'pointer',boxShadow:'0 6px 18px rgba(0,0,0,.35)'}}>
+      <i className="fas fa-key" style={{marginRight:8}}/>Mon code de sortie
+    </button>
+  )
+  return (
+    <div role="alertdialog" aria-live="assertive" style={{position:'fixed',inset:0,zIndex:10001,background:'rgba(0,0,0,.72)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+      <div style={{background:'white',borderRadius:14,maxWidth:440,width:'100%',padding:'26px 28px',textAlign:'center',boxShadow:'0 20px 50px rgba(0,0,0,.45)'}}>
+        <div style={{fontSize:36,color:'#f59e0b',marginBottom:6}}><i className="fas fa-key"/></div>
+        <h2 style={{margin:'0 0 6px',fontSize:20,fontWeight:800,color:'#0f172a'}}>Votre code de sortie</h2>
+        <p style={{margin:'0 0 14px',fontSize:14.5,color:'#475569',lineHeight:1.5}}>Un surveillant vous autorise à quitter l&apos;application CEI Examen.</p>
+        <div style={{fontSize:38,fontWeight:800,letterSpacing:4,color:'#0f172a',background:'#f1f5f9',borderRadius:10,padding:'14px 8px',marginBottom:14,fontVariantNumeric:'tabular-nums'}}>{code}</div>
+        <ol style={{textAlign:'left',margin:'0 0 14px',paddingLeft:22,fontSize:14.5,color:'#334155',lineHeight:1.65}}>
+          <li>Appuyez sur <strong>{mac?'⌘ ⇧ ⌥ Q':'Ctrl + Maj + Alt + Q'}</strong>.</li>
+          <li>Saisissez ce code dans la fenêtre qui s&apos;ouvre.</li>
+        </ol>
+        <p style={{margin:'0 0 16px',fontSize:13,color:'#64748b',lineHeight:1.5}}>Valable 15 minutes, utilisable une seule fois, <strong>uniquement par vous</strong>. Ne le communiquez à personne.</p>
+        <button onClick={onClose} style={{width:'100%',padding:12,background:'#0f172a',color:'white',border:'none',borderRadius:9,fontWeight:700,fontSize:15.5,cursor:'pointer'}}>J&apos;ai compris</button>
+      </div>
     </div>
   )
 }

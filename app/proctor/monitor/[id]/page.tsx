@@ -45,6 +45,7 @@ interface Proctor {
 interface ProctorData {
   exam_title:     string
   exam_status:    string
+  allow_secondary_camera?: boolean
   my_role:        string
   my_identity:    string | null
   attempts:       Student[]
@@ -295,6 +296,11 @@ export default function ProctorMonitorPage() {
   const [extraModal,   setExtraModal]   = useState<{ attemptId: number; name: string } | null>(null)
   // Code de sortie d'urgence de l'application CEI Examen : généré à la demande, valable 15 min, utilisable une seule fois
   const [exitCodeModal, setExitCodeModal] = useState<{ attemptId: number; name: string; code?: string; expiresAt?: number; busy?: boolean; error?: string } | null>(null)
+  // Liste des étudiants (tableaux) : repliée par défaut — avec des centaines d'étudiants elle repoussait les cartes vidéo tout en bas.
+  // Seul le choix d'affichage est mémorisé dans le navigateur de l'enseignant ; la page fonctionne sans.
+  const [showStudentList, setShowStudentList] = useState(false)
+  useEffect(() => { try { if (localStorage.getItem('cei_monitor_list_open') === '1') setShowStudentList(true) } catch { /* stockage indisponible */ } }, [])
+  const toggleStudentList = () => setShowStudentList(v => { const n = !v; try { localStorage.setItem('cei_monitor_list_open', n ? '1' : '0') } catch { /* ignoré */ } return n })
   const [extraMins,    setExtraMins]    = useState('15')
   const [grantingTime, setGrantingTime] = useState(false)
 
@@ -1328,6 +1334,13 @@ export default function ProctorMonitorPage() {
       setExitCodeModal({ attemptId, name, code: r.code, expiresAt: Date.now() + r.expires_in * 1000 })
     } catch (e: unknown) { setExitCodeModal({ attemptId, name, error: errMsg(e) || 'Impossible de générer le code' }) }
   }
+  async function waivePhoneCam(s: Student) {
+    if (!confirm(`Dispenser ${s.student_name} de la caméra secondaire ?\n\nÀ faire seulement après avoir constaté une vraie panne (téléphone éteint, batterie vide…). Sa copie s'ouvrira sans caméra secondaire ; l'action est enregistrée à votre nom.`)) return
+    try {
+      await api.post(`/api/exam_attempts/${s.attempt_id}/phone_camera/waive`, { reason: 'dispense par le personnel' })
+      success(`${s.student_name} est dispensé de la caméra secondaire`)
+    } catch (e: unknown) { toastErr(errMsg(e) || "Impossible de dispenser cet étudiant") }
+  }
   function openExitCode(s: Student) {
     if (!confirm(`Générer un code de sortie d'urgence pour ${s.student_name} ?\n\nÀ donner seulement après avoir vérifié une vraie panne (appel ou message). Le code est à usage unique et vaut 15 minutes.`)) return
     generateExitCode(s.attempt_id, s.student_name)
@@ -1853,6 +1866,16 @@ export default function ProctorMonitorPage() {
         {/* ═══════════ TABLES PROFESSEUR uniquement ═══════════════════════ */}
         {!isSurveillant && (
           <>
+            <button onClick={toggleStudentList} aria-expanded={showStudentList}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', marginBottom: showStudentList ? 14 : 18, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 10, color: 'rgba(255,255,255,.85)', fontSize: 15, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+              <i className={`fas fa-chevron-${showStudentList ? 'down' : 'right'}`} style={{ width: 14, color: 'rgba(255,255,255,.5)' }} />
+              <i className="fas fa-list" />
+              {showStudentList ? 'Masquer la liste des étudiants' : 'Afficher la liste des étudiants'}
+              <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,.5)' }}>
+                {inProgress.length} en cours · {completed.length} terminé{completed.length > 1 ? 's' : ''}{banned.length ? ` · ${banned.length} exclu${banned.length > 1 ? 's' : ''}` : ''}
+              </span>
+            </button>
+            {showStudentList && (<>
             {/* Table EN COURS */}
             {(filter === 'all' || filter === 'in_progress' || filter === 'high_risk') && (
               <Section title="En cours" count={inProgress.filter(s => filter !== 'high_risk' || s.risk_score >= 60).length} dot="#10b981" badgeBg="rgba(16,185,129,.2)" badgeColor="#6ee7b7">
@@ -1984,6 +2007,7 @@ export default function ProctorMonitorPage() {
                 <PagerBar pg={pgBan} sizes={[10, 25, 50, 100]} step={25} />
               </Section>
             )}
+            </>)}
           </>
         )}
 
@@ -2048,6 +2072,7 @@ export default function ProctorMonitorPage() {
                 onCall={() => startPrivateCall(s.attempt_id, s.student_name)}
                 onExtraTime={() => openExtra(s)}
                 onExitCode={() => openExitCode(s)}
+                onWaivePhone={data?.allow_secondary_camera && !phoneLiveSet.has(s.livekit_identity) ? () => waivePhoneCam(s) : undefined}
                 onNote={() => openNote(s)}
                 onLogs={() => openLogs(s)}
                 onZoomPhone={() => openPhoneZoom(s)}
@@ -2154,8 +2179,9 @@ export default function ProctorMonitorPage() {
               {exitCodeModal.code}
             </div>
             <p style={{ fontSize:14.5, color: 'rgba(255,255,255,.6)', margin: '12px 0 0', lineHeight: 1.5 }}>
-              L&apos;étudiant tape <b>Ctrl+Maj+Alt+Q</b> (⌘⇧⌥Q sur Mac) dans l&apos;application et saisit ce code. Il est <b>valable 15 minutes</b>, <b>utilisable une seule fois</b>, et ne marche que pour cet étudiant.
-              Le serveur vérifie le code ; sa génération et son usage sont enregistrés. Donnez-le oralement ou par message privé, jamais en public.
+              <b>Le code s&apos;affiche de lui-même sur l&apos;écran de l&apos;étudiant</b> (dans les 20 secondes) avec la marche à suivre : vous n&apos;avez rien à lui transmettre.
+              Il est <b>valable 15 minutes</b>, <b>utilisable une seule fois</b>, et ne marche que pour cet étudiant. Le serveur vérifie le code ; sa génération, son affichage et son usage sont enregistrés.
+              Si l&apos;écran de l&apos;étudiant est bloqué et qu&apos;il ne le voit pas, donnez-le lui oralement ou par appel privé, jamais en public.
             </p>
           </>)}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
@@ -2864,7 +2890,7 @@ function AgentBanner({ agent, lastCheck, studentsCount }: { agent: AgentStatus |
   )
 }
 
-function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onBan, onRec, onScreen, onCall, onExtraTime, onExitCode, onNote, onLogs, onZoomPhone, onIdentityVerify }: {
+function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onBan, onRec, onScreen, onCall, onExtraTime, onExitCode, onWaivePhone, onNote, onLogs, onZoomPhone, onIdentityVerify }: {
   s: Student
   recActive:    boolean
   screenAvail:  boolean
@@ -2877,6 +2903,7 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
   onCall:       () => void
   onExtraTime:  () => void
   onExitCode:   () => void
+  onWaivePhone?: () => void
   onNote:       () => void
   onLogs:       () => void
   onZoomPhone:  () => void
@@ -3064,6 +3091,12 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
                 onClick={onExitCode} title="Code de sortie d'urgence (application CEI Examen)">
                 <i className="fas fa-key" />
               </button>
+              {onWaivePhone && (
+                <button className="card-act-btn" style={{ background: 'rgba(245,158,11,.14)', color: '#fbbf24', borderColor: 'rgba(245,158,11,.3)' }}
+                  onClick={onWaivePhone} title="Caméra secondaire absente : dispenser cet étudiant (téléphone en panne)">
+                  <i className="fas fa-mobile-screen" /><i className="fas fa-slash" style={{ marginLeft: -9, fontSize: 11 }} />
+                </button>
+              )}
               <button className="card-act-btn" style={{ background: 'rgba(13,148,136,.12)', color: '#2dd4bf', borderColor: 'rgba(13,148,136,.2)' }}
                 onClick={onNote} title="Note de surveillance">
                 <i className="fas fa-sticky-note" />
