@@ -334,6 +334,15 @@ const DOC_HEADER_CUES = [
   /semestre|ann[ée]e universitaire/i, /questions?\s+[àa]\s+choix/i, /\b(?:nom|pr[ée]nom|matricule)\s*:/i,
 ]
 const STATEMENT_CUES = /(?:^|[^a-zà-ÿ])(?:on note|rappel|soit|soient|consid[ée]r|hypoth[èe]se|pr[ée]dicats?|d[ée]finitions?|[ée]nonc[ée])/i
+// Énoncé limité à ses questions : « ÉNONCÉ : … (questions 5 à 7) » ne concerne que les questions 5 à 7 (miroir de _ctx_until, routes/exams.py).
+const CTX_RANGE_RE = /\(\s*(?:[Qq]uestions?|Q)\s*\.?\s*(\d{1,3})\s*(?:à|a|au|jusqu'à|-|–|—|et)\s*(?:[Qq]uestions?|Q)?\s*\.?\s*(\d{1,3})\s*\)/
+function ctxRangeEnd(lines: string[]): number | null {
+  const m = CTX_RANGE_RE.exec(lines[0] || '')
+  if (!m) return null
+  const a = parseInt(m[1], 10), b = parseInt(m[2], 10)
+  return b >= a ? b : null
+}
+
 function looksLikeDocHeader(lines: string[]): boolean {
   const t = lines.join('\n')
   return !STATEMENT_CUES.test(t) && DOC_HEADER_CUES.filter(c => c.test(t)).length >= 2
@@ -389,6 +398,7 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
   if (preamble.join('').trim()) blocks.push({ type: 'text', content: preamble.join('\n') })
   // Énoncé d'une partie : rattaché à chaque question de la partie (champ `context`), comme le lecteur du serveur.
   let ctxTitle = '', ctxText: string[] = [], pending: string[] = []
+  let ctxUntil: number | null = null          // dernier numéro de question auquel l'énoncé courant s'applique (« (questions 5 à 7) »), comme le serveur
   let headerOnce = false                      // le paragraphe avant la question 1 est un en-tête de document : une seule question le reçoit
   const lastSectIdx = (() => { let k = -1; preamble.forEach((l, j) => { if (isSect(l)) k = j }); return k })()
   if (lastSectIdx >= 0) {
@@ -542,7 +552,8 @@ function parseExamBlocks(raw: string): ParsedBlock[] {
       blk.choices = []
     }
     let once = false
-    if (pending.length) { ctxText = pending; pending = []; once = headerOnce; headerOnce = false }
+    if (pending.length) { ctxText = pending; pending = []; once = headerOnce; headerOnce = false; ctxUntil = ctxRangeEnd(ctxText) }
+    else if (ctxUntil !== null && /^\d{1,3}$/.test(String(blk.num)) && parseInt(String(blk.num), 10) > ctxUntil) { ctxText = []; ctxUntil = null }   // dernière question concernée passée
     if (ctxTitle || ctxText.length) blk.context = { title: ctxTitle, text: ctxText.join('\n').trim() }
     if (once) ctxText = []                      // en-tête de document : montré sur cette question seulement
     blocks.push(blk)
