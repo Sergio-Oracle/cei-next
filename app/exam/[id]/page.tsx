@@ -1742,7 +1742,8 @@ export default function ExamPage() {
     try {
       const ss = await (navigator.mediaDevices as any).getDisplayMedia({video:{cursor:'always',displaySurface:'monitor'},preferCurrentTab:false,audio:false})
       const track=ss.getVideoTracks()[0]; const surface=track?.getSettings?.()?.displaySurface
-      if (surface!==undefined&&surface!=='monitor') {
+      // Dans l'application CEI Examen c'est le CLIENT qui choisit ce qui est partagé (écran, ou la page d'examen elle-même en mode « page ») : aucun choix de l'étudiant à contrôler.
+      if (!isCeiClient()&&surface!==undefined&&surface!=='monitor') {
         track.stop(); setPermScreen('error')
         setPermError("Choisissez « Écran entier » et non une fenêtre ou un onglet.")
         setPermBusy(false); return
