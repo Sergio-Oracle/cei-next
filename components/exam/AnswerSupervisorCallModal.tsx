@@ -17,10 +17,11 @@ declare global { interface Window { LivekitClient: any } }
 interface Props {
   proctorId: number
   supervisorName: string
+  callerLabel?: string        // « Le responsable d'examen », « L'enseignant »… (par défaut : « Votre superviseur »)
   onClose: () => void
 }
 
-export default function AnswerSupervisorCallModal({ proctorId, supervisorName, onClose }: Props) {
+export default function AnswerSupervisorCallModal({ proctorId, supervisorName, callerLabel, onClose }: Props) {
   const { error: toastErr, success } = useToast()
   const [status, setStatus] = useState<'connecting' | 'waiting' | 'connected' | 'error'>('connecting')
   const [camOn, setCamOn] = useState(false)
@@ -134,7 +135,7 @@ export default function AnswerSupervisorCallModal({ proctorId, supervisorName, o
           <i className="fas fa-phone-volume" style={{ color: '#10b981' }} />
           <div>
             <div style={{ color: 'white', fontWeight: 700, fontSize:17 }}>Appel — {supervisorName}</div>
-            <div style={{ color: 'rgba(255,255,255,.5)', fontSize:13 }}>Votre superviseur</div>
+            <div style={{ color: 'rgba(255,255,255,.5)', fontSize:13 }}>{callerLabel || 'Votre superviseur'}</div>
           </div>
         </div>
 

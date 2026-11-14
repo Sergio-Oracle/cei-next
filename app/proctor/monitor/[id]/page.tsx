@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
+import SupervisorCallModal from '@/components/exam/SupervisorCallModal'
 import { initProctoringVision, analyzeFace } from '@/lib/proctoring-vision'
 import { eventLabel } from '@/lib/eventLabels'
 import { errMsg } from '@/lib/errors'
@@ -367,6 +368,8 @@ export default function ProctorMonitorPage() {
 
   /* appel privé */
   const [privateCall,   setPrivateCall]   = useState<{ attemptId: number; name: string } | null>(null)
+  // Appel d'un surveillant par le responsable d'examen / l'enseignant / l'administrateur (même mécanisme que l'appel superviseur → surveillant)
+  const [callProctor, setCallProctor] = useState<{ id: number; name: string } | null>(null)
   const [privateStatus, setPrivateStatus] = useState('')
   const [privateCamOn,  setPrivateCamOn]  = useState(false)
   const [privateMicOn,  setPrivateMicOn]  = useState(false)
@@ -1784,6 +1787,10 @@ export default function ProctorMonitorPage() {
                       <span style={{ fontSize:15.5, fontWeight: 700, color: 'rgba(255,255,255,.9)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {p.proctor_name}
                       </span>
+                      <button onClick={() => setCallProctor({ id: p.proctor_id, name: p.proctor_name })} title={`Appeler ${p.proctor_name}`}
+                        style={{ background: 'rgba(16,185,129,.15)', color: '#34d399', border: '1px solid rgba(16,185,129,.3)', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: 12.5, fontWeight: 700 }}>
+                        <i className="fas fa-phone" /> Appeler
+                      </button>
                       {diffuse && (
                         <span style={{ fontSize:11, fontWeight: 800, color: '#ef4444', background: 'rgba(239,68,68,.15)', border: '1px solid rgba(239,68,68,.4)', borderRadius: 4, padding: '1px 5px', letterSpacing: '.05em' }}>
                           DIFFUSE
@@ -2630,6 +2637,10 @@ export default function ProctorMonitorPage() {
           </div>
         )
       })()}
+
+      {callProctor && (
+        <SupervisorCallModal proctorId={callProctor.id} proctorName={callProctor.name} onClose={() => setCallProctor(null)} />
+      )}
 
       {/* ══════════════ Modal Appel Privé — toujours dans le DOM pour que le ref video existe */}
       <div style={{ display: privateCall ? 'flex' : 'none', position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 9600, alignItems: 'center', justifyContent: 'center' }}>

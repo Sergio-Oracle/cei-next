@@ -114,7 +114,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   // d'un simple toast car il faut un accepter/refuser explicite, où que le
   // surveillant se trouve dans l'application (pas seulement sa page de
   // surveillance, contrairement à l'appel étudiant qui y ramène toujours).
-  const [incomingSupervisorCall, setIncomingSupervisorCall] = useState<{ supervisorId: number; supervisorName: string } | null>(null)
+  const [incomingSupervisorCall, setIncomingSupervisorCall] = useState<{ supervisorId: number; supervisorName: string; callerLabel?: string } | null>(null)
   const [answeringSupervisorCall, setAnsweringSupervisorCall] = useState(false)
   // Appel de vérification d'identité biométrique — même patron que l'appel
   // superviseur ci-dessus : non lié à une tentative d'examen (aucune n'existe
@@ -125,12 +125,12 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
   const handleNotifEvent = useCallback((ev: NotifEvent) => {
     setUnreadCount(c => c + 1)
-    const anyEv = ev as NotifEvent & { exam_id?: number; supervisor_id?: number; supervisor_name?: string; student_id?: number; student_name?: string; exam_title?: string }
+    const anyEv = ev as NotifEvent & { exam_id?: number; supervisor_id?: number; supervisor_name?: string; caller_label?: string; student_id?: number; student_name?: string; exam_title?: string }
     if (ev.type === 'call_request' && anyEv.exam_id) {
       showToast(ev.message, 'warning', 10000, () => router.push(`/proctor/monitor/${anyEv.exam_id}`))
     }
     if (ev.type === 'supervisor_call_request' && anyEv.supervisor_id) {
-      setIncomingSupervisorCall({ supervisorId: anyEv.supervisor_id, supervisorName: anyEv.supervisor_name || 'Votre superviseur' })
+      setIncomingSupervisorCall({ supervisorId: anyEv.supervisor_id, supervisorName: anyEv.supervisor_name || 'Votre superviseur', callerLabel: anyEv.caller_label })
     }
     if (ev.type === 'biometric_call_request' && anyEv.exam_id && anyEv.student_id) {
       playAlertBeep()
@@ -395,7 +395,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         <i className="fas fa-phone-volume fa-shake" style={{ color: '#10b981', fontSize: 24 }} />
         <div>
           <div style={{ fontWeight: 700, fontSize:15.5 }}>Appel entrant</div>
-          <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.7)' }}>{incomingSupervisorCall.supervisorName}</div>
+          <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.7)' }}>{incomingSupervisorCall.supervisorName}{incomingSupervisorCall.callerLabel ? ` — ${incomingSupervisorCall.callerLabel.toLowerCase()}` : ''}</div>
         </div>
         <button onClick={() => setAnsweringSupervisorCall(true)}
           style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize:14.5, cursor: 'pointer' }}>
@@ -412,6 +412,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
       <AnswerSupervisorCallModal
         proctorId={user!.id}
         supervisorName={incomingSupervisorCall.supervisorName}
+        callerLabel={incomingSupervisorCall.callerLabel}
         onClose={() => { setAnsweringSupervisorCall(false); setIncomingSupervisorCall(null) }}
       />
     )}

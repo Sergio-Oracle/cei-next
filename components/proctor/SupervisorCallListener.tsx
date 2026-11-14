@@ -19,15 +19,15 @@ import { playAlertBeep } from '@/lib/notifSound'
 export default function SupervisorCallListener() {
   const { user } = useAuth()
   const router = useRouter()
-  const [incoming, setIncoming] = useState<{ supervisorId: number; supervisorName: string } | null>(null)
+  const [incoming, setIncoming] = useState<{ supervisorId: number; supervisorName: string; callerLabel?: string } | null>(null)
   const [answering, setAnswering] = useState(false)
   const [resumedAlert, setResumedAlert] = useState<{ examId: number; message: string } | null>(null)
   const [riskAlert, setRiskAlert] = useState<{ message: string } | null>(null)
 
   const handleNotifEvent = useCallback((ev: NotifEvent) => {
-    const anyEv = ev as NotifEvent & { supervisor_id?: number; supervisor_name?: string; exam_id?: number }
+    const anyEv = ev as NotifEvent & { supervisor_id?: number; supervisor_name?: string; caller_label?: string; exam_id?: number }
     if (ev.type === 'supervisor_call_request' && anyEv.supervisor_id) {
-      setIncoming({ supervisorId: anyEv.supervisor_id, supervisorName: anyEv.supervisor_name || 'Votre superviseur' })
+      setIncoming({ supervisorId: anyEv.supervisor_id, supervisorName: anyEv.supervisor_name || 'Votre superviseur', callerLabel: anyEv.caller_label })
     }
     if (ev.type === 'student_resumed' && anyEv.exam_id) {
       playAlertBeep()
@@ -76,7 +76,7 @@ export default function SupervisorCallListener() {
           <i className="fas fa-phone-volume fa-shake" style={{ color: '#10b981', fontSize: 24 }} />
           <div>
             <div style={{ fontWeight: 700, fontSize:15.5 }}>Appel entrant</div>
-            <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.7)' }}>{incoming.supervisorName}</div>
+            <div style={{ fontSize:14.5, color: 'rgba(255,255,255,.7)' }}>{incoming.supervisorName}{incoming.callerLabel ? ` — ${incoming.callerLabel.toLowerCase()}` : ''}</div>
           </div>
           <button onClick={() => setAnswering(true)}
             style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize:14.5, cursor: 'pointer' }}>
@@ -92,6 +92,7 @@ export default function SupervisorCallListener() {
         <AnswerSupervisorCallModal
           proctorId={user.id}
           supervisorName={incoming.supervisorName}
+          callerLabel={incoming.callerLabel}
           onClose={() => { setAnswering(false); setIncoming(null) }}
         />
       )}
