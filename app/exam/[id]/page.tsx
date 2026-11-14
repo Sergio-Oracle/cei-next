@@ -849,6 +849,11 @@ export default function ExamPage() {
   /* ── Application CEI Examen : applications ouvertes à fermer avant de commencer ── */
   const [otherApps, setOtherApps] = useState<string[]>([])
   const [closingApps, setClosingApps] = useState(false)
+  // Une application qui résiste à la fermeture (service du système, logiciel protégé : ex. « IdeaShareService », 14/11/2026, examen 181) ne doit JAMAIS
+  // enfermer l'étudiant hors de son examen : après une tentative de fermeture ratée il peut continuer, le surveillant en est informé (journal).
+  const [closeTries, setCloseTries] = useState(0)
+  const [forceApps, setForceApps] = useState(false)
+  const unclosedAppsRef = useRef<string[]>([])
   useEffect(() => {
     const c = getCeiClient()
     if (!c?.listApps || phase !== 'instructions' || isPreview) return
@@ -860,7 +865,7 @@ export default function ExamPage() {
   async function closeOtherApps() {
     const c = getCeiClient(); if (!c?.closeApps) return
     setClosingApps(true)
-    try { const r = await c.closeApps(); setOtherApps((r?.remaining ?? []).map(a => a.name)) } catch { /* l'étudiant peut réessayer */ }
+    try { const r = await c.closeApps(); setOtherApps((r?.remaining ?? []).map(a => a.name)); setCloseTries(n => n + 1) } catch { /* l'étudiant peut réessayer */ }
     finally { setClosingApps(false) }
   }
 
@@ -2019,6 +2024,10 @@ export default function ExamPage() {
   function enterExam() {
     if (!exam||!attempt) return
     if (exam.allow_secondary_camera && !phoneCamOkRef.current) { toastErr('Connectez la caméra secondaire avant de continuer.'); return }   // filet : aucune voie ne contourne l'exigence
+    if (unclosedAppsRef.current.length) {                // applications restées ouvertes malgré la fermeture : le surveillant le voit
+      logActivity(attempt.id, 'client_app_not_closed', `Applications non fermées au démarrage : ${unclosedAppsRef.current.join(', ')}`).catch(()=>{})
+      unclosedAppsRef.current = []
+    }
     examEnterTimeRef.current = Date.now()
     clockEnterAtRef.current = performance.now()
     document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
@@ -3970,6 +3979,18 @@ export default function ExamPage() {
             <button type="button" onClick={closeOtherApps} disabled={closingApps} style={{padding:'9px 16px',border:'none',borderRadius:8,background:'#1d4ed8',color:'#fff',fontWeight:700,fontSize:15,cursor:closingApps?'wait':'pointer'}}>
               {closingApps?<><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Fermeture en cours…</>:<><i className="fas fa-xmark" style={{marginRight:6}}/>Fermer ces applications</>}
             </button>
+            {closeTries>=1&&!closingApps&&(
+              <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid #bfdbfe',fontSize:14,color:'#334155',lineHeight:1.6}}>
+                <b>Cette application ne se ferme pas automatiquement</b> (service du système ou logiciel protégé). Essayez de la fermer depuis l&apos;icône près de l&apos;horloge ou le Gestionnaire des tâches.
+                Si elle reste ouverte, vous pouvez continuer : <b>le surveillant en sera informé</b>.
+                <div style={{marginTop:8}}>
+                  <button type="button" onClick={()=>{ unclosedAppsRef.current = otherApps; setForceApps(true) }} disabled={forceApps}
+                    style={{padding:'8px 14px',border:'1px solid #1d4ed8',borderRadius:8,background:forceApps?'#dbeafe':'#fff',color:'#1d4ed8',fontWeight:700,fontSize:14.5,cursor:forceApps?'default':'pointer'}}>
+                    {forceApps?<><i className="fas fa-check" style={{marginRight:6}}/>Vous pouvez démarrer l&apos;examen</>:<>Continuer quand même</>}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -3978,8 +3999,8 @@ export default function ExamPage() {
           <button onClick={()=>router.back()} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:17}}>
             <i className="fas fa-times" style={{marginRight:6}}/>Annuler
           </button>
-          <button onClick={isPreview ? () => startPreview() : doStartExam} disabled={starting||(!isPreview&&otherApps.length>0)}
-            style={{flex:2,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:(starting||otherApps.length>0)?'not-allowed':'pointer',opacity:(starting||otherApps.length>0)?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:17}}>
+          <button onClick={isPreview ? () => startPreview() : doStartExam} disabled={starting||(!isPreview&&otherApps.length>0&&!forceApps)}
+            style={{flex:2,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:(starting||(otherApps.length>0&&!forceApps))?'not-allowed':'pointer',opacity:(starting||(otherApps.length>0&&!forceApps))?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:17}}>
             {starting
               ?<><i className="fas fa-spinner fa-spin"/>Démarrage en cours…</>
               :<><i className="fas fa-check"/>J&apos;accepte et je démarre l&apos;examen</>}
