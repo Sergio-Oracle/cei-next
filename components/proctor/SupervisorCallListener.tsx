@@ -15,17 +15,27 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useNotificationPoll, type NotifEvent } from '@/hooks/useNotificationPoll'
 import AnswerSupervisorCallModal from '@/components/exam/AnswerSupervisorCallModal'
 import { playAlertBeep } from '@/lib/notifSound'
+import { useToast } from '@/contexts/ToastContext'
 
 export default function SupervisorCallListener() {
   const { user } = useAuth()
   const router = useRouter()
-  const [incoming, setIncoming] = useState<{ supervisorId: number; supervisorName: string; callerLabel?: string } | null>(null)
+  const { showToast } = useToast()
+  // roomProctorId : propriétaire de la salle d'appel (supcall-<surveillant>) — moi quand un superviseur m'appelle, l'appelant quand un surveillant m'appelle
+  const [incoming, setIncoming] = useState<{ supervisorId: number; supervisorName: string; callerLabel?: string; roomProctorId?: number } | null>(null)
   const [answering, setAnswering] = useState(false)
   const [resumedAlert, setResumedAlert] = useState<{ examId: number; message: string } | null>(null)
   const [riskAlert, setRiskAlert] = useState<{ message: string } | null>(null)
 
   const handleNotifEvent = useCallback((ev: NotifEvent) => {
-    const anyEv = ev as NotifEvent & { supervisor_id?: number; supervisor_name?: string; caller_label?: string; exam_id?: number }
+    const anyEv = ev as NotifEvent & { supervisor_id?: number; supervisor_name?: string; caller_label?: string; exam_id?: number; proctor_id?: number; proctor_name?: string }
+    if (ev.type === 'proctor_call_request' && anyEv.proctor_id) {
+      playAlertBeep()
+      setIncoming({ supervisorId: anyEv.proctor_id, supervisorName: anyEv.proctor_name || 'Un surveillant', callerLabel: 'Surveillant', roomProctorId: anyEv.proctor_id })
+    }
+    if (ev.type === 'staff_message' && anyEv.exam_id) {
+      showToast(`${ev.title} : ${ev.message}`, 'info', 9000, () => router.push(`/proctor/monitor/${anyEv.exam_id}?chat=1`))
+    }
     if (ev.type === 'supervisor_call_request' && anyEv.supervisor_id) {
       setIncoming({ supervisorId: anyEv.supervisor_id, supervisorName: anyEv.supervisor_name || 'Votre superviseur', callerLabel: anyEv.caller_label })
     }
@@ -46,12 +56,12 @@ export default function SupervisorCallListener() {
 
   // Surveillants ET superviseurs travaillent depuis /proctor/* — les deux
   // doivent être avertis d'une reprise d'étudiant, pas seulement l'appel.
-  useNotificationPoll(user?.role === 'surveillant' || user?.role === 'superviseur', handleNotifEvent)
+  useNotificationPoll(!!user && ['surveillant', 'superviseur', 'professor', 'admin', 'responsable_examen'].includes(String(user.role)), handleNotifEvent)
 
   return (
     <>
       {riskAlert && (
-        <div style={{ position: 'fixed', top: incoming ? 96 : 16, left: 20, zIndex: 9599, background: '#0f172a', color: 'white', borderRadius: 12, padding: '12px 16px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid rgba(245,158,11,.5)', maxWidth: 340 }}>
+        <div style={{ position: 'fixed', top: incoming ? 152 : 72, left: 20, zIndex: 9599, background: '#0f172a', color: 'white', borderRadius: 12, padding: '12px 16px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid rgba(245,158,11,.5)', maxWidth: 340 }}>
           <i className="fas fa-triangle-exclamation" style={{ color: '#f59e0b', fontSize: 22, flexShrink: 0 }} />
           <div style={{ fontSize:15, flex: 1 }}>{riskAlert.message}</div>
           <button onClick={() => setRiskAlert(null)}
@@ -61,7 +71,7 @@ export default function SupervisorCallListener() {
         </div>
       )}
       {resumedAlert && (
-        <div style={{ position: 'fixed', top: incoming ? 96 : 16, right: 20, zIndex: 9599, background: '#0f172a', color: 'white', borderRadius: 12, padding: '12px 16px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid rgba(59,130,246,.4)', cursor: 'pointer', maxWidth: 320 }}
+        <div style={{ position: 'fixed', top: incoming ? 152 : 72, right: 20, zIndex: 9599, background: '#0f172a', color: 'white', borderRadius: 12, padding: '12px 16px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid rgba(59,130,246,.4)', cursor: 'pointer', maxWidth: 320 }}
           onClick={() => { router.push(`/proctor/monitor/${resumedAlert.examId}`); setResumedAlert(null) }}>
           <i className="fas fa-bell" style={{ color: '#60a5fa', fontSize: 22, flexShrink: 0 }} />
           <div style={{ fontSize:15, flex: 1 }}>{resumedAlert.message}</div>
@@ -72,7 +82,7 @@ export default function SupervisorCallListener() {
         </div>
       )}
       {incoming && !answering && (
-        <div style={{ position: 'fixed', top: 16, right: 20, zIndex: 9600, background: '#0f172a', color: 'white', borderRadius: 12, padding: '14px 18px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(16,185,129,.4)' }}>
+        <div style={{ position: 'fixed', top: 72, right: 20, zIndex: 9600, background: '#0f172a', color: 'white', borderRadius: 12, padding: '14px 18px', boxShadow: '0 10px 40px rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(16,185,129,.4)' }}>
           <i className="fas fa-phone-volume fa-shake" style={{ color: '#10b981', fontSize: 24 }} />
           <div>
             <div style={{ fontWeight: 700, fontSize:15.5 }}>Appel entrant</div>
@@ -90,7 +100,7 @@ export default function SupervisorCallListener() {
       )}
       {answering && incoming && user && (
         <AnswerSupervisorCallModal
-          proctorId={user.id}
+          proctorId={incoming.roomProctorId ?? user.id}
           supervisorName={incoming.supervisorName}
           callerLabel={incoming.callerLabel}
           onClose={() => { setAnswering(false); setIncoming(null) }}

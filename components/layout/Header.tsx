@@ -114,7 +114,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   // d'un simple toast car il faut un accepter/refuser explicite, où que le
   // surveillant se trouve dans l'application (pas seulement sa page de
   // surveillance, contrairement à l'appel étudiant qui y ramène toujours).
-  const [incomingSupervisorCall, setIncomingSupervisorCall] = useState<{ supervisorId: number; supervisorName: string; callerLabel?: string } | null>(null)
+  const [incomingSupervisorCall, setIncomingSupervisorCall] = useState<{ supervisorId: number; supervisorName: string; callerLabel?: string; roomProctorId?: number } | null>(null)
   const [answeringSupervisorCall, setAnsweringSupervisorCall] = useState(false)
   // Appel de vérification d'identité biométrique — même patron que l'appel
   // superviseur ci-dessus : non lié à une tentative d'examen (aucune n'existe
@@ -125,9 +125,15 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
   const handleNotifEvent = useCallback((ev: NotifEvent) => {
     setUnreadCount(c => c + 1)
-    const anyEv = ev as NotifEvent & { exam_id?: number; supervisor_id?: number; supervisor_name?: string; caller_label?: string; student_id?: number; student_name?: string; exam_title?: string }
+    const anyEv = ev as NotifEvent & { exam_id?: number; supervisor_id?: number; supervisor_name?: string; caller_label?: string; proctor_id?: number; proctor_name?: string; student_id?: number; student_name?: string; exam_title?: string }
     if (ev.type === 'call_request' && anyEv.exam_id) {
       showToast(ev.message, 'warning', 10000, () => router.push(`/proctor/monitor/${anyEv.exam_id}`))
+    }
+    if (ev.type === 'proctor_call_request' && anyEv.proctor_id) {            // un surveillant appelle l'enseignant / le responsable / l'administrateur
+      setIncomingSupervisorCall({ supervisorId: anyEv.proctor_id, supervisorName: anyEv.proctor_name || 'Un surveillant', callerLabel: 'Surveillant', roomProctorId: anyEv.proctor_id })
+    }
+    if (ev.type === 'staff_message' && anyEv.exam_id) {
+      showToast(`${ev.title} : ${ev.message}`, 'info', 9000, () => router.push(`/proctor/monitor/${anyEv.exam_id}?chat=1`))
     }
     if (ev.type === 'supervisor_call_request' && anyEv.supervisor_id) {
       setIncomingSupervisorCall({ supervisorId: anyEv.supervisor_id, supervisorName: anyEv.supervisor_name || 'Votre superviseur', callerLabel: anyEv.caller_label })
@@ -410,7 +416,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
     {incomingSupervisorCall && answeringSupervisorCall && (
       <AnswerSupervisorCallModal
-        proctorId={user!.id}
+        proctorId={incomingSupervisorCall.roomProctorId ?? user!.id}
         supervisorName={incomingSupervisorCall.supervisorName}
         callerLabel={incomingSupervisorCall.callerLabel}
         onClose={() => { setAnsweringSupervisorCall(false); setIncomingSupervisorCall(null) }}

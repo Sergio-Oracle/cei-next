@@ -16,12 +16,14 @@ import { errMsg } from '@/lib/errors'
 declare global { interface Window { LivekitClient: any } }
 
 interface Props {
-  proctorId: number
-  proctorName: string
+  proctorId: number          // propriétaire de la salle d'appel (supcall-<surveillant>)
+  proctorName: string        // nom affiché de l'AUTRE personne
   onClose: () => void
+  calleeId?: number          // le SURVEILLANT appelle : identifiant de la personne appelée (enseignant, responsable, administrateur, superviseur)
+  roleLabel?: string         // libellé sous le nom (par défaut « Surveillant »)
 }
 
-export default function SupervisorCallModal({ proctorId, proctorName, onClose }: Props) {
+export default function SupervisorCallModal({ proctorId, proctorName, onClose, calleeId, roleLabel }: Props) {
   const { error: toastErr, success } = useToast()
   const [status, setStatus] = useState<'connecting' | 'waiting' | 'connected' | 'error'>('connecting')
   const [camOn, setCamOn] = useState(false)
@@ -53,7 +55,7 @@ export default function SupervisorCallModal({ proctorId, proctorName, onClose }:
       try {
         // Notifie le surveillant (badge + toast/modal entrant) avant de
         // rejoindre la room, pour qu'il puisse répondre même s'il rejoint après nous.
-        await api.post(`/api/superviseur/proctor_call/${proctorId}/request`, {})
+        await api.post(calleeId ? `/api/proctor_call/${calleeId}/request` : `/api/superviseur/proctor_call/${proctorId}/request`, {})
       } catch { /* non bloquant */ }
 
       try {
@@ -144,7 +146,7 @@ export default function SupervisorCallModal({ proctorId, proctorName, onClose }:
           <i className="fas fa-phone-volume" style={{ color: '#10b981' }} />
           <div>
             <div style={{ color: 'white', fontWeight: 700, fontSize:17 }}>Appel — {proctorName}</div>
-            <div style={{ color: 'rgba(255,255,255,.5)', fontSize:13 }}>Surveillant</div>
+            <div style={{ color: 'rgba(255,255,255,.5)', fontSize:13 }}>{roleLabel || 'Surveillant'}</div>
           </div>
         </div>
 

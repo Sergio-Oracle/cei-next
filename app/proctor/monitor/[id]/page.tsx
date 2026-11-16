@@ -6,6 +6,7 @@ import api from '@/lib/api'
 import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import SupervisorCallModal from '@/components/exam/SupervisorCallModal'
+import StaffChatPanel from '@/components/proctor/StaffChatPanel'
 import { initProctoringVision, analyzeFace } from '@/lib/proctoring-vision'
 import { eventLabel } from '@/lib/eventLabels'
 import { errMsg } from '@/lib/errors'
@@ -370,6 +371,7 @@ export default function ProctorMonitorPage() {
   const [privateCall,   setPrivateCall]   = useState<{ attemptId: number; name: string } | null>(null)
   // Appel d'un surveillant par le responsable d'examen / l'enseignant / l'administrateur (même mécanisme que l'appel superviseur → surveillant)
   const [callProctor, setCallProctor] = useState<{ id: number; name: string } | null>(null)
+  const [callStaff, setCallStaff] = useState<{ id: number; name: string; role: string; meId: number } | null>(null)      // le SURVEILLANT appelle le personnel
   const [privateStatus, setPrivateStatus] = useState('')
   const [privateCamOn,  setPrivateCamOn]  = useState(false)
   const [privateMicOn,  setPrivateMicOn]  = useState(false)
@@ -2641,6 +2643,13 @@ export default function ProctorMonitorPage() {
       {callProctor && (
         <SupervisorCallModal proctorId={callProctor.id} proctorName={callProctor.name} onClose={() => setCallProctor(null)} />
       )}
+      {callStaff && (
+        <SupervisorCallModal proctorId={callStaff.meId} calleeId={callStaff.id} proctorName={callStaff.name}
+          roleLabel={({ professor: 'Enseignant', admin: 'Administrateur', responsable_examen: "Responsable d'examen", superviseur: 'Superviseur' } as Record<string, string>)[callStaff.role] || 'Personnel'}
+          onClose={() => setCallStaff(null)} />
+      )}
+      {/* Messagerie du personnel de cet examen + appel dans les deux sens */}
+      <StaffChatPanel examId={Number(id)} onCall={(p, me) => { if (me.role === 'surveillant') setCallStaff({ id: p.id, name: p.name, role: p.role, meId: me.id }); else setCallProctor({ id: p.id, name: p.name }) }} />
 
       {/* ══════════════ Modal Appel Privé — toujours dans le DOM pour que le ref video existe */}
       <div style={{ display: privateCall ? 'flex' : 'none', position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 9600, alignItems: 'center', justifyContent: 'center' }}>
