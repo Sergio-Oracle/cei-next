@@ -9,7 +9,7 @@ interface Row {
   points: number | null; letters: string[]; value: string | null; status: 'ok' | 'warn' | 'error'; mode: 'auto' | 'ia'; suggest?: string | null
 }
 interface Check {
-  ok: boolean; questions: number; by_type: Record<string, number>; issues: Issue[]
+  ok: boolean; questions: number; answers?: number; by_type: Record<string, number>; issues: Issue[]
   hidden_lines: string[]; rubric_text: string
   grading: { rows: Row[]; total_points: number; auto_count: number; ai_count: number }
 }
@@ -268,7 +268,7 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
               <>
                 <div style={{ background: toneBg, border: `1.5px solid ${tone}33`, color: tone, borderRadius: 12, padding: '12px 14px', fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
                   <i className={`fas ${good ? 'fa-circle-check' : errors.length ? 'fa-circle-xmark' : 'fa-triangle-exclamation'}`} style={{ marginRight: 8 }} />
-                  {check.questions} question{check.questions > 1 ? 's' : ''} lue{check.questions > 1 ? 's' : ''} par les étudiants
+                  {check.questions} question{check.questions > 1 ? 's' : ''}{check.answers && check.answers !== check.questions ? ` (${check.answers} réponses à donner)` : ''} lue{check.questions > 1 ? 's' : ''} par les étudiants
                   {good ? ' — rien ne manque.' : errors.length ? ' — à corriger avant l’examen.' : ' — à vérifier.'}
                   <div style={{ fontWeight: 500, fontSize: 13, marginTop: 4, color: '#475569' }}>
                     {Object.entries(check.by_type).map(([t, n]) => `${n} ${TYPE_LABEL[t] || t}`).join(' · ')}
