@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import api, { serverNow } from '@/lib/api'
 import { getCeiClient, isCeiClient, proveCeiClient, onCeiClientEvent } from '@/lib/ceiClient'
+import { totalAnswered, totalUnits } from '@/lib/answerUnits'
 import { ASSIST_PRESETS } from '@/components/shared/ClientAssistSettings'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
@@ -4344,10 +4345,9 @@ export default function ExamPage() {
     const p2Pages       = serverPages?.p2_pages ?? paginateBlocks(p2Items, perPage)
 
     const structAnswered = structuredQs.filter(q=>(answers[q.id.toString()]??'').trim()!=='').length
-    const parsedAnswered = allQBlocks.filter(b=>{
-      if(b.type==='subopen') return b.choices?.some(c=>(answers[`pq_${b.num}_${c.letter}`]??'').trim()!=='')
-      return answeredAny(b, answers)
-    }).length
+    // Réponses (et non blocs) : une association de 8 paires = 8 réponses, comme l'annonce le sujet (« 51 réponses attendues »)
+    const parsedAnswered = totalAnswered(allQBlocks, answers)
+    const parsedTotal    = totalUnits(allQBlocks)
 
     // Avance automatiquement à la page suivante quand la dernière question à
     // choix unique (QCU/V-F) de la page vient d'être répondue — comme demandé :
@@ -4706,7 +4706,7 @@ export default function ExamPage() {
               {structuredQs.length===0&&hasParsed&&(()=>{
                 const saveNow=()=>{if(attemptRef.current)doAutoSave(attemptRef.current)}
                 return(<>
-                  <ProgBar answered={parsedAnswered} total={allQBlocks.length}/>
+                  <ProgBar answered={parsedAnswered} total={parsedTotal}/>
                   {/* Partie 1 QCM/VF — pagination par groupes. Masquée définitivement une
                       fois la partie 2 débloquée : un étudiant ne doit plus pouvoir revoir
                       ni modifier ses réponses QCM (risque de partage entre étudiants). */}
@@ -4909,7 +4909,7 @@ export default function ExamPage() {
                 <p style={{fontSize:15,color:'#64748b',margin:0}}>
                   {structuredQs.length>0
                     ? `${structAnswered} / ${structuredQs.length} question(s) répondue(s)`
-                    : `${parsedAnswered} / ${allQBlocks.length} question(s) répondue(s)`}
+                    : `${parsedAnswered} / ${parsedTotal} réponse(s) donnée(s)`}
                   {' '}— vérifiez qu&apos;aucune réponse n&apos;a été oubliée avant de confirmer.
                 </p>
               </div>
