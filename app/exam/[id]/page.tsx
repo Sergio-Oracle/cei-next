@@ -343,6 +343,13 @@ function ctxRangeEnd(lines: string[]): number | null {
   return b >= a ? b : null
 }
 
+// Logiciels interdits : l'application CEI Examen les arrête TOUTE SEULE (arrêt normal, puis aide installée sur le poste par un administrateur,
+// « Préparation du poste » : aucune fenêtre d'autorisation, étudiant sans droits d'administrateur compris). Ce qui résiste malgré tout ne doit
+// JAMAIS enfermer l'étudiant hors de son examen (incident IdeaShareService, 14/11/2026) : l'étudiant continue, le surveillant est alerté.
+// Mettre à true pour refuser le démarrage / masquer la copie tant qu'un logiciel interdit reste ouvert.
+const FORBIDDEN_BLOCKS_START = false
+const FORBIDDEN_BLOCKS_EXAM = false
+
 // Noms lisibles des logiciels interdits (le client donne le nom du processus : « teamviewer_service »).
 const FORBIDDEN_LABELS: Record<string, string> = { teamviewer: 'TeamViewer', teamviewer_service: 'TeamViewer (service)', tv_w32: 'TeamViewer', tv_x64: 'TeamViewer', anydesk: 'AnyDesk', 'anydesk-service': 'AnyDesk (service)',
   rustdesk: 'RustDesk', ultraviewer: 'UltraViewer', snippingtool: 'Outil Capture d\'écran', screenclippinghost: 'Outil Capture d\'écran', screensketch: 'Capture d\'écran et croquis', snipandsketch: 'Capture d\'écran et croquis',
@@ -873,6 +880,9 @@ export default function ExamPage() {
   const [forbiddenApps, setForbiddenApps] = useState<string[]>([])
   const [stoppingForbidden, setStoppingForbidden] = useState(false)
   const [forbiddenTried, setForbiddenTried] = useState(false)
+  const [forbiddenHelper, setForbiddenHelper] = useState<boolean|undefined>(undefined)   // la préparation du poste (aide administrateur) est-elle installée ?
+  const autoStopRef = useRef({ tries: 0, busy: false, canAuto: undefined as boolean | undefined })   // canAuto : le client sait arrêter SANS fenêtre d'autorisation (1.7.0+)
+  const forbiddenLeftRef = useRef<string[]>([])
   const [stuckForbidden, setStuckForbidden] = useState<string[]>([])      // en cours d'examen : logiciels interdits que le client n'arrive pas à arrêter
   const [closeTries, setCloseTries] = useState(0)
   const [forceApps, setForceApps] = useState(false)
@@ -883,7 +893,20 @@ export default function ExamPage() {
     let alive = true
     const poll = () => {
       c.listApps!().then(r => { if (alive && r) setOtherApps(r.apps.map(a => a.name)) }).catch(() => {})
-      c.forbidden?.().then(r => { if (alive && r) setForbiddenApps(r.names) }).catch(() => {})
+      c.forbidden?.().then(r => {
+        if (!alive || !r) return
+        setForbiddenApps(r.names)
+        // Arrêt AUTOMATIQUE (sans clic, sans fenêtre d'autorisation) : jusqu'à 6 essais espacés de 3 s, puis on laisse l'étudiant décider
+        const st = autoStopRef.current
+        if (st.canAuto === undefined && c.info) {       // les clients 1.6.x demandent TOUJOURS l'autorisation Windows : on ne les déclenche pas en boucle
+          st.canAuto = false
+          c.info().then(i => { const m = String(i?.version || '').split('.').map(Number); st.canAuto = (m[0] > 1) || (m[0] === 1 && (m[1] ?? 0) >= 7) }).catch(() => {})
+        }
+        if (r.names.length && st.canAuto && !st.busy && st.tries < 6 && c.stopForbidden) {
+          st.busy = true; st.tries++
+          c.stopForbidden({}).then(x => { if (alive && x) { setForbiddenApps(x.remaining); setForbiddenHelper(x.helper) } }).catch(() => {}).finally(() => { st.busy = false })
+        }
+      }).catch(() => {})
     }
     poll(); const t = setInterval(poll, 3000)
     return () => { alive = false; clearInterval(t) }
@@ -891,7 +914,7 @@ export default function ExamPage() {
   async function stopForbiddenApps() {
     const c = getCeiClient(); if (!c?.stopForbidden) return
     setStoppingForbidden(true)
-    try { const r = await c.stopForbidden(); setForbiddenApps(r?.remaining ?? []); setForbiddenTried(true) } catch { setForbiddenTried(true) }
+    try { const r = await c.stopForbidden({ elevate: true }); setForbiddenApps(r?.remaining ?? []); setForbiddenHelper(r?.helper); setForbiddenTried(true) } catch { setForbiddenTried(true) }
     finally { setStoppingForbidden(false) }
   }
   async function closeOtherApps() {
@@ -2059,6 +2082,9 @@ export default function ExamPage() {
   function enterExam() {
     if (!exam||!attempt) return
     if (exam.allow_secondary_camera && !phoneCamOkRef.current) { toastErr('Connectez la caméra secondaire avant de continuer.'); return }   // filet : aucune voie ne contourne l'exigence
+    if (forbiddenApps.length) {                           // logiciels interdits restés ouverts malgré l'arrêt automatique : le surveillant le voit
+      logActivity(attempt.id, 'client_forbidden_not_stopped', `Logiciels interdits non arrêtés au démarrage : ${forbiddenApps.join(', ')}`).catch(()=>{})
+    }
     if (unclosedAppsRef.current.length) {                // applications restées ouvertes malgré la fermeture : le surveillant le voit
       logActivity(attempt.id, 'client_app_not_closed', `Applications non fermées au démarrage : ${unclosedAppsRef.current.join(', ')}`).catch(()=>{})
       unclosedAppsRef.current = []
@@ -4000,24 +4026,27 @@ export default function ExamPage() {
           </p>
         </div>
 
-        {/* Application CEI Examen : logiciels INTERDITS — arrêtés par l'application ; sans issue de secours : l'examen ne démarre pas tant qu'il en reste */}
+        {/* Application CEI Examen : logiciels INTERDITS — arrêtés automatiquement par l'application */}
         {forbiddenApps.length>0&&(
-          <div role="alert" style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
-            <div style={{fontWeight:700,fontSize:15.5,color:'#991b1b',marginBottom:6}}><i className="fas fa-ban" style={{marginRight:8}}/>Logiciels interdits ouverts : ils doivent être arrêtés pour commencer</div>
-            <div style={{fontSize:14.5,color:'#7f1d1d',lineHeight:1.6,marginBottom:8}}>
+          <div role="alert" style={{background:FORBIDDEN_BLOCKS_START?'#fef2f2':'#fffbeb',border:`1px solid ${FORBIDDEN_BLOCKS_START?'#fecaca':'#fde68a'}`,borderRadius:10,padding:'14px 16px',marginBottom:14}}>
+            <div style={{fontWeight:700,fontSize:15.5,color:'#92400e',marginBottom:6}}><i className="fas fa-ban" style={{marginRight:8}}/>Logiciels interdits détectés : l&apos;application les arrête</div>
+            <div style={{fontSize:14.5,color:'#78350f',lineHeight:1.6,marginBottom:8}}>
               Contrôle à distance, enregistrement ou capture d&apos;écran, visioconférence… ne sont pas autorisés pendant l&apos;examen, même en tâche de fond.
+              {autoStopRef.current.tries<6&&!forbiddenTried?' Arrêt automatique en cours…':''}
             </div>
             <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
-              {forbiddenApps.map(n=><span key={n} style={{background:'#fff',border:'1px solid #fecaca',borderRadius:99,padding:'3px 11px',fontSize:14,color:'#991b1b'}}>{prettyForbidden(n)}</span>)}
+              {forbiddenApps.map(n=><span key={n} style={{background:'#fff',border:'1px solid #fde68a',borderRadius:99,padding:'3px 11px',fontSize:14,color:'#92400e'}}>{prettyForbidden(n)}</span>)}
             </div>
-            <button type="button" onClick={stopForbiddenApps} disabled={stoppingForbidden} style={{padding:'9px 16px',border:'none',borderRadius:8,background:'#b91c1c',color:'#fff',fontWeight:700,fontSize:15,cursor:stoppingForbidden?'wait':'pointer'}}>
-              {stoppingForbidden?<><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Arrêt en cours…</>:<><i className="fas fa-power-off" style={{marginRight:6}}/>Arrêter ces logiciels</>}
-            </button>
-            {forbiddenTried&&!stoppingForbidden&&(
-              <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid #fecaca',fontSize:14,color:'#7f1d1d',lineHeight:1.6}}>
-                <b>Windows doit vous demander l&apos;autorisation</b> (fenêtre « Voulez-vous autoriser cette application à apporter des modifications ? ») : répondez <b>Oui</b>.
-                Si le logiciel reste : fermez-le depuis l&apos;icône près de l&apos;horloge, ou dans le Gestionnaire des tâches (onglet « Services » : clic droit → Arrêter), ou désinstallez-le.
-                Sans droits d&apos;administrateur sur ce poste, composez depuis un autre ordinateur.
+            {(autoStopRef.current.tries>=2||forbiddenTried)&&(
+              <div style={{paddingTop:10,borderTop:'1px solid #fde68a',fontSize:14,color:'#78350f',lineHeight:1.6}}>
+                <b>L&apos;arrêt automatique n&apos;a pas suffi.</b>{forbiddenHelper===false?' Ce poste n\'a pas été préparé par un administrateur (installateur « Préparation du poste »).':''}
+                {' '}Fermez-les depuis l&apos;icône près de l&apos;horloge ou le Gestionnaire des tâches (onglet « Services » : clic droit → Arrêter), ou essayez l&apos;arrêt avec autorisation Windows (répondre « Oui »).
+                {!FORBIDDEN_BLOCKS_START&&<> Si cela ne fonctionne pas, <b>vous pouvez commencer</b> : le surveillant en sera informé.</>}
+                <div style={{marginTop:8}}>
+                  <button type="button" onClick={stopForbiddenApps} disabled={stoppingForbidden} style={{padding:'8px 14px',border:'1px solid #b45309',borderRadius:8,background:'#fff',color:'#92400e',fontWeight:700,fontSize:14.5,cursor:stoppingForbidden?'wait':'pointer'}}>
+                    {stoppingForbidden?<><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Arrêt en cours…</>:<><i className="fas fa-power-off" style={{marginRight:6}}/>Arrêter avec l&apos;autorisation de Windows</>}
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -4057,8 +4086,8 @@ export default function ExamPage() {
           <button onClick={()=>router.back()} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:17}}>
             <i className="fas fa-times" style={{marginRight:6}}/>Annuler
           </button>
-          <button onClick={isPreview ? () => startPreview() : doStartExam} disabled={starting||(!isPreview&&((otherApps.length>0&&!forceApps)||forbiddenApps.length>0))}
-            style={{flex:2,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:(starting||(otherApps.length>0&&!forceApps)||forbiddenApps.length>0)?'not-allowed':'pointer',opacity:(starting||(otherApps.length>0&&!forceApps)||forbiddenApps.length>0)?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:17}}>
+          <button onClick={isPreview ? () => startPreview() : doStartExam} disabled={starting||(!isPreview&&((otherApps.length>0&&!forceApps)||(FORBIDDEN_BLOCKS_START&&forbiddenApps.length>0)))}
+            style={{flex:2,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:(starting||(otherApps.length>0&&!forceApps)||(FORBIDDEN_BLOCKS_START&&forbiddenApps.length>0))?'not-allowed':'pointer',opacity:(starting||(otherApps.length>0&&!forceApps)||(FORBIDDEN_BLOCKS_START&&forbiddenApps.length>0))?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:17}}>
             {starting
               ?<><i className="fas fa-spinner fa-spin"/>Démarrage en cours…</>
               :<><i className="fas fa-check"/>J&apos;accepte et je démarre l&apos;examen</>}
@@ -4803,7 +4832,13 @@ export default function ExamPage() {
         {/* Calculatrice intégrée (Retour DFIP — évite la calculatrice physique/téléphone) */}
         {exam.enable_calculator&&showCalculator&&<Calculator onClose={()=>setShowCalculator(false)}/>}
 
-        {stuckForbidden.length>0 && (
+        {stuckForbidden.length>0 && !FORBIDDEN_BLOCKS_EXAM && (
+          <div role="status" style={{position:'fixed',top:0,left:0,right:0,zIndex:9300,background:'#b45309',color:'#fff',padding:'8px 16px',fontSize:14.5,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+            <i className="fas fa-ban"/><span><b>Logiciel interdit actif : {stuckForbidden.map(prettyForbidden).join(', ')}.</b> Fermez-le (icône près de l&apos;horloge, ou Gestionnaire des tâches). Le surveillant en est informé.</span>
+            <button onClick={stopForbiddenApps} disabled={stoppingForbidden} style={{marginLeft:'auto',padding:'4px 12px',border:'1px solid #fff',borderRadius:6,background:'transparent',color:'#fff',fontWeight:700,cursor:stoppingForbidden?'wait':'pointer'}}>{stoppingForbidden?'Arrêt…':'Arrêter (autorisation Windows)'}</button>
+          </div>
+        )}
+        {stuckForbidden.length>0 && FORBIDDEN_BLOCKS_EXAM && (
           <div role="alertdialog" aria-live="assertive" style={{position:'fixed',inset:0,zIndex:9550,background:'rgba(15,23,42,.97)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
             <div style={{maxWidth:480,width:'100%',background:'#1e293b',border:'1px solid #b91c1c',borderRadius:14,padding:'28px 26px',textAlign:'center',color:'#e2e8f0'}}>
               <div style={{fontSize:40,color:'#ef4444',marginBottom:10}}><i className="fas fa-ban"/></div>

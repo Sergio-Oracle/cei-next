@@ -14,7 +14,7 @@ interface CeiBridge {
   closeApps?(): Promise<{ closed: number; remaining: { name: string }[] } | null>
   /** Version 1.6.0+ : logiciels INTERDITS (contrôle à distance, capture d'écran, visio…) lancés, et leur arrêt (autorisation administrateur Windows demandée si besoin). */
   forbidden?(): Promise<{ names: string[] } | null>
-  stopForbidden?(): Promise<{ remaining: string[]; tried: string[] } | null>
+  stopForbidden?(opts?: { elevate?: boolean }): Promise<{ remaining: string[]; tried: string[]; helper?: boolean } | null>
   enterExamMode(o?: ExamModeOptions): Promise<{ ok: boolean }>
   leaveExamMode(): Promise<{ ok: boolean }>
   /** Version 1.2.0+ : identité de l'examen, sites d'assistance et applications tolérées, donnés AVANT l'entrée en mode examen. */
