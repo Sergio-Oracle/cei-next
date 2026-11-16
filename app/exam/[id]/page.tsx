@@ -4039,7 +4039,7 @@ export default function ExamPage() {
             </div>
             {(autoStopRef.current.tries>=2||forbiddenTried)&&(
               <div style={{paddingTop:10,borderTop:'1px solid #fde68a',fontSize:14,color:'#78350f',lineHeight:1.6}}>
-                <b>L&apos;arrêt automatique n&apos;a pas suffi.</b>{forbiddenHelper===false?' Ce poste n\'a pas été préparé par un administrateur (installateur « Préparation du poste »).':''}
+                <b>L&apos;arrêt automatique n&apos;a pas suffi.</b>{forbiddenHelper===false?' Ce poste n\'a pas encore été préparé : un administrateur doit lancer UNE fois « Préparer le poste » (menu Démarrer → CEI Examen).':''}
                 {' '}Fermez-les depuis l&apos;icône près de l&apos;horloge ou le Gestionnaire des tâches (onglet « Services » : clic droit → Arrêter), ou essayez l&apos;arrêt avec autorisation Windows (répondre « Oui »).
                 {!FORBIDDEN_BLOCKS_START&&<> Si cela ne fonctionne pas, <b>vous pouvez commencer</b> : le surveillant en sera informé.</>}
                 <div style={{marginTop:8}}>
