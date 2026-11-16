@@ -11,6 +11,8 @@ const SHARED: Record<string, string> = {
   client_navigation_blocked: 'Navigation hors de la plateforme bloquée',
   client_quit_code_used: "Sortie d'urgence par code surveillant",
   client_quit_code_failed: 'Code de sortie incorrect saisi',
+  client_forbidden_persist: "Logiciel interdit actif que le client n'arrive pas à arrêter (copie masquée)",
+  client_forbidden_cleared: 'Logiciel interdit arrêté (copie rétablie)',
   client_app_not_closed: "Application restée ouverte au démarrage (impossible à fermer)",
   client_exit_code_shown: "Code de sortie affiché sur l'écran de l'étudiant",
   secondary_camera_missing: "Caméra secondaire exigée : absente (copie masquée)",

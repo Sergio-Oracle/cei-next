@@ -12,6 +12,9 @@ interface CeiBridge {
   sign(nonce: string, userId: number, examId: number): Promise<{ sig: string; version: string; platform: string; vm: boolean; vm_hint?: string; remote?: boolean; remote_hint?: string; displays?: number; usb_storage?: number } | null>
   listApps?(): Promise<{ apps: { name: string }[] } | null>
   closeApps?(): Promise<{ closed: number; remaining: { name: string }[] } | null>
+  /** Version 1.6.0+ : logiciels INTERDITS (contrôle à distance, capture d'écran, visio…) lancés, et leur arrêt (autorisation administrateur Windows demandée si besoin). */
+  forbidden?(): Promise<{ names: string[] } | null>
+  stopForbidden?(): Promise<{ remaining: string[]; tried: string[] } | null>
   enterExamMode(o?: ExamModeOptions): Promise<{ ok: boolean }>
   leaveExamMode(): Promise<{ ok: boolean }>
   /** Version 1.2.0+ : identité de l'examen, sites d'assistance et applications tolérées, donnés AVANT l'entrée en mode examen. */

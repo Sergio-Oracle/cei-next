@@ -343,6 +343,13 @@ function ctxRangeEnd(lines: string[]): number | null {
   return b >= a ? b : null
 }
 
+// Noms lisibles des logiciels interdits (le client donne le nom du processus : « teamviewer_service »).
+const FORBIDDEN_LABELS: Record<string, string> = { teamviewer: 'TeamViewer', teamviewer_service: 'TeamViewer (service)', tv_w32: 'TeamViewer', tv_x64: 'TeamViewer', anydesk: 'AnyDesk', 'anydesk-service': 'AnyDesk (service)',
+  rustdesk: 'RustDesk', ultraviewer: 'UltraViewer', snippingtool: 'Outil Capture d\'écran', screenclippinghost: 'Outil Capture d\'écran', screensketch: 'Capture d\'écran et croquis', snipandsketch: 'Capture d\'écran et croquis',
+  obs: 'OBS', obs64: 'OBS', 'ms-teams': 'Microsoft Teams', teams: 'Microsoft Teams', zoom: 'Zoom', discord: 'Discord', skype: 'Skype', slack: 'Slack', whatsapp: 'WhatsApp', telegram: 'Telegram', signal: 'Signal', webex: 'Webex',
+  virtualbox: 'VirtualBox', virtualboxvm: 'VirtualBox', vmware: 'VMware', sharex: 'ShareX', bandicam: 'Bandicam', camtasia: 'Camtasia' }
+function prettyForbidden(n: string): string { return FORBIDDEN_LABELS[String(n).toLowerCase()] || String(n) }
+
 function looksLikeDocHeader(lines: string[]): boolean {
   const t = lines.join('\n')
   return !STATEMENT_CUES.test(t) && DOC_HEADER_CUES.filter(c => c.test(t)).length >= 2
@@ -862,6 +869,11 @@ export default function ExamPage() {
   const [closingApps, setClosingApps] = useState(false)
   // Une application qui résiste à la fermeture (service du système, logiciel protégé : ex. « IdeaShareService », 14/11/2026, examen 181) ne doit JAMAIS
   // enfermer l'étudiant hors de son examen : après une tentative de fermeture ratée il peut continuer, le surveillant en est informé (journal).
+  // Logiciels INTERDITS (TeamViewer, AnyDesk, outil de capture, enregistreurs…) : jamais tolérés, l'examen ne démarre pas tant qu'il en reste (client 1.6.0+)
+  const [forbiddenApps, setForbiddenApps] = useState<string[]>([])
+  const [stoppingForbidden, setStoppingForbidden] = useState(false)
+  const [forbiddenTried, setForbiddenTried] = useState(false)
+  const [stuckForbidden, setStuckForbidden] = useState<string[]>([])      // en cours d'examen : logiciels interdits que le client n'arrive pas à arrêter
   const [closeTries, setCloseTries] = useState(0)
   const [forceApps, setForceApps] = useState(false)
   const unclosedAppsRef = useRef<string[]>([])
@@ -869,10 +881,19 @@ export default function ExamPage() {
     const c = getCeiClient()
     if (!c?.listApps || phase !== 'instructions' || isPreview) return
     let alive = true
-    const poll = () => c.listApps!().then(r => { if (alive && r) setOtherApps(r.apps.map(a => a.name)) }).catch(() => {})
+    const poll = () => {
+      c.listApps!().then(r => { if (alive && r) setOtherApps(r.apps.map(a => a.name)) }).catch(() => {})
+      c.forbidden?.().then(r => { if (alive && r) setForbiddenApps(r.names) }).catch(() => {})
+    }
     poll(); const t = setInterval(poll, 3000)
     return () => { alive = false; clearInterval(t) }
   }, [phase]) // eslint-disable-line
+  async function stopForbiddenApps() {
+    const c = getCeiClient(); if (!c?.stopForbidden) return
+    setStoppingForbidden(true)
+    try { const r = await c.stopForbidden(); setForbiddenApps(r?.remaining ?? []); setForbiddenTried(true) } catch { setForbiddenTried(true) }
+    finally { setStoppingForbidden(false) }
+  }
   async function closeOtherApps() {
     const c = getCeiClient(); if (!c?.closeApps) return
     setClosingApps(true)
@@ -887,6 +908,8 @@ export default function ExamPage() {
       // Déjà arrêté par le client (Teams, Zoom… laissés en tâche de fond) : rien à demander à l'étudiant, qui n'a plus rien à fermer.
       // Sinon (ancien client, ou logiciel qui résiste) : message précis, car le logiciel peut tourner SANS fenêtre (icône près de l'horloge).
       if (evt.type === 'client_forbidden_app' && !evt.data?.killed) warning(`Quittez complètement le logiciel « ${evt.data?.name} » (même s'il n'a plus de fenêtre : icône près de l'horloge, « Quitter ») : il est interdit pendant l'examen.`)
+      if (evt.type === 'client_forbidden_persist') setStuckForbidden(Array.isArray(evt.data?.names) ? evt.data.names : [])
+      if (evt.type === 'client_forbidden_cleared') setStuckForbidden([])
       if (evt.type === 'client_second_display') warning('Un second écran est branché : il est masqué. Débranchez-le.')
       if (evt.type === 'client_usb_storage') warning("Une clé ou un disque USB est branché : il est éjecté. Débranchez-le, les périphériques de stockage sont interdits pendant l'examen.")
       if (evt.type === 'client_external_display') warning('Un écran externe ou un câble de projection (HDMI, VGA…) est branché : débranchez-le tout de suite.')
@@ -3977,6 +4000,29 @@ export default function ExamPage() {
           </p>
         </div>
 
+        {/* Application CEI Examen : logiciels INTERDITS — arrêtés par l'application ; sans issue de secours : l'examen ne démarre pas tant qu'il en reste */}
+        {forbiddenApps.length>0&&(
+          <div role="alert" style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
+            <div style={{fontWeight:700,fontSize:15.5,color:'#991b1b',marginBottom:6}}><i className="fas fa-ban" style={{marginRight:8}}/>Logiciels interdits ouverts : ils doivent être arrêtés pour commencer</div>
+            <div style={{fontSize:14.5,color:'#7f1d1d',lineHeight:1.6,marginBottom:8}}>
+              Contrôle à distance, enregistrement ou capture d&apos;écran, visioconférence… ne sont pas autorisés pendant l&apos;examen, même en tâche de fond.
+            </div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
+              {forbiddenApps.map(n=><span key={n} style={{background:'#fff',border:'1px solid #fecaca',borderRadius:99,padding:'3px 11px',fontSize:14,color:'#991b1b'}}>{prettyForbidden(n)}</span>)}
+            </div>
+            <button type="button" onClick={stopForbiddenApps} disabled={stoppingForbidden} style={{padding:'9px 16px',border:'none',borderRadius:8,background:'#b91c1c',color:'#fff',fontWeight:700,fontSize:15,cursor:stoppingForbidden?'wait':'pointer'}}>
+              {stoppingForbidden?<><i className="fas fa-spinner fa-spin" style={{marginRight:6}}/>Arrêt en cours…</>:<><i className="fas fa-power-off" style={{marginRight:6}}/>Arrêter ces logiciels</>}
+            </button>
+            {forbiddenTried&&!stoppingForbidden&&(
+              <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid #fecaca',fontSize:14,color:'#7f1d1d',lineHeight:1.6}}>
+                <b>Windows doit vous demander l&apos;autorisation</b> (fenêtre « Voulez-vous autoriser cette application à apporter des modifications ? ») : répondez <b>Oui</b>.
+                Si le logiciel reste : fermez-le depuis l&apos;icône près de l&apos;horloge, ou dans le Gestionnaire des tâches (onglet « Services » : clic droit → Arrêter), ou désinstallez-le.
+                Sans droits d&apos;administrateur sur ce poste, composez depuis un autre ordinateur.
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Application CEI Examen : les autres applications (bloc-notes, chatbots, navigateurs…) doivent être fermées */}
         {otherApps.length>0&&(
           <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
@@ -4011,8 +4057,8 @@ export default function ExamPage() {
           <button onClick={()=>router.back()} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontWeight:600,cursor:'pointer',fontSize:17}}>
             <i className="fas fa-times" style={{marginRight:6}}/>Annuler
           </button>
-          <button onClick={isPreview ? () => startPreview() : doStartExam} disabled={starting||(!isPreview&&otherApps.length>0&&!forceApps)}
-            style={{flex:2,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:(starting||(otherApps.length>0&&!forceApps))?'not-allowed':'pointer',opacity:(starting||(otherApps.length>0&&!forceApps))?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:17}}>
+          <button onClick={isPreview ? () => startPreview() : doStartExam} disabled={starting||(!isPreview&&((otherApps.length>0&&!forceApps)||forbiddenApps.length>0))}
+            style={{flex:2,padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontWeight:600,cursor:(starting||(otherApps.length>0&&!forceApps)||forbiddenApps.length>0)?'not-allowed':'pointer',opacity:(starting||(otherApps.length>0&&!forceApps)||forbiddenApps.length>0)?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:17}}>
             {starting
               ?<><i className="fas fa-spinner fa-spin"/>Démarrage en cours…</>
               :<><i className="fas fa-check"/>J&apos;accepte et je démarre l&apos;examen</>}
@@ -4757,6 +4803,19 @@ export default function ExamPage() {
         {/* Calculatrice intégrée (Retour DFIP — évite la calculatrice physique/téléphone) */}
         {exam.enable_calculator&&showCalculator&&<Calculator onClose={()=>setShowCalculator(false)}/>}
 
+        {stuckForbidden.length>0 && (
+          <div role="alertdialog" aria-live="assertive" style={{position:'fixed',inset:0,zIndex:9550,background:'rgba(15,23,42,.97)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+            <div style={{maxWidth:480,width:'100%',background:'#1e293b',border:'1px solid #b91c1c',borderRadius:14,padding:'28px 26px',textAlign:'center',color:'#e2e8f0'}}>
+              <div style={{fontSize:40,color:'#ef4444',marginBottom:10}}><i className="fas fa-ban"/></div>
+              <h2 style={{margin:'0 0 10px',fontSize:21,fontWeight:700,color:'white'}}>Logiciel interdit actif</h2>
+              <p style={{margin:'0 0 10px',fontSize:15.5,lineHeight:1.55}}>{stuckForbidden.map(prettyForbidden).join(', ')} {stuckForbidden.length>1?'sont ouverts':'est ouvert'} et l&apos;application n&apos;a pas pu {stuckForbidden.length>1?'les':'le'} arrêter. Votre copie est masquée tant {stuckForbidden.length>1?'qu\'ils restent':'qu\'il reste'} actif{stuckForbidden.length>1?'s':''}. <strong>Vos réponses sont conservées</strong> ; le temps continue de s&apos;écouler, et le surveillant est informé.</p>
+              <button onClick={stopForbiddenApps} disabled={stoppingForbidden} style={{width:'100%',padding:13,background:'#b91c1c',color:'white',border:'none',borderRadius:10,fontSize:16,fontWeight:700,cursor:stoppingForbidden?'wait':'pointer'}}>
+                {stoppingForbidden?<><i className="fas fa-spinner fa-spin" style={{marginRight:8}}/>Arrêt en cours…</>:<><i className="fas fa-power-off" style={{marginRight:8}}/>Arrêter {stuckForbidden.length>1?'ces logiciels':'ce logiciel'} (autoriser Windows)</>}
+              </button>
+              {forbiddenTried&&!stoppingForbidden&&<p style={{margin:'12px 0 0',fontSize:13.5,lineHeight:1.5,color:'#94a3b8'}}>Répondez « Oui » à la fenêtre de Windows. Sinon : icône près de l&apos;horloge → Quitter, ou Gestionnaire des tâches → Services → Arrêter.</p>}
+            </div>
+          </div>
+        )}
         {phoneCamMissing && exam?.allow_secondary_camera && !phoneCamWaived && !phoneCamLinked && (
           <div role="alertdialog" aria-live="assertive" style={{position:'fixed',inset:0,zIndex:9500,background:'rgba(15,23,42,.97)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
             <div style={{maxWidth:460,width:'100%',background:'#1e293b',border:'1px solid #475569',borderRadius:14,padding:'28px 26px',textAlign:'center',color:'#e2e8f0'}}>
