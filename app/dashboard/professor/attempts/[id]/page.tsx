@@ -126,6 +126,7 @@ const INCIDENT_LABELS: Record<string, string> = {
   vision_profile_lite:     "Surveillance allégée (connexion limitée de l'étudiant) — information, pas une anomalie",
   face_detection_unavailable: 'Détection faciale indisponible (problème réseau ou navigateur)',
   live_monitoring_unavailable: 'Canal de surveillance en direct indisponible (problème réseau)',
+  live_media_republished: 'Diffusion en direct rétablie automatiquement',
   liveness_suspect_static: 'Visage suspecté statique (photo/écran ?) — signal expérimental, à vérifier manuellement',
   gaze_away:               "Regard détourné de l'écran",
   head_turned:             'Tête tournée',

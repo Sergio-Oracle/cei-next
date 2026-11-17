@@ -7,6 +7,7 @@ import { getCeiClient, isCeiClient, proveCeiClient, onCeiClientEvent } from '@/l
 import { totalAnswered, totalUnits } from '@/lib/answerUnits'
 import { JOIN_JITTER_MS, retryDelayMs } from '@/lib/lkRetry'
 import { studentShouldSubscribe, staffIdentities } from '@/lib/lkSubscriptions'
+import { missingMedia, REQUEST_MEDIA_KIND } from '@/lib/mediaHealth'
 import { ASSIST_PRESETS } from '@/components/shared/ClientAssistSettings'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
@@ -797,6 +798,8 @@ export default function ExamPage() {
   const camStream       = useRef<MediaStream|null>(null)
   const screenStream    = useRef<MediaStream|null>(null)
   const lkRoomRef           = useRef<any>(null)
+  const mediaBusyRef        = useRef(false)          // une vérification/republication des pistes à la fois
+  const mediaWatchRef       = useRef<any>(null)      // minuterie du contrôle périodique des pistes publiées
   const proctorVideoRef     = useRef<HTMLVideoElement|null>(null)
   const proctorAudioRef     = useRef<HTMLAudioElement|null>(null)
   const teacherVideoRef     = useRef<HTMLVideoElement|null>(null)
@@ -1259,6 +1262,7 @@ export default function ExamPage() {
   useEffect(() => () => {
     ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef,heartbeatRef,multiScreenIntervalRef,yoloObjectIntervalRef,previewTimerRef].forEach(r => { if (r.current) clearInterval(r.current) })
     ;[saveRetryTimerRef,submitRetryTimerRef].forEach(r => { if (r.current) clearTimeout(r.current) })
+    if (mediaWatchRef.current) { clearInterval(mediaWatchRef.current); mediaWatchRef.current = null }
     camStream.current?.getTracks().forEach(t => t.stop())
     screenStream.current?.getTracks().forEach(t => t.stop())
     if (lkRoomRef.current) { try { lkRoomRef.current.disconnect() } catch {} }
@@ -2442,7 +2446,7 @@ export default function ExamPage() {
      « connexion lente » coupait le simulcast et envoyait un seul flux 640x480
      bridé à 100 kb/s : image floue ET aucune couche de repli. */
   function camPublishOptions(LK:any){
-    const opts:any={simulcast:true,videoEncoding:{maxBitrate:300_000,maxFramerate:15}}
+    const opts:any={source:LK.Track.Source.Camera,simulcast:true,videoEncoding:{maxBitrate:300_000,maxFramerate:15}}
     if(LK.VideoPreset){
       opts.videoSimulcastLayers=[new LK.VideoPreset(160,120,60_000,10),new LK.VideoPreset(320,240,150_000,12)]
     }
@@ -2486,33 +2490,105 @@ export default function ExamPage() {
      reconnexion de room.connect() ne republie rien — l'étudiant paraît
      alors "en ligne" côté surveillance mais l'écran reste noir en
      permanence, sans qu'aucune erreur ne remonte à personne. */
-  async function publishLocalTracks(room:any,LK:any) {
+  async function publishCam(room:any,LK:any){
     const low = networkQualityRef.current==='poor'
     const camTracks=camStream.current?.getVideoTracks()
-    if(camTracks?.length){
-      try{
-        const vt=new LK.LocalVideoTrack(camTracks[0].clone(),undefined,false)
-        await room.localParticipant.publishTrack(vt,camPublishOptions(LK))
-        mainCamTrackRef.current=vt
-        camEncBaseRef.current=new Map()
-        if(low) tuneCamEncoding(true)
-      }
-      catch(e){console.warn('[LiveKit] échec publication caméra:',e)}
+    if(!camTracks?.length) return
+    try{
+      const vt=new LK.LocalVideoTrack(camTracks[0].clone(),undefined,false)
+      await room.localParticipant.publishTrack(vt,camPublishOptions(LK))
+      mainCamTrackRef.current=vt
+      camEncBaseRef.current=new Map()
+      if(low) tuneCamEncoding(true)
     }
+    catch(e){console.warn('[LiveKit] échec publication caméra:',e)}
+  }
+  async function publishMic(room:any,LK:any){
     const micTracks=camStream.current?.getAudioTracks()
-    if(micTracks?.length){
-      try{const at=new LK.LocalAudioTrack(micTracks[0].clone(),undefined,false);await room.localParticipant.publishTrack(at)}
-      catch(e){console.warn('[LiveKit] échec publication micro:',e)}
-    }
+    if(!micTracks?.length) return
+    try{const at=new LK.LocalAudioTrack(micTracks[0].clone(),undefined,false);await room.localParticipant.publishTrack(at,{source:LK.Track.Source.Microphone})}
+    catch(e){console.warn('[LiveKit] échec publication micro:',e)}
+  }
+  async function publishScreen(room:any,LK:any){
+    const low = networkQualityRef.current==='poor'
     const screenTracks=screenStream.current?.getVideoTracks()
-    if(screenTracks?.length&&screenTracks[0].readyState!=='ended'){
-      try{
-        const st=new LK.LocalVideoTrack(screenTracks[0],undefined,false)
-        await room.localParticipant.publishTrack(st,{source:LK.Track.Source.ScreenShare,name:'screen',screenShareEncoding:low?{maxBitrate:150_000,maxFramerate:2}:{maxBitrate:500_000,maxFramerate:5}})
-        mainScreenTrackRef.current=st
-      }
-      catch(e){console.warn('[LiveKit] échec publication écran:',e)}
+    if(!screenTracks?.length||screenTracks[0].readyState==='ended') return
+    try{
+      const st=new LK.LocalVideoTrack(screenTracks[0],undefined,false)
+      await room.localParticipant.publishTrack(st,{source:LK.Track.Source.ScreenShare,name:'screen',screenShareEncoding:low?{maxBitrate:150_000,maxFramerate:2}:{maxBitrate:500_000,maxFramerate:5}})
+      mainScreenTrackRef.current=st
     }
+    catch(e){console.warn('[LiveKit] échec publication écran:',e)}
+  }
+  async function publishLocalTracks(room:any,LK:any) {
+    mediaBusyRef.current=true          // le contrôle périodique n'intervient pas pendant la publication initiale / après reconnexion
+    try{
+      await publishCam(room,LK)
+      await publishMic(room,LK)
+      await publishScreen(room,LK)
+    } finally { mediaBusyRef.current=false }
+  }
+
+  /* Contrôle de santé de la diffusion (17/11/2026). Cas réel : étudiant « Visage OK » chez lui, écran partagé reçu, mais tuile caméra noire chez le surveillant
+     — une publication ayant échoué une seule fois n'était jamais retentée. Ici : on compare ce que l'étudiant POSSÈDE (flux source vivant) à ce qui est
+     réellement PUBLIÉ dans la salle, et on republie ce qui manque. forceCam : à la demande d'un surveillant, la caméra est dépubliée puis republiée. */
+  async function ensureMediaPublished(room:any,LK:any,forceCam=false){
+    if(!room||!LK||mediaBusyRef.current||sessionEndedRef.current) return
+    if(lkRoomRef.current!==room||room.state!=='connected') return
+    mediaBusyRef.current=true
+    try{
+      // Caméra source terminée (pilote, autre application) : en rouvrir une seule fois, sans toucher au micro ni à l'écran.
+      let camTrack=camStream.current?.getVideoTracks()[0]
+      if(camStream.current&&(!camTrack||camTrack.readyState==='ended')){
+        try{
+          const ns=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640},height:{ideal:480}}})
+          const nv=ns.getVideoTracks()[0]
+          if(nv){
+            camStream.current.getVideoTracks().forEach(t=>camStream.current!.removeTrack(t))
+            camStream.current.addTrack(nv)
+            camTrack=nv
+            if(videoRef.current) videoRef.current.srcObject=camStream.current
+          }
+        }catch(e){console.warn('[LiveKit] caméra source indisponible, nouvel essai au prochain contrôle:',e)}
+      }
+      const pubs:any[]=Array.from(room.localParticipant.trackPublications?.values?.()||[])
+      const have={
+        cam:!!camTrack&&camTrack.readyState!=='ended',
+        mic:!!camStream.current?.getAudioTracks().some(t=>t.readyState!=='ended'),
+        screen:!!screenStream.current?.getVideoTracks().some(t=>t.readyState!=='ended'),
+      }
+      const miss=missingMedia(pubs,have)
+      if(forceCam&&have.cam&&!miss.cam){
+        try{ if(mainCamTrackRef.current){ await room.localParticipant.unpublishTrack(mainCamTrackRef.current); mainCamTrackRef.current.stop() } }catch{}
+        mainCamTrackRef.current=null
+        miss.cam=true
+      } else if(miss.cam){
+        // Publication morte ou absente : la retirer proprement avant d'en créer une neuve.
+        const stale=pubs.find(p=>p.kind==='video'&&p.source!==LK.Track.Source.ScreenShare)
+        if(stale?.track){ try{ await room.localParticipant.unpublishTrack(stale.track) }catch{} }
+      }
+      if(miss.cam)    await publishCam(room,LK)
+      if(miss.mic)    await publishMic(room,LK)
+      if(miss.screen) await publishScreen(room,LK)
+      if(miss.cam||miss.mic||miss.screen){
+        // Journal seulement si la republication a RÉUSSI (sinon on retente au prochain contrôle sans polluer le journal de l'étudiant).
+        const after=missingMedia(Array.from(room.localParticipant.trackPublications?.values?.()||[]),have)
+        const fixed=[miss.cam&&!after.cam&&'caméra',miss.mic&&!after.mic&&'micro',miss.screen&&!after.screen&&'écran'].filter(Boolean).join(', ')
+        if(fixed){
+          console.warn('[LiveKit] pistes absentes de la salle, republiées :',fixed)
+          const curAId=attemptRef.current
+          if(curAId) logActivity(curAId,'live_media_republished',`Diffusion en direct rétablie (${fixed})`).catch(()=>{})
+        }
+      }
+    }catch(e){console.warn('[LiveKit] contrôle des pistes impossible:',e)}
+    finally{ mediaBusyRef.current=false }
+  }
+  function startMediaWatch(room:any,LK:any){
+    if(mediaWatchRef.current) clearInterval(mediaWatchRef.current)
+    mediaWatchRef.current=setInterval(()=>{
+      if(sessionEndedRef.current||lkRoomRef.current!==room){ clearInterval(mediaWatchRef.current); mediaWatchRef.current=null; return }
+      ensureMediaPublished(room,LK)
+    },6000)
   }
 
   /* Rebascule le débit vidéo caméra à chaud (sans déconnecter la room) dès
@@ -2591,8 +2667,16 @@ export default function ExamPage() {
         },delay)
       }
       room.on(LK.RoomEvent.Disconnected,scheduleReconnect)
-      room.on(LK.RoomEvent.DataReceived,(payload:Uint8Array)=>{
-        try{handleTeacherMessage(JSON.parse(new TextDecoder().decode(payload)))}catch{}
+      room.on(LK.RoomEvent.DataReceived,(payload:Uint8Array,participant:any)=>{
+        try{
+          const msg=JSON.parse(new TextDecoder().decode(payload))
+          // Demande d'un surveillant (sa tuile ne reçoit pas notre caméra) : republier la caméra, uniquement si elle vient du personnel.
+          if(msg?.kind===REQUEST_MEDIA_KIND){
+            if(participant?.identity&&studentShouldSubscribe(participant.identity)) ensureMediaPublished(room,LK,true)
+            return
+          }
+          handleTeacherMessage(msg)
+        }catch{}
       })
       room.on(LK.RoomEvent.TrackSubscribed,(track:any,_pub:any,p:any)=>{
         const pid=p.identity
@@ -2644,6 +2728,7 @@ export default function ExamPage() {
       if(videoRef.current&&camStream.current&&videoRef.current.srcObject!==camStream.current)
         videoRef.current.srcObject=camStream.current
       await publishLocalTracks(room,LK)
+      startMediaWatch(room,LK)
     } catch (err) {
       // Correctif (01/09, audit complet) — un échec de la CONNEXION
       // INITIALE (avant tout `room.connect()` réussi) restait jusqu'ici

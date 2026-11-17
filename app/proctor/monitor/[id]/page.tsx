@@ -12,6 +12,7 @@ import { eventLabel } from '@/lib/eventLabels'
 import { errMsg } from '@/lib/errors'
 import { retryDelayMs } from '@/lib/lkRetry'
 import { monitorShouldSubscribe } from '@/lib/lkSubscriptions'
+import { cameraView, shouldAskRepublish, REQUEST_MEDIA_KIND } from '@/lib/mediaHealth'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 
@@ -168,6 +169,7 @@ const EVENT_LABEL_MAP: Record<string, string> = {
   vision_profile_lite:     "Surveillance allégée (connexion limitée de l'étudiant) — information, pas une anomalie",
   face_detection_unavailable: 'Détection faciale indisponible (problème réseau ou navigateur)',
   live_monitoring_unavailable: 'Canal de surveillance en direct indisponible (problème réseau)',
+  live_media_republished: 'Diffusion en direct rétablie automatiquement',
   liveness_suspect_static: 'Visage suspecté statique (photo/écran ?) — signal expérimental, à vérifier manuellement',
   gaze_away:               "Regard détourné de l'écran",
   head_turned:             'Tête tournée',
@@ -236,6 +238,7 @@ const EVENT_ICON_MAP: Record<string, { icon: string; color: string }> = {
   vision_profile_lite:    { icon: 'gauge',               color: '#94a3b8' },
   face_detection_unavailable: { icon: 'triangle-exclamation', color: '#94a3b8' },
   live_monitoring_unavailable: { icon: 'video-slash', color: '#94a3b8' },
+  live_media_republished: { icon: 'video', color: '#94a3b8' },
   liveness_suspect_static: { icon: 'user-secret', color: '#f59e0b' },
   gaze_away:              { icon: 'eye',                 color: '#f59e0b' },
   head_turned:            { icon: 'rotate',              color: '#f59e0b' },
@@ -1238,6 +1241,37 @@ export default function ProctorMonitorPage() {
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [trackTick, pgState.video, liveSet, phoneLiveSet, data, search, filter, loading])
 
+  // Tuile noire alors que l'étudiant est connecté (17/11/2026, « Devoir-IA-Master IL ») : sa caméra n'avait jamais été publiée (ou était coupée) alors que
+  // son écran partagé arrivait normalement. Le surveillant le DIT dans la tuile et demande à l'étudiant — lui seul — de republier sa caméra.
+  const camMissTicksRef = useRef<Map<string, number>>(new Map())
+  const camAskedAtRef   = useRef<Map<string, number>>(new Map())
+
+  function watchCameras(room: any) {
+    const notes: Record<string, string> = {
+      absent: 'Caméra non diffusée par l’étudiant — relance automatique…',
+      muted: 'Caméra coupée chez l’étudiant — relance automatique…',
+      not_received: 'Image en cours de chargement…',
+    }
+    visibleIdsRef.current.forEach(ident => {
+      const p = room.remoteParticipants?.get(ident)
+      const txt = document.getElementById(`phtxt-${ident}`)
+      if (!p) { camMissTicksRef.current.delete(ident); return }
+      const view = cameraView(Array.from(p.trackPublications.values()))
+      if (view === 'ok') { camMissTicksRef.current.delete(ident); if (txt) txt.textContent = notes.not_received; return }
+      if (txt) txt.textContent = notes[view]
+      if (view === 'not_received') return                               // publiée : l'abonnement / le watchdog ci-dessous s'en charge
+      const ticks = (camMissTicksRef.current.get(ident) || 0) + 1
+      camMissTicksRef.current.set(ident, ticks)
+      if (ticks < 2) return                                              // ~8 s : laisse le temps à une publication en cours
+      const now = Date.now()
+      if (!shouldAskRepublish(camAskedAtRef.current.get(ident), now)) return
+      camAskedAtRef.current.set(ident, now)
+      try {
+        room.localParticipant.publishData(new TextEncoder().encode(JSON.stringify({ kind: REQUEST_MEDIA_KIND })), { reliable: true, destinationIdentities: [ident] })
+      } catch {}
+    })
+  }
+
   useEffect(() => {
     const LK = () => (typeof window !== 'undefined' ? window.LivekitClient : null)
     const timer = setInterval(() => {
@@ -1245,6 +1279,7 @@ export default function ProctorMonitorPage() {
       const lk = LK()
       if (!room || !lk) return
       syncSubscriptions()
+      watchCameras(room)
       visibleIdsRef.current.forEach(ident => {
         const p = room.remoteParticipants?.get(ident)
         if (!p) return
@@ -2981,7 +3016,7 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
           <div id={`ph-${s.livekit_identity}`}
             style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <i className="fas fa-video-slash" style={{ fontSize: 29, color: 'rgba(255,255,255,.18)' }} />
-            <span style={{ fontSize:12, color: 'rgba(255,255,255,.3)' }}>Image en cours de chargement…</span>
+            <span id={`phtxt-${s.livekit_identity}`} style={{ fontSize:12, color: 'rgba(255,255,255,.3)', textAlign: 'center', padding: '0 10px' }}>Image en cours de chargement…</span>
           </div>
           <video id={`video-${s.livekit_identity}`} autoPlay playsInline
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'none' }} />

@@ -35,6 +35,7 @@ const SHARED: Record<string, string> = {
   face_reference: 'Photo de référence',
   face_detection_unavailable: 'Détection du visage indisponible',
   live_monitoring_unavailable: 'Surveillance en direct indisponible',
+  live_media_republished: 'Diffusion en direct rétablie automatiquement',
   low_bandwidth_mode: 'Mode faible débit activé',
   pause_started: 'Pause démarrée',
   pause_ended: 'Pause terminée',
