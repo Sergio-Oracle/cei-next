@@ -853,6 +853,16 @@ export default function ExamPage() {
     attemptClockRef.current = typeof att.elapsed_seconds === 'number' ? { elapsed: att.elapsed_seconds, at: performance.now() } : null
     clockSeenRef.current = !!att.exam_seen                // reprise d'une copie déjà vue : le temps court déjà
   }
+  // Heure (performance.now) à laquelle le SERVEUR clôt cette copie (fin de l'examen ou de la vague + temps accordé ; la pause de 3 min n'y compte pas) :
+  // le minuteur ne promet jamais plus de temps que cela (17/11/2026 : des étudiants composaient encore plusieurs minutes après la clôture).
+  const closeAtRef = useRef<number|null>(null)
+  function noteCloseIn(sec?: number|null) {
+    if (typeof sec === 'number' && isFinite(sec)) closeAtRef.current = performance.now() + sec * 1000
+  }
+  function capByClose(personalSec: number): number {
+    const c = closeAtRef.current
+    return c == null ? personalSec : Math.min(personalSec, (c - performance.now()) / 1000)
+  }
   function noteSeenClock(elapsed?: number) {
     attemptClockRef.current = { elapsed: typeof elapsed === 'number' ? elapsed : 0, at: performance.now() }
     clockSeenRef.current = true
@@ -1167,7 +1177,7 @@ export default function ExamPage() {
       seenSentRef.current = true
       let tries = 0
       const post = () => {
-        api.post<{elapsed_seconds?: number}>(`/api/exam_attempts/${attId}/seen`, {}).then(r => noteSeenClock(r?.elapsed_seconds)).catch((e: unknown) => {
+        api.post<{elapsed_seconds?: number; closes_in_seconds?: number|null}>(`/api/exam_attempts/${attId}/seen`, {}).then(r => { noteSeenClock(r?.elapsed_seconds); noteCloseIn(r?.closes_in_seconds) }).catch((e: unknown) => {
           if ((e as {status?:number})?.status === 409 && (e as {data?:{secondary_camera_required?:boolean}})?.data?.secondary_camera_required) {
             // Le serveur constate l'absence du téléphone : la copie reste masquée (écran de reconnexion) ; elle sera re-déclarée dès son retour
             seenSentRef.current = false; setPhoneCamLinked(false); phoneCamMissRef.current = 3
@@ -2066,7 +2076,7 @@ export default function ExamPage() {
     timerRef.current = setInterval(()=>{
       setTimeLeft(()=>{
         const totalNow=(examRef.current?.duration_minutes??0)*60+extraMinRef.current*60
-        const nl=Math.max(0,Math.floor(totalNow-elapsedSeconds(attempt)))   // temps écoulé donné par le serveur
+        const nl=Math.max(0,Math.floor(capByClose(totalNow-elapsedSeconds(attempt))))   // temps écoulé donné par le serveur, plafonné à la clôture du serveur
         if(nl<=300 && !reminder5MinShownRef.current){
           reminder5MinShownRef.current=true
           warning('Il vous reste 5 minutes — pensez à finaliser vos réponses')
@@ -2097,11 +2107,12 @@ export default function ExamPage() {
     pauseUsedRef.current = attempt.pause_used || false
     const totalSec   = exam.duration_minutes*60+extraMinRef.current*60
     const elapsedSec = Math.floor(elapsedSeconds(attempt))   // temps écoulé donné par le serveur
-    setTimeLeft(Math.max(totalSec-elapsedSec,0))
+    setTimeLeft(Math.max(capByClose(totalSec-elapsedSec),0))
     startTimerInterval()
     saveRef.current     = setInterval(()=>{const aId=attemptRef.current;if(aId)doAutoSave(aId)},30000)
     msgPollRef.current  = setInterval(()=>pollTeacherMessages(attempt.id),30000)
     extraPollRef.current= setInterval(()=>pollExtraTime(attempt.id),30000)
+    pollExtraTime(attempt.id)                              // 1re lecture tout de suite : l'heure de clôture réelle est connue avant la première demi-minute
     // Heartbeat léger — alimente ExamAttempt.last_seen_at côté serveur pour
     // le badge "hors ligne" du surveillant. Volontairement silencieux en cas
     // d'échec (navigator.onLine false ou requête qui échoue) : ne doit jamais
@@ -3623,7 +3634,8 @@ export default function ExamPage() {
   async function pollExtraTime(aId:number) {
     if(sessionEndedRef.current) return
     try {
-      const res=await api.get<{extra_minutes?:number; duration_minutes?:number}>(`/api/exam_attempts/${aId}/subject`)
+      const res=await api.get<{extra_minutes?:number; duration_minutes?:number; closes_in_seconds?:number|null}>(`/api/exam_attempts/${aId}/subject`)
+      noteCloseIn(res.closes_in_seconds)
       const ne=res.extra_minutes??0
       if(ne>extraMinRef.current){const added=ne-extraMinRef.current;extraMinRef.current=ne;success(`+${added} minute${added>1?'s':''} accordée${added>1?'s':''} par le surveillant`)}
       // Durée de l'examen prolongée par l'enseignant en cours d'épreuve : prise en compte sans recharger la page.
