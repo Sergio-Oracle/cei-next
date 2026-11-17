@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import api, { serverNow } from '@/lib/api'
 import { getCeiClient, isCeiClient, proveCeiClient, onCeiClientEvent } from '@/lib/ceiClient'
 import { totalAnswered, totalUnits } from '@/lib/answerUnits'
+import { JOIN_JITTER_MS, retryDelayMs } from '@/lib/lkRetry'
 import { ASSIST_PRESETS } from '@/components/shared/ClientAssistSettings'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
@@ -2529,35 +2530,45 @@ export default function ExamPage() {
 
   async function connectLiveKit(aId:number, attempt=1) {
     try {
+      // Étalement de la ruée du début d'examen (voir lib/lkRetry.ts) : première connexion décalée de 0 à 15 s au hasard.
+      if(attempt===1) await new Promise(r=>setTimeout(r,Math.random()*JOIN_JITTER_MS))
+      if(sessionEndedRef.current) return
       const tok=await api.get<{ws_url:string;token:string}>(`/api/exam_attempts/${aId}/livekit_token`)
       if(!tok.ws_url||!tok.token) return
       const LK=window.LivekitClient
       const room=new LK.Room({adaptiveStream:true,dynacast:true}); lkRoomRef.current=room
       let reconnects=0
-      room.on(LK.RoomEvent.Disconnected,()=>{
-        if(sessionEndedRef.current) return
-        if(reconnects>=5){
-          // Correctif (01/09, audit complet) — abandon jusqu'ici silencieux
-          // après 5 tentatives ; trace désormais consignée (diagnostic
-          // seulement, jamais de pénalité étudiant).
-          console.warn('[live-monitoring] abandon après 5 tentatives de reconnexion')
+      let unavailableLogged=false
+      let reconnectPending=false           // un seul nouvel essai programmé à la fois (une connexion qui échoue peut aussi émettre « Disconnected »)
+      const scheduleReconnect=()=>{
+        // Seule la salle COURANTE se reconnecte : une salle remplacée par un nouvel essai (ou expulsée pour identité en double) ne doit pas se relancer,
+        // sinon deux connexions de même identité s'expulseraient l'une l'autre sans fin.
+        if(sessionEndedRef.current||reconnectPending||lkRoomRef.current!==room) return
+        reconnectPending=true
+        if(reconnects>=5 && !unavailableLogged){
+          // Trace consignée UNE seule fois (diagnostic seulement, jamais de pénalité étudiant) — mais on NE s'arrête plus : on continue d'essayer
+          // (17/11/2026 : abandon définitif après 5 essais = des centaines d'étudiants jamais revenus à l'écran du surveillant).
+          unavailableLogged=true
+          console.warn('[live-monitoring] canal indisponible, nouvelles tentatives en arrière-plan')
           const curAId = attemptRef.current || aId
-          logActivity(curAId,'live_monitoring_unavailable','Reconnexion au canal de surveillance en direct abandonnée après 5 tentatives').catch(()=>{})
-          logProctoring(curAId,'live_monitoring_unavailable','Reconnexion au canal de surveillance en direct abandonnée après 5 tentatives').catch(()=>{})
-          return
+          logActivity(curAId,'live_monitoring_unavailable','Canal de surveillance en direct indisponible : nouvelles tentatives en arrière-plan').catch(()=>{})
+          logProctoring(curAId,'live_monitoring_unavailable','Canal de surveillance en direct indisponible : nouvelles tentatives en arrière-plan').catch(()=>{})
         }
-        const delay=Math.min(2000*Math.pow(1.5,reconnects),30000); reconnects++
+        const delay=retryDelayMs(reconnects+1); reconnects++
         setTimeout(async()=>{
+          reconnectPending=false
+          if(sessionEndedRef.current||lkRoomRef.current!==room) return
           try{
             const t=await api.get<any>(`/api/exam_attempts/${aId}/livekit_token`)
             await room.connect(t.ws_url,t.token)
-            reconnects=0
+            reconnects=0; unavailableLogged=false
             /* Aucune piste ne survit à une reconnexion complète (nouvelle
                session RTC côté serveur) — il faut toujours republier. */
             await publishLocalTracks(room,LK)
-          }catch{}
+          }catch{ scheduleReconnect() }
         },delay)
-      })
+      }
+      room.on(LK.RoomEvent.Disconnected,scheduleReconnect)
       room.on(LK.RoomEvent.DataReceived,(payload:Uint8Array)=>{
         try{handleTeacherMessage(JSON.parse(new TextDecoder().decode(payload)))}catch{}
       })
@@ -2621,15 +2632,15 @@ export default function ExamPage() {
       // tentatives échouent toutes — le reste de l'examen (réponses,
       // détection locale) continue sans dépendre de ce canal.
       if (sessionEndedRef.current) return
-      if (attempt < 4) {
-        const delay = Math.min(2000 * Math.pow(1.5, attempt-1), 15000)
-        setTimeout(() => connectLiveKit(aId, attempt+1), delay)
-      } else {
-        console.warn('[live-monitoring] échec de connexion après plusieurs tentatives', err)
+      // N'abandonne JAMAIS : le serveur surchargé à 10 h puis rétabli à 10 h 20 n'a jamais revu les étudiants qui avaient renoncé après 4 essais.
+      // La trace de diagnostic n'est consignée qu'UNE fois (au 4e échec), jamais de pénalité étudiant.
+      if (attempt === 4) {
+        console.warn('[live-monitoring] canal indisponible, nouvelles tentatives en arrière-plan', err)
         const curAId = attemptRef.current || aId
-        logActivity(curAId,'live_monitoring_unavailable','Connexion au canal de surveillance en direct impossible après plusieurs tentatives').catch(()=>{})
-        logProctoring(curAId,'live_monitoring_unavailable','Connexion au canal de surveillance en direct impossible après plusieurs tentatives').catch(()=>{})
+        logActivity(curAId,'live_monitoring_unavailable','Connexion au canal de surveillance en direct impossible : nouvelles tentatives en arrière-plan').catch(()=>{})
+        logProctoring(curAId,'live_monitoring_unavailable','Connexion au canal de surveillance en direct impossible : nouvelles tentatives en arrière-plan').catch(()=>{})
       }
+      setTimeout(() => connectLiveKit(aId, attempt+1), retryDelayMs(attempt))
     }
   }
 
