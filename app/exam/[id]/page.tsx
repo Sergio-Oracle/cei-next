@@ -3637,7 +3637,10 @@ export default function ExamPage() {
       saveFailedRef.current=false
       saveBackoffRef.current=0
       if(saveRetryTimerRef.current){clearTimeout(saveRetryTimerRef.current);saveRetryTimerRef.current=null}
-    }catch{
+    }catch(e:any){
+      // Le serveur a déjà clos cette copie (heure de fin atteinte, soumission automatique, exclusion) : on termine ICI, tout de suite,
+      // au lieu d'afficher « sauvegarde impossible » et de laisser l'étudiant continuer d'écrire jusqu'au prochain contrôle (17/11/2026 : jusqu'à 30 s).
+      if(e?.data?.already_submitted||e?.data?.banned){ handleSubmit(true); return }
       // n'alerter qu'une fois par série d'échecs (auto-save toutes les 30s) —
       // éviter de spammer l'étudiant si la coupure réseau dure plusieurs minutes.
       // Les réponses restent sécurisées localement (voir localStorage
