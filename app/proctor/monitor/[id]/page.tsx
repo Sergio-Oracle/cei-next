@@ -10,6 +10,8 @@ import StaffChatPanel from '@/components/proctor/StaffChatPanel'
 import { initProctoringVision, analyzeFace } from '@/lib/proctoring-vision'
 import { eventLabel } from '@/lib/eventLabels'
 import { errMsg } from '@/lib/errors'
+import { retryDelayMs } from '@/lib/lkRetry'
+import { monitorShouldSubscribe } from '@/lib/lkSubscriptions'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 
@@ -657,11 +659,12 @@ export default function ProctorMonitorPage() {
     }
     // Une seule tentative de connexion jusqu'ici : un échec réseau
     // ponctuel laissait la grille noire pour toute la séance.
+    // Ne renonce JAMAIS (avant : 6 essais puis grille vide pour toute la séance) : essais espacés et étalés, plafonnés à 60 s.
     async function connectLKWithRetry() {
-      for (let attempt = 0; attempt < 6 && !cancelled; attempt++) {
+      for (let attempt = 1; !cancelled; attempt++) {
         const ok = await connectLK()
         if (ok || cancelled) return
-        await new Promise(r => setTimeout(r, Math.min(2000 * Math.pow(1.6, attempt), 15000)))
+        await new Promise(r => setTimeout(r, retryDelayMs(attempt)))
       }
     }
     reconnectLKRef.current = () => { if (window.LivekitClient) connectLKWithRetry() }
@@ -670,6 +673,23 @@ export default function ProctorMonitorPage() {
     }
     return () => { cancelled = true; if (scriptEl) scriptEl.remove() }
   }, [id]) // eslint-disable-line
+
+  /* Abonnements : au personnel, et des étudiants SEULEMENT à la vidéo des tuiles affichées (jamais leur audio, jamais les pages non affichées).
+     Avant : abonnement automatique à ~2 400 pistes par surveillant (lib/lkSubscriptions.ts). */
+  function syncSubscriptions() {
+    const room = roomRef.current
+    if (!room) return
+    const visible = [...visibleIdsRef.current, ...modalIdsRef.current]       // tuiles affichées + fenêtres ouvertes (écran, téléphone, identité)
+    try {
+      room.remoteParticipants.forEach((p: any) => {
+        p.trackPublications.forEach((pub: any) => {
+          const want = monitorShouldSubscribe(p.identity, pub.kind, visible)
+          if (want && !pub.isSubscribed) { try { pub.setSubscribed(true) } catch {} }
+          else if (!want && (pub.isSubscribed || pub.isDesired)) { try { pub.setSubscribed(false) } catch {} }
+        })
+      })
+    } catch {}
+  }
 
   async function connectLK(): Promise<boolean> {
     try {
@@ -683,6 +703,8 @@ export default function ProctorMonitorPage() {
       try { oldRoom?.disconnect() } catch {}
       const room = new LK.Room({ adaptiveStream: true, dynacast: true })
       roomRef.current = room
+      room.on(LK.RoomEvent.TrackPublished, () => syncSubscriptions())
+      room.on(LK.RoomEvent.ParticipantConnected, () => syncSubscriptions())
       // Perte définitive de la salle (le client LiveKit retente seul en
       // premier) : on se reconnecte au lieu de laisser la grille figée.
       room.on(LK.RoomEvent.Disconnected, () => {
@@ -862,7 +884,8 @@ export default function ProctorMonitorPage() {
         }
       })
 
-      await room.connect(tok.ws_url, tok.token)
+      await room.connect(tok.ws_url, tok.token, { autoSubscribe: false })
+      syncSubscriptions()
 
       /* participants déjà présents au moment de la connexion */
       const alreadyLive: string[] = []
@@ -1190,8 +1213,10 @@ export default function ProctorMonitorPage() {
   // suivant. On rattache donc à chaque changement de page / de piste / de
   // données, et un chien de garde relance les flux qui n'arrivent pas.
   const visibleIdsRef = useRef<string[]>([])
+  const modalIdsRef   = useRef<string[]>([])         // étudiants dont une fenêtre (écran, téléphone, vérification d'identité) est ouverte : restent abonnés
 
   useEffect(() => {
+    syncSubscriptions()                      // changement de page / de filtre : s'abonner aux nouvelles tuiles, se désabonner des anciennes
     function attachVisible() {
       visibleIdsRef.current.forEach(ident => {
         const track = videoTracksRef.current.get(ident)
@@ -1219,6 +1244,7 @@ export default function ProctorMonitorPage() {
       const room = roomRef.current
       const lk = LK()
       if (!room || !lk) return
+      syncSubscriptions()
       visibleIdsRef.current.forEach(ident => {
         const p = room.remoteParticipants?.get(ident)
         if (!p) return
@@ -1304,6 +1330,7 @@ export default function ProctorMonitorPage() {
   const pgVideo = pgOf('video', liveStudents.length, VIDEO_PAGE_SIZE, 48)
   const pagedLiveStudents = liveStudents.slice(pgVideo.from, pgVideo.to)
   visibleIdsRef.current = pagedLiveStudents.map(s => s.livekit_identity)
+  modalIdsRef.current = [screenModal?.identity, phoneZoomModal?.identity, identityModal?.identity].filter((x): x is string => !!x)
 
   /* Étudiants en cours d'examen dont le heartbeat n'a pas été reçu depuis le
      seuil défini — souvent absents de la grille "Vues en direct" (déconnectés

@@ -6,6 +6,7 @@ import api, { serverNow } from '@/lib/api'
 import { getCeiClient, isCeiClient, proveCeiClient, onCeiClientEvent } from '@/lib/ceiClient'
 import { totalAnswered, totalUnits } from '@/lib/answerUnits'
 import { JOIN_JITTER_MS, retryDelayMs } from '@/lib/lkRetry'
+import { studentShouldSubscribe, staffIdentities } from '@/lib/lkSubscriptions'
 import { ASSIST_PRESETS } from '@/components/shared/ClientAssistSettings'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
@@ -2551,6 +2552,15 @@ export default function ExamPage() {
       let reconnects=0
       let unavailableLogged=false
       let reconnectPending=false           // un seul nouvel essai programmé à la fois (une connexion qui échoue peut aussi émettre « Disconnected »)
+      // Abonnement MANUEL, au personnel seulement : par défaut LiveKit abonne chaque participant à TOUTES les pistes de TOUS les autres, soit 800 étudiants × 2 400
+      // pistes (caméra, micro, écran de chacun) — cause du plafond de ~230 participants du serveur vidéo à l'examen du 17/11/2026 (voir lib/lkSubscriptions.ts).
+      const subscribeStaff=(p:any)=>{
+        if(!studentShouldSubscribe(p.identity)) return
+        try{ p.trackPublications.forEach((pub:any)=>{ if(!pub.isSubscribed) pub.setSubscribed(true) }) }catch{}
+      }
+      const afterConnect=()=>{ try{ room.remoteParticipants.forEach(subscribeStaff) }catch{} }
+      room.on(LK.RoomEvent.TrackPublished,(pub:any,p:any)=>{ if(studentShouldSubscribe(p.identity)){ try{ pub.setSubscribed(true) }catch{} } })
+      room.on(LK.RoomEvent.ParticipantConnected,(p:any)=>subscribeStaff(p))
       const scheduleReconnect=()=>{
         // Seule la salle COURANTE se reconnecte : une salle remplacée par un nouvel essai (ou expulsée pour identité en double) ne doit pas se relancer,
         // sinon deux connexions de même identité s'expulseraient l'une l'autre sans fin.
@@ -2571,7 +2581,8 @@ export default function ExamPage() {
           if(sessionEndedRef.current||lkRoomRef.current!==room) return
           try{
             const t=await api.get<any>(`/api/exam_attempts/${aId}/livekit_token`)
-            await room.connect(t.ws_url,t.token)
+            await room.connect(t.ws_url,t.token,{autoSubscribe:false})
+            afterConnect()
             reconnects=0; unavailableLogged=false
             /* Aucune piste ne survit à une reconnexion complète (nouvelle
                session RTC côté serveur) — il faut toujours republier. */
@@ -2613,7 +2624,8 @@ export default function ExamPage() {
           }
         }
       })
-      await room.connect(tok.ws_url,tok.token)
+      await room.connect(tok.ws_url,tok.token,{autoSubscribe:false})
+      afterConnect()
       /* Ré-attacher les tracks déjà publiés par le prof/surveillant (cas où ils étaient déjà connectés) */
       room.remoteParticipants.forEach((participant:any)=>{
         const pid=participant.identity
@@ -2711,7 +2723,10 @@ export default function ExamPage() {
       if (now - (lastBroadcastRef.current[eventType] || 0) < BROADCAST_MIN_INTERVAL_MS) return
       lastBroadcastRef.current[eventType] = now
       const payload = JSON.stringify({ kind:'proctor_live_alert', event_type:eventType, message, ts:now })
-      room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable:true })
+      // Au personnel présent SEULEMENT : sans destinataire, le message partait vers les 800 autres étudiants (800 × 800 messages, traités un à un par leur page).
+      const dest = staffIdentities(Array.from(room.remoteParticipants.values()).map((p:any)=>p.identity))
+      if (!dest.length) return
+      room.localParticipant.publishData(new TextEncoder().encode(payload), { reliable:true, destinationIdentities: dest })
     } catch {}
   }
   async function logProctoring(aId:number,eventType:string,eventData:string) {
