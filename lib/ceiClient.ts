@@ -33,6 +33,18 @@ export const getCeiClient = (): CeiBridge | undefined =>
 
 export const isCeiClient = () => !!getCeiClient()?.isCEIClient
 
+/** Première version de l'application dont le partage d'écran montre la copie d'examen au surveillant (avant : fenêtre d'examen exclue des captures). */
+export const CLIENT_SCREEN_SHARE_MIN = '1.8.0'
+
+/** true si la version `a` est strictement plus ancienne que `b` (« 1.7.0 » < « 1.8.0 »). Une version illisible n'est jamais jugée ancienne. */
+export function versionLt(a: string, b: string): boolean {
+  const p = (v: string) => { const m = /^(\d+)\.(\d+)\.(\d+)/.exec(String(v || '').trim()); return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null }
+  const x = p(a), y = p(b)
+  if (!x || !y) return false
+  for (let i = 0; i < 3; i++) { if (x[i] !== y[i]) return x[i] < y[i] }
+  return false
+}
+
 /** Prouve au serveur que cette fenêtre est bien l'application officielle (poignée de main signée). Retourne l'indice « machine virtuelle ». */
 export async function proveCeiClient(examId: number): Promise<{ ok: boolean; vm?: boolean; error?: string; outdated?: boolean; refused?: boolean }> {
   const c = getCeiClient()

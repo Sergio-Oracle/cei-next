@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import api, { serverNow } from '@/lib/api'
-import { getCeiClient, isCeiClient, proveCeiClient, onCeiClientEvent } from '@/lib/ceiClient'
+import { getCeiClient, isCeiClient, proveCeiClient, onCeiClientEvent, versionLt, CLIENT_SCREEN_SHARE_MIN } from '@/lib/ceiClient'
 import { totalAnswered, totalUnits } from '@/lib/answerUnits'
 import { JOIN_JITTER_MS, retryDelayMs } from '@/lib/lkRetry'
 import { studentShouldSubscribe, staffIdentities } from '@/lib/lkSubscriptions'
@@ -1588,6 +1588,14 @@ export default function ExamPage() {
           allowedSites: examRef.current?.client_allowed_sites ?? [], allowedApps: examRef.current?.client_allowed_apps ?? [],
         }).catch(() => {})
         if (clientVm) logActivity(att.id, 'client_vm_detected', 'machine virtuelle détectée par le client')
+        // Version de l'application consignée (informatif, aucun effet sur le score) : permet de savoir, après coup, si un partage d'écran incomplet vient d'une version ancienne.
+        getCeiClient()?.info?.().then(i => {
+          if (!i?.version) return
+          const old = versionLt(i.version, CLIENT_SCREEN_SHARE_MIN)
+          logActivity(att.id, old ? 'client_old_version' : 'client_version',
+            old ? `Application CEI Examen ${i.version} (${i.platform}) : version ancienne, le partage d'écran peut ne pas montrer la copie d'examen (mise à jour ${CLIENT_SCREEN_SHARE_MIN} requise)`
+                : `Application CEI Examen ${i.version} (${i.platform})`).catch(() => {})
+        }).catch(() => {})
       }
       extraMinRef.current=att.extra_minutes??0
       if (att.answers) restoreAnswersWithLocalDraft(att.id, att.answers)

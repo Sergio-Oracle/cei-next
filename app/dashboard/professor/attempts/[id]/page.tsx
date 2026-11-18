@@ -127,6 +127,8 @@ const INCIDENT_LABELS: Record<string, string> = {
   face_detection_unavailable: 'Détection faciale indisponible (problème réseau ou navigateur)',
   live_monitoring_unavailable: 'Canal de surveillance en direct indisponible (problème réseau)',
   live_media_republished: 'Diffusion en direct rétablie automatiquement',
+  client_version: 'Version de l’application CEI Examen',
+  client_old_version: 'Application CEI Examen ancienne (partage d’écran possiblement incomplet)',
   liveness_suspect_static: 'Visage suspecté statique (photo/écran ?) — signal expérimental, à vérifier manuellement',
   gaze_away:               "Regard détourné de l'écran",
   head_turned:             'Tête tournée',

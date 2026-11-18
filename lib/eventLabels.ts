@@ -36,6 +36,8 @@ const SHARED: Record<string, string> = {
   face_detection_unavailable: 'Détection du visage indisponible',
   live_monitoring_unavailable: 'Surveillance en direct indisponible',
   live_media_republished: 'Diffusion en direct rétablie automatiquement',
+  client_version: 'Version de l’application CEI Examen',
+  client_old_version: 'Application CEI Examen ancienne (partage d’écran possiblement incomplet)',
   low_bandwidth_mode: 'Mode faible débit activé',
   pause_started: 'Pause démarrée',
   pause_ended: 'Pause terminée',
