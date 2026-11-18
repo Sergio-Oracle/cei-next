@@ -180,9 +180,9 @@ const EVENT_LABEL_MAP: Record<string, string> = {
   live_media_republished: 'Diffusion en direct rétablie automatiquement',
   client_version: 'Version de l’application CEI Examen',
   client_old_version: 'Application CEI Examen ancienne (partage d’écran possiblement incomplet)',
-  client_crash: 'Plantage du moteur de l’application (page rechargée automatiquement)',
-  client_error: 'Erreur interne de l’application CEI Examen',
-  client_unclean_exit: 'Arrêt anormal de l’application au lancement précédent (plantage, processus arrêté ou coupure)',
+  client_crash: 'L’application a planté (la page a été rechargée automatiquement)',
+  client_error: 'L’application CEI Examen a rencontré une erreur',
+  client_unclean_exit: 'L’application s’était arrêtée brutalement la fois précédente (plantage ou coupure)',
   entry_timing: 'Temps passé dans chaque étape d’entrée',
   entry_stuck: 'Étape d’entrée bloquée plus de 2 minutes',
   liveness_suspect_static: 'Visage suspecté statique (photo/écran ?) — signal expérimental, à vérifier manuellement',
@@ -2120,7 +2120,7 @@ export default function ProctorMonitorPage() {
           return (
             <div style={{ marginTop: !isSurveillant ? 24 : 0, marginBottom: 18, padding: '12px 16px', background: 'rgba(59,130,246,.07)', border: '1px solid rgba(59,130,246,.22)', borderRadius: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '.06em' }}><i className="fas fa-stethoscope" style={{ marginRight: 6 }} />Test technique des étudiants</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '.06em' }}><i className="fas fa-stethoscope" style={{ marginRight: 6 }} />Préparation des étudiants</span>
                 <span style={{ fontSize: 14, color: '#6ee7b7', fontWeight: 700 }}>{c.ready || 0} prêt{(c.ready || 0) > 1 ? 's' : ''}</span>
                 <span style={{ fontSize: 14, color: '#fbbf24' }}>{c.warn || 0} à surveiller</span>
                 <span style={{ fontSize: 14, color: '#f87171' }}>{c.not_ready || 0} non prêt{(c.not_ready || 0) > 1 ? 's' : ''}</span>
