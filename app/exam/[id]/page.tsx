@@ -798,6 +798,11 @@ export default function ExamPage() {
   const camStream       = useRef<MediaStream|null>(null)
   const screenStream    = useRef<MediaStream|null>(null)
   const lkRoomRef           = useRef<any>(null)
+  const phaseClockRef = useRef<{ phase: string; at: number }>({ phase: '', at: 0 })   // télémétrie d'entrée : temps passé dans chaque étape (voir logEntryTiming)
+  const entrySecsRef = useRef<Record<string, number>>({})
+  const entryStartRef = useRef(0)
+  const [techTest, setTechTest] = useState<string | null>(null)         // dernier test technique : ready | warn | not_ready | stale | never
+  const clientEvtQueueRef   = useRef<{ type: string; data?: Record<string, unknown> }[]>([])   // signalements du client reçus avant que la tentative soit connue
   const mediaBusyRef        = useRef(false)          // une vérification/republication des pistes à la fois
   const mediaWatchRef       = useRef<any>(null)      // minuterie du contrôle périodique des pistes publiées
   const proctorVideoRef     = useRef<HTMLVideoElement|null>(null)
@@ -940,6 +945,31 @@ export default function ExamPage() {
     finally { setClosingApps(false) }
   }
 
+  useEffect(() => { if (!isPreview) api.get<{ status: string }>('/api/tech_test/me').then(r => setTechTest(r.status)).catch(() => {}) }, []) // eslint-disable-line
+  /* Télémétrie des étapes d'entrée (18/11/2026) : des étudiants ont attendu 26 à 78 minutes entre « Démarrer » et l'affichage de la copie sans qu'aucune trace ne dise
+     où. On mesure le temps passé dans chaque étape ; au-delà de 150 s dans la même étape, une trace « bloqué » dit laquelle et dans quel état. Purement informatif. */
+  useEffect(() => {
+    const now = Date.now(), prev = phaseClockRef.current
+    if (prev.phase && prev.at) entrySecsRef.current[prev.phase] = (entrySecsRef.current[prev.phase] || 0) + Math.round((now - prev.at) / 1000)
+    phaseClockRef.current = { phase, at: now }
+    if (isPreview || !['permissions', 'env_scan', 'exam'].includes(phase)) return
+    const t = setTimeout(() => {
+      const aId = attemptRef.current
+      if (!aId || phaseClockRef.current.phase !== phase || (phase === 'exam' && seenSentRef.current) || sessionEndedRef.current) return
+      logActivity(aId, 'entry_stuck', JSON.stringify({ phase, seconds: 150, cam: permCam, mic: permMic, screen: permScreen, phone_missing: !!phoneCamMissing, questions_ready: parsedBlocks.length > 0 || shuffledBlocks.length > 0, client: isCeiClient() }))
+    }, 150_000)
+    return () => clearTimeout(t)
+  }, [phase]) // eslint-disable-line
+  const logEntryTiming = (aId: number) => {
+    const cur = phaseClockRef.current, secs = { ...entrySecsRef.current }
+    if (cur.phase) secs[cur.phase] = (secs[cur.phase] || 0) + Math.round((Date.now() - cur.at) / 1000)
+    logActivity(aId, 'entry_timing', JSON.stringify({ phases_s: secs, since_start_s: entryStartRef.current ? Math.round((Date.now() - entryStartRef.current) / 1000) : null, client: isCeiClient() }))
+  }
+  useEffect(() => {                                                      // tentative retrouvée : on journalise les signalements mis en attente
+    const aId = attempt?.id
+    if (!aId || isPreview || !clientEvtQueueRef.current.length) return
+    clientEvtQueueRef.current.splice(0).forEach(e => logActivity(aId, e.type, JSON.stringify(e.data ?? {})))
+  }, [attempt?.id]) // eslint-disable-line
   /* ── Application CEI Examen : alertes du client relayées au serveur, poste libéré à la fin ── */
   useEffect(() => {
     const off = onCeiClientEvent(evt => {
@@ -956,6 +986,7 @@ export default function ExamPage() {
       if (evt.type === 'client_assist_closed') { assistOpenRef.current = false; assistGraceRef.current = Date.now() + 3000 }
       if (evt.type === 'client_remote_session') warning('Un bureau à distance est détecté sur ce poste : fermez-le immédiatement.')
       if (aId && !isPreview) logActivity(aId, evt.type, JSON.stringify(evt.data ?? {}))
+      else if (!isPreview && /^client_(crash|error|unclean_exit)$/.test(evt.type)) clientEvtQueueRef.current.push(evt)   // page rechargée après un plantage : on attend de retrouver la tentative
     })
     return () => { off(); getCeiClient()?.leaveExamMode().catch(() => {}) }
   }, []) // eslint-disable-line
@@ -1181,7 +1212,7 @@ export default function ExamPage() {
       seenSentRef.current = true
       let tries = 0
       const post = () => {
-        api.post<{elapsed_seconds?: number; closes_in_seconds?: number|null}>(`/api/exam_attempts/${attId}/seen`, {}).then(r => { noteSeenClock(r?.elapsed_seconds); noteCloseIn(r?.closes_in_seconds) }).catch((e: unknown) => {
+        api.post<{elapsed_seconds?: number; closes_in_seconds?: number|null}>(`/api/exam_attempts/${attId}/seen`, {}).then(r => { noteSeenClock(r?.elapsed_seconds); noteCloseIn(r?.closes_in_seconds); logEntryTiming(attId) }).catch((e: unknown) => {
           if ((e as {status?:number})?.status === 409 && (e as {data?:{secondary_camera_required?:boolean}})?.data?.secondary_camera_required) {
             // Le serveur constate l'absence du téléphone : la copie reste masquée (écran de reconnexion) ; elle sera re-déclarée dès son retour
             seenSentRef.current = false; setPhoneCamLinked(false); phoneCamMissRef.current = 3
@@ -1579,7 +1610,7 @@ export default function ExamPage() {
         clientVm = !!proof.vm
       }
       const res = await api.post<{attempt:Attempt}>(`/api/online_exams/${id}/start`,{})
-      const att=res.attempt; setAttempt(att); noteAttemptClock(att); attemptRef.current=att.id
+      const att=res.attempt; setAttempt(att); noteAttemptClock(att); attemptRef.current=att.id; if(!entryStartRef.current) entryStartRef.current=Date.now()
       if (isCeiClient()) {
         // Le client prend le contrôle du poste dès maintenant (permissions, scan, composition) jusqu'à la fin de l'examen
         getCeiClient()?.enterExamMode({
@@ -1749,7 +1780,7 @@ export default function ExamPage() {
     setSubmittingCode(true)
     try {
       const res = await api.post<{attempt:Attempt}>(`/api/online_exams/${id}/start`, { access_code: pastedCode.trim() })
-      const att=res.attempt; setAttempt(att); noteAttemptClock(att); attemptRef.current=att.id
+      const att=res.attempt; setAttempt(att); noteAttemptClock(att); attemptRef.current=att.id; if(!entryStartRef.current) entryStartRef.current=Date.now()
       extraMinRef.current=att.extra_minutes??0
       if (att.answers) restoreAnswersWithLocalDraft(att.id, att.answers)
       setCodeRequired(false)
@@ -4120,6 +4151,15 @@ export default function ExamPage() {
           <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:10,padding:'12px 14px',marginBottom:18,color:'#115e59',fontSize:15,lineHeight:1.5}}>
             <strong><i className="fas fa-eye" style={{marginRight:6}}/>Prévisualisation enseignant.</strong> Vous voyez l&apos;examen exactement comme un étudiant.
             Les vérifications (caméra, identité, plein écran) et la surveillance ne sont pas lancées, et rien n&apos;est enregistré : à la fin, vous voyez seulement la note que vos réponses auraient obtenue.
+          </div>
+        )}
+
+        {/* Test technique : jamais fait, ancien ou échoué → rappel avant de démarrer (non bloquant : l'étudiant reste libre, le surveillant voit l'état) */}
+        {!isPreview && techTest && techTest !== 'ready' && techTest !== 'warn' && (
+          <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'12px 14px',marginBottom:18,color:'#78350f',fontSize:15,lineHeight:1.55}}>
+            <strong><i className="fas fa-stethoscope" style={{marginRight:6}}/>{techTest==='not_ready'?'Votre dernier test technique a échoué.':'Vous n\'avez pas fait le test technique récemment.'}</strong>{' '}
+            Il vérifie en 2 minutes votre caméra, votre éclairage, votre micro, le partage d&apos;écran et l&apos;envoi réel vers le surveillant. Faites-le <b>maintenant</b> plutôt que de découvrir un problème pendant l&apos;examen :{' '}
+            <a href="/test-poste" target="_blank" rel="noopener noreferrer" style={{color:'#1d4ed8',fontWeight:700}}>lancer le test technique</a>
           </div>
         )}
 

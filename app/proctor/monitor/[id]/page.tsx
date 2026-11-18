@@ -22,6 +22,7 @@ interface Student {
   student_email:     string
   status:            string
   risk_score:        number
+  risk_breakdown?:   { categorie: string; libelle: string; points: number; plafond: number }[]
   warnings_count:    number
   tab_switches:      number
   no_face_count:     number
@@ -67,7 +68,7 @@ interface AgentStatus {
   risk_urgent:          number
   exams_monitored:      number
   total_alerts_session: number
-  exam?: { students: number; alerts_sent: number; banned: number }
+  exam?: { students: number; alerts_sent: number; banned: number; students_alerted?: number }
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -92,6 +93,13 @@ function fmtTime(iso: string | null) {
 // passe au rouge (70), pour donner une longueur d'avance au staff — pas une
 // incohérence à corriger, juste une relation à garder en tête si l'un des
 // deux est retouché un jour.
+/** Infobulle « pourquoi ce score » : points par catégorie (chacune plafonnée, voir services/risk_score.py). */
+function riskTitle(s: { risk_score: number; risk_breakdown?: { libelle: string; points: number; plafond: number }[] }): string {
+  const bd = s.risk_breakdown || []
+  if (!bd.length) return `Score de risque ${s.risk_score || 0}/100`
+  return `Score ${s.risk_score || 0}/100 — ` + bd.map(b => `${b.libelle} ${b.points}/${b.plafond}`).join(' · ')
+}
+
 function riskCls(s: number) { return s >= 70 ? 'high' : s >= 40 ? 'medium' : 'low' }
 const RC = { low: '#10b981', medium: '#f59e0b', high: '#ef4444' } as const
 const RB = { low: 'rgba(16,185,129,.2)', medium: 'rgba(245,158,11,.2)', high: 'rgba(239,68,68,.2)' } as const
@@ -172,6 +180,11 @@ const EVENT_LABEL_MAP: Record<string, string> = {
   live_media_republished: 'Diffusion en direct rétablie automatiquement',
   client_version: 'Version de l’application CEI Examen',
   client_old_version: 'Application CEI Examen ancienne (partage d’écran possiblement incomplet)',
+  client_crash: 'Plantage du moteur de l’application (page rechargée automatiquement)',
+  client_error: 'Erreur interne de l’application CEI Examen',
+  client_unclean_exit: 'Arrêt anormal de l’application au lancement précédent (plantage, processus arrêté ou coupure)',
+  entry_timing: 'Temps passé dans chaque étape d’entrée',
+  entry_stuck: 'Étape d’entrée bloquée plus de 2 minutes',
   liveness_suspect_static: 'Visage suspecté statique (photo/écran ?) — signal expérimental, à vérifier manuellement',
   gaze_away:               "Regard détourné de l'écran",
   head_turned:             'Tête tournée',
@@ -243,6 +256,11 @@ const EVENT_ICON_MAP: Record<string, { icon: string; color: string }> = {
   live_media_republished: { icon: 'video', color: '#94a3b8' },
   client_version: { icon: 'desktop', color: '#94a3b8' },
   client_old_version: { icon: 'triangle-exclamation', color: '#f59e0b' },
+  client_crash: { icon: 'triangle-exclamation', color: '#f59e0b' },
+  client_error: { icon: 'triangle-exclamation', color: '#94a3b8' },
+  client_unclean_exit: { icon: 'triangle-exclamation', color: '#f59e0b' },
+  entry_timing: { icon: 'stopwatch', color: '#94a3b8' },
+  entry_stuck: { icon: 'hourglass-half', color: '#f59e0b' },
   liveness_suspect_static: { icon: 'user-secret', color: '#f59e0b' },
   gaze_away:              { icon: 'eye',                 color: '#f59e0b' },
   head_turned:            { icon: 'rotate',              color: '#f59e0b' },
@@ -373,6 +391,15 @@ export default function ProctorMonitorPage() {
 
   /* alertes agent */
   const [agentAlerts, setAgentAlerts] = useState<any[]>([])
+  // Préparation des étudiants (test technique, 18/11/2026) : prêts / à surveiller / non prêts / jamais testés, avec la cause pour chacun.
+  const [readiness, setReadiness] = useState<{ total: number; counts: Record<string, number>; students: { student_id: number; name: string; status: string; problems: string[] }[]; truncated?: boolean } | null>(null)
+  const [readyOpen, setReadyOpen] = useState(false)
+  useEffect(() => {
+    let off = false
+    const load = () => api.get<any>(`/api/online_exams/${id}/readiness`).then(r => { if (!off) setReadiness(r) }).catch(() => {})
+    load(); const t = setInterval(load, 60_000)
+    return () => { off = true; clearInterval(t) }
+  }, [id])
   const [agentPanel,  setAgentPanel]  = useState(false)
   const [alertBadge,  setAlertBadge]  = useState(0)
 
@@ -1979,7 +2006,7 @@ export default function ProctorMonitorPage() {
                             </td>
                             <td>{fmtTime(s.started_at)}</td>
                             <td>{elapsed(s.started_at)}</td>
-                            <td><span className={`tv-risk-badge ${rc}`}>{s.risk_score || 0}%</span></td>
+                            <td><span className={`tv-risk-badge ${rc}`} title={riskTitle(s)}>{s.risk_score || 0}%</span></td>
                             <td>
                               <span style={{ color: s.tab_switches > 2 ? '#fcd34d' : 'rgba(255,255,255,.45)' }}>Tabs: {s.tab_switches || 0}</span>
                               {' · '}
@@ -2045,7 +2072,7 @@ export default function ProctorMonitorPage() {
                           <td style={{ fontWeight: 700, color: s.score != null ? '#93c5fd' : 'rgba(255,255,255,.35)' }}>
                             {s.score != null ? `${fmtScore(s.score)}/20` : '—'}
                           </td>
-                          <td><span className={`tv-risk-badge ${rc}`}>{s.risk_score || 0}%</span></td>
+                          <td><span className={`tv-risk-badge ${rc}`} title={riskTitle(s)}>{s.risk_score || 0}%</span></td>
                           <td style={{ color: 'rgba(255,255,255,.55)' }}>{s.proctor_name || '—'}</td>
                         </tr>
                       )
@@ -2072,7 +2099,7 @@ export default function ProctorMonitorPage() {
                         <tr key={s.attempt_id}>
                           <td><strong style={{ color: 'rgba(255,255,255,.9)' }}>{s.student_name}</strong></td>
                           <td style={{ color: '#fca5a5' }}>{s.ban_reason || '—'}</td>
-                          <td><span className={`tv-risk-badge ${rc}`}>{s.risk_score || 0}%</span></td>
+                          <td><span className={`tv-risk-badge ${rc}`} title={riskTitle(s)}>{s.risk_score || 0}%</span></td>
                           <td style={{ color: 'rgba(255,255,255,.55)' }}>{s.proctor_name || '—'}</td>
                         </tr>
                       )
@@ -2085,6 +2112,36 @@ export default function ProctorMonitorPage() {
             </>)}
           </>
         )}
+
+        {/* ═══════════ PRÉPARATION DES ÉTUDIANTS — test technique ═══ */}
+        {readiness && readiness.total > 0 && (() => {
+          const c = readiness.counts, notOk = (c.not_ready || 0) + (c.warn || 0) + (c.stale || 0) + (c.never || 0)
+          const LBL: Record<string, { t: string; col: string }> = { not_ready: { t: 'Non prêt', col: '#f87171' }, warn: { t: 'À surveiller', col: '#fbbf24' }, stale: { t: 'Test ancien', col: '#94a3b8' }, never: { t: 'Jamais testé', col: '#94a3b8' } }
+          return (
+            <div style={{ marginTop: !isSurveillant ? 24 : 0, marginBottom: 18, padding: '12px 16px', background: 'rgba(59,130,246,.07)', border: '1px solid rgba(59,130,246,.22)', borderRadius: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '.06em' }}><i className="fas fa-stethoscope" style={{ marginRight: 6 }} />Test technique des étudiants</span>
+                <span style={{ fontSize: 14, color: '#6ee7b7', fontWeight: 700 }}>{c.ready || 0} prêt{(c.ready || 0) > 1 ? 's' : ''}</span>
+                <span style={{ fontSize: 14, color: '#fbbf24' }}>{c.warn || 0} à surveiller</span>
+                <span style={{ fontSize: 14, color: '#f87171' }}>{c.not_ready || 0} non prêt{(c.not_ready || 0) > 1 ? 's' : ''}</span>
+                <span style={{ fontSize: 14, color: '#94a3b8' }}>{(c.never || 0) + (c.stale || 0)} jamais testé{((c.never || 0) + (c.stale || 0)) > 1 ? 's' : ''}</span>
+                {notOk > 0 && <button onClick={() => setReadyOpen(o => !o)} style={{ marginLeft: 'auto', background: 'rgba(255,255,255,.08)', border: 'none', color: 'white', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 13 }}>{readyOpen ? 'Masquer la liste' : `Voir les ${notOk} à contacter`}</button>}
+              </div>
+              {readyOpen && (
+                <div style={{ marginTop: 10, maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {readiness.students.map(st => (
+                    <div key={st.student_id} style={{ display: 'flex', gap: 10, fontSize: 13.5, alignItems: 'baseline' }}>
+                      <span style={{ color: LBL[st.status]?.col, fontWeight: 700, minWidth: 92 }}>{LBL[st.status]?.t || st.status}</span>
+                      <span style={{ fontWeight: 600 }}>{st.name}</span>
+                      <span style={{ color: 'rgba(255,255,255,.45)' }}>{st.problems.join(' · ')}</span>
+                    </div>
+                  ))}
+                  {readiness.truncated && <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,.4)' }}>Liste tronquée : les 400 premiers sont affichés.</div>}
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* ═══════════ ÉTUDIANTS HORS LIGNE — signal heartbeat perdu ═══ */}
         {offlineInProgress.length > 0 && (
@@ -2958,7 +3015,7 @@ function AgentBanner({ agent, lastCheck, studentsCount }: { agent: AgentStatus |
         </div>
         <div style={{ fontSize:13, color: 'rgba(255,255,255,.4)' }}>
           {alive
-            ? `Seuil alerte ≥ ${agent?.risk_alert ?? 60} · Alertes session : ${agent?.exam?.alerts_sent ?? 0}`
+            ? `Seuil alerte ≥ ${agent?.risk_alert ?? 60} · ${agent?.exam?.students_alerted ?? 0} étudiant(s) alerté(s) · ${agent?.exam?.alerts_sent ?? 0} alerte(s) envoyée(s) (rappels compris)`
             : 'Service agent inactif — redémarrez cei-agent.service'}
         </div>
       </div>
@@ -2968,8 +3025,8 @@ function AgentBanner({ agent, lastCheck, studentsCount }: { agent: AgentStatus |
           <div>étudiant(s)</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize:19, fontWeight: 700, color: '#fbbf24' }}>{agent?.exam?.alerts_sent ?? 0}</div>
-          <div>alerte(s)</div>
+          <div style={{ fontSize:19, fontWeight: 700, color: '#fbbf24' }}>{agent?.exam?.students_alerted ?? 0}</div>
+          <div>alerté(s)</div>
         </div>
       </div>
     </div>
@@ -3090,7 +3147,7 @@ function VideoCard({ s, recActive, screenAvail, phoneLive, liveAlert, onMsg, onB
           <span style={{ fontSize:12, fontWeight: 700, color: 'white', background: 'rgba(0,0,0,.45)', padding: '2px 6px', borderRadius: 4 }}>
             {s.student_name.split(' ')[0]}
           </span>
-          <span style={{ fontSize:12, fontWeight: 700, background: RB[rc], color: RC[rc], padding: '2px 6px', borderRadius: 4 }}>
+          <span title={riskTitle(s)} style={{ fontSize:12, fontWeight: 700, background: RB[rc], color: RC[rc], padding: '2px 6px', borderRadius: 4 }}>
             {s.risk_score || 0}%
           </span>
         </div>
