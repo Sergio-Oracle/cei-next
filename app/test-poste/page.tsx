@@ -203,7 +203,7 @@ export default function TestPostePage() {
       set('live', 'Envoi réel vers le surveillant', 'warn', 'Non testé : connectez-vous pour tester l\'envoi réel et enregistrer le résultat pour votre surveillant.', 'Connectez-vous puis relancez ce test.')
       return
     }
-    set('live', 'Envoi réel vers le surveillant', 'run', 'Connexion au serveur vidéo…')
+    set('live', 'Envoi réel vers le surveillant', 'run', 'Préparation de la transmission…')
     let room: any = null
     try {
       const [LK, tok] = await Promise.all([loadLivekit(), api.post<{ ws_url: string; token: string }>('/api/tech_test/livekit_token', {})])
@@ -226,10 +226,10 @@ export default function TestPostePage() {
       }
       const parts = [v?.camera ? 'caméra' : null, v?.mic ? 'micro' : null, v?.screen ? 'écran' : null].filter(Boolean)
       const miss = [!v?.camera ? 'la caméra' : null, !v?.mic ? 'le micro' : null, !v?.screen ? "l'écran" : null].filter(Boolean)
-      if (v?.camera && v?.screen) set('live', 'Envoi réel vers le surveillant', v?.mic ? 'ok' : 'warn', `Le serveur vidéo reçoit : ${parts.join(', ')}${v?.width ? ` (caméra ${v.width}×${v.height})` : ''}`, v?.mic ? undefined : "Le micro n'est pas parvenu au serveur.")
-      else set('live', 'Envoi réel vers le surveillant', 'ko', `Le serveur vidéo ne reçoit pas ${miss.join(' ni ')}`, "Votre réseau ou un pare-feu bloque l'envoi vidéo (fréquent sur les réseaux d'établissement et les VPN). Essayez un autre réseau, par exemple le partage de connexion de votre téléphone, puis relancez le test.")
+      if (v?.camera && v?.screen) set('live', 'Envoi réel vers le surveillant', v?.mic ? 'ok' : 'warn', v?.mic ? 'Votre caméra, votre micro et votre écran sont bien transmis au surveillant.' : 'Votre caméra et votre écran sont bien transmis au surveillant.', v?.mic ? undefined : "Votre voix ne semble pas transmise : vérifiez que votre micro n'est pas coupé.")
+      else set('live', 'Envoi réel vers le surveillant', 'ko', miss.length > 1 ? `${miss.map(m => m === 'la caméra' ? 'Votre image' : m === "l'écran" ? 'Votre écran' : 'Votre voix').join(' et ')} ne sont pas transmis au surveillant` : miss[0] === 'la caméra' ? "Votre image n'est pas transmise au surveillant" : miss[0] === "l'écran" ? "Votre écran n'est pas transmis au surveillant" : "Votre voix n'est pas transmise au surveillant", "La connexion actuelle ne permet pas la transmission. Essayez avec un autre réseau, par exemple le partage de connexion de votre téléphone, puis refaites le test.")
     } catch (e: any) {
-      set('live', 'Envoi réel vers le surveillant', 'ko', `Connexion au serveur vidéo impossible (${e?.message || e?.name || 'erreur'})`, "Désactivez le VPN, essayez un autre réseau (partage de connexion du téléphone), puis relancez le test.")
+      set('live', 'Envoi réel vers le surveillant', 'ko', "La transmission vers le surveillant n'a pas pu démarrer", "Si vous utilisez un VPN, désactivez-le. Essayez aussi un autre réseau (par exemple le partage de connexion de votre téléphone), puis refaites le test.")
     } finally {
       try { room?.disconnect() } catch { /* déjà déconnecté */ }
       screenStreamRef.current?.getTracks().forEach(t => t.stop())      // le partage d'écran s'arrête dès la fin du test
@@ -253,7 +253,7 @@ export default function TestPostePage() {
     <main style={{ minHeight: '100vh', background: '#f1f5f9', padding: 'calc(36px + var(--pwa-banner-height, 0px)) 16px 36px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ maxWidth: 760, margin: '0 auto' }}>
         <h1 style={{ fontSize: 27, color: '#0f172a', margin: '0 0 6px' }}>Test de mon poste</h1>
-        <p style={{ color: '#475569', fontSize: 16.5, lineHeight: 1.6, margin: '0 0 18px' }}>Vérifiez en deux minutes, <b>avant le jour de l&apos;examen</b>, que votre caméra, votre micro, le partage d&apos;écran et votre connexion fonctionnent. Connecté, le test envoie réellement votre caméra et votre écran à un serveur de contrôle et enregistre le résultat, que votre surveillant pourra consulter.</p>
+        <p style={{ color: '#475569', fontSize: 16.5, lineHeight: 1.6, margin: '0 0 18px' }}>Vérifiez en deux minutes, <b>avant le jour de l&apos;examen</b>, que votre caméra, votre micro, le partage d&apos;écran et votre connexion fonctionnent. Connecté, le test vérifie aussi que votre image et votre écran arrivent bien jusqu'au surveillant, et enregistre le résultat, que votre surveillant pourra consulter.</p>
         <button onClick={runAuto} disabled={running} style={{ padding: '12px 22px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16.5, cursor: running ? 'wait' : 'pointer', marginBottom: 18 }}>
           <i className={`fas ${running ? 'fa-spinner fa-spin' : 'fa-play'}`} style={{ marginRight: 8 }} />{running ? 'Test en cours…' : done ? 'Relancer le test' : 'Lancer le test'}
         </button>
