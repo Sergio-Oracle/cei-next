@@ -101,6 +101,19 @@ function riskTitle(s: { risk_score: number; risk_breakdown?: { libelle: string; 
   return `Score ${s.risk_score || 0}/100 — ` + bd.map(b => `${b.libelle} ${b.points}/${b.plafond}`).join(' · ')
 }
 
+/** Alertes de l'agent regroupées PAR ÉTUDIANT (rapport du 17/11 : « regrouper les alertes par étudiant ») : une seule fiche par étudiant, la plus récente, avec le nombre
+ *  d'alertes reçues ; les plus à risque d'abord. */
+function groupAlerts(alerts: any[]): any[] {
+  const by = new Map<number, any>()
+  for (const a of alerts) {
+    const cur = by.get(a.attempt_id)
+    if (!cur) { by.set(a.attempt_id, { ...a, count: 1 }); continue }
+    const newer = (a.timestamp || '') > (cur.timestamp || '')
+    by.set(a.attempt_id, { ...(newer ? a : cur), count: cur.count + 1, risk_score: Math.max(cur.risk_score || 0, a.risk_score || 0) })
+  }
+  return [...by.values()].sort((x, y) => (y.risk_score || 0) - (x.risk_score || 0) || String(y.timestamp || '').localeCompare(String(x.timestamp || '')))
+}
+
 function riskCls(s: number) { return s >= 70 ? 'high' : s >= 40 ? 'medium' : 'low' }
 const RC = { low: '#10b981', medium: '#f59e0b', high: '#ef4444' } as const
 const RB = { low: 'rgba(16,185,129,.2)', medium: 'rgba(245,158,11,.2)', high: 'rgba(239,68,68,.2)' } as const
@@ -524,7 +537,7 @@ export default function ProctorMonitorPage() {
     try {
       const data = await api.get<any>('/api/agent/alerts')
       const alerts: any[] = data.alerts || []
-      const count: number = data.total_unread || 0
+      const count: number = new Set(alerts.filter((a: any) => !a.read).map((a: any) => a.attempt_id)).size || 0      // étudiants distincts à regarder (plus le nombre d'alertes brutes)
       setAgentAlerts(alerts)
       setAlertBadge(count)
       // Notifications navigateur pour les alertes URGENT — une seule fois par
@@ -1779,7 +1792,7 @@ export default function ProctorMonitorPage() {
                 <div style={{ padding: '20px', textAlign: 'center', color: '#64748b', fontSize:15.5 }}>
                   <i className="fas fa-shield-check" style={{ fontSize: 26, display: 'block', marginBottom: 8 }} />Aucune alerte active
                 </div>
-              ) : agentAlerts.map((a: any, i: number) => {
+              ) : groupAlerts(agentAlerts).map((a: any, i: number) => {
                 const col = a.level === 'URGENT' ? '#ef4444' : '#f59e0b'
                 const ts  = a.timestamp ? new Date(a.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''
                 return (
@@ -1788,6 +1801,7 @@ export default function ProctorMonitorPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ background: col, color: '#fff', padding: '2px 8px', borderRadius: 10, fontSize:13, fontWeight: 700 }}>{a.level}</span>
                         <strong style={{ fontSize:15.5, color: '#f1f5f9' }}>{a.student_name}</strong>
+                        {a.count > 1 && <span style={{ fontSize:12.5, color: '#94a3b8' }}>{a.count} alertes</span>}
                       </div>
                       <span style={{ fontSize:13, color: '#64748b' }}>{ts}</span>
                     </div>
