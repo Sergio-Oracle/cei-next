@@ -13,6 +13,8 @@ import { errMsg } from '@/lib/errors'
 import { retryDelayMs } from '@/lib/lkRetry'
 import { monitorShouldSubscribe } from '@/lib/lkSubscriptions'
 import { cameraView, shouldAskRepublish, REQUEST_MEDIA_KIND } from '@/lib/mediaHealth'
+import { micHelp, mediaHelp } from '@/lib/mediaHelp'
+import SoundToggle from '@/components/shared/SoundToggle'
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 
@@ -419,6 +421,7 @@ export default function ProctorMonitorPage() {
   }, [id])
   const [agentPanel,  setAgentPanel]  = useState(false)
   const [alertBadge,  setAlertBadge]  = useState(0)
+  const [lkConnected, setLkConnected] = useState(false)      // liaison vidéo du surveillant avec la salle d'examen (sert à dire la vérité quand la grille est vide)
 
   /* appel privé */
   const [privateCall,   setPrivateCall]   = useState<{ attemptId: number; name: string } | null>(null)
@@ -535,7 +538,7 @@ export default function ProctorMonitorPage() {
 
   const fetchAgentAlerts = useCallback(async () => {
     try {
-      const data = await api.get<any>('/api/agent/alerts')
+      const data = await api.get<any>(`/api/agent/alerts?exam_id=${id}`)
       const alerts: any[] = data.alerts || []
       const count: number = new Set(alerts.filter((a: any) => !a.read).map((a: any) => a.attempt_id)).size || 0      // étudiants distincts à regarder (plus le nombre d'alertes brutes)
       setAgentAlerts(alerts)
@@ -760,6 +763,7 @@ export default function ProctorMonitorPage() {
       // premier) : on se reconnecte au lieu de laisser la grille figée.
       room.on(LK.RoomEvent.Disconnected, () => {
         if (roomRef.current !== room) return
+        setLkConnected(false)
         setTimeout(() => { if (roomRef.current === room) reconnectLKRef.current() }, 3000)
       })
 
@@ -936,6 +940,7 @@ export default function ProctorMonitorPage() {
       })
 
       await room.connect(tok.ws_url, tok.token, { autoSubscribe: false })
+      setLkConnected(true)
       syncSubscriptions()
 
       /* participants déjà présents au moment de la connexion */
@@ -1040,12 +1045,18 @@ export default function ProctorMonitorPage() {
         setCamOn(false)
         success('Caméra coupée')
       }
-    } catch (e: unknown) { toastErr(errMsg(e) || 'Caméra non disponible') }
+    } catch (e: unknown) { toastErr(mediaHelp(e as { name?: string })) }
   }
 
   async function toggleMic() {
-    const room = roomRef.current
-    if (!room) { toastErr('Connexion de surveillance non établie — rechargez la page'); return }
+    let room = roomRef.current
+    if (!room || room.state !== 'connected') {
+      // Avant : « rechargez la page » (rapport du 17/11 : micro impossible à activer). La liaison se rétablit seule : on attend jusqu'à 15 s puis on active.
+      toastErr('La liaison avec la salle se rétablit : le micro s\'activera dans quelques secondes.')
+      for (let i = 0; i < 30 && (!roomRef.current || roomRef.current.state !== 'connected'); i++) await new Promise(r => setTimeout(r, 500))
+      room = roomRef.current
+      if (!room || room.state !== 'connected') { toastErr('La liaison avec la salle n\'est pas rétablie : cliquez sur « Se reconnecter » ou rechargez la page.'); return }
+    }
     const LK = window.LivekitClient
     try {
       if (!micOn) {
@@ -1063,7 +1074,7 @@ export default function ProctorMonitorPage() {
         setMicOn(false)
         success('Microphone coupé')
       }
-    } catch (e: unknown) { toastErr(errMsg(e) || 'Microphone non disponible') }
+    } catch (e: unknown) { toastErr(micHelp(e as { name?: string })) }
   }
 
   async function toggleGroupRec() {
@@ -1540,10 +1551,13 @@ export default function ProctorMonitorPage() {
         })
       })
       // micro automatique (déjà ouvert pendant la connexion)
-      const micTrack = (await micReady) || await LK.createLocalAudioTrack()
-      await pr.localParticipant.publishTrack(micTrack)
-      privateMicRef.current = micTrack
-      setPrivateMicOn(true)
+      const micTrack = (await micReady) || await LK.createLocalAudioTrack().catch((e: unknown) => { toastErr(micHelp(e as { name?: string })); return null })
+      // Sans micro (refusé, absent), l'appel continue : le surveillant voit et entend l'étudiant, et peut écrire ; le message dit pourquoi son micro est coupé.
+      if (micTrack) {
+        await pr.localParticipant.publishTrack(micTrack)
+        privateMicRef.current = micTrack
+        setPrivateMicOn(true)
+      }
     } catch (e: unknown) {
       toastErr(errMsg(e) || 'Erreur appel privé')
       setPrivateCall(null)
@@ -1593,7 +1607,7 @@ export default function ProctorMonitorPage() {
         const prev = document.getElementById('private-my-preview') as HTMLVideoElement | null
         if (prev) t.attach(prev)
         setPrivateCamOn(true)
-      } catch (e: unknown) { toastErr(errMsg(e) || 'Caméra indisponible') }
+      } catch (e: unknown) { toastErr(mediaHelp(e as { name?: string })) }
     } else {
       const prev = document.getElementById('private-my-preview') as HTMLVideoElement | null
       if (prev && privateCamRef.current) privateCamRef.current.detach(prev)
@@ -1604,14 +1618,14 @@ export default function ProctorMonitorPage() {
 
   async function togglePrivateMic() {
     const LK = window.LivekitClient
-    if (!LK || !privateRoomRef.current) return
+    if (!LK || !privateRoomRef.current) { toastErr('L\'appel se connecte : réessayez dans quelques secondes.'); return }
     if (!privateMicOn) {
       try {
         const t = await LK.createLocalAudioTrack()
         await privateRoomRef.current.localParticipant.publishTrack(t)
         privateMicRef.current = t
         setPrivateMicOn(true)
-      } catch (e: unknown) { toastErr(errMsg(e) || 'Micro indisponible') }
+      } catch (e: unknown) { toastErr(micHelp(e as { name?: string })) }
     } else {
       if (privateMicRef.current) { await privateRoomRef.current?.localParticipant.unpublishTrack(privateMicRef.current); privateMicRef.current.stop(); privateMicRef.current = null }
       setPrivateMicOn(false)
@@ -1756,6 +1770,7 @@ export default function ProctorMonitorPage() {
 
         {/* Cloche alertes agent (entre pills et boutons) */}
         <div style={{ position: 'relative', marginRight: 4 }}>
+          <SoundToggle className="hdr-btn" style={{ background: 'rgba(255,255,255,.2)', color: 'white', padding: '7px 12px' }} />
           <button className="hdr-btn" onClick={() => setAgentPanel(p => !p)}
             style={{ background: alertBadge > 0 ? 'rgba(239,68,68,.3)' : 'rgba(255,255,255,.2)', color: 'white', padding: '7px 14px', position: 'relative' }}>
             <i className="fas fa-bell" />
@@ -2238,10 +2253,29 @@ export default function ProctorMonitorPage() {
           </div>
           <PagerBar pg={pgVideo} sizes={[6, 12, 24, 48]} step={12} />
           {liveSet.size === 0 ? (
+            // Rapport du 17/11 : « En attente de connexion des étudiants » alors que 100 étudiants composaient. Cause : la liaison VIDÉO du surveillant était coupée, pas les étudiants.
+            // On dit maintenant ce qui se passe, on rétablit la liaison tout seul et on offre un bouton ; les étudiants restent listés plus bas.
+            students.some(s => s.status === 'in_progress') ? (
+              <div style={{ textAlign: 'center', padding: '50px 24px', color: 'rgba(255,255,255,.55)' }}>
+                <i className={`fas ${lkConnected ? 'fa-circle-notch fa-spin' : 'fa-plug-circle-exclamation'}`} style={{ fontSize: 44, display: 'block', marginBottom: 14, color: lkConnected ? undefined : '#fbbf24' }} />
+                <div style={{ fontSize: 17, fontWeight: 600, color: 'rgba(255,255,255,.8)', marginBottom: 6 }}>
+                  {lkConnected ? 'Les images des étudiants arrivent…' : 'Liaison vidéo interrompue : reconnexion en cours…'}
+                </div>
+                <div style={{ fontSize: 14.5, marginBottom: 14 }}>
+                  {students.filter(s => s.status === 'in_progress').length} étudiant(s) composent actuellement ; ils restent suivis dans les listes ci-dessous.
+                </div>
+                {!lkConnected && (
+                  <button onClick={() => reconnectLKRef.current()} style={{ ...btnSecondary, padding: '8px 18px', fontWeight: 700 }}>
+                    <i className="fas fa-rotate-right" style={{ marginRight: 6 }} />Se reconnecter maintenant
+                  </button>
+                )}
+              </div>
+            ) : (
             <div style={{ textAlign: 'center', padding: '60px 24px', color: 'rgba(255,255,255,.25)' }}>
               <i className="fas fa-hourglass-half" style={{ fontSize: 53, display: 'block', marginBottom: 14 }} />
               En attente de connexion des étudiants
             </div>
+            )
           ) : liveStudents.length === 0 && filter !== 'all' ? (
             <div style={{ textAlign: 'center', padding: '40px 24px', color: 'rgba(255,255,255,.25)' }}>
               <i className="fas fa-filter" style={{ fontSize: 35, display: 'block', marginBottom: 12 }} />

@@ -29,3 +29,16 @@ export function screenHelp(e: { name?: string } | null | undefined): string {
   }
   return "Le partage de l'écran entier est obligatoire. Cliquez sur « Réessayer », choisissez « Écran entier » puis « Partager »."
 }
+
+/** Micro seul (surveillant ou étudiant) : cause précise et geste à faire, en langage simple (jamais le message brut du navigateur). */
+export function micHelp(e: { name?: string } | null | undefined): string {
+  const os = osName()
+  if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') {
+    if (os === 'windows') return "Le micro est bloqué. Cliquez sur le cadenas à gauche de l'adresse et mettez le micro sur « Autoriser ». Si cela ne suffit pas : Paramètres Windows, Confidentialité et sécurité, Microphone, puis autorisez les applications de bureau."
+    if (os === 'mac') return "Le micro est bloqué. Cliquez sur le cadenas à gauche de l'adresse et mettez le micro sur « Autoriser ». Si cela ne suffit pas : Réglages Système, Confidentialité et sécurité, Microphone, cochez votre navigateur."
+    return "Le micro est bloqué. Cliquez sur le cadenas à gauche de l'adresse et mettez le micro sur « Autoriser », puis recommencez."
+  }
+  if (e?.name === 'NotFoundError' || e?.name === 'OverconstrainedError') return "Aucun micro n'a été trouvé. Branchez un micro ou un casque, puis recommencez."
+  if (e?.name === 'NotReadableError' || e?.name === 'AbortError') return "Le micro est déjà utilisé par un autre logiciel (Zoom, Teams, un autre onglet…). Fermez-le, puis recommencez."
+  return "Le micro n'a pas pu démarrer. Vérifiez qu'il est branché et autorisé, puis recommencez."
+}

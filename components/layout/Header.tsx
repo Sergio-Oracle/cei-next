@@ -8,6 +8,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import api from '@/lib/api'
 import { useNotificationPoll, type NotifEvent } from '@/hooks/useNotificationPoll'
 import { playAlertBeep } from '@/lib/notifSound'
+import SoundToggle from '@/components/shared/SoundToggle'
 import { usePwaInstall } from '@/hooks/usePwaInstall'
 import { useToast } from '@/contexts/ToastContext'
 import AnswerSupervisorCallModal from '@/components/exam/AnswerSupervisorCallModal'
@@ -123,6 +124,8 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const [incomingBiometricCall, setIncomingBiometricCall] = useState<{ examId: number; studentId: number; studentName: string; examTitle: string } | null>(null)
   const [answeringBiometricCall, setAnsweringBiometricCall] = useState(false)
 
+  const alertToastAtRef = useRef(0)
+  const alertToastSkippedRef = useRef(0)
   const handleNotifEvent = useCallback((ev: NotifEvent) => {
     setUnreadCount(c => c + 1)
     const anyEv = ev as NotifEvent & { exam_id?: number; supervisor_id?: number; supervisor_name?: string; caller_label?: string; proctor_id?: number; proctor_name?: string; student_id?: number; student_name?: string; exam_title?: string }
@@ -155,8 +158,13 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
     // personnel couvrant l'examen — le professeur créateur en fait partie et
     // travaille depuis /dashboard (avec ce Header), pas depuis /proctor/*.
     if (['student_banned', 'high_risk', 'identity_mismatch', 'threshold_alert', 'proctor_disconnected', 'agent_alert'].includes(ev.type)) {
-      playAlertBeep()
-      showToast(ev.message || ev.title || 'Alerte de surveillance', 'warning', 10000,
+      playAlertBeep('alerte')                                   // un seul bip toutes les 30 s, et réglable (voir lib/notifSound.ts)
+      // Alertes rapprochées : un seul message toutes les 10 s, avec le nombre de celles qui ont été regroupées (rapport : « notifications envahissantes »)
+      const now = Date.now()
+      if (now - alertToastAtRef.current < 10_000) { alertToastSkippedRef.current++; return }
+      alertToastAtRef.current = now
+      const more = alertToastSkippedRef.current; alertToastSkippedRef.current = 0
+      showToast((ev.message || ev.title || 'Alerte de surveillance') + (more > 0 ? ` (+ ${more} autre${more > 1 ? 's' : ''} alerte${more > 1 ? 's' : ''})` : ''), 'warning', 8000,
         anyEv.exam_id ? () => router.push(`/proctor/monitor/${anyEv.exam_id}`) : undefined)
     }
   }, [showToast, router])
@@ -270,6 +278,11 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)' }}>
             <i className={`fas ${dark ? 'fa-sun' : 'fa-moon'}`} style={{ fontSize: 20 }} />
           </button>
+
+          {/* Son des alertes (personnel de surveillance) : normal / discret / coupé */}
+          {user && ['surveillant', 'professor', 'admin', 'responsable_examen', 'superviseur'].includes(String((user as any).role)) && (
+            <SoundToggle style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--text)', cursor: 'pointer', fontSize: 16 }} />
+          )}
 
           {/* Notifications */}
           {user && (

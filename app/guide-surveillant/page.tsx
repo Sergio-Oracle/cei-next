@@ -84,6 +84,7 @@ export default function GuideSurveillant() {
             <li><a href="#reprise"><i className="fas fa-key" /> 10. Reprise après déconnexion — notification automatique</a></li>
             <li><a href="#identite"><i className="fas fa-camera" /> 11. Appel de vérification d&apos;identité (biométrie)</a></li>
             <li><a href="#client"><i className="fas fa-lock" /> 12. Examens avec l&apos;application CEI Examen — incidents et sortie d&apos;urgence</a></li>
+            <li><a href="#conduite"><i className="fas fa-clipboard-check" /> 13. Conduite à tenir et questions fréquentes</a></li>
           </ul>
         </div>
 
@@ -164,7 +165,7 @@ export default function GuideSurveillant() {
             <div className="status-row" style={{background:'#eff6ff',border:'1px solid #bfdbfe'}}><div className="status-dot" style={{background:'#3b82f6'}} /><p><strong>Bleu — Recapture en cours :</strong> Le système est en train de mettre à jour la référence faciale. Normal après un repositionnement de l&apos;étudiant.</p></div>
             <div style={{marginTop:24}}>
               <h4 style={{fontSize:17,fontWeight:700,color:'#0f172a',marginBottom:12}}>Score de risque</h4>
-              <p style={{fontSize:17,color:'#475569'}}>Chaque étudiant dispose d&apos;un <strong>score de risque de 0 à 100%</strong> calculé en temps réel en fonction des incidents accumulés (changements de fenêtre, absence de visage, etc.). Un étudiant avec un score ≥ 70% apparaît avec un encadré rouge dans la grille.</p>
+              <p style={{fontSize:17,color:'#475569'}}>Chaque étudiant dispose d&apos;un <strong>score de risque de 0 à 100%</strong> calculé en temps réel en fonction des incidents accumulés (changements de fenêtre, absence de visage, etc.). <strong>Survolez le score</strong> pour voir pourquoi (points par catégorie). Un étudiant avec un score ≥ 70% apparaît avec un encadré rouge dans la grille. Voir la <a href="#conduite" style={{color:'#d97706',fontWeight:600}}>section 13</a> pour savoir quoi faire.</p>
             </div>
             <div style={{marginTop:24}}>
               <h4 style={{fontSize:17,fontWeight:700,color:'#0f172a',marginBottom:12}}>Alertes en direct sur la vidéo</h4>
@@ -273,6 +274,37 @@ export default function GuideSurveillant() {
           </div>
         </div>
 
+
+        {/* 13. Conduite à tenir */}
+        <div className="section" id="conduite">
+          <div className="section-header"><div className="section-icon" style={{background:'#0d9488'}}><i className="fas fa-clipboard-check" /></div><h2>13. Conduite à tenir et questions fréquentes</h2></div>
+          <div className="section-body">
+            <h4 style={{fontSize:16,fontWeight:700,color:'#0f172a',margin:'0 0 8px'}}>Ce que signifient les mots de l&apos;écran</h4>
+            <div className="steps">
+              <div className="step"><div className="step-num">•</div><div className="step-content"><h4>Score de risque (0 à 100)</h4><p>Un indicateur d&apos;attention, <strong>jamais une preuve</strong>. Les signaux fréquents et peu fiables (voix, regard, perte de focus, visage absent) ne peuvent pas à eux seuls dépasser <strong>30</strong> : un score élevé suppose un signal fort (objet suspect confirmé, plusieurs personnes, identité non confirmée, collage de texte). Survolez le score pour voir le détail.</p></div></div>
+              <div className="step"><div className="step-num">•</div><div className="step-content"><h4>Seuil d&apos;alerte (60)</h4><p>À partir de <strong>60/100</strong> l&apos;agent IA vous signale l&apos;étudiant : une seule fiche par étudiant, qui ne concerne <strong>que les étudiants qui vous sont affectés</strong>. Au-dessous, il n&apos;y a aucune alerte.</p></div></div>
+              <div className="step"><div className="step-num">•</div><div className="step-content"><h4>Auto-soumis</h4><p>La copie a été remise <strong>automatiquement par la plateforme</strong> à l&apos;heure de fin de l&apos;examen. Ce n&apos;est ni une sanction ni un abandon : le contenu déjà saisi est conservé.</p></div></div>
+              <div className="step"><div className="step-num">•</div><div className="step-content"><h4>Moyenne</h4><p>Moyenne <strong>provisoire</strong> des notes déjà calculées (copies à correction automatique). Elle évolue pendant la correction et n&apos;est pas la note finale.</p></div></div>
+            </div>
+            <h4 style={{fontSize:16,fontWeight:700,color:'#0f172a',margin:'22px 0 8px'}}>Que faire quand un étudiant affiche un risque élevé (60 ou plus, même 100/100)</h4>
+            <div className="steps">
+              <div className="step"><div className="step-num">1</div><div className="step-content"><h4>Regarder avant d&apos;agir</h4><p>Survolez le score (pourquoi ?), ouvrez son <strong>écran</strong>, sa <strong>caméra</strong> et son <strong>journal</strong>. Un mauvais éclairage, une caméra qui se coupe ou une connexion faible expliquent beaucoup de signaux.</p></div></div>
+              <div className="step"><div className="step-num">2</div><div className="step-content"><h4>Avertir</h4><p>Envoyez un message précis (« Restez face à la caméra », « Revenez sur l&apos;examen »). Un avertissement suffit pour la plupart des cas.</p></div></div>
+              <div className="step"><div className="step-num">3</div><div className="step-content"><h4>Appeler</h4><p>Si le doute persiste, lancez un <strong>appel privé</strong> pour le voir et lui parler.</p></div></div>
+              <div className="step"><div className="step-num">4</div><div className="step-content"><h4>Exclure en dernier recours</h4><p>Seulement sur une <strong>preuve</strong> : une autre personne présente, un téléphone ou un document consulté, un changement de personne, un logiciel interdit utilisé. L&apos;exclusion est manuelle (le bannissement automatique est désactivé), <strong>irréversible</strong> et exige un motif précis. En cas de doute, prévenez l&apos;enseignant avant d&apos;exclure.</p></div></div>
+            </div>
+            <div className="info"><i className="fas fa-info-circle" /> Cette démarche est la conduite recommandée ; le Pôle peut la compléter par ses propres règles d&apos;exclusion.</div>
+            <h4 style={{fontSize:16,fontWeight:700,color:'#0f172a',margin:'22px 0 8px'}}>Questions fréquentes</h4>
+            <div className="steps">
+              <div className="step"><div className="step-num">?</div><div className="step-content"><h4>Un étudiant peut-il se reconnecter après une sortie ?</h4><p><strong>Oui.</strong> Une déconnexion n&apos;est jamais une violation. Si sa copie ne s&apos;était pas encore affichée, il reprend <strong>immédiatement</strong>, sans code et sans appel. Si elle s&apos;était affichée, un <strong>code personnel</strong> s&apos;affiche pour lui et il reprend en un clic ; vous êtes prévenu de son retour.</p></div></div>
+              <div className="step"><div className="step-num">?</div><div className="step-content"><h4>Un étudiant sans webcam peut-il composer ?</h4><p><strong>Non.</strong> La caméra, le micro et le partage de l&apos;écran entier sont obligatoires pour démarrer. Il doit utiliser un autre poste ; toute dérogation relève de l&apos;enseignant ou du responsable d&apos;examen. Le <strong>test technique</strong> fait avant l&apos;examen évite ce cas.</p></div></div>
+              <div className="step"><div className="step-num">?</div><div className="step-content"><h4>Si un surveillant est déconnecté, ses étudiants sont-ils réaffectés ?</h4><p><strong>Oui, automatiquement.</strong> Un surveillant sans signe de vie depuis 4 minutes est considéré absent : ses étudiants passent aux surveillants présents (le moins chargé d&apos;abord), sans perte de messages. À son retour, la charge est rééquilibrée.</p></div></div>
+              <div className="step"><div className="step-num">?</div><div className="step-content"><h4>Un étudiant a perdu du temps à cause d&apos;un incident technique</h4><p>Utilisez <strong>Temps supplémentaire</strong> sur sa carte : si l&apos;étudiant a attendu 5 minutes ou plus avant l&apos;affichage de sa copie, un bouton propose de compenser l&apos;attente.</p></div></div>
+              <div className="step"><div className="step-num">?</div><div className="step-content"><h4>Les alertes sonores me gênent</h4><p>Le bouton en forme de haut-parleur (en haut de l&apos;écran) règle le son des alertes : <strong>normal, discret ou coupé</strong>. Les alertes rapprochées sont regroupées.</p></div></div>
+              <div className="step"><div className="step-num">?</div><div className="step-content"><h4>Quels étudiants sont prêts avant l&apos;examen ?</h4><p>Le panneau <strong>Test technique des étudiants</strong> indique qui est prêt, à surveiller, non prêt ou jamais testé, avec ce qu&apos;il faut leur demander de corriger.</p></div></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <footer className="doc-footer">

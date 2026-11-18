@@ -702,6 +702,10 @@ export default function ExamPage() {
   const [alerts,       setAlerts]       = useState<{type:string;msg:string;at:string}[]>([])
   const [lastSaved,    setLastSaved]    = useState<Date|null>(null)
   const [submitting,   setSubmitting]   = useState(false)
+  const [submitState,  setSubmitState]  = useState<'idle'|'sending'|'retrying'>('idle')   // écran d'envoi : les exercices disparaissent dès que l'étudiant remet sa copie
+  const [submitTries,  setSubmitTries]  = useState(0)
+  const [submittedAt,  setSubmittedAt]  = useState<Date|null>(null)
+  const submitRetryNowRef = useRef<(()=>void)|null>(null)
   /* Relecture des réponses — obligatoire avant de pouvoir soumettre : le
      bouton "Soumettre" ouvre d'abord cet écran de relecture. */
   const [showReview, setShowReview] = useState(false)
@@ -2822,10 +2826,12 @@ export default function ExamPage() {
   const LIVE_ALERT_EVENTS = new Set([
     'sustained_audio_detected','tab_switch','window_blur','fullscreen_exit',
     'multi_screen_detected','identity_mismatch_sustained',
-    'gaze_away','head_turned','talking_detected','whisper_detected',
+    // 18/11/2026 — retirés de l'alerte EN DIRECT : « un simple mouvement de tête déclenche une alerte » (rapport des surveillants). Ces signaux faibles restent journalisés
+    // et comptent dans les signaux combinés (patterns), mais ne font plus clignoter la vignette du surveillant : 'gaze_away', 'head_turned', 'mouse_left_window'.
+    'talking_detected','whisper_detected',
     'no_face_detected','multiple_faces','face_covered','face_hidden_object_detected',
     'suspect_object_detected','suspect_object_confirmed',
-    'devtools_attempt','mouse_left_window',
+    'devtools_attempt',
     'pattern_gaze_talk_mouth','pattern_object_gaze_away','pattern_multi_face_audio',
     'pattern_head_turned_talking','pattern_whisper_gaze','pattern_mouth_covered_audio',
     // Audit complet (01/09) — signal rare (un seul par session, au pire) et
@@ -3443,7 +3449,7 @@ export default function ExamPage() {
       // position mesurée de l'iris, qu'un seuil serré confondrait avec un
       // détournement du regard. Un vrai détournement reste large et soutenu,
       // donc cette marge ne réduit pas la détection réelle.
-      const CONSEC_ALERT_GAZE = 4
+      const CONSEC_ALERT_GAZE = 8        // 4 → 8 (18/11/2026) : un mouvement de tête ou de regard doit durer pour compter
 
       const sig = analyzeFace(vid, now)
       if (sig && sig.faceCount === 1) {
@@ -3856,7 +3862,7 @@ export default function ExamPage() {
   const handleSubmit = useCallback(async(auto=false)=>{
     if(isPreview){ submitPreview(); return }
     const aId=attemptRef.current; if(!aId||submitting||sessionEndedRef.current) return
-    sessionEndedRef.current=true; setSubmitting(true)
+    sessionEndedRef.current=true; setSubmitting(true); setSubmitState('sending')
     ;[timerRef,saveRef,msgPollRef,extraPollRef,heartbeatRef,multiScreenIntervalRef,yoloObjectIntervalRef].forEach(r=>{if(r.current)clearInterval(r.current)})
     if(saveRetryTimerRef.current){clearTimeout(saveRetryTimerRef.current);saveRetryTimerRef.current=null}
     try { (navigator as any).keyboard?.unlock?.() } catch {}
@@ -3882,27 +3888,31 @@ export default function ExamPage() {
     }
 
     const first = await trySubmit()
-    if (first === 'banned') { triggerBan(); return }
+    if (first === 'banned') { setSubmitState('idle'); triggerBan(); return }
     if (first === 'ok' || first === 'final') {
       try{ localStorage.removeItem(`cei_exam_draft_${aId}`) }catch{}
       if(!auto) success(first === 'ok' ? 'Copie soumise avec succès !' : 'Votre copie était déjà enregistrée.')
-      setPhase('submitted')
+      setSubmittedAt(new Date()); setSubmitState('idle'); setPhase('submitted')
     } else {
       // Ni soumission ni sauvegarde n'ont abouti — connexion probablement
       // coupée. Les réponses restent en sécurité localement ; on continue de
       // réessayer automatiquement en arrière-plan plutôt que de laisser
       // l'étudiant bloqué avec juste un message d'erreur.
-      warning('Connexion indisponible — vos réponses restent sauvegardées sur cet appareil, nouvelle tentative automatique en cours…')
+      // Les exercices ne restent PLUS affichés pendant ce temps (rapport du 17/11) : un écran explique la situation, compte les tentatives et propose « Réessayer maintenant ».
+      setSubmitState('retrying')
       const retry = async () => {
+        if (submitRetryTimerRef.current) { clearTimeout(submitRetryTimerRef.current); submitRetryTimerRef.current = null }
+        setSubmitTries(n => n + 1)
         const r = await trySubmit()
-        if (r === 'banned') { triggerBan(); return }
+        if (r === 'banned') { setSubmitState('idle'); triggerBan(); return }
         if (r === 'ok' || r === 'final') {
           try{ localStorage.removeItem(`cei_exam_draft_${aId}`) }catch{}
-          setPhase('submitted')
+          setSubmittedAt(new Date()); setSubmitState('idle'); setPhase('submitted')
           return
         }
         submitRetryTimerRef.current = setTimeout(retry, 8000)
       }
+      submitRetryNowRef.current = retry
       submitRetryTimerRef.current = setTimeout(retry, 8000)
     }
   },[submitting]) // eslint-disable-line
@@ -4032,12 +4042,31 @@ export default function ExamPage() {
     </div>
   )
 
+  if(phase==='exam'&&submitState!=='idle') return(
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f8fafc',padding:20}}>
+      <div style={{background:'white',borderRadius:20,padding:'40px 36px',maxWidth:480,width:'100%',textAlign:'center',boxShadow:'0 8px 32px rgba(0,0,0,.1)',border:'1px solid #e2e8f0'}}>
+        <div style={{width:72,height:72,borderRadius:'50%',margin:'0 auto 20px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,background:submitState==='retrying'?'rgba(245,158,11,.12)':'rgba(37,99,235,.1)',color:submitState==='retrying'?'#d97706':'#2563eb'}}>
+          <i className={`fas ${submitState==='retrying'?'fa-wifi':'fa-paper-plane'}`}/>
+        </div>
+        <h2 style={{color:'#0f172a',margin:'0 0 10px',fontSize:22}}>{submitState==='retrying'?'Connexion instable':'Envoi de votre copie…'}</h2>
+        <p style={{color:'#475569',lineHeight:1.6,margin:'0 0 18px',fontSize:16}}>
+          {submitState==='retrying'
+            ? <>Vos réponses sont <b>enregistrées sur votre appareil</b>. Nous réessayons d&apos;envoyer votre copie automatiquement{submitTries>0?` (tentative ${submitTries})`:''}. <b>Ne fermez pas cette page.</b></>
+            : <>Merci de patienter quelques secondes. <b>Ne fermez pas cette page</b> avant d&apos;avoir vu la confirmation.</>}
+        </p>
+        {submitState==='retrying'
+          ? <button onClick={()=>submitRetryNowRef.current?.()} style={{padding:'11px 22px',background:'#2563eb',color:'white',border:'none',borderRadius:10,fontWeight:700,fontSize:16,cursor:'pointer'}}><i className="fas fa-rotate-right" style={{marginRight:8}}/>Réessayer maintenant</button>
+          : <i className="fas fa-spinner fa-spin" style={{fontSize:26,color:'#2563eb'}}/>}
+      </div>
+    </div>
+  )
+
   if(phase==='submitted') return(
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f8fafc'}}>
       <div style={{background:'white',borderRadius:20,padding:48,maxWidth:480,width:'90%',textAlign:'center',boxShadow:'0 8px 32px rgba(0,0,0,.1)',border:'1px solid #e2e8f0'}}>
         <div style={{width:80,height:80,background:'rgba(16,185,129,.1)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 24px',fontSize:39.5,color:'#10b981'}}><i className="fas fa-check-circle"/></div>
         <h2 style={{color:'#0f172a',marginBottom:12}}>Copie soumise !</h2>
-        <p style={{color:'#64748b',marginBottom:28,lineHeight:1.6}}>Votre copie a été transmise avec succès.</p>
+        <p style={{color:'#64748b',marginBottom:28,lineHeight:1.6}}>Votre copie a bien été transmise{submittedAt?<> le <b>{submittedAt.toLocaleDateString('fr-FR')}</b> à <b>{submittedAt.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</b></>:null}. Vous pouvez fermer cette page.</p>
         <button onClick={()=>router.push('/dashboard/student')} style={{width:'100%',padding:'13px',background:'#2563eb',color:'white',border:'none',borderRadius:10,fontWeight:700,fontSize:18,cursor:'pointer'}}>
           <i className="fas fa-home" style={{marginRight:8}}/>Retour au tableau de bord
         </button>
