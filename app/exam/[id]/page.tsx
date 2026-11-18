@@ -1642,7 +1642,7 @@ export default function ExamPage() {
         setPhase('client_required')
       } else if (e?.data?.code_required) {
         setCodeRequired(true)
-        if (e.data.code) setAccessCode(e.data.code)
+        if (e.data.code) { setAccessCode(e.data.code); setPastedCode(e.data.code) }      // déjà saisi : l'étudiant n'a plus qu'à cliquer sur « Reprendre »
       } else toastErr(e.message||"Impossible de démarrer l'examen")
     }
     finally { setStarting(false) }
@@ -4136,9 +4136,9 @@ export default function ExamPage() {
           </div>
         </div>
         <div style={{background:'#fff8ed',border:'1px solid #f59e0b',borderRadius:10,padding:'14px 16px',marginBottom:14,fontSize:15.5,color:'#78350f',lineHeight:1.6}}>
-          Ce code vous est propre — personne d&apos;autre ne peut l&apos;utiliser. Copiez-le, collez-le dans le champ ci-dessous, puis cliquez sur « Reprendre ». Votre surveillant sera automatiquement informé de votre retour.
+          Votre code personnel est déjà saisi : cliquez simplement sur « Reprendre ». Votre surveillant sera automatiquement informé de votre retour.
         </div>
-        <label style={{fontSize:14.5,fontWeight:700,color:'#334155',display:'block',marginBottom:8}}>1. Votre code (à copier)</label>
+        <label style={{fontSize:14.5,fontWeight:700,color:'#334155',display:'block',marginBottom:8}}>Votre code</label>
         <div style={{display:'flex',gap:8,marginBottom:18}}>
           <div style={{flex:1,padding:'12px 14px',fontSize:24,letterSpacing:6,textAlign:'center',border:'2px dashed #cbd5e1',borderRadius:8,fontWeight:700,color:'#1e293b',background:'#f8fafc'}}>
             {accessCode || '——————'}
@@ -4148,7 +4148,7 @@ export default function ExamPage() {
             <i className="fas fa-copy"/>
           </button>
         </div>
-        <label style={{fontSize:14.5,fontWeight:700,color:'#334155',display:'block',marginBottom:8}}>2. Collez-le ici</label>
+        <label style={{fontSize:14.5,fontWeight:700,color:'#334155',display:'block',marginBottom:8}}>Code saisi</label>
         <input value={pastedCode} onChange={e=>setPastedCode(e.target.value.replace(/\D/g,'').slice(0,6))}
           placeholder="Collez votre code" maxLength={6} inputMode="numeric" autoFocus
           style={{width:'100%',boxSizing:'border-box',padding:'12px 14px',fontSize:24,letterSpacing:6,textAlign:'center',border:'2px solid #2563eb',borderRadius:8,fontWeight:700,color:'#1e293b',background:'white',marginBottom:18}}

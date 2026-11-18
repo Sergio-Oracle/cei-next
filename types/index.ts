@@ -148,6 +148,7 @@ export interface OnlineExam {
   formation_id?: number
   formation_name?: string
   my_attempt?: {
+    never_seen?: boolean      // copie jamais affichée : reprise directe, sans code ni appel
     id: number
     status: string
     score: number | null

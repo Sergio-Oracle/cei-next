@@ -6,7 +6,6 @@ import api, { serverNow } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import type { StudentPaper, OnlineExam } from '@/types'
-import CallSurveillantModal from '@/components/exam/CallSurveillantModal'
 
 interface OnlineResult {
   attempt_id: number
@@ -76,7 +75,6 @@ export default function StudentDashboard() {
   const [activeExams, setActiveExams] = useState<OnlineExam[]>([])
   const [inProgressExams, setInProgressExams] = useState<OnlineExam[]>([])
   const [loading,     setLoading]     = useState(true)
-  const [callExam, setCallExam] = useState<OnlineExam | null>(null)
 
   useEffect(() => { load() }, []) // eslint-disable-line
 
@@ -185,28 +183,26 @@ export default function StudentDashboard() {
             </Link>
           )}
 
-          {/* ── Alerte : examen quitté en cours, code de reprise requis ────── */}
+          {/* ── Examen commencé : un seul bouton pour y retourner ─────────────────────
+               Avant (examen du 17/11) : « Vous avez quitté cet examen » + bouton « Appeler votre surveillant » : des étudiants dont la copie n'avait JAMAIS été affichée
+               appelaient et attendaient 7 à 45 minutes la réponse d'un surveillant déjà débordé — attente qui grossit avec le nombre d'étudiants. Plus aucun appel n'est
+               nécessaire pour reprendre : le code éventuel s'affiche seul sur la page d'examen. ── */}
           {inProgressExams.map(e => (
             <div key={e.id} style={{ background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-              <i className="fas fa-triangle-exclamation" style={{ color: '#d97706', fontSize: 19, flexShrink: 0 }} />
+              <i className="fas fa-circle-play" style={{ color: '#d97706', fontSize: 19, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 180 }}>
                 <span style={{ fontWeight: 700, color: '#92400e', fontSize:15.5 }}>Examen en cours : {e.title}</span>
                 <div style={{ fontSize:14.5, color: '#b45309', marginTop: 2 }}>
-                  Vous avez quitté cet examen — cliquez sur « Reprendre » pour retrouver votre code personnel et continuer.
+                  {e.my_attempt?.never_seen
+                    ? 'Votre examen vous attend : cliquez sur « Reprendre » pour y entrer directement.'
+                    : 'Cliquez sur « Reprendre » pour continuer : votre code personnel s’affiche et se valide en un clic.'}
                 </div>
               </div>
-              <button onClick={() => setCallExam(e)} title="Besoin d'aide ? Appeler votre surveillant" style={{ fontSize:14.5, fontWeight: 700, color: '#b45309', background: 'white', border: '1.5px solid #fbbf24', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <i className="fas fa-phone-volume" /> Besoin d&apos;aide ?
-              </button>
               <Link href={`/exam/${e.id}`} style={{ fontSize:14.5, fontWeight: 700, color: 'white', background: '#d97706', border: 'none', borderRadius: 8, padding: '8px 14px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <i className="fas fa-arrow-right" /> Reprendre
               </Link>
             </div>
           ))}
-
-          {callExam && (
-            <CallSurveillantModal attemptId={callExam.my_attempt!.id} examTitle={callExam.title} onClose={() => setCallExam(null)} />
-          )}
 
           {/* ── Tuiles stats ────────────────────────────────────────────────── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginBottom: 28 }}>
