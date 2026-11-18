@@ -30,6 +30,7 @@ export default function AnswerCallModal({ attemptId, examTitle, studentName, onC
   const [generatingCode, setGeneratingCode] = useState(false)
 
   const roomRef      = useRef<any>(null)
+  const camWaitRef = useRef(false)                       // caméra demandée avant que l'appel soit connecté : activation différée
   const camTrackRef  = useRef<any>(null)
   const micTrackRef  = useRef<any>(null)
   const remoteVidRef = useRef<HTMLVideoElement | null>(null)
@@ -100,7 +101,21 @@ export default function AnswerCallModal({ attemptId, examTitle, studentName, onC
 
   async function toggleCam() {
     const LK = window.LivekitClient
-    if (!LK || !roomRef.current) return
+    if (!LK || !roomRef.current || roomRef.current.state !== 'connected') {
+      // Avant : sortie SILENCIEUSE — « j'ai appuyé sur activer et rien ne se passe » (rapport du surveillant du 17/11). Désormais l'étudiant est prévenu et la caméra
+      // s'active toute seule dès que l'appel est connecté.
+      if (!camWaitRef.current) {
+        camWaitRef.current = true
+        toastErr("L'appel est en cours de connexion : votre caméra s'activera dans quelques secondes.")
+        let n = 0
+        const t = setInterval(() => {
+          n++
+          if (window.LivekitClient && roomRef.current?.state === 'connected') { clearInterval(t); camWaitRef.current = false; void toggleCam() }
+          else if (n > 40) { clearInterval(t); camWaitRef.current = false; toastErr("La connexion de l'appel est trop lente : réessayez dans un instant.") }
+        }, 500)
+      }
+      return
+    }
     if (!camOn) {
       try {
         const t = await LK.createLocalVideoTrack({ resolution: LK.VideoPresets.h360.resolution })
