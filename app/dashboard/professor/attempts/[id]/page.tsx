@@ -134,6 +134,7 @@ const INCIDENT_LABELS: Record<string, string> = {
   client_unclean_exit: 'L’application s’était fermée de manière inattendue lors de la précédente utilisation',
   entry_timing: 'Temps passé dans chaque étape d’entrée',
   entry_stuck: 'Étape d’entrée bloquée plus de 2 minutes',
+  camera_unavailable: 'La caméra de l’étudiant ne transmet plus d’image',
   liveness_suspect_static: 'Visage suspecté statique (photo/écran ?) — signal expérimental, à vérifier manuellement',
   gaze_away:               "Regard détourné de l'écran",
   head_turned:             'Tête tournée',

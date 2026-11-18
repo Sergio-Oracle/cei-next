@@ -43,6 +43,7 @@ const SHARED: Record<string, string> = {
   client_unclean_exit: 'L’application s’était fermée de manière inattendue lors de la précédente utilisation',
   entry_timing: 'Temps passé dans chaque étape d’entrée',
   entry_stuck: 'Étape d’entrée bloquée plus de 2 minutes',
+  camera_unavailable: 'La caméra de l’étudiant ne transmet plus d’image',
   low_bandwidth_mode: 'Mode faible débit activé',
   pause_started: 'Pause démarrée',
   pause_ended: 'Pause terminée',

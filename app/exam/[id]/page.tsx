@@ -798,6 +798,8 @@ export default function ExamPage() {
   const camStream       = useRef<MediaStream|null>(null)
   const screenStream    = useRef<MediaStream|null>(null)
   const lkRoomRef           = useRef<any>(null)
+  const camFramesRef = useRef<{ total: number; at: number }>({ total: -1, at: 0 })   // images reçues de la caméra à la dernière vérification (détecte une caméra figée)
+  const lastCamUnavailRef = useRef(0)
   const phaseClockRef = useRef<{ phase: string; at: number }>({ phase: '', at: 0 })   // télémétrie d'entrée : temps passé dans chaque étape (voir logEntryTiming)
   const entrySecsRef = useRef<Record<string, number>>({})
   const entryStartRef = useRef(0)
@@ -3013,7 +3015,9 @@ export default function ExamPage() {
       })
 
       try {
-        const micTrack = await LK.createLocalAudioTrack()
+        // Le micro de l'examen est déjà ouvert : on en publie une copie tout de suite au lieu de rouvrir le micro (plusieurs secondes d'attente, rapport du 17/11).
+        const live = camStream.current?.getAudioTracks().find(t => t.readyState === 'live')
+        const micTrack = live ? new LK.LocalAudioTrack(live.clone(), undefined, false) : await LK.createLocalAudioTrack()
         await pr.localParticipant.publishTrack(micTrack)
         privateMicTrackRef.current = micTrack
         setPrivateMicOn(true)
@@ -3095,6 +3099,23 @@ export default function ExamPage() {
       const frameAnalysis = brightness!==null ? JSON.stringify({brightness,width:vid.videoWidth,height:vid.videoHeight}) : null
       await api.post(`/api/exam_attempts/${aId}/camera_snapshot`,{event_type:eventType,image_data:c.toDataURL('image/jpeg',0.55),face_detected:faceDetected,faces_count:facesCount,confidence_score:confidenceScore,frame_analysis:frameAnalysis})
     } catch {}
+  }
+
+  /* La caméra transmet-elle vraiment des images ? Une piste terminée, coupée ou figée (pilote, autre application) n'est PAS une absence de l'étudiant : sans ce contrôle,
+     « visage absent » était compté (et alertait le surveillant) pendant toute la panne de caméra — constat du rapport du 17/11. */
+  function cameraFeedState(vid:HTMLVideoElement): 'ok'|'ended'|'muted'|'frozen' {
+    const t=camStream.current?.getVideoTracks()[0]
+    if(!t||t.readyState==='ended') return 'ended'
+    if(t.muted||!t.enabled) return 'muted'
+    try{
+      const q=(vid as any).getVideoPlaybackQuality?.()
+      if(q){
+        const prev=camFramesRef.current, now=Date.now()
+        camFramesRef.current={total:q.totalVideoFrames,at:now}
+        if(prev.total>=0&&q.totalVideoFrames===prev.total&&now-prev.at>=4000&&!vid.paused) return 'frozen'
+      }
+    }catch{}
+    return 'ok'
   }
 
   /* Phase 7 — contrôle de vivacité : une photo/vidéo tenue devant la caméra
@@ -3269,7 +3290,19 @@ export default function ExamPage() {
           } catch {}
         }
         const count=dets.length
-        if(count===0){
+        const feedBad = count===0 ? cameraFeedState(vid)!=='ok' : (camFramesRef.current={total:-1,at:0}, false)
+        if(count===0&&feedBad){
+          // Caméra défaillante : aucune pénalité, aucun « visage absent » ; l'étudiant est prévenu et la diffusion est rétablie par le contrôle des pistes.
+          consNoFaceRef.current=0; setFaceStatus('warn'); setFaceIssue('no_face')
+          if(now-lastCamUnavailRef.current>NO_FACE_COOLDOWN){
+            lastCamUnavailRef.current=now
+            warnDetect("Votre caméra ne transmet plus d'image : vérifiez qu'elle est branchée et qu'aucune autre application ne l'utilise")
+            logActivity(curAId,'camera_unavailable','Caméra sans image (piste terminée, coupée ou figée)').catch(()=>{})
+            logProctoring(curAId,'camera_unavailable','Caméra sans image').catch(()=>{})
+            const room=lkRoomRef.current, LK=(window as any).LivekitClient
+            if(room&&LK) ensureMediaPublished(room,LK)
+          }
+        } else if(count===0){
           consNoFaceRef.current++; consMismatchRef.current=0; consMultiRef.current=0; consGood=0
           if(consNoFaceRef.current>=CONSEC_ALERT){
             setFaceStatus('bad'); setFaceIssue('no_face')

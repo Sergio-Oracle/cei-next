@@ -22,6 +22,7 @@ interface Student {
   student_email:     string
   status:            string
   risk_score:        number
+  entry_delay_s?:    number | null
   risk_breakdown?:   { categorie: string; libelle: string; points: number; plafond: number }[]
   warnings_count:    number
   tab_switches:      number
@@ -185,6 +186,7 @@ const EVENT_LABEL_MAP: Record<string, string> = {
   client_unclean_exit: 'L’application s’était fermée de manière inattendue lors de la précédente utilisation',
   entry_timing: 'Temps passé dans chaque étape d’entrée',
   entry_stuck: 'Étape d’entrée bloquée plus de 2 minutes',
+  camera_unavailable: 'La caméra de l’étudiant ne transmet plus d’image',
   liveness_suspect_static: 'Visage suspecté statique (photo/écran ?) — signal expérimental, à vérifier manuellement',
   gaze_away:               "Regard détourné de l'écran",
   head_turned:             'Tête tournée',
@@ -261,6 +263,7 @@ const EVENT_ICON_MAP: Record<string, { icon: string; color: string }> = {
   client_unclean_exit: { icon: 'triangle-exclamation', color: '#f59e0b' },
   entry_timing: { icon: 'stopwatch', color: '#94a3b8' },
   entry_stuck: { icon: 'hourglass-half', color: '#f59e0b' },
+  camera_unavailable: { icon: 'video-slash', color: '#f59e0b' },
   liveness_suspect_static: { icon: 'user-secret', color: '#f59e0b' },
   gaze_away:              { icon: 'eye',                 color: '#f59e0b' },
   head_turned:            { icon: 'rotate',              color: '#f59e0b' },
@@ -322,7 +325,7 @@ export default function ProctorMonitorPage() {
   const [banning,   setBanning]   = useState(false)
 
   /* modal: temps supplémentaire */
-  const [extraModal,   setExtraModal]   = useState<{ attemptId: number; name: string } | null>(null)
+  const [extraModal,   setExtraModal]   = useState<{ attemptId: number; name: string; delayS?: number | null } | null>(null)
   // Code de sortie d'urgence de l'application CEI Examen : généré à la demande, valable 15 min, utilisable une seule fois
   const [exitCodeModal, setExitCodeModal] = useState<{ attemptId: number; name: string; code?: string; expiresAt?: number; busy?: boolean; error?: string } | null>(null)
   // Liste des étudiants (tableaux) : repliée par défaut — avec des centaines d'étudiants elle repoussait les cartes vidéo tout en bas.
@@ -1444,7 +1447,7 @@ export default function ProctorMonitorPage() {
     generateExitCode(s.attempt_id, s.student_name)
   }
   function openExtra(s: Student) {
-    setExtraModal({ attemptId: s.attempt_id, name: s.student_name }); setExtraMins('15')
+    setExtraModal({ attemptId: s.attempt_id, name: s.student_name, delayS: s.entry_delay_s ?? null }); setExtraMins('15')
   }
   function openNote(s: Student) {
     setNoteModal({ attemptId: s.attempt_id, name: s.student_name }); setNoteText('')
@@ -1467,12 +1470,18 @@ export default function ProctorMonitorPage() {
     setPrivateCamOn(false)
     setPrivateMicOn(false)
     try {
-      await api.post(`/api/exam_attempts/${attemptId}/send_warning`, {
-        message: 'Appel privé initié par le surveillant', type: 'private_call'
-      })
-      const tok = await api.get<{ ws_url: string; token: string }>(`/api/exam_attempts/${attemptId}/private_token`)
       const LK  = window.LivekitClient
       if (!LK) throw new Error('Module de surveillance non chargé')
+      // Délai d'activation du micro (rapport du 17/11) : avant, tout se faisait l'un après l'autre (avertissement, jeton, connexion, PUIS ouverture du micro) et l'étudiant
+      // n'apprenait l'appel que par une relève toutes les 30 s. Maintenant : le micro s'ouvre tout de suite, l'étudiant est averti à l'instant par le canal direct,
+      // et l'enregistrement de l'appel + le jeton se font en parallèle.
+      const micReady = LK.createLocalAudioTrack().catch(() => null)
+      const callee = data?.attempts?.find(a => a.attempt_id === attemptId)?.livekit_identity
+      broadcastToStudent(callee, { type: 'private_call', message: 'Appel privé initié par le surveillant' })
+      const [, tok] = await Promise.all([
+        api.post(`/api/exam_attempts/${attemptId}/send_warning`, { message: 'Appel privé initié par le surveillant', type: 'private_call' }),   // filet de sécurité si le canal direct est coupé
+        api.get<{ ws_url: string; token: string }>(`/api/exam_attempts/${attemptId}/private_token`),
+      ])
       const pr = new LK.Room({ adaptiveStream: true, dynacast: true })
       privateRoomRef.current = pr
       pr.on(LK.RoomEvent.TrackSubscribed, (track: any) => {
@@ -1516,8 +1525,8 @@ export default function ProctorMonitorPage() {
           }
         })
       })
-      // micro automatique
-      const micTrack = await LK.createLocalAudioTrack()
+      // micro automatique (déjà ouvert pendant la connexion)
+      const micTrack = (await micReady) || await LK.createLocalAudioTrack()
       await pr.localParticipant.publishTrack(micTrack)
       privateMicRef.current = micTrack
       setPrivateMicOn(true)
@@ -2330,6 +2339,17 @@ export default function ProctorMonitorPage() {
             <i className="fas fa-clock" /> Temps supplémentaire
           </h2>
           <p style={{ fontSize:15.5, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>Étudiant : <strong>{extraModal.name}</strong></p>
+          {(extraModal.delayS ?? 0) >= 300 && (() => {
+            const lost = Math.round((extraModal.delayS as number) / 60), sugg = Math.min(30, lost)
+            return (
+              <div style={{ marginBottom: 14, padding: '10px 12px', background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.3)', borderRadius: 8, fontSize: 14.5, color: '#fcd34d', lineHeight: 1.5 }}>
+                Cet étudiant a attendu <strong>{lost} min</strong> entre « Démarrer » et l’affichage de sa copie.
+                <button onClick={() => setExtraMins(String(sugg))} style={{ display: 'block', marginTop: 8, padding: '6px 12px', border: '1px solid #f59e0b', background: 'rgba(245,158,11,.2)', color: '#fcd34d', borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                  Compenser l’attente : +{sugg} min{lost > 30 ? ' (plafond 30 min)' : ''}
+                </button>
+              </div>
+            )
+          })()}
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
             {['5', '10', '15', '20', '30'].map(m => (
               <button key={m} onClick={() => setExtraMins(m)}
