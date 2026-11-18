@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import api from '@/lib/api'
 import { loadLivekit } from '@/lib/loadLivekit'
+import { mediaHelp } from '@/lib/mediaHelp'
 
 type St = 'wait' | 'run' | 'ok' | 'warn' | 'ko'
 interface Check { id: string; label: string; st: St; msg: string; help?: string }
@@ -14,17 +15,6 @@ const ICON: Record<St, { c: string; i: string }> = {
 const bridge = () => (typeof window !== 'undefined' ? (window as any).ceiClient : undefined)
 const osName = () => { const u = navigator.userAgent; return /windows/i.test(u) ? 'windows' : /mac/i.test(u) ? 'mac' : 'linux' }
 
-function mediaHelp(e: any): string {
-  const os = osName()
-  if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') {
-    if (os === 'windows') return "Windows bloque l'accès : Paramètres, Confidentialité et sécurité, Caméra / Microphone, puis activez « Autoriser les applications de bureau à accéder à la caméra / au microphone »."
-    if (os === 'mac') return "macOS a refusé : Réglages Système, Confidentialité et sécurité, Caméra / Microphone, cochez CEI Examen (ou votre navigateur), puis relancez l'application."
-    return "L'accès a été refusé : autorisez la caméra et le micro quand la fenêtre le demande, puis relancez le test."
-  }
-  if (e?.name === 'NotFoundError' || e?.name === 'OverconstrainedError') return "Aucun appareil trouvé : branchez la caméra / le micro, vérifiez qu'ils sont activés, puis relancez le test."
-  if (e?.name === 'NotReadableError') return "L'appareil est déjà utilisé par un autre logiciel (Zoom, Teams, navigateur…) : fermez-le puis relancez le test."
-  return "Vérifiez les branchements et les autorisations, puis relancez le test."
-}
 
 type Verdict = { status: 'ready' | 'warn' | 'not_ready'; problems: { code: string; niveau: string; message: string }[] }
 
@@ -253,7 +243,7 @@ export default function TestPostePage() {
     <main style={{ minHeight: '100vh', background: '#f1f5f9', padding: 'calc(36px + var(--pwa-banner-height, 0px)) 16px 36px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ maxWidth: 760, margin: '0 auto' }}>
         <h1 style={{ fontSize: 27, color: '#0f172a', margin: '0 0 6px' }}>Test de mon poste</h1>
-        <p style={{ color: '#475569', fontSize: 16.5, lineHeight: 1.6, margin: '0 0 18px' }}>Vérifiez en deux minutes, <b>avant le jour de l&apos;examen</b>, que votre caméra, votre micro, le partage d&apos;écran et votre connexion fonctionnent. Connecté, le test vérifie aussi que votre image et votre écran arrivent bien jusqu'au surveillant, et enregistre le résultat, que votre surveillant pourra consulter.</p>
+        <p style={{ color: '#475569', fontSize: 16.5, lineHeight: 1.6, margin: '0 0 18px' }}>Vérifiez en deux minutes, <b>avant le jour de l&apos;examen</b>, que votre caméra, votre micro, le partage d&apos;écran et votre connexion fonctionnent. Connecté, le test vérifie aussi que votre image et votre écran arrivent bien jusqu&apos;au surveillant, et enregistre le résultat, que votre surveillant pourra consulter.</p>
         <button onClick={runAuto} disabled={running} style={{ padding: '12px 22px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16.5, cursor: running ? 'wait' : 'pointer', marginBottom: 18 }}>
           <i className={`fas ${running ? 'fa-spinner fa-spin' : 'fa-play'}`} style={{ marginRight: 8 }} />{running ? 'Test en cours…' : done ? 'Relancer le test' : 'Lancer le test'}
         </button>

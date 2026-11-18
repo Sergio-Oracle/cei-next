@@ -19,6 +19,7 @@ import SubjectEditor from '@/components/exam/SubjectEditor'
 import BiometricCallModal from '@/components/exam/BiometricCallModal'
 import { loadFaceApi, captureSingleDescriptor, warmupFaceApi } from '@/lib/faceCapture'
 import { errMsg } from '@/lib/errors'
+import { mediaHelp, screenHelp } from '@/lib/mediaHelp'
 // Correctif montée en charge (29/08, audit) : import statique retiré —
 // 'qrcode' n'est utilisé que dans openPhoneCameraModal() ci-dessous
 // (fonctionnalité optionnelle, caméra secondaire par smartphone), pourtant
@@ -1837,9 +1838,10 @@ export default function ExamPage() {
         setAlerts(a=>[{type:'network_quality',msg:`Connexion lente détectée (${conn.effectiveType}, ${conn.downlink} Mbps)`,at:new Date().toLocaleTimeString('fr-FR')},...a])
         warning('Connexion Internet lente détectée — cela peut ralentir la sauvegarde de vos réponses.')
       }
-    } catch {
+    } catch (e:any) {
       setPermCam('error'); setPermMic('error')
-      setPermError('La caméra et le microphone sont obligatoires. Autorisez-les puis réessayez.')
+      setPermError(mediaHelp(e))                       // cause précise et geste à faire (voir lib/mediaHelp.ts), plus le message générique
+      const aId=attemptRef.current; if(aId) logActivity(aId,'permission_error',JSON.stringify({step:'camera_micro',error:e?.name||'inconnue'})).catch(()=>{})
       setPermBusy(false); return
     }
     setPermScreen('loading')
@@ -1849,7 +1851,7 @@ export default function ExamPage() {
       // Dans l'application CEI Examen c'est le CLIENT qui choisit ce qui est partagé (écran, ou la page d'examen elle-même en mode « page ») : aucun choix de l'étudiant à contrôler.
       if (!isCeiClient()&&surface!==undefined&&surface!=='monitor') {
         track.stop(); setPermScreen('error')
-        setPermError("Choisissez « Écran entier » et non une fenêtre ou un onglet.")
+        setPermError("Vous avez partagé une fenêtre ou un onglet. Cliquez sur « Réessayer », choisissez « Écran entier » (et non une fenêtre) puis cliquez sur « Partager ».")
         setPermBusy(false); return
       }
       screenStream.current=ss; setPermScreen('ok'); setScreenOn(true)
@@ -1858,9 +1860,10 @@ export default function ExamPage() {
         setAlerts(a=>[{type:'screen',msg:"Partage d'écran interrompu",at:new Date().toLocaleTimeString('fr-FR')},...a])
         const aId=attemptRef.current; if(aId){logActivity(aId,'screen_share_stopped',"Partage d'écran interrompu").catch(()=>{})}
       })
-    } catch {
+    } catch (e:any) {
       setPermScreen('error')
-      setPermError("Le partage de l'écran complet est obligatoire.")
+      setPermError(screenHelp(e))
+      const aId=attemptRef.current; if(aId) logActivity(aId,'permission_error',JSON.stringify({step:'screen',error:e?.name||'inconnue'})).catch(()=>{})
       setPermBusy(false); return
     }
     setPermBusy(false)
@@ -4320,7 +4323,7 @@ export default function ExamPage() {
           </div>
           <button onClick={requestAllPermissions} disabled={permBusy||isHttp}
             style={{width:'100%',padding:15,background:permBusy||isHttp?'#334155':'#2563eb',color:permBusy||isHttp?'#64748b':'white',border:'none',borderRadius:12,fontSize:18,fontWeight:700,cursor:permBusy||isHttp?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
-            {permBusy?<><i className="fas fa-spinner fa-spin"/>Vérification…</>:<><i className="fas fa-shield-alt"/>Autoriser et commencer</>}
+            {permBusy?<><i className="fas fa-spinner fa-spin"/>Vérification…</>:<><i className={`fas ${permError?'fa-rotate-right':'fa-shield-alt'}`}/>{permError?'Réessayer':'Autoriser et commencer'}</>}
           </button>
           {permError&&<div style={{marginTop:16,background:'rgba(239,68,68,.12)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:'12px 14px',fontSize:15.5,color:'#fca5a5',lineHeight:1.6}}>
             <i className="fas fa-exclamation-triangle" style={{marginRight:6}}/>{permError}
