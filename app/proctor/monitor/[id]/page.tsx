@@ -413,6 +413,15 @@ export default function ProctorMonitorPage() {
   // Préparation des étudiants (test technique, 18/11/2026) : prêts / à surveiller / non prêts / jamais testés, avec la cause pour chacun.
   const [readiness, setReadiness] = useState<{ total: number; counts: Record<string, number>; students: { student_id: number; name: string; status: string; problems: string[] }[]; truncated?: boolean } | null>(null)
   const [readyOpen, setReadyOpen] = useState(false)
+  // Santé de l'examen (administrateur, responsable, enseignant) : mesurée par la plateforme chaque minute, jamais découverte après coup (voir services/exam_vitals.py)
+  const [vitals, setVitals] = useState<{ niveau: 'ok' | 'attention' | 'critique'; verdict: string; problems: { code: string; niveau: string; message: string; conseil: string }[]; kpi: Record<string, number | null> } | null>(null)
+  const [vitalsOpen, setVitalsOpen] = useState(false)
+  useEffect(() => {
+    let off = false
+    const load = () => api.get<any>(`/api/online_exams/${id}/vitals`).then(r => { if (!off) setVitals(r) }).catch(() => {})    // 403 pour un surveillant : sans effet
+    load(); const t = setInterval(load, 60_000)
+    return () => { off = true; clearInterval(t) }
+  }, [id])
   useEffect(() => {
     let off = false
     const load = () => api.get<any>(`/api/online_exams/${id}/readiness`).then(r => { if (!off) setReadiness(r) }).catch(() => {})
@@ -1894,6 +1903,36 @@ export default function ProctorMonitorPage() {
 
         {/* Banner Agent IA */}
         <AgentBanner agent={agent} lastCheck={agentLastCheck} studentsCount={students.length} />
+
+        {/* ═══════════ SANTÉ DE L'EXAMEN ═══ */}
+        {vitals && (vitals.kpi.in_progress as number) + (vitals.kpi.stuck_entry as number) > 0 && (() => {
+          const col = vitals.niveau === 'critique' ? '#f87171' : vitals.niveau === 'attention' ? '#fbbf24' : '#34d399'
+          const k = vitals.kpi
+          return (
+            <div style={{ marginTop: 0, marginBottom: 14, padding: '10px 16px', background: 'rgba(255,255,255,.04)', border: `1px solid ${col}55`, borderRadius: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ width: 11, height: 11, borderRadius: '50%', background: col, display: 'inline-block' }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: col, textTransform: 'uppercase', letterSpacing: '.06em' }}>Santé de l’examen</span>
+                <span style={{ fontSize: 14.5, color: 'rgba(255,255,255,.8)' }}>{vitals.verdict}</span>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,.45)' }}>
+                  {k.in_progress} en cours{k.entry_p50_s != null ? ` · entrée en ${k.entry_p50_s} s (médiane)` : ''}{(k.stuck_entry as number) > 0 ? ` · ${k.stuck_entry} en attente d’affichage` : ''}{(k.offline as number) > 0 ? ` · ${k.offline} hors ligne` : ''}
+                </span>
+                {vitals.problems.length > 0 && <button onClick={() => setVitalsOpen(o => !o)} style={{ marginLeft: 'auto', background: 'rgba(255,255,255,.08)', border: 'none', color: 'white', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 13 }}>{vitalsOpen ? 'Masquer' : `Voir (${vitals.problems.length})`}</button>}
+              </div>
+              {(vitalsOpen || vitals.niveau === 'critique') && vitals.problems.length > 0 && (
+                <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {vitals.problems.map(pb => (
+                    <div key={pb.code} style={{ fontSize: 14, lineHeight: 1.5 }}>
+                      <strong style={{ color: pb.niveau === 'critique' ? '#f87171' : '#fbbf24' }}>{pb.niveau === 'critique' ? 'Urgent' : 'À surveiller'} : </strong>{pb.message}
+                      <div style={{ color: 'rgba(255,255,255,.55)' }}>Que faire : {pb.conseil}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })()}
+
 
         {/* Surveillants connectés (prof uniquement) */}
         {!isSurveillant && proctors.length > 0 && (

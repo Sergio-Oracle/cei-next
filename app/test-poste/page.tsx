@@ -115,7 +115,7 @@ export default function TestPostePage() {
     }
 
     // 4. Visioconférence : transmission WebRTC
-    set('rtc', 'Visioconférence (transmission vidéo)', 'run', 'Essai…')
+    set('rtc', 'Transmission de l\'image', 'run', 'Essai…')
     try {
       const a = new RTCPeerConnection(), b = new RTCPeerConnection()
       a.onicecandidate = e => e.candidate && b.addIceCandidate(e.candidate); b.onicecandidate = e => e.candidate && a.addIceCandidate(e.candidate)
@@ -128,11 +128,11 @@ export default function TestPostePage() {
       const ok = await got; await new Promise(r => setTimeout(r, 1200))
       let sent = 0; (await a.getStats()).forEach(r => { if (r.type === 'outbound-rtp' && r.kind === 'video') sent = r.bytesSent || 0 })
       a.close(); b.close()
-      set('rtc', 'Visioconférence (transmission vidéo)', ok && sent > 500 ? 'ok' : 'ko', ok && sent > 500 ? 'La vidéo est bien transmise' : 'La vidéo ne passe pas', 'Désactivez un éventuel VPN ou un logiciel de sécurité qui bloque la visioconférence, puis relancez le test.')
-    } catch { set('rtc', 'Visioconférence (transmission vidéo)', 'warn', 'Non testée (caméra indisponible)') }
+      set('rtc', 'Transmission de l\'image', ok && sent > 500 ? 'ok' : 'ko', ok && sent > 500 ? 'Votre image est bien transmise' : 'Votre image ne passe pas', 'Désactivez un éventuel VPN ou un logiciel de sécurité qui bloque la vidéo, puis refaites le test.')
+    } catch { set('rtc', 'Transmission de l\'image', 'warn', 'Non testée (caméra indisponible)') }
 
     // 5. Connexion au serveur : délai + débit
-    set('net', 'Connexion à la plateforme', 'run', 'Mesure…')
+    set('net', 'Votre connexion Internet', 'run', 'Mesure…')
     try {
       const times: number[] = []
       for (let i = 0; i < 4; i++) { const t = performance.now(); await fetch(`${base}/api/health`, { cache: 'no-store' }); times.push(performance.now() - t) }
@@ -141,21 +141,21 @@ export default function TestPostePage() {
       const mbit = (bytes * 8) / 1e6 / ((performance.now() - t1) / 1000)
       rec.current.network = { latency_ms: ping, down_mbps: Number(mbit.toFixed(2)) }
       const st2: St = mbit < 2 || ping > 1500 ? 'ko' : mbit < 4 || ping > 600 ? 'warn' : 'ok'
-      set('net', 'Connexion à la plateforme', st2, `Délai ${ping} ms · débit ${mbit.toFixed(1)} Mbit/s`, st2 === 'ok' ? undefined : "Connexion trop lente pour la surveillance vidéo (4 Mbit/s recommandés) : rapprochez-vous du routeur, utilisez un câble réseau, fermez les téléchargements.")
-    } catch { set('net', 'Connexion à la plateforme', 'ko', 'Plateforme injoignable', 'Vérifiez votre connexion internet.') }
+      set('net', 'Votre connexion Internet', st2, st2 === 'ok' ? 'Bonne' : st2 === 'warn' ? 'Correcte, mais juste' : 'Trop lente pour l\'examen', st2 === 'ok' ? undefined : "Rapprochez-vous de votre box ou de votre routeur, utilisez un câble réseau si possible et fermez tout ce qui télécharge.")
+    } catch { set('net', 'Votre connexion Internet', 'ko', 'Plateforme injoignable', 'Vérifiez votre connexion internet.') }
 
     // 6. Serveur de visioconférence et bibliothèque
-    set('sfu', 'Serveur de visioconférence', 'run', 'Essai…')
+    set('sfu', 'Liaison avec le surveillant', 'run', 'Essai…')
     try {
       const host = location.hostname
       const sfu = /^cei\.unchk\.sn$/.test(host) ? 'https://sfu-cei.unchk.sn' : `https://sfu-${host}`
       await Promise.all([fetch(sfu, { mode: 'no-cors', cache: 'no-store' }), fetch('https://cdn.jsdelivr.net/npm/livekit-client@2.5.7/package.json', { mode: 'no-cors', cache: 'no-store' })])
-      set('sfu', 'Serveur de visioconférence', 'ok', 'Joignable')
-    } catch { set('sfu', 'Serveur de visioconférence', 'warn', 'Non joignable depuis ce réseau', "Si vous êtes sur un réseau d'établissement ou un VPN, essayez un autre réseau (partage de connexion du téléphone) : sans accès, la surveillance vidéo ne fonctionnera pas.") }
+      set('sfu', 'Liaison avec le surveillant', 'ok', 'Disponible')
+    } catch { set('sfu', 'Liaison avec le surveillant', 'warn', 'Non disponible depuis ce réseau', "Si vous êtes sur un réseau d'établissement ou un VPN, essayez un autre réseau (par exemple le partage de connexion de votre téléphone) : sans cela, le surveillant ne pourra pas vous voir.") }
 
     // 7. Détection du visage
     const gl = (() => { try { const cv = document.createElement('canvas'); return !!(cv.getContext('webgl2') || cv.getContext('webgl')) } catch { return false } })()
-    set('ai', 'Détection du visage', typeof WebAssembly === 'object' ? (gl ? 'ok' : 'warn') : 'ko', typeof WebAssembly !== 'object' ? 'WebAssembly indisponible' : gl ? 'Moteur disponible' : 'Accélération graphique indisponible : la détection sera plus lente', gl ? undefined : 'Mettez à jour les pilotes de la carte graphique.')
+    set('ai', 'Vérification de présence', typeof WebAssembly === 'object' ? (gl ? 'ok' : 'warn') : 'ko', typeof WebAssembly !== 'object' ? 'Non disponible sur ce navigateur' : gl ? 'Disponible' : 'Disponible, mais plus lente sur cet ordinateur', typeof WebAssembly !== 'object' ? 'Utilisez un navigateur récent (Chrome, Edge ou Firefox à jour).' : gl ? undefined : 'Mettez à jour le pilote de votre carte graphique ou utilisez un autre ordinateur.')
 
     // 8. Notifications
     try { const p = Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission; set('notif', 'Notifications', p === 'granted' ? 'ok' : 'warn', p === 'granted' ? 'Autorisées' : 'Non autorisées', "Autorisez-les pour recevoir les messages de l'enseignant.") } catch { /* sans notifications */ }
