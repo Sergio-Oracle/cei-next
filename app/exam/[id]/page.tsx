@@ -811,6 +811,8 @@ export default function ExamPage() {
   const [techTest, setTechTest] = useState<string | null>(null)         // dernier test technique : ready | warn | not_ready | stale | never
   const clientEvtQueueRef   = useRef<{ type: string; data?: Record<string, unknown> }[]>([])   // signalements du client reçus avant que la tentative soit connue
   const mediaBusyRef        = useRef(false)          // une vérification/republication des pistes à la fois
+  const lastPermLogRef      = useRef(0)              // un seul enregistrement « autorisation refusée » par 30 s (un étudiant qui clique en boucle ne doit pas inonder le serveur)
+  const lastMediaAskRef     = useRef(0)              // dernière demande de republication d'un surveillant traitée (au plus une toutes les 20 s)
   const mediaWatchRef       = useRef<any>(null)      // minuterie du contrôle périodique des pistes publiées
   const proctorVideoRef     = useRef<HTMLVideoElement|null>(null)
   const proctorAudioRef     = useRef<HTMLAudioElement|null>(null)
@@ -1300,7 +1302,7 @@ export default function ExamPage() {
   useEffect(() => () => {
     ;[timerRef,saveRef,msgPollRef,extraPollRef,faceIntervalRef,heartbeatRef,multiScreenIntervalRef,yoloObjectIntervalRef,previewTimerRef].forEach(r => { if (r.current) clearInterval(r.current) })
     ;[saveRetryTimerRef,submitRetryTimerRef].forEach(r => { if (r.current) clearTimeout(r.current) })
-    if (mediaWatchRef.current) { clearInterval(mediaWatchRef.current); mediaWatchRef.current = null }
+    if (mediaWatchRef.current) { clearTimeout(mediaWatchRef.current); mediaWatchRef.current = null }
     camStream.current?.getTracks().forEach(t => t.stop())
     screenStream.current?.getTracks().forEach(t => t.stop())
     if (lkRoomRef.current) { try { lkRoomRef.current.disconnect() } catch {} }
@@ -1845,7 +1847,7 @@ export default function ExamPage() {
     } catch (e:any) {
       setPermCam('error'); setPermMic('error')
       setPermError(mediaHelp(e))                       // cause précise et geste à faire (voir lib/mediaHelp.ts), plus le message générique
-      const aId=attemptRef.current; if(aId) logActivity(aId,'permission_error',JSON.stringify({step:'camera_micro',error:e?.name||'inconnue'})).catch(()=>{})
+      const aId=attemptRef.current; if(aId&&Date.now()-lastPermLogRef.current>30_000){ lastPermLogRef.current=Date.now(); logActivity(aId,'permission_error',JSON.stringify({step:'camera_micro',error:e?.name||'inconnue'})).catch(()=>{}) }
       setPermBusy(false); return
     }
     setPermScreen('loading')
@@ -1867,7 +1869,7 @@ export default function ExamPage() {
     } catch (e:any) {
       setPermScreen('error')
       setPermError(screenHelp(e))
-      const aId=attemptRef.current; if(aId) logActivity(aId,'permission_error',JSON.stringify({step:'screen',error:e?.name||'inconnue'})).catch(()=>{})
+      const aId=attemptRef.current; if(aId&&Date.now()-lastPermLogRef.current>30_000){ lastPermLogRef.current=Date.now(); logActivity(aId,'permission_error',JSON.stringify({step:'screen',error:e?.name||'inconnue'})).catch(()=>{}) }
       setPermBusy(false); return
     }
     setPermBusy(false)
@@ -2580,10 +2582,11 @@ export default function ExamPage() {
   /* Contrôle de santé de la diffusion (17/11/2026). Cas réel : étudiant « Visage OK » chez lui, écran partagé reçu, mais tuile caméra noire chez le surveillant
      — une publication ayant échoué une seule fois n'était jamais retentée. Ici : on compare ce que l'étudiant POSSÈDE (flux source vivant) à ce qui est
      réellement PUBLIÉ dans la salle, et on republie ce qui manque. forceCam : à la demande d'un surveillant, la caméra est dépubliée puis republiée. */
-  async function ensureMediaPublished(room:any,LK:any,forceCam=false){
-    if(!room||!LK||mediaBusyRef.current||sessionEndedRef.current) return
-    if(lkRoomRef.current!==room||room.state!=='connected') return
+  async function ensureMediaPublished(room:any,LK:any,forceCam=false):Promise<boolean>{
+    if(!room||!LK||mediaBusyRef.current||sessionEndedRef.current) return true
+    if(lkRoomRef.current!==room||room.state!=='connected') return true
     mediaBusyRef.current=true
+    let healthy=true
     try{
       // Caméra source terminée (pilote, autre application) : en rouvrir une seule fois, sans toucher au micro ni à l'écran.
       let camTrack=camStream.current?.getVideoTracks()[0]
@@ -2606,6 +2609,7 @@ export default function ExamPage() {
         screen:!!screenStream.current?.getVideoTracks().some(t=>t.readyState!=='ended'),
       }
       const miss=missingMedia(pubs,have)
+      healthy=!(miss.cam||miss.mic||miss.screen)
       if(forceCam&&have.cam&&!miss.cam){
         try{ if(mainCamTrackRef.current){ await room.localParticipant.unpublishTrack(mainCamTrackRef.current); mainCamTrackRef.current.stop() } }catch{}
         mainCamTrackRef.current=null
@@ -2622,6 +2626,7 @@ export default function ExamPage() {
         // Journal seulement si la republication a RÉUSSI (sinon on retente au prochain contrôle sans polluer le journal de l'étudiant).
         const after=missingMedia(Array.from(room.localParticipant.trackPublications?.values?.()||[]),have)
         const fixed=[miss.cam&&!after.cam&&'caméra',miss.mic&&!after.mic&&'micro',miss.screen&&!after.screen&&'écran'].filter(Boolean).join(', ')
+        healthy=!(after.cam||after.mic||after.screen)
         if(fixed){
           console.warn('[LiveKit] pistes absentes de la salle, republiées :',fixed)
           const curAId=attemptRef.current
@@ -2630,13 +2635,21 @@ export default function ExamPage() {
       }
     }catch(e){console.warn('[LiveKit] contrôle des pistes impossible:',e)}
     finally{ mediaBusyRef.current=false }
+    return healthy
   }
   function startMediaWatch(room:any,LK:any){
-    if(mediaWatchRef.current) clearInterval(mediaWatchRef.current)
-    mediaWatchRef.current=setInterval(()=>{
-      if(sessionEndedRef.current||lkRoomRef.current!==room){ clearInterval(mediaWatchRef.current); mediaWatchRef.current=null; return }
-      ensureMediaPublished(room,LK)
-    },6000)
+    // Contrôle des pistes : toutes les 6 s tant que tout va bien ; en cas d'échec répété l'intervalle DOUBLE (jusqu'à 60 s) avec une dispersion aléatoire. Sans cela, quand le serveur
+    // vidéo est saturé, des milliers d'étudiants retentaient en même temps toutes les 6 s et aggravaient eux-mêmes la panne (re-publications en rafale).
+    if(mediaWatchRef.current) clearTimeout(mediaWatchRef.current)
+    let fails=0
+    const tick=async()=>{
+      if(sessionEndedRef.current||lkRoomRef.current!==room){ mediaWatchRef.current=null; return }
+      const ok=await ensureMediaPublished(room,LK)
+      fails=ok?0:Math.min(fails+1,4)
+      const base=6000*Math.pow(2,fails)                       // 6 s, 12 s, 24 s, 48 s, puis 60 s
+      mediaWatchRef.current=setTimeout(tick,Math.min(60_000,base)*(0.8+Math.random()*0.4))
+    }
+    mediaWatchRef.current=setTimeout(tick,6000)
   }
 
   /* Rebascule le débit vidéo caméra à chaud (sans déconnecter la room) dès
@@ -2720,7 +2733,8 @@ export default function ExamPage() {
           const msg=JSON.parse(new TextDecoder().decode(payload))
           // Demande d'un surveillant (sa tuile ne reçoit pas notre caméra) : republier la caméra, uniquement si elle vient du personnel.
           if(msg?.kind===REQUEST_MEDIA_KIND){
-            if(participant?.identity&&studentShouldSubscribe(participant.identity)) ensureMediaPublished(room,LK,true)
+            const nowMs=Date.now()
+            if(participant?.identity&&studentShouldSubscribe(participant.identity)&&nowMs-lastMediaAskRef.current>20_000){ lastMediaAskRef.current=nowMs; ensureMediaPublished(room,LK,true) }
             return
           }
           handleTeacherMessage(msg)
