@@ -189,17 +189,18 @@ export default function TestPostePage() {
   /** Envoi RÉEL de la caméra, du micro et de l'écran vers le serveur vidéo (salle privée de test), puis vérification faite par le SERVEUR : c'est ce qui manquait le 17/11
    *  (caméra « activée » côté étudiant, jamais reçue par le surveillant). Réservé à l'étudiant connecté. */
   async function runLive() {
-    if (!logged) {
-      set('live', 'Envoi réel vers le surveillant', 'warn', 'Non testé : connectez-vous pour tester l\'envoi réel et enregistrer le résultat pour votre surveillant.', 'Connectez-vous puis relancez ce test.')
-      return
-    }
-    set('live', 'Envoi réel vers le surveillant', 'run', 'Préparation de la transmission…')
+    // Sans connexion (20/11/2026) : la transmission réelle se teste quand même, dans une salle de test éphémère et isolée (voie publique du serveur) ; seul l'ENREGISTREMENT du résultat
+    // pour le surveillant reste réservé à l'étudiant connecté.
+    const pub = !logged
+    const LBL = pub ? 'Transmission réelle de votre poste' : 'Envoi réel vers le surveillant'
+    const DEST = pub ? 'au serveur de l\'examen' : 'au surveillant'
+    set('live', LBL, 'run', 'Préparation de la transmission…')
     let room: any = null
     try {
-      const [LK, tok] = await Promise.all([loadLivekit(), api.post<{ ws_url: string; token: string }>('/api/tech_test/livekit_token', {})])
+      const [LK, tok] = await Promise.all([loadLivekit(), api.post<{ ws_url: string; token: string; id?: string }>(pub ? '/api/tech_test/public/livekit_token' : '/api/tech_test/livekit_token', {})])
       room = new LK.Room({ adaptiveStream: false, dynacast: true })
       await room.connect(tok.ws_url, tok.token, { autoSubscribe: false })
-      set('live', 'Envoi réel vers le surveillant', 'run', 'Envoi de votre caméra, de votre micro et de votre écran…')
+      set('live', LBL, 'run', 'Envoi de votre caméra, de votre micro et de votre écran…')
       const cam = camStreamRef.current, scr = screenStreamRef.current
       const cv = cam?.getVideoTracks()[0], mic = cam?.getAudioTracks()[0], sv = scr?.getVideoTracks()[0]
       const lp = room.localParticipant
@@ -211,15 +212,15 @@ export default function TestPostePage() {
       let v: any = null
       for (let i = 0; i < 5; i++) {                                   // le serveur doit RECEVOIR les pistes : on l'interroge jusqu'à 5 fois
         await new Promise(r => setTimeout(r, 2000))
-        v = await api.post<any>('/api/tech_test/verify', {})
+        v = await api.post<any>(pub ? '/api/tech_test/public/verify' : '/api/tech_test/verify', pub ? { id: tok.id } : {})
         if (v.camera && v.screen && v.mic) break
       }
       const parts = [v?.camera ? 'caméra' : null, v?.mic ? 'micro' : null, v?.screen ? 'écran' : null].filter(Boolean)
       const miss = [!v?.camera ? 'la caméra' : null, !v?.mic ? 'le micro' : null, !v?.screen ? "l'écran" : null].filter(Boolean)
-      if (v?.camera && v?.screen) set('live', 'Envoi réel vers le surveillant', v?.mic ? 'ok' : 'warn', v?.mic ? 'Votre caméra, votre micro et votre écran sont bien transmis au surveillant.' : 'Votre caméra et votre écran sont bien transmis au surveillant.', v?.mic ? undefined : "Votre voix ne semble pas transmise : vérifiez que votre micro n'est pas coupé.")
-      else set('live', 'Envoi réel vers le surveillant', 'ko', miss.length > 1 ? `${miss.map(m => m === 'la caméra' ? 'Votre image' : m === "l'écran" ? 'Votre écran' : 'Votre voix').join(' et ')} ne sont pas transmis au surveillant` : miss[0] === 'la caméra' ? "Votre image n'est pas transmise au surveillant" : miss[0] === "l'écran" ? "Votre écran n'est pas transmis au surveillant" : "Votre voix n'est pas transmise au surveillant", "La connexion actuelle ne permet pas la transmission. Essayez avec un autre réseau, par exemple le partage de connexion de votre téléphone, puis refaites le test.")
+      if (v?.camera && v?.screen) set('live', LBL, v?.mic ? 'ok' : 'warn', v?.mic ? `Votre caméra, votre micro et votre écran sont bien transmis ${DEST}.` : `Votre caméra et votre écran sont bien transmis ${DEST}.`, v?.mic ? undefined : "Votre voix ne semble pas transmise : vérifiez que votre micro n'est pas coupé.")
+      else set('live', LBL, 'ko', miss.length > 1 ? `${miss.map(m => m === 'la caméra' ? 'Votre image' : m === "l'écran" ? 'Votre écran' : 'Votre voix').join(' et ')} ne sont pas transmis ${DEST}` : miss[0] === 'la caméra' ? `Votre image n'est pas transmise ${DEST}` : miss[0] === "l'écran" ? `Votre écran n'est pas transmis ${DEST}` : `Votre voix n'est pas transmise ${DEST}`, "La connexion actuelle ne permet pas la transmission. Essayez avec un autre réseau, par exemple le partage de connexion de votre téléphone, puis refaites le test.")
     } catch (e: any) {
-      set('live', 'Envoi réel vers le surveillant', 'ko', "La transmission vers le surveillant n'a pas pu démarrer", "Si vous utilisez un VPN, désactivez-le. Essayez aussi un autre réseau (par exemple le partage de connexion de votre téléphone), puis refaites le test.")
+      set('live', LBL, 'ko', `La transmission ${DEST.replace('au ', 'vers le ')} n'a pas pu démarrer`, "Si vous utilisez un VPN, désactivez-le. Essayez aussi un autre réseau (par exemple le partage de connexion de votre téléphone), puis refaites le test.")
     } finally {
       try { room?.disconnect() } catch { /* déjà déconnecté */ }
       screenStreamRef.current?.getTracks().forEach(t => t.stop())      // le partage d'écran s'arrête dès la fin du test
@@ -284,7 +285,7 @@ export default function TestPostePage() {
         )}
         {done && logged === false && (
           <div style={{ marginTop: 12, fontSize: 14.5, color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 14px' }}>
-            Vous n&apos;êtes pas connecté : le test de l&apos;envoi réel vers le surveillant et l&apos;enregistrement du résultat sont réservés aux étudiants connectés. <Link href="/login" style={{ color: '#1d4ed8', fontWeight: 700 }}>Se connecter</Link>
+            Vous n&apos;êtes pas connecté : ce test vérifie votre poste, mais son résultat n&apos;est pas enregistré pour votre surveillant. Connectez-vous puis refaites le test pour l&apos;enregistrer. <Link href="/login" style={{ color: '#1d4ed8', fontWeight: 700 }}>Se connecter</Link>
           </div>
         )}
         {done && !verdict && (
