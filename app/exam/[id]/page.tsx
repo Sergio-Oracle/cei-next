@@ -917,9 +917,13 @@ export default function ExamPage() {
   const [closeTries, setCloseTries] = useState(0)
   const [forceApps, setForceApps] = useState(false)
   const unclosedAppsRef = useRef<string[]>([])
+  // 20/11/2026 : RIEN n'est fermé ni arrêté avant que l'étudiant veuille composer. Avant, dès l'écran d'instructions (sans aucun clic), la page arrêtait toute seule les logiciels interdits
+  // (messageries comme WhatsApp comprises) et bloquait le bouton « Démarrer » tant que d'autres applications restaient ouvertes. Maintenant le travail se fait AU CLIC sur « Démarrer »
+  // (voir closeAppsAtStart) ; la surveillance en continu de cet écran ne s'active qu'APRÈS un clic qui a laissé des applications ouvertes, pour afficher ce qui reste.
+  const [appsArmed, setAppsArmed] = useState(false)
   useEffect(() => {
     const c = getCeiClient()
-    if (!c?.listApps || phase !== 'instructions' || isPreview) return
+    if (!c?.listApps || phase !== 'instructions' || isPreview || !appsArmed) return
     let alive = true
     const poll = () => {
       c.listApps!().then(r => { if (alive && r) setOtherApps(r.apps.map(a => a.name)) }).catch(() => {})
@@ -940,12 +944,44 @@ export default function ExamPage() {
     }
     poll(); const t = setInterval(poll, 3000)
     return () => { alive = false; clearInterval(t) }
-  }, [phase]) // eslint-disable-line
+  }, [phase, appsArmed]) // eslint-disable-line
   async function stopForbiddenApps() {
     const c = getCeiClient(); if (!c?.stopForbidden) return
     setStoppingForbidden(true)
     try { const r = await c.stopForbidden({ elevate: true }); setForbiddenApps(r?.remaining ?? []); setForbiddenHelper(r?.helper); setForbiddenTried(true) } catch { setForbiddenTried(true) }
     finally { setStoppingForbidden(false) }
+  }
+  /** Au clic sur « Démarrer » (et seulement là) : arrête les logiciels interdits puis ferme les autres applications. Renvoie false si des applications restent ouvertes et que l'étudiant doit décider
+   *  (le panneau habituel s'affiche alors). Une panne de cette étape ne doit JAMAIS empêcher de composer : en cas d'erreur on continue. */
+  async function closeAppsAtStart(): Promise<boolean> {
+    const c = getCeiClient(); if (!c) return true
+    try {
+      if (c.forbidden && c.stopForbidden) {
+        const f = await c.forbidden().catch(() => null)
+        if (f?.names?.length) {
+          let canAuto = false
+          try { const i = await c.info?.(); const m = String(i?.version || '').split('.').map(Number); canAuto = (m[0] > 1) || (m[0] === 1 && (m[1] ?? 0) >= 7) } catch { /* version inconnue */ }
+          if (canAuto) {                      // les clients 1.6.x demandent TOUJOURS une autorisation Windows : on ne les déclenche pas sans clic dédié
+            for (let t = 0; t < 3; t++) {
+              const x = await c.stopForbidden({}).catch(() => null)
+              if (x) { setForbiddenApps(x.remaining); setForbiddenHelper(x.helper) }
+              if (!x || !x.remaining?.length) break
+              await new Promise(r => setTimeout(r, 1200))
+            }
+          }
+        }
+      }
+      if (c.listApps && c.closeApps) {
+        const a = await c.listApps().catch(() => null)
+        if (a?.apps?.length) {
+          const r = await c.closeApps().catch(() => null)
+          const left = (r?.remaining ?? []).map(x => x.name)
+          setOtherApps(left); setCloseTries(n => n + 1)
+          if (left.length && !forceApps) { setAppsArmed(true); return false }
+        }
+      }
+    } catch { /* ne jamais bloquer la composition à cause de cette étape */ }
+    return true
   }
   async function closeOtherApps() {
     const c = getCeiClient(); if (!c?.closeApps) return
@@ -1606,6 +1642,7 @@ export default function ExamPage() {
   async function doStartExam() {
     setStarting(true)
     try {
+      if (isCeiClient() && !isPreview && !(await closeAppsAtStart())) { setStarting(false); return }
       // Application CEI Examen : poignée de main signée AVANT le démarrage (exigée par le serveur si l'examen l'impose)
       let clientVm = false
       if (isCeiClient()) {
