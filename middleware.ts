@@ -1,60 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-// Routes accessibles sans authentification
-const PUBLIC_PATHS = new Set([
-  '/login',
-  '/forgot-password',
-  '/reset-password',
-  '/conditions',
-  '/',
-  '/robots.txt',
-  '/security.txt',
-  // Ouverte depuis le téléphone en scannant un QR code — cet appareil n'a
-  // jamais de session CEI (pas de cookie token), voir POST /api/phone_camera/token.
-  '/phone-camera',
-  // Page de téléchargement de l'application CEI Examen : consultée avant la connexion
-  '/telecharger-client',
-  // Test du poste (caméra, micro, partage d'écran, connexion) avant un examen : avant même la connexion
-  '/test-poste',
-])
-
-// Préfixes publics (assets, guide public, etc.)
-const PUBLIC_PREFIXES = [
-  '/_next/',
-  '/fontawesome/',
-  '/fonts/',
-  '/static/',
-  '/screenshots/',  // captures d'écran produit sur la page d'accueil publique
-  '/icons/',        // icônes PWA (manifest.json) — doivent rester accessibles sans authentification
-  '/brand/',        // logos partenaires (ex. UNCHK) affichés sur les pages publiques
-  '/models/',       // modèles IA (face-api.js, MediaPipe) hébergés localement — fichiers
-                     // génériques sans donnée utilisateur ; un cookie manquant/expiré ne doit
-                     // jamais faire échouer silencieusement le chargement de la surveillance
-                     // (redirigeait vers /login, un HTML reçu à la place du modèle attendu)
-  '/mediapipe/',    // runtime WASM MediaPipe, même raison
-  '/vendor/',       // bibliothèques JS tierces hébergées localement (face-api.js), même raison
-  '/favicon',
-  '/manifest.json',
-  '/sw.js',
-  // C-23 (audit DITSI-SSSI AVR-2026-09-CEI-AUDIT) : /.well-known/security.txt
-  // retournait un 307 vers /login (redirigé comme n'importe quelle route
-  // privée, faute d'être listé ici) — pas un problème de fichier manquant,
-  // le middleware l'interceptait avant même d'atteindre le serveur statique.
-  '/.well-known/',
-  '/api/',          // l'API gère sa propre auth
-  '/guide-etudiant',
-  '/guide-enseignant',
-  '/guide-surveillant',
-  '/guide-superviseur',
-  '/guide-responsable-examen',
-]
+import { isPublicPath } from './lib/publicPaths'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Laisser passer les assets et routes publiques
-  if (PUBLIC_PREFIXES.some(p => pathname.startsWith(p))) return NextResponse.next()
-  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next()
+  // Laisser passer les assets et routes publiques (liste unique : lib/publicPaths.ts)
+  if (isPublicPath(pathname)) return NextResponse.next()
 
   // Vérifier la présence de la session (cookie non-secret posé par AuthContext —
   // C-06 : ne contient plus le jeton, juste un indicateur ; la vraie validation

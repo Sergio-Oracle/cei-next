@@ -86,6 +86,17 @@ ssh -i "$PREPROD_KEY" -p "$PREPROD_PORT" -o ConnectTimeout=15 "$PREPROD_HOST" '
     echo "  port $p -> $(curl -s -o /dev/null -w "%{http_code}" http://localhost:$p/)"
   done
 '
+echo "== Contrôle des pages publiques (visiteur non connecté, navigateur réel) =="
+# Garde-fou du 20/11/2026 : « Tester mon poste » renvoyait les visiteurs vers la connexion sans qu'aucun test ne le voie. Toute page publique qui renvoie vers /login ou s'ouvre vide fait ÉCHOUER la livraison.
+PWPY="${CEI_E2E_PY:-/tmp/pwenv/bin/python}"; SMOKE="../cei-api-v2/scripts/e2e/pages_publiques.py"
+if [ -x "$PWPY" ] && [ -f "$SMOKE" ]; then
+  if ! env -u ELECTRON_RUN_AS_NODE "$PWPY" "$SMOKE" "$PREPROD_API_URL"; then
+    echo "ERREUR : une page publique renvoie vers la connexion ou s'ouvre vide — la préproduction est DÉJÀ mise à jour : corriger puis relivrer." >&2
+    exit 1
+  fi
+else
+  echo "!! ATTENTION : contrôle des pages publiques NON EXÉCUTÉ (Playwright ou script introuvable : $PWPY / $SMOKE) — à faire à la main avant de conclure." >&2
+fi
 echo "== Terminé =="
 echo ""
 echo "!! ATTENTION : ce dossier local (.next/) contient maintenant le build de PRÉPRODUCTION"

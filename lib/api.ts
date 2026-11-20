@@ -6,6 +6,8 @@
  *   - Refresh token automatique sur 401
  *   - Détection offline avec erreur explicite
  */
+import { isPublicPath } from './publicPaths'
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dev-cei.ddns.net'
 
 // 10 min pour les routes normales laissait une page figée en silence jusqu'à
@@ -188,6 +190,11 @@ async function _request<T = any>(
     if (_refreshTransient) {
       // Le renouvellement a échoué pour une raison passagère : on ne déconnecte pas, l'appelant réessaiera.
       throw Object.assign(new Error('Connexion instable. Réessayez dans un instant.'), { network: true })
+    }
+    // Page PUBLIQUE (liste unique lib/publicPaths.ts) : un 401 y est normal (visiteur non connecté) — on ne renvoie JAMAIS vers la connexion, l'appelant décide (20/11/2026 :
+    // « Tester mon poste » renvoyait un visiteur vers /login à cause de cela). Seules les pages privées perdent leur session et repartent vers la connexion.
+    if (typeof window !== 'undefined' && isPublicPath(window.location.pathname)) {
+      throw Object.assign(new Error('Non connecté'), { status: 401, data: {} })
     }
     if (typeof window !== 'undefined') {
       setToken(null)

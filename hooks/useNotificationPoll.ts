@@ -12,6 +12,7 @@
  * tenue 25 s par client). Compromis assumé : latence de bout en bout
  * jusqu'à l'intervalle de poll au lieu de ≈ 0.
  */
+import { isPublicPath } from '@/lib/publicPaths'
 import { useEffect, useRef } from 'react'
 import api from '@/lib/api'
 
@@ -124,7 +125,7 @@ export function useNotificationPoll(
             api.setToken(null)
             localStorage.removeItem('user')
             document.cookie = 'cei_logged_in=; path=/; max-age=0; SameSite=Strict'
-            window.location.href = '/login'
+            if (!isPublicPath(window.location.pathname)) window.location.href = '/login'      // jamais depuis une page publique (liste unique lib/publicPaths.ts)
             return
           }
           schedule(0)
