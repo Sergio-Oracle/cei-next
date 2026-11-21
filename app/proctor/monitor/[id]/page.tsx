@@ -434,6 +434,10 @@ export default function ProctorMonitorPage() {
 
   /* appel privé */
   const [privateCall,   setPrivateCall]   = useState<{ attemptId: number; name: string } | null>(null)
+  // Références de l'appel privé : déclarées ICI, avec les autres hooks (jamais après un retour anticipé du composant : erreur React 310, page de surveillance blanche).
+  const callStartingRef = useRef(false)          // un seul appel à la fois : un double clic ne lance pas deux appels (ni deux avertissements à l'étudiant)
+  const callEidRef = useRef('')
+  const callEndingRef = useRef(false)
   // Appel d'un surveillant par le responsable d'examen / l'enseignant / l'administrateur (même mécanisme que l'appel superviseur → surveillant)
   const [callProctor, setCallProctor] = useState<{ id: number; name: string } | null>(null)
   const [callStaff, setCallStaff] = useState<{ id: number; name: string; role: string; meId: number } | null>(null)      // le SURVEILLANT appelle le personnel
@@ -1132,7 +1136,10 @@ export default function ProctorMonitorPage() {
   // le filet de sécurité si LiveKit est déconnecté à ce moment précis. Le
   // format du payload correspond exactement à ce qu'attend déjà
   // handleTeacherMessage côté étudiant (aucune modification requise là-bas).
-  function broadcastToStudent(identity: string | undefined, payload: { type: string; message?: string }) {
+  // Identifiant d'événement, commun au canal direct ET à l'enregistrement par le serveur (20/11/2026) : l'étudiant reconnaît ainsi le même message ou le même appel reçu par les deux voies,
+  // et le serveur n'enregistre jamais deux fois le même (clic répété, nouvel essai réseau).
+  const newEid = () => ((typeof crypto !== 'undefined' && (crypto as Crypto).randomUUID ? (crypto as Crypto).randomUUID().replace(/-/g, '') : Date.now().toString(36) + Math.random().toString(36).slice(2, 12)) + '000000000000').slice(0, 24)
+  function broadcastToStudent(identity: string | undefined, payload: { type: string; message?: string; eid?: string }) {
     try {
       if (!identity) return // pas d'identity connue (panneau agent) — HTTP+poll reste la seule voie, inchangée
       const room = roomRef.current
@@ -1148,11 +1155,12 @@ export default function ProctorMonitorPage() {
     if (!msgModal || !msgText.trim()) return
     setSending(true)
     try {
+      const eid = newEid()
       await api.post(
         `/api/exam_attempts/${msgModal.attemptId}/send_warning`,
-        { message: msgText, type: msgModal.type === 'warning' ? 'warning' : 'message' }
+        { message: msgText, type: msgModal.type === 'warning' ? 'warning' : 'message', eid }
       )
-      broadcastToStudent(msgModal.identity, { type: msgModal.type, message: msgText })
+      broadcastToStudent(msgModal.identity, { type: msgModal.type, message: msgText, eid })
       success(msgModal.type === 'warning' ? 'Avertissement envoyé' : 'Message envoyé')
       setMsgModal(null); setMsgText('')
     } catch (e: unknown) { toastErr(errMsg(e) || 'Erreur') }
@@ -1499,6 +1507,9 @@ export default function ProctorMonitorPage() {
   /* ── Appel privé ────────────────────────────────────────────────────────── */
 
   async function startPrivateCall(attemptId: number, name: string) {
+    if (callStartingRef.current) return
+    callStartingRef.current = true
+    const eid = newEid(); callEidRef.current = eid
     setPrivateCall({ attemptId, name })
     setPrivateStatus('Connexion en cours…')
     setPrivateCamOn(false)
@@ -1511,9 +1522,9 @@ export default function ProctorMonitorPage() {
       // et l'enregistrement de l'appel + le jeton se font en parallèle.
       const micReady = LK.createLocalAudioTrack().catch(() => null)
       const callee = data?.attempts?.find(a => a.attempt_id === attemptId)?.livekit_identity
-      broadcastToStudent(callee, { type: 'private_call', message: 'Appel privé initié par le surveillant' })
+      broadcastToStudent(callee, { type: 'private_call', message: 'Appel privé initié par le surveillant', eid })
       const [, tok] = await Promise.all([
-        api.post(`/api/exam_attempts/${attemptId}/send_warning`, { message: 'Appel privé initié par le surveillant', type: 'private_call' }),   // filet de sécurité si le canal direct est coupé
+        api.post(`/api/exam_attempts/${attemptId}/send_warning`, { message: 'Appel privé initié par le surveillant', type: 'private_call', eid }),   // filet de sécurité si le canal direct est coupé
         api.get<{ ws_url: string; token: string }>(`/api/exam_attempts/${attemptId}/private_token`),
       ])
       const pr = new LK.Room({ adaptiveStream: true, dynacast: true })
@@ -1570,6 +1581,7 @@ export default function ProctorMonitorPage() {
     } catch (e: unknown) {
       toastErr(errMsg(e) || 'Erreur appel privé')
       setPrivateCall(null)
+      callStartingRef.current = false
     }
   }
 
@@ -1584,9 +1596,11 @@ export default function ProctorMonitorPage() {
   }
 
   async function endPrivateCall() {
+    if (callEndingRef.current) return                 // la fin d'un appel n'est enregistrée qu'une fois (clic + déconnexion automatique pouvaient la déclencher deux fois)
+    callEndingRef.current = true
     setAccessCode(null)
     if (privateCall) {
-      try { await api.post(`/api/exam_attempts/${privateCall.attemptId}/send_warning`, { message: 'Appel privé terminé', type: 'end_call' }) } catch {}
+      try { await api.post(`/api/exam_attempts/${privateCall.attemptId}/send_warning`, { message: 'Appel privé terminé', type: 'end_call', eid: 'end-' + (callEidRef.current || newEid()) }) } catch {}
     }
     if (privateCamRef.current) {
       try { await privateRoomRef.current?.localParticipant.unpublishTrack(privateCamRef.current) } catch {}
@@ -1599,6 +1613,7 @@ export default function ProctorMonitorPage() {
     await privateRoomRef.current?.disconnect()
     privateRoomRef.current = null
     setPrivateCall(null); setPrivateCamOn(false); setPrivateMicOn(false)
+    callStartingRef.current = false; callEndingRef.current = false
     const sv = document.getElementById('private-student-video') as HTMLVideoElement | null
     if (sv) sv.srcObject = null
     const mp = document.getElementById('private-my-preview') as HTMLVideoElement | null

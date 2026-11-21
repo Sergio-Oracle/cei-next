@@ -833,6 +833,7 @@ export default function ExamPage() {
   // rouvrir deux fois la même modale d'avertissement ou relancer deux fois
   // captureReference() sur 'identity_cleared'.
   const recentTeacherMsgRef = useRef<Map<string, number>>(new Map())
+  const seenTeacherEidsRef = useRef<Set<string>>(new Set())      // identifiants d'événements du surveillant déjà traités (canal direct ET relève du serveur)
   const sessionEndedRef = useRef(false)
   // Période de grâce anti-fraude au tout début de l'examen : requestFullscreen()
   // est asynchrone (enterExam) mais le montage des écouteurs blur/visibilitychange
@@ -2992,7 +2993,7 @@ export default function ExamPage() {
     if(sessionEndedRef.current) return
     try {
       const since=lastMsgTsRef.current?`?since=${encodeURIComponent(lastMsgTsRef.current)}`:''
-      const res=await api.get<{banned?:boolean;risk_score?:number;messages?:{id?:number;type:string;message?:string;timestamp:string}[]}>(`/api/exam_attempts/${aId}/pending_messages${since}`)
+      const res=await api.get<{banned?:boolean;risk_score?:number;messages?:{id?:number;eid?:string|null;type:string;message?:string;timestamp:string}[]}>(`/api/exam_attempts/${aId}/pending_messages${since}`)
       if(res.banned){triggerBan();return}
       if(res.risk_score!=null) setRiskScore(res.risk_score)
       for(const msg of res.messages??[]){
@@ -3007,12 +3008,19 @@ export default function ExamPage() {
     } catch {}
   }
 
-  function handleTeacherMessage(msg:{type:string;message?:string}) {
-    const dedupKey = `${msg.type}|${msg.message||''}`
-    const seenAt = recentTeacherMsgRef.current.get(dedupKey)
-    const now = Date.now()
-    if(seenAt && now-seenAt<10_000 && msg.type!=='ban') return // 'ban' reste géré par triggerBan(), déjà idempotent
-    recentTeacherMsgRef.current.set(dedupKey, now)
+  function handleTeacherMessage(msg:{type:string;message?:string;eid?:string|null}) {
+    // 20/11/2026 : le MÊME message ou appel du surveillant arrive par deux voies voulues (canal direct, puis relève du serveur 30 s plus tard). La reconnaissance par contenu ne tenait que 10 s :
+    // au-delà, l'étudiant voyait le message ou la fenêtre d'appel une seconde fois. Désormais chaque événement porte un identifiant commun aux deux voies : traité une seule fois.
+    if(msg.eid){
+      if(seenTeacherEidsRef.current.has(msg.eid)) return
+      seenTeacherEidsRef.current.add(msg.eid)
+    } else {
+      const dedupKey = `${msg.type}|${msg.message||''}`          // événements sans identifiant (anciennes versions, autres routes) : reconnaissance par contenu, comme avant
+      const seenAt = recentTeacherMsgRef.current.get(dedupKey)
+      const nowMs = Date.now()
+      if(seenAt && nowMs-seenAt<10_000 && msg.type!=='ban') return // 'ban' reste géré par triggerBan(), déjà idempotent
+      recentTeacherMsgRef.current.set(dedupKey, nowMs)
+    }
     if(msg.type==='warning'){
       setWarnText(msg.message||"Avertissement de l'enseignant"); setShowWarnModal(true)
       setAlerts(a=>[{type:'teacher_warn',msg:msg.message||'Avertissement',at:new Date().toLocaleTimeString('fr-FR')},...a])
