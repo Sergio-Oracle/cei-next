@@ -538,12 +538,13 @@ export default function ProctorMonitorPage() {
       }
       if (newMsgs.length > 0) {
         setStudentMsgs(prev => [...newMsgs, ...prev].slice(0, 100))
-        setNewMsgCount(prev => prev + newMsgs.length)
+        // « A terminé l'appel » est une information, pas un message à lire : elle ne compte pas dans le badge.
+        setNewMsgCount(prev => prev + newMsgs.filter(m => m.type !== 'call_ended').length)
         // Une demande d'appel est plus urgente qu'un simple message — l'étudiant
         // attend activement, donc on le signale immédiatement plutôt que de
         // laisser découvrir la demande en ouvrant le panneau de messages.
         newMsgs.filter(m => m.type === 'call_request').forEach(m => {
-          warning(`${m.student_name} demande un appel — reprise après déconnexion`)
+          warning(m.reason === 'resume' ? `${m.student_name} demande un appel — reprise après déconnexion` : `${m.student_name} demande un appel vocal`)
         })
       }
     } catch {}
@@ -2581,7 +2582,8 @@ export default function ProctorMonitorPage() {
                   <i className="fas fa-comments" style={{ fontSize: 35, display: 'block', marginBottom: 10 }} />Aucun message reçu
                 </div>
               ) : studentMsgs.map((m: any, i: number) => {
-                const isCallRequest = m.type === 'call_request' || (m.message && m.message.includes('[DEMANDE_APPEL]'))
+                const isCallRequest = m.type === 'call_request'
+                const isCallEnded = m.type === 'call_ended'
                 return (
                 <div key={i} style={{ background: isCallRequest ? 'rgba(217,119,6,.15)' : 'rgba(37,99,235,.12)', borderLeft: `3px solid ${isCallRequest ? '#f59e0b' : '#3b82f6'}`, borderRadius: 4, padding: '10px 12px', marginBottom: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -2593,7 +2595,7 @@ export default function ProctorMonitorPage() {
                   </div>
                   <div style={{ fontSize:15.5, color: 'white', marginBottom: 6 }}>{m.message}</div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {!isCallRequest && (
+                    {!isCallRequest && !isCallEnded && (
                       <button onClick={() => { setStudentMsgsModal(false); setMsgModal({ attemptId: m.attempt_id, name: m.student_name, type: 'message' }); setMsgText('') }}
                         style={{ fontSize:13, background: 'rgba(37,99,235,.3)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>
                         <i className="fas fa-reply" /> Répondre

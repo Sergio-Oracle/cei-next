@@ -741,7 +741,7 @@ export default function ExamPage() {
   const [exitCodeOpen, setExitCodeOpen] = useState(false)
   const exitCodeRef = useRef<string|null>(null)
   const [msgText,      setMsgText]      = useState('')
-  const [msgSent,      setMsgSent]      = useState<{text:string;time:string}[]>([])
+  const [msgSent,      setMsgSent]      = useState<{id:string;text:string;time:string;failed?:boolean;raw?:string}[]>([])
   const [camOn,        setCamOn]        = useState(false)
   const [micOn,        setMicOn]        = useState(false)
   const [screenOn,     setScreenOn]     = useState(false)
@@ -2775,6 +2775,10 @@ export default function ExamPage() {
             if(participant?.identity&&studentShouldSubscribe(participant.identity)&&nowMs-lastMediaAskRef.current>20_000){ lastMediaAskRef.current=nowMs; ensureMediaPublished(room,LK,true) }
             return
           }
+          // Les commandes (avertissement, message, appel, EXCLUSION, identité confirmée) ne sont acceptées que si l'expéditeur est un membre du personnel (21/11/2026).
+          // Tous les étudiants d'un examen partagent la même salle et leur jeton leur permet de diffuser des données : sans ce contrôle, n'importe lequel pouvait envoyer
+          // {"type":"ban"} à tous les autres et mettre fin à leur examen. L'identité de l'expéditeur est fixée par notre serveur à la création du jeton : elle ne se falsifie pas.
+          if(!participant?.identity||!studentShouldSubscribe(participant.identity)) return
           handleTeacherMessage(msg)
         }catch{}
       })
@@ -3120,7 +3124,7 @@ export default function ExamPage() {
       privateRoomRef.current = null
     }
     const aId = attemptRef.current
-    if(aId) api.post(`/api/exam_attempts/${aId}/student_message`,{message:'[FIN_APPEL] Appel privé terminé.'}).catch(()=>{})
+    if(aId) postStudentMessage('[FIN_APPEL] Appel privé terminé.')
     setPrivateCallActive(false); setPrivateMicOn(false)
     if(privateTeacherVidRef.current) { try { (privateTeacherVidRef.current as any).srcObject = null } catch {} }
   }
@@ -4020,11 +4024,32 @@ export default function ExamPage() {
     else router.push('/dashboard')
   }
 
+  // Envoi d'un message au surveillant : renvoyé seul en cas de coupure (un identifiant d'événement évite tout doublon côté serveur).
+  // Sans cela, le message pouvait se perdre en silence alors que l'écran affichait « Envoyé ».
+  async function postStudentMessage(text:string, eid?:string):Promise<boolean> {
+    const id = eid || ((typeof crypto!=='undefined' && (crypto as Crypto).randomUUID ? (crypto as Crypto).randomUUID().replace(/-/g,'') : Date.now().toString(36)+Math.random().toString(36).slice(2,12))+'000000000000').slice(0,24)
+    for(const wait of [0,1500,4000,10000,20000]) {
+      if(wait) await new Promise(r=>setTimeout(r,wait))
+      const aId = attemptRef.current
+      if(!aId) continue
+      try { await api.post(`/api/exam_attempts/${aId}/student_message`,{message:text,eid:id}); return true }
+      catch(e:any) { const st=e?.status; if(st===400||st===403||st===404) return false }   // refus définitif (copie close…) : inutile de réessayer
+    }
+    return false
+  }
+
   function sendMsg() {
     if(!msgText.trim()) return
-    const txt=msgText.trim(); setMsgSent(p=>[...p,{text:txt,time:new Date().toLocaleTimeString('fr-FR')}])
-    if(attemptRef.current) api.post(`/api/exam_attempts/${attemptRef.current}/student_message`,{message:txt}).catch(()=>{})
+    const txt=msgText.trim(); const id=Date.now().toString(36)+Math.random().toString(36).slice(2,8)
+    setMsgSent(p=>[...p,{id,text:txt,time:new Date().toLocaleTimeString('fr-FR')}])
+    postStudentMessage(txt,id).then(ok=>{ if(!ok) setMsgSent(p=>p.map(m=>m.id===id?{...m,failed:true}:m)) })
     setMsgText('')
+  }
+
+  function resendMsg(id:string) {
+    const m = msgSent.find(x=>x.id===id); if(!m) return
+    setMsgSent(p=>p.map(x=>x.id===id?{...x,failed:false}:x))
+    postStudentMessage(m.raw||m.text,id).then(ok=>{ if(!ok) setMsgSent(p=>p.map(x=>x.id===id?{...x,failed:true}:x)) })
   }
 
   function fmtTimer(s:number) {
@@ -4900,8 +4925,10 @@ export default function ExamPage() {
             <div style={{display:'flex',gap:4}}>
               <button onClick={()=>{
                 if(!attemptRef.current) return
-                api.post(`/api/exam_attempts/${attemptRef.current}/student_message`,{message:'[DEMANDE_APPEL] Je souhaite poser une question verbalement au surveillant.'}).catch(()=>{})
-                setMsgSent(p=>[...p,{text:'Demande d\'appel vocal envoyée',time:new Date().toLocaleTimeString('fr-FR')}])
+                const id=Date.now().toString(36)+Math.random().toString(36).slice(2,8)
+                const raw='[DEMANDE_APPEL] Je souhaite poser une question verbalement au surveillant.'
+                setMsgSent(p=>[...p,{id,text:'Demande d\'appel vocal envoyée',time:new Date().toLocaleTimeString('fr-FR'),raw}])
+                postStudentMessage(raw,id).then(ok=>{ if(!ok) setMsgSent(p=>p.map(m=>m.id===id?{...m,failed:true}:m)) })
               }} title="Demander un appel vocal"
                 style={{flex:1,background:'rgba(16,185,129,.15)',color:'#10b981',border:'1px solid rgba(16,185,129,.3)',borderRadius:6,padding:'6px',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:4,fontWeight:600}}>
                 <i className="fas fa-phone"/> Appel
@@ -4912,10 +4939,12 @@ export default function ExamPage() {
               </button>
             </div>
             {msgSent.length>0&&<div style={{maxHeight:72,overflowY:'auto',marginTop:6}}>
-              {[...msgSent].reverse().slice(0,4).map((m,i)=>(
-                <div key={i} style={{background:'rgba(37,99,235,.06)',border:'1px solid rgba(37,99,235,.1)',borderRadius:4,padding:'4px 7px',marginBottom:3,fontSize:12,color:'#1e3a8a'}}>
+              {[...msgSent].reverse().slice(0,4).map((m)=>(
+                <div key={m.id} style={{background:m.failed?'rgba(217,119,6,.08)':'rgba(37,99,235,.06)',border:`1px solid ${m.failed?'rgba(217,119,6,.35)':'rgba(37,99,235,.1)'}`,borderRadius:4,padding:'4px 7px',marginBottom:3,fontSize:12,color:m.failed?'#92400e':'#1e3a8a'}}>
                   <div style={{marginBottom:1}}>{m.text}</div>
-                  <div style={{fontSize:11,color:'#94a3b8'}}>Envoyé à {m.time}</div>
+                  {m.failed
+                    ? <div style={{fontSize:11}}>Pas encore reçu — <button onClick={()=>resendMsg(m.id)} style={{background:'none',border:'none',padding:0,color:'#b45309',textDecoration:'underline',cursor:'pointer',fontSize:11,fontWeight:600}}>Renvoyer</button></div>
+                    : <div style={{fontSize:11,color:'#94a3b8'}}>Envoyé à {m.time}</div>}
                 </div>
               ))}
             </div>}
