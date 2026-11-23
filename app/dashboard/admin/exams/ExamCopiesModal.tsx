@@ -631,7 +631,7 @@ const STATUS_LBL: Record<string, string> = { submitted: 'Soumis', auto_submitted
 const STATUS_CLR: Record<string, string> = { submitted: '#059669', auto_submitted: '#d97706', in_progress: '#3b82f6', banned: '#ef4444' }
 const CHOICE_CLR: Record<string, string> = { A:'#3b82f6', B:'#10b981', C:'#f59e0b', D:'#ef4444', E:'#2563eb', F:'#06b6d4', Vrai:'#10b981', Faux:'#ef4444' }
 const INCIDENT_FR: Record<string, string> = {
-  tab_switch: 'Changement d\'onglet', window_blur: 'Fenêtre au second plan',
+  tab_switch: 'Changement d\'onglet', window_blur: 'Fenêtre au second plan', focus_blip: 'Interruption brève du focus (rétablie)',
   fullscreen_exit: 'Plein écran quitté',
   copy_attempt: 'Tentative de copie', paste_attempt: 'Tentative de collage',
   right_click: 'Clic droit bloqué', keyboard_shortcut: 'Raccourci bloqué',

@@ -169,6 +169,7 @@ const EVENT_LABEL_MAP: Record<string, string> = {
   teacher_identity_cleared: 'Identité confirmée par le surveillant',
   face_reference_captured: 'Référence faciale capturée',
   window_blur:             'Fenêtre mise en arrière-plan',
+  focus_blip:              'Interruption brève du focus (rétablie)',
   teacher_warning:         "Avertissement de l'enseignant",
   teacher_message:         "Message de l'enseignant",
   student_message:         "Message de l'étudiant",

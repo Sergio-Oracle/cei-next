@@ -92,6 +92,7 @@ const INCIDENT_LABELS: Record<string, string> = {
   tab_switch:              "Changement d'onglet",
   fullscreen_exit:         'Plein écran quitté',
   window_blur:             'Fenêtre perdue',
+  focus_blip:              'Interruption brève du focus (rétablie)',
   copy_attempt:            'Tentative de copie',
   paste_attempt:           'Tentative de collage',
   right_click:             'Clic droit',

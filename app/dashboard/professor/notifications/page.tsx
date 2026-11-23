@@ -42,6 +42,7 @@ interface IncidentsResponse {
 const EVENT_LABELS: Record<string, string> = {
   tab_switch:              "Changement d'onglet",
   window_blur:             'Changement de fenêtre',
+  focus_blip:              'Interruption brève du focus (rétablie)',
   copy_attempt:            'Tentative de copie',
   paste_attempt:           'Tentative de collage',
   right_click:             'Clic droit détecté',

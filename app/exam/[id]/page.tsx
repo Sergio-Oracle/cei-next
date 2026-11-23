@@ -656,6 +656,7 @@ export default function ExamPage() {
   const [tabCount,     setTabCount]     = useState(0)
   const [riskScore,    setRiskScore]    = useState(0)
   const [focusLost,    setFocusLost]    = useState(false)
+  const [softFsPrompt, setSoftFsPrompt]  = useState(false)      // invitation discrète à reprendre le plein écran après une interruption brève (pas une violation)
   const [networkOffline, setNetworkOffline] = useState(false)
   /* Adaptation à une connexion faible : la surveillance (vidéo continue,
      captures, analyses IA) ne doit jamais faire perdre à l'étudiant la
@@ -851,6 +852,15 @@ export default function ExamPage() {
   // pas cliqué "Revenir à l'examen", sans dépendre uniquement des events.
   const fsPollGuardRef    = useRef(false)
   const focusPollGuardRef = useRef(false)
+  // Interruption BRÈVE du focus (23/11/2026). Cliquer sur « Masquer » / « Arrêter le partage » dans la barre native que le navigateur affiche pendant le partage d'écran donne
+  // le focus à une fenêtre du navigateur : la page recevait « blur » (et parfois une sortie de plein écran) et affichait « Vous avez quitté l'examen », avec une pénalité,
+  // alors que l'étudiant n'a rien quitté. Une perte de focus n'est désormais DÉCLARÉE que si elle dure plus de BRIEF_FOCUS_LOSS_MS (ou si l'onglet est réellement masqué) ;
+  // plus courte, elle est seulement tracée (« focus_blip », sans note de risque) et la sortie de plein écran qui l'accompagne n'est qu'une invitation à le reprendre.
+  const BRIEF_FOCUS_LOSS_MS = 3000
+  const SOFT_FS_RETURN_MS   = 20000
+  const blurTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastBlurAtRef  = useRef(0)
+  const softFsUntilRef = useRef(0)
   const extraMinRef     = useRef(0)
   /* Pause self-service de 3 min — breakActiveRef gate toute la surveillance
      pendant la pause (patron sessionEndedRef, mais réversible). resumeAt
@@ -1352,6 +1362,7 @@ export default function ExamPage() {
       if (breakActiveRef.current || assistBusy()) return
       if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
       if (!document.hidden) return
+      if (blurTimerRef.current) { clearTimeout(blurTimerRef.current); blurTimerRef.current = null; void declareBlur() }      // onglet réellement masqué : aucune tolérance (comme avant)
       const next = tabCount + 1; setTabCount(next)
       setRiskScore(r => Math.min(r + 10, 100))
       setAlertsDetect(a => [{type:'tab',msg:`Changement d'onglet (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
@@ -1366,14 +1377,10 @@ export default function ExamPage() {
         try { await logProctoring(aId,'tab_switch',`Changement onglet ${next}`) } catch {}
       }
     }
-    const onBlur = async () => {
-      // Filet de sécurité pour un basculement trop rapide (bascule OS,
-      // fenêtre partiellement recouverte) : visibilitychange ne se déclenche
-      // pas toujours dans ces cas alors que le focus de la fenêtre, lui,
-      // est perdu immédiatement. Le backend reconnaît déjà 'window_blur'
-      // dans ses seuils (severity_tab_events) — seul l'envoi manquait ici.
+    // Perte de focus confirmée (au-delà de la tolérance) : compte, alerte, journal — comme avant.
+    const declareBlur = async () => {
       if (sessionEndedRef.current || breakActiveRef.current || assistBusy()) return
-      if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
+      if (document.hasFocus() && !document.hidden) { traceBlip(); return }      // le focus est revenu entre-temps : simple interruption
       const next = tabCount + 1; setTabCount(next)
       setRiskScore(r => Math.min(r + 10, 100))
       setAlertsDetect(a => [{type:'blur',msg:`Perte de focus détectée (${next})`,at:new Date().toLocaleTimeString('fr-FR')},...a])
@@ -1384,6 +1391,25 @@ export default function ExamPage() {
         try { await logActivity(aId,'window_blur','Perte de focus fenêtre') } catch {}
         try { await logProctoring(aId,'window_blur','Perte de focus fenêtre') } catch {}
       }
+    }
+    const traceBlip = () => {
+      const aId = attemptRef.current
+      const sec = Math.round((Date.now()-lastBlurAtRef.current)/100)/10
+      if (aId) logActivity(aId,'focus_blip',`Interruption brève du focus (${sec} s), rétablie`).catch(()=>{})
+    }
+    const onBlur = () => {
+      // Filet de sécurité pour un basculement trop rapide (bascule OS, fenêtre partiellement recouverte) : visibilitychange ne se déclenche pas toujours alors que le
+      // focus de la fenêtre est perdu immédiatement. La perte n'est déclarée qu'après BRIEF_FOCUS_LOSS_MS (barre de partage d'écran du navigateur, notification système…).
+      if (sessionEndedRef.current || breakActiveRef.current || assistBusy()) return
+      if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
+      lastBlurAtRef.current = Date.now()
+      if (blurTimerRef.current) return
+      blurTimerRef.current = setTimeout(() => { blurTimerRef.current = null; void declareBlur() }, BRIEF_FOCUS_LOSS_MS)
+    }
+    const onFocus = () => {
+      if (!blurTimerRef.current) return
+      clearTimeout(blurTimerRef.current); blurTimerRef.current = null
+      traceBlip()
     }
     const noCtx  = (e:MouseEvent)     => { if (!examRef.current?.enable_right_click) e.preventDefault() }
     // Copier/coller/couper étaient bloqués (si desactivé côté examen) sans
@@ -1430,6 +1456,12 @@ export default function ExamPage() {
       if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
       if (!document.fullscreenElement && !sessionEndedRef.current) {
         if (fsPollGuardRef.current) return // déjà signalé, en attente du clic "Revenir à l'examen"
+        // Sortie du plein écran qui accompagne une interruption brève du focus (barre de partage d'écran du navigateur) : pas une violation, seulement une invitation à reprendre
+        // le plein écran. Sans interruption (touche Échap, bouton du navigateur) ou au-delà de SOFT_FS_RETURN_MS : violation, comme avant.
+        const interrupted = blurTimerRef.current !== null || Date.now()-lastBlurAtRef.current < BRIEF_FOCUS_LOSS_MS
+        if (interrupted && Date.now() >= softFsUntilRef.current) softFsUntilRef.current = Date.now() + SOFT_FS_RETURN_MS
+        if (Date.now() < softFsUntilRef.current) { setSoftFsPrompt(true); return }
+        setSoftFsPrompt(false)
         fsPollGuardRef.current = true
         setRiskScore(r => Math.min(r + 10, 100))
         setFocusLost(true)
@@ -1443,6 +1475,7 @@ export default function ExamPage() {
         setAlertsDetect(a => [{type:'fs',msg:'Plein écran quitté',at:new Date().toLocaleTimeString('fr-FR')},...a])
       } else if (document.fullscreenElement) {
         fsPollGuardRef.current = false
+        softFsUntilRef.current = 0; setSoftFsPrompt(false)
       }
     }
     // Filet de sécurité — une PWA installée (fenêtre autonome, sans onglet)
@@ -1459,6 +1492,7 @@ export default function ExamPage() {
       if (Date.now()-examEnterTimeRef.current<IGNORE_FOCUS_EVENTS_MS) return
       onFs()
       if (!document.hasFocus()) {
+        if (blurTimerRef.current) return           // interruption en cours : la tolérance décide
         if (focusPollGuardRef.current) return
         focusPollGuardRef.current = true
         const next = tabCount + 1; setTabCount(next)
@@ -1510,14 +1544,15 @@ export default function ExamPage() {
     document.addEventListener('visibilitychange',onVis); document.addEventListener('contextmenu',noCtx)
     document.addEventListener('copy',noCopy); document.addEventListener('paste',noPaste); document.addEventListener('cut',noCut)
     document.addEventListener('keydown',noKey); document.addEventListener('fullscreenchange',onFs)
-    window.addEventListener('blur',onBlur); window.addEventListener('beforeunload',onBeforeUnload)
+    window.addEventListener('blur',onBlur); window.addEventListener('focus',onFocus); window.addEventListener('beforeunload',onBeforeUnload)
     window.addEventListener('pagehide',onPageHide)
     document.documentElement.addEventListener('mouseleave',onMouseLeave)
     return () => {
       document.removeEventListener('visibilitychange',onVis); document.removeEventListener('contextmenu',noCtx)
       document.removeEventListener('copy',noCopy); document.removeEventListener('paste',noPaste); document.removeEventListener('cut',noCut)
       document.removeEventListener('keydown',noKey); document.removeEventListener('fullscreenchange',onFs)
-      window.removeEventListener('blur',onBlur); window.removeEventListener('beforeunload',onBeforeUnload)
+      window.removeEventListener('blur',onBlur); window.removeEventListener('focus',onFocus); window.removeEventListener('beforeunload',onBeforeUnload)
+      if (blurTimerRef.current) { clearTimeout(blurTimerRef.current); blurTimerRef.current = null }
       window.removeEventListener('pagehide',onPageHide)
       document.documentElement.removeEventListener('mouseleave',onMouseLeave)
       clearInterval(pollTimer)
@@ -4731,12 +4766,23 @@ export default function ExamPage() {
               Revenez à l&apos;examen pour continuer à composer.
             </p>
             <button onClick={() => {
-              setFocusLost(false)
+              setFocusLost(false); setSoftFsPrompt(false); softFsUntilRef.current = 0
               fsPollGuardRef.current = false; focusPollGuardRef.current = false
+              try { window.focus() } catch {}
               document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable())
             }}
               style={{padding:'12px 30px',borderRadius:8,border:'none',background:'#3b82f6',color:'#fff',fontWeight:600,cursor:'pointer',fontSize:18}}>
               Revenir à l&apos;examen
+            </button>
+          </div>
+        )}
+
+        {softFsPrompt && !focusLost && (
+          <div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',zIndex:10001,background:'#fffbeb',border:'1px solid #fde68a',color:'#92400e',borderRadius:10,padding:'8px 14px',display:'flex',alignItems:'center',gap:12,boxShadow:'0 6px 20px rgba(0,0,0,.18)',fontSize:15}}>
+            <span>Le plein écran a été interrompu.</span>
+            <button onClick={() => { setSoftFsPrompt(false); softFsUntilRef.current = 0; try { window.focus() } catch {}; document.documentElement.requestFullscreen?.().then(lockEscapeKey).catch(() => reportFullscreenUnavailable()) }}
+              style={{padding:'6px 14px',borderRadius:7,border:'none',background:'#d97706',color:'#fff',fontWeight:600,cursor:'pointer',fontSize:15}}>
+              Reprendre le plein écran
             </button>
           </div>
         )}

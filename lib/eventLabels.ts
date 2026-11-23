@@ -87,6 +87,7 @@ const SHARED: Record<string, string> = {
   tab_closed: 'Onglet/navigateur fermé pendant la composition',
   tab_switch: "Changement d'onglet",
   window_blur: 'Changement de fenêtre',
+  focus_blip: 'Interruption brève du focus (rétablie)',
   fullscreen_exit: 'Plein écran quitté',
   fullscreen_enter: 'Plein écran activé',
   screen_share_stopped: "Partage d'écran arrêté",
