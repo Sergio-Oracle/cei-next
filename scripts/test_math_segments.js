@@ -4,7 +4,7 @@
 const { execSync } = require('child_process'), fs = require('fs'), os = require('os'), path = require('path')
 const root = path.join(__dirname, '..'), out = fs.mkdtempSync(path.join(os.tmpdir(), 'math-'))
 execSync(`node_modules/.bin/tsc lib/mathSegments.ts --outDir ${out} --module commonjs --target es2020 --skipLibCheck`, { cwd: root, stdio: 'pipe' })
-const { splitMath, hasMath, insideMath, bulletize, parseNumberFr } = require(path.join(out, 'mathSegments.js'))
+const { splitMath, hasMath, insideMath, bulletize, parseNumberFr, splitNumberUnit } = require(path.join(out, 'mathSegments.js'))
 const katex = require(path.join(root, 'node_modules/katex'))
 let ok = 0, ko = 0
 const check = (n, c, d) => { c ? ok++ : ko++; console.log((c ? '  ✔ ' : '  ✘ ') + n + (c || d === undefined ? '' : '  — ' + JSON.stringify(d))) }
@@ -35,6 +35,9 @@ console.log('\n== Lecture d\'un nombre (identique au serveur) ==')
 const num = (s, v) => check(`« ${s} » → ${v}`, parseNumberFr(s) === v, parseNumberFr(s))
 num('12,5', 12.5); num('1 250.75', 1250.75); num('−3', -3); num('  7 ', 7); num('2,5e3', 2500); num('abc', null); num('', null); num('-', null); num('12 m', 12); num('1.000,5', null)
 
+check('« 5,5 kW » → 5,5 + unité kW', JSON.stringify(splitNumberUnit('5,5 kW')) === '{"value":5.5,"unit":"kW"}')
+check('« 12 » → sans unité ; « abc » → rien', splitNumberUnit('12').unit === null && splitNumberUnit('abc').value === null)
+check('« 5 eV » : l\'unité eV, pas un exposant ; « 2,5e3 W » = 2500 W', splitNumberUnit('5 eV').unit === 'eV' && splitNumberUnit('2,5e3 W').value === 2500)
 console.log('\n== Rendu KaTeX réel ==')
 const render = (l, d) => katex.renderToString(l, { displayMode: d, throwOnError: true, strict: 'ignore', trust: false, output: 'htmlAndMathml', maxExpand: 1000 })
 check("intégrale de la capture rendue", render('I=\\displaystyle\\int_{0}^{\\,3} e^{\\,3x}\\,dx', false).includes('katex'))

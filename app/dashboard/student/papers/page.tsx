@@ -9,6 +9,7 @@ import type { StudentPaper } from '@/types'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
 import { errMsg } from '@/lib/errors'
+import { MathText } from '@/components/shared/MathText'
 
 export default function StudentPapersPage() {
   const { success, error } = useToast()
@@ -138,7 +139,7 @@ export default function StudentPapersPage() {
             <div className="form-group">
               <label>Feedback</label>
               <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize:17, whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}>
-                {selected.content}
+                <MathText text={selected.content} />
               </div>
             </div>
           )}

@@ -6,6 +6,8 @@ import { useToast } from '@/contexts/ToastContext'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
 import { errMsg } from '@/lib/errors'
+import { MathText } from '@/components/shared/MathText'
+import MathPreview from '@/components/shared/MathPreview'
 
 interface Question {
   id: number
@@ -342,7 +344,7 @@ export default function ProfessorQuestionsPage() {
           </div>
         )}
         <pre style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 8, padding: 14, fontSize:15.5, whiteSpace: 'pre-wrap', lineHeight: 1.7, maxHeight: 280, overflowY: 'auto' }}>
-          {preview.content}
+          <MathText text={preview.content} />
         </pre>
         {preview.rubric && (<>
           <h4 style={{ margin: '16px 0 8px', fontSize:17 }}>
@@ -637,6 +639,7 @@ export default function ProfessorQuestionsPage() {
                 <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>Énoncé *</label>
                 <textarea className="form-control" rows={6} style={{ resize: 'vertical', fontFamily: 'inherit' }}
                   value={editForm.content} onChange={e => setEditForm(p => ({ ...p, content: e.target.value }))} />
+                <MathPreview text={editForm.content} />
               </div>
               <div>
                 <label style={{ fontSize:15.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>Barème / correction</label>

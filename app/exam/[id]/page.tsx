@@ -7,8 +7,8 @@ import { getCeiClient, isCeiClient, proveCeiClient, onCeiClientEvent, versionLt,
 import { totalAnswered, totalUnits } from '@/lib/answerUnits'
 import { JOIN_JITTER_MS, retryDelayMs } from '@/lib/lkRetry'
 import { MathText } from '@/components/shared/MathText'
-import MathCodeEditor from '@/components/exam/MathCodeEditor'
-import { bulletize, parseNumberFr } from '@/lib/mathSegments'
+import CodeAnswer from '@/components/exam/CodeAnswer'
+import { bulletize, splitNumberUnit } from '@/lib/mathSegments'
 import { studentShouldSubscribe, staffIdentities } from '@/lib/lkSubscriptions'
 import { missingMedia, REQUEST_MEDIA_KIND } from '@/lib/mediaHealth'
 import { ASSIST_PRESETS } from '@/components/shared/ClientAssistSettings'
@@ -5803,14 +5803,13 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}
           style={{width:'100%',padding:'12px 14px',border:`1.5px solid ${(answers[key]??'').trim()?'#10b981':'#e2e8f0'}`,borderRadius:10,fontSize:18,color:'#0f172a',outline:'none',boxSizing:'border-box',background:'#fff'}}/>
       )}
       {(block.type==='numerique'||block.type==='calculee')&&(answers[key]??'').trim()!==''&&(()=>{
-        const v=parseNumberFr(answers[key]??'')
+        const {value:v,unit}=splitNumberUnit(answers[key]??'')
         return v===null
-          ?<div style={{marginTop:6,fontSize:14.5,color:'#b45309'}}>Entrez un nombre, par exemple 12,5.</div>
-          :<div style={{marginTop:6,fontSize:14.5,color:'#64748b'}}>Valeur lue : <b style={{color:'#0f172a'}}>{v.toLocaleString('fr-FR',{maximumFractionDigits:12})}</b></div>
+          ?<div style={{marginTop:6,fontSize:14.5,color:'#b45309'}}>Entrez un nombre, par exemple 12,5 (suivi de l&apos;unité si l&apos;énoncé la demande).</div>
+          :<div style={{marginTop:6,fontSize:14.5,color:'#64748b'}}>Valeur lue : <b style={{color:'#0f172a'}}>{v.toLocaleString('fr-FR',{maximumFractionDigits:12})}{unit?` ${unit}`:''}</b></div>
       })()}
       {block.type==='code'&&(
-        <MathCodeEditor value={answers[key]??''} onChange={v=>setAnswers(p=>({...p,[key]:v}))} rows={10}
-          placeholder={`Rédigez votre réponse (code / démonstration) à la question ${block.num}…`}
+        <CodeAnswer attemptId={attemptId} num={String(block.num)} value={answers[key]??''} onChange={v=>setAnswers(p=>({...p,[key]:v}))}
           borderColor={(answers[key]?.trim()?'#10b981':'#e2e8f0')}/>
       )}
       {block.upload&&(block.type==='open'||block.type==='code'||block.type==='subopen')&&<AttachmentBox attemptId={attemptId??null} num={block.num??''} answers={answers} setAnswers={setAnswers} required={block.upload==='required'}/>}

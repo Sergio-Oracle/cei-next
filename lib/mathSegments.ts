@@ -55,3 +55,11 @@ export function parseNumberFr(s: string): number | null {
   const v = Number(t)
   return Number.isFinite(v) && /\d/.test(t) ? v : null
 }
+
+/** « 5,5 kW » → { value: 5.5, unit: 'kW' } ; « 12 » → { value: 12, unit: null } ; « abc » → { value: null, unit: null } (même découpage que services/question_types.py : split_number_unit). */
+export function splitNumberUnit(s: string): { value: number | null; unit: string | null } {
+  const m = /^\s*([-+\u2212]?\s*\d[\d\s\u00a0\u202f.,]*(?:[eE][-+\u2212]?\d+)?)\s*(\S.*)?$/.exec(String(s ?? ''))
+  if (!m) return { value: null, unit: null }
+  const unit = (m[2] ?? '').trim()
+  return { value: parseNumberFr(m[1]), unit: unit || null }
+}

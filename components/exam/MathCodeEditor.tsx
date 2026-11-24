@@ -1,20 +1,40 @@
 'use client'
 
 /**
- * Réponse à une question « Maths / Programmation » : zone de saisie de code / démonstration, avec les aides standard des éditeurs d'évaluation
- * (Moodle STACK / CodeRunner, Canvas) :
- *  - barre de symboles mathématiques (fraction, racine, intégrale, somme, ensembles, quantificateurs, lettres grecques…) qui insère le LaTeX
- *    à l'endroit du curseur (dans \( … \) si le curseur n'est pas déjà dans une formule) ;
- *  - aperçu en direct de la réponse dès qu'elle contient une formule (« voici comment votre réponse sera lue ») ;
- *  - confort de code : Tab indente (Maj+Tab désindente ; Échap puis Tab quitte la zone), Entrée conserve l'indentation.
- * La réponse enregistrée reste le texte brut : rien ne change pour la correction.
+ * Réponse à une question « Maths / Programmation » — l'éditeur des plateformes d'évaluation standard (CodeMirror 6, comme CodeRunner/Moodle en Ace) :
+ *  - coloration syntaxique (Python, JavaScript, Java, C, C++) ou LaTeX pour une démonstration, numéros de ligne pour le code ;
+ *  - Tab indente (Maj+Tab désindente ; Échap puis Tab quitte la zone), Entrée garde l'indentation, annuler / rétablir ;
+ *  - barre de symboles mathématiques qui insère le LaTeX au curseur (dans \( … \) si le curseur n'est pas déjà dans une formule) ;
+ *  - éditeur VISUEL de formules (MathLive, comme l'éditeur d'équations de Canvas) : l'étudiant compose la formule, « Insérer » ajoute le LaTeX ;
+ *  - aperçu en direct de la réponse dès qu'elle contient une formule.
+ * La réponse enregistrée reste le texte brut : rien ne change pour la correction. Tout est servi par notre site (aucun CDN).
  */
-import React, { useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Compartment, EditorState, type Extension } from '@codemirror/state'
+import { EditorView, keymap, lineNumbers, drawSelection, highlightActiveLine, placeholder as cmPlaceholder } from '@codemirror/view'
+import { defaultKeymap, history, historyKeymap, indentMore, indentLess, temporarilySetTabFocusMode } from '@codemirror/commands'
+import { syntaxHighlighting, defaultHighlightStyle, indentOnInput, bracketMatching, indentUnit } from '@codemirror/language'
 import { MathText } from '@/components/shared/MathText'
 import { hasMath, insideMath } from '@/lib/mathSegments'
 
-type Snippet = { label: string; title: string; latex: string; cursor?: number }       // cursor : position du curseur dans le LaTeX inséré (défaut : à la fin)
+export type EditorLang = 'latex' | 'python' | 'javascript' | 'java' | 'c' | 'cpp'
+export const LANG_LABEL: Record<EditorLang, string> = { latex: 'LaTeX / texte', python: 'Python', javascript: 'JavaScript', java: 'Java', c: 'C', cpp: 'C++' }
 
+async function langExtension(l: EditorLang): Promise<Extension> {
+  switch (l) {
+    case 'python': return (await import('@codemirror/lang-python')).python()
+    case 'javascript': return (await import('@codemirror/lang-javascript')).javascript()
+    case 'java': return (await import('@codemirror/lang-java')).java()
+    case 'c': case 'cpp': return (await import('@codemirror/lang-cpp')).cpp()
+    default: {
+      const { StreamLanguage } = await import('@codemirror/language')
+      const { stex } = await import('@codemirror/legacy-modes/mode/stex')
+      return StreamLanguage.define(stex)
+    }
+  }
+}
+
+type Snippet = { label: string; title: string; latex: string; cursor?: number }       // cursor : position du curseur dans le LaTeX inséré (défaut : à la fin)
 const SYMBOLS: Snippet[] = [
   { label: 'a⁄b', title: 'Fraction', latex: '\\frac{}{}', cursor: 6 },
   { label: '√', title: 'Racine carrée', latex: '\\sqrt{}', cursor: 6 },
@@ -49,96 +69,179 @@ const SYMBOLS: Snippet[] = [
   { label: '{ cas', title: 'Définition par cas', latex: '\\begin{cases} 1 & x \\in A \\\\ 0 & x \\notin A \\end{cases}' },
 ]
 
-export default function MathCodeEditor({ value, onChange, placeholder, rows = 10, borderColor, onFocus, onBlur }: {
+export default function MathCodeEditor({ value, onChange, placeholder, rows = 10, borderColor, lang = 'latex', fixedLang = false, ariaLabel, storageKey }: {
   value: string
   onChange: (v: string) => void
   placeholder?: string
   rows?: number
   borderColor?: string
-  onFocus?: React.FocusEventHandler<HTMLTextAreaElement>
-  onBlur?: React.FocusEventHandler<HTMLTextAreaElement>
+  lang?: EditorLang              // langage initial
+  fixedLang?: boolean            // vrai : le langage est imposé par la question (pas de menu de choix)
+  ariaLabel?: string
+  storageKey?: string            // mémorise le langage choisi par l'étudiant
 }) {
-  const ref = useRef<HTMLTextAreaElement>(null)
-  const tabFree = useRef(false)                        // Échap pressé : le prochain Tab quitte la zone (accessibilité clavier)
+  const host = useRef<HTMLDivElement>(null)
+  const viewRef = useRef<EditorView | null>(null)
+  const langComp = useRef(new Compartment())
+  const lastEmitted = useRef(value ?? '')
+  const emitted = useRef<string[]>([])            // valeurs récemment émises par l'éditeur : leur écho tardif (re-rendu de la page) ne doit JAMAIS écraser ce que l'étudiant vient de taper
+  const onChangeRef = useRef(onChange); onChangeRef.current = onChange
+  const [cur, setCur] = useState<EditorLang>(() => {
+    if (!fixedLang && storageKey) { try { const v = localStorage.getItem(storageKey) as EditorLang | null; if (v && v in LANG_LABEL) return v } catch {} }
+    return lang
+  })
+  useEffect(() => { if (fixedLang) setCur(lang) }, [lang, fixedLang])          // le langage de la question arrive après l'ouverture de l'éditeur
   const [showSyms, setShowSyms] = useState(true)
-  const val = value ?? ''
+  const [text, setText] = useState(value ?? '')
 
-  function edit(next: string, selStart: number, selEnd = selStart) {
-    onChange(next)
-    requestAnimationFrame(() => { const el = ref.current; if (el) { el.focus(); el.setSelectionRange(selStart, selEnd) } })
+  // Création de l'éditeur (une fois)
+  useEffect(() => {
+    if (!host.current) return
+    const update = EditorView.updateListener.of(u => {
+      if (!u.docChanged) return
+      const doc = u.state.doc.toString()
+      lastEmitted.current = doc; emitted.current.push(doc); if (emitted.current.length > 60) emitted.current.shift()
+      setText(doc); onChangeRef.current(doc)
+    })
+    const theme = EditorView.theme({
+      '&': { fontSize: '15.5px', background: '#0f172a08', borderRadius: '0', border: 'none' },
+      '.cm-content': { fontFamily: "ui-monospace,'Cascadia Mono',Menlo,Consolas,'Courier New',monospace", minHeight: `${rows * 1.6}em`, padding: '10px 0', caretColor: '#0f172a' },
+      '.cm-scroller': { lineHeight: '1.6', overflow: 'auto', maxHeight: '60vh' },
+      '.cm-gutters': { background: '#f1f5f9', color: '#94a3b8', border: 'none', borderRight: '1px solid #e2e8f0' },
+      '.cm-activeLine': { background: '#e0f2fe55' },
+      '.cm-activeLineGutter': { background: '#e0f2fe' },
+      '&.cm-focused': { outline: 'none' },
+      '.cm-placeholder': { color: '#94a3b8' },
+    })
+    const state = EditorState.create({
+      doc: value ?? '',
+      extensions: [
+        history(), drawSelection(), highlightActiveLine(), indentOnInput(), bracketMatching(), indentUnit.of('    '),
+        syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+        keymap.of([
+          { key: 'Escape', run: v => { temporarilySetTabFocusMode(v); return false } },          // Échap puis Tab : on quitte la zone (accessibilité clavier)
+          { key: 'Tab', run: indentMore }, { key: 'Shift-Tab', run: indentLess },
+          ...historyKeymap, ...defaultKeymap,
+        ]),
+        langComp.current.of([]),
+        cmPlaceholder(placeholder ?? ''),
+        EditorView.contentAttributes.of({ 'aria-label': ariaLabel ?? 'Réponse', spellcheck: 'false', autocapitalize: 'off', autocorrect: 'off', 'data-gramm': 'false' }),
+        update, theme,
+      ],
+    })
+    const view = new EditorView({ state, parent: host.current })
+    viewRef.current = view
+    return () => { view.destroy(); viewRef.current = null }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Langage : coloration + numéros de ligne pour le code (pas pour une démonstration LaTeX)
+  useEffect(() => {
+    let off = false
+    ;(async () => {
+      const ext = await langExtension(cur)
+      if (off || !viewRef.current) return
+      viewRef.current.dispatch({ effects: langComp.current.reconfigure([ext, ...(cur === 'latex' ? [EditorView.lineWrapping] : [lineNumbers()])]) })
+    })()
+    return () => { off = true }
+  }, [cur])
+
+  // Valeur modifiée de l'extérieur (reprise d'une sauvegarde) : l'éditeur la suit
+  useEffect(() => {
+    const v = viewRef.current; const nv = value ?? ''
+    if (!v || nv === lastEmitted.current || nv === v.state.doc.toString() || emitted.current.includes(nv)) return      // écho d'une valeur déjà émise : ignoré
+    v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: nv } }); lastEmitted.current = nv; setText(nv)
+  }, [value])
+
+  const insertText = useCallback((latex: string, cursorInLatex?: number) => {
+    const v = viewRef.current; if (!v) return
+    const { from, to } = v.state.selection.main
+    const doc = v.state.doc.toString()
+    const sel = doc.slice(from, to)
+    let body = latex
+    if (sel) body = body.includes('{}') ? body.replace('{}', `{${sel}}`) : body + sel          // le texte sélectionné remplace le premier « {} » vide ou suit le symbole
+    const inMath = insideMath(doc, from)
+    const pre = inMath ? '' : '\\(', post = inMath ? '' : '\\)'
+    const caret = sel ? from + pre.length + body.length : from + pre.length + (cursorInLatex ?? body.length)
+    v.dispatch({ changes: { from, to, insert: pre + body + post }, selection: { anchor: caret } })
+    v.focus()
+  }, [])
+
+  // Éditeur visuel de formules (MathLive), chargé à la demande
+  const [visual, setVisual] = useState(false)
+  const mfHost = useRef<HTMLDivElement>(null)
+  const mfRef = useRef<any>(null)
+  useEffect(() => {
+    if (!visual) return
+    let off = false
+    ;(async () => {
+      const { MathfieldElement } = await import('mathlive')
+      if (off || !mfHost.current) return
+      MathfieldElement.fontsDirectory = '/mathlive/fonts'          // polices servies par notre site
+      MathfieldElement.soundsDirectory = null
+      const mf: any = new MathfieldElement()
+      mf.setAttribute('aria-label', 'Éditeur de formule')
+      mf.style.cssText = 'display:block;width:100%;font-size:22px;padding:8px 12px;border:1.5px solid #cbd5e1;border-radius:8px;background:#fff'
+      try { mf.menuItems = [] } catch {}
+      mfHost.current.replaceChildren(mf); mfRef.current = mf
+      setTimeout(() => { try { mf.focus() } catch {} }, 50)
+    })()
+    return () => { off = true; try { mfRef.current?.remove() } catch {}; mfRef.current = null }
+  }, [visual])
+  function insertVisual() {
+    const latex = String(mfRef.current?.getValue?.('latex') ?? '').trim()
+    if (!latex) return
+    insertText(latex)
+    try { mfRef.current.setValue('') } catch {}
   }
 
-  function insert(sn: Snippet) {
-    const el = ref.current; if (!el) return
-    const a = el.selectionStart ?? val.length, b = el.selectionEnd ?? a
-    const inMath = insideMath(val, a)
-    const sel = val.slice(a, b)
-    let body = sn.latex
-    // Texte sélectionné : il remplace le premier « {} » vide (fraction, racine…) ou suit le symbole.
-    if (sel) body = body.includes('{}') ? body.replace('{}', `{${sel}}`) : body + sel
-    const pre = inMath ? '' : '\\('
-    const post = inMath ? '' : '\\)'
-    const next = val.slice(0, a) + pre + body + post + val.slice(b)
-    const caret = sel ? a + pre.length + body.length : a + pre.length + (sn.cursor ?? sn.latex.length)
-    edit(next, caret)
-  }
-
-  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    const el = e.currentTarget
-    if (e.key === 'Escape') { tabFree.current = true; return }
-    if (e.key === 'Tab') {
-      if (tabFree.current) { tabFree.current = false; return }                // Échap puis Tab : on quitte la zone
-      e.preventDefault()
-      const a = el.selectionStart, b = el.selectionEnd
-      const lineStart = val.lastIndexOf('\n', a - 1) + 1
-      if (e.shiftKey) {                                                       // désindente la ligne courante
-        const m = /^( {1,4}|\t)/.exec(val.slice(lineStart))
-        if (m) edit(val.slice(0, lineStart) + val.slice(lineStart + m[0].length), Math.max(lineStart, a - m[0].length), Math.max(lineStart, b - m[0].length))
-        return
-      }
-      if (a !== b && val.slice(a, b).includes('\n')) {                        // plusieurs lignes sélectionnées : on indente chacune
-        const block = val.slice(lineStart, b).replace(/^/gm, '    ')
-        edit(val.slice(0, lineStart) + block + val.slice(b), a + 4, b + (block.length - (b - lineStart)))
-        return
-      }
-      edit(val.slice(0, a) + '    ' + val.slice(b), a + 4)
-      return
-    }
-    tabFree.current = false
-    if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.shiftKey && el.selectionStart === el.selectionEnd) {
-      const a = el.selectionStart
-      const lineStart = val.lastIndexOf('\n', a - 1) + 1
-      const indent = /^[ \t]*/.exec(val.slice(lineStart, a))?.[0] ?? ''
-      if (indent) { e.preventDefault(); edit(val.slice(0, a) + '\n' + indent + val.slice(a), a + 1 + indent.length) }
-    }
-  }
-
-  const withMath = hasMath(val)
+  const chooseLang = (l: EditorLang) => { setCur(l); if (storageKey) { try { localStorage.setItem(storageKey, l) } catch {} } }
+  const isCode = cur !== 'latex'                    // programme : ni barre de symboles, ni éditeur de formule, ni aperçu (réservés aux démonstrations)
+  const withMath = !isCode && hasMath(text)
   const btn: React.CSSProperties = { minWidth: 30, height: 30, padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: 'pointer', fontSize: 15, fontFamily: "'Cambria Math','STIX Two Math',serif", lineHeight: 1 }
+  const link: React.CSSProperties = { border: 'none', background: 'none', color: '#2563eb', cursor: 'pointer', fontSize: 13.5, fontWeight: 600 }
 
   return (
-    <div>
+    <div data-cei-answer={text}>
       <div style={{ border: '1.5px solid #e2e8f0', borderBottom: 'none', borderRadius: '8px 8px 0 0', background: '#f8fafc', padding: '6px 8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <span style={{ fontSize: 13.5, color: '#475569', fontWeight: 600 }}>Symboles mathématiques</span>
-          <button type="button" onClick={() => setShowSyms(s => !s)} style={{ border: 'none', background: 'none', color: '#2563eb', cursor: 'pointer', fontSize: 13.5, fontWeight: 600 }}>{showSyms ? 'Masquer' : 'Afficher'}</button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13.5, color: '#475569', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+            Langage :
+            {fixedLang
+              ? <span style={{ padding: '2px 10px', borderRadius: 99, background: '#ecfdf5', color: '#065f46', fontWeight: 700 }}>{LANG_LABEL[cur]}</span>
+              : <select value={cur} onChange={e => chooseLang(e.target.value as EditorLang)} aria-label="Langage de la réponse" style={{ padding: '3px 8px', border: '1px solid #cbd5e1', borderRadius: 6, background: '#fff', fontSize: 13.5 }}>
+                  {(Object.keys(LANG_LABEL) as EditorLang[]).map(l => <option key={l} value={l}>{LANG_LABEL[l]}</option>)}
+                </select>}
+          </span>
+          {!isCode && <span style={{ display: 'flex', gap: 14 }}>
+            <button type="button" onClick={() => setVisual(v => !v)} style={link} aria-expanded={visual}>{visual ? 'Fermer l’éditeur de formule' : 'Éditeur de formule'}</button>
+            <button type="button" onClick={() => setShowSyms(s => !s)} style={link}>{showSyms ? 'Masquer les symboles' : 'Symboles mathématiques'}</button>
+          </span>}
         </div>
-        {showSyms && (
+        {!isCode && showSyms && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 6 }} role="toolbar" aria-label="Symboles mathématiques">
             {SYMBOLS.map(s => (
-              <button key={s.title} type="button" title={s.title} aria-label={s.title} onMouseDown={e => e.preventDefault()} onClick={() => insert(s)} style={btn}>{s.label}</button>
+              <button key={s.title} type="button" title={s.title} aria-label={s.title} onMouseDown={e => e.preventDefault()} onClick={() => insertText(s.latex, s.cursor)} style={btn}>{s.label}</button>
             ))}
           </div>
         )}
+        {!isCode && visual && (
+          <div style={{ marginTop: 8, padding: 10, border: '1px solid #bfdbfe', borderRadius: 8, background: '#eff6ff' }}>
+            <div style={{ fontSize: 13, color: '#1e40af', marginBottom: 6, fontWeight: 600 }}>Composez votre formule, puis cliquez sur « Insérer dans la réponse » (le clavier mathématique s&apos;ouvre avec l&apos;icône du champ).</div>
+            <div ref={mfHost} style={{ minHeight: 48 }}>Chargement de l&apos;éditeur…</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button type="button" onClick={insertVisual} style={{ padding: '6px 14px', border: 'none', borderRadius: 7, background: '#2563eb', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 14.5 }}>Insérer dans la réponse</button>
+              <button type="button" onClick={() => setVisual(false)} style={{ padding: '6px 14px', border: '1px solid #cbd5e1', borderRadius: 7, background: '#fff', color: '#334155', fontWeight: 600, cursor: 'pointer', fontSize: 14.5 }}>Fermer</button>
+            </div>
+          </div>
+        )}
       </div>
-      <textarea ref={ref} value={val} onChange={e => onChange(e.target.value)} rows={rows} spellCheck={false} autoCapitalize="off" autoCorrect="off"
-        placeholder={placeholder} onKeyDown={onKeyDown} onFocus={onFocus} onBlur={onBlur}
-        style={{ width: '100%', padding: '12px 14px', border: `1.5px solid ${borderColor ?? '#e2e8f0'}`, borderRadius: withMath ? 0 : '0 0 8px 8px', fontSize: 15.5, fontFamily: "ui-monospace,'Cascadia Mono',Menlo,Consolas,'Courier New',monospace", whiteSpace: 'pre', overflowX: 'auto', resize: 'vertical', color: '#0f172a', outline: 'none', boxSizing: 'border-box', lineHeight: 1.6, background: '#0f172a08', tabSize: 4 }} />
+      <div ref={host} style={{ border: `1.5px solid ${borderColor ?? '#e2e8f0'}`, borderRadius: withMath ? 0 : '0 0 8px 8px', overflow: 'hidden', background: '#0f172a08' }} />
       {withMath && (
         <div style={{ border: '1.5px solid #e2e8f0', borderTop: 'none', borderRadius: '0 0 8px 8px', background: '#fff', padding: '10px 14px' }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Aperçu de votre réponse</div>
-          <div style={{ fontSize: 17, color: '#0f172a', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><MathText text={val} /></div>
-          <div style={{ fontSize: 12.5, color: '#94a3b8', marginTop: 6 }}>Les formules s&apos;écrivent entre \( … \) ou \[ … \]. La barre ci-dessus les ajoute pour vous.</div>
+          <div style={{ fontSize: 17, color: '#0f172a', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><MathText text={text} /></div>
+          <div style={{ fontSize: 12.5, color: '#94a3b8', marginTop: 6 }}>Les formules s&apos;écrivent entre \( … \) ou \[ … \]. La barre ci-dessus et l&apos;éditeur de formule les ajoutent pour vous.</div>
         </div>
       )}
     </div>

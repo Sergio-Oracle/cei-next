@@ -12,6 +12,7 @@ import MoodleSourcePicker, { MoodleSelection } from '@/components/shared/MoodleS
 import RagSourcesList from '@/components/shared/RagSourcesList'
 import RagGroundingBanner, { Grounding } from '@/components/shared/RagGroundingBanner'
 import { errMsg } from '@/lib/errors'
+import { MathText } from '@/components/shared/MathText'
 
 /* ── Types ─────────────────────────────────────────────────────── */
 interface EC {
@@ -961,7 +962,7 @@ export default function ProfessorSuggestionsPage() {
                   </div>
                   <div style={{ marginBottom:8 }}>
                     <div style={{ fontSize:13, fontWeight:700, color:'var(--text-muted)', marginBottom:4 }}>CONTENU</div>
-                    <pre style={{ background:'var(--background)', border:'1px solid var(--border)', borderRadius:8, padding:10, fontSize:13, whiteSpace:'pre-wrap', maxHeight:200, overflowY:'auto', margin:0 }}>{v.content}</pre>
+                    <pre style={{ background:'var(--background)', border:'1px solid var(--border)', borderRadius:8, padding:10, fontSize:13, whiteSpace:'pre-wrap', maxHeight:200, overflowY:'auto', margin:0 }}><MathText text={v.content} /></pre>
                   </div>
                   <div>
                     <div style={{ fontSize:13, fontWeight:700, color:'#15803d', marginBottom:4 }}>BARÈME</div>

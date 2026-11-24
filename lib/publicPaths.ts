@@ -41,6 +41,7 @@ export const PUBLIC_PREFIXES = [
                      // (redirigeait vers /login, un HTML reçu à la place du modèle attendu)
   '/mediapipe/',    // runtime WASM MediaPipe, même raison
   '/vendor/',       // bibliothèques JS tierces hébergées localement (face-api.js), même raison
+  '/mathlive/',     // polices de l'éditeur visuel de formules (MathLive), hébergées localement : sans elles les symboles s'affichent mal — même raison
   '/favicon',
   '/manifest.json',
   '/sw.js',

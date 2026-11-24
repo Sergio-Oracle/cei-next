@@ -10,6 +10,8 @@ import { useSubjectUpload, type QTypes } from '@/hooks/useSubjectUpload'
 import { useQuestionBank, BankQuestion } from '@/hooks/useQuestionBank'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { errMsg } from '@/lib/errors'
+import { MathText } from '@/components/shared/MathText'
+import MathPreview from '@/components/shared/MathPreview'
 
 /* ── Types ────────────────────────────────────────────────────── */
 interface ECItem {
@@ -478,6 +480,7 @@ export default function ProfessorCreateSubjectPage() {
               style={{ width:'100%', padding:14, background:'var(--background)', borderRadius:8, fontFamily:'monospace', fontSize:15.5, lineHeight:1.7, border:'1px solid var(--border)', resize:'vertical', boxSizing:'border-box', outline:'none', color:'var(--text)', marginTop:14, transition:'border-color .2s' }}
               onFocus={e => e.target.style.borderColor='var(--primary)'}
               onBlur={e => e.target.style.borderColor='var(--border)'} />
+            <MathPreview text={editContent} />
           </div>
         </div>
 
@@ -588,7 +591,7 @@ export default function ProfessorCreateSubjectPage() {
                   </div>
                   <div style={{ marginBottom:8 }}>
                     <div style={{ fontSize:13, fontWeight:700, color:'var(--text-muted)', marginBottom:4 }}>CONTENU</div>
-                    <pre style={{ background:'var(--background)', border:'1px solid var(--border)', borderRadius:8, padding:10, fontSize:13, whiteSpace:'pre-wrap', maxHeight:200, overflowY:'auto', margin:0 }}>{v.content}</pre>
+                    <pre style={{ background:'var(--background)', border:'1px solid var(--border)', borderRadius:8, padding:10, fontSize:13, whiteSpace:'pre-wrap', maxHeight:200, overflowY:'auto', margin:0 }}><MathText text={v.content} /></pre>
                   </div>
                   <div>
                     <div style={{ fontSize:13, fontWeight:700, color:'#15803d', marginBottom:4 }}>BARÈME</div>
@@ -1044,7 +1047,7 @@ export default function ProfessorCreateSubjectPage() {
                   {preview.ec_name&&<span style={{ fontSize:13, background:'var(--background)', border:'1px solid var(--border)', padding:'2px 8px', borderRadius:99, color:'var(--text-muted)' }}>{preview.ec_name}</span>}
                 </div>
               )}
-              <pre style={{ background:'var(--background)', border:'1px solid var(--border)', borderRadius:8, padding:12, fontSize:15.5, whiteSpace:'pre-wrap', maxHeight:280, overflowY:'auto', margin:0 }}>{preview.content}</pre>
+              <pre style={{ background:'var(--background)', border:'1px solid var(--border)', borderRadius:8, padding:12, fontSize:15.5, whiteSpace:'pre-wrap', maxHeight:280, overflowY:'auto', margin:0 }}><MathText text={preview.content} /></pre>
               {preview.rubric&&(<><h4 style={{ margin:'14px 0 6px', fontSize:15.5 }}>Barème</h4><pre style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, padding:12, fontSize:14.5, whiteSpace:'pre-wrap', maxHeight:180, overflowY:'auto', color:'#15803d', margin:0 }}>{preview.rubric}</pre></>)}
             </div>
             <div style={{ padding:'12px 20px', borderTop:'1px solid var(--border)', display:'flex', justifyContent:'flex-end' }}>

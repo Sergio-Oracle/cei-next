@@ -22,7 +22,9 @@ export default function InstallPwaBanner() {
   }, [])
   const showUpdate = !!update && !updateHidden && !pathname?.startsWith('/exam')
   const suggestHere = suggestApp && !pathname?.startsWith('/telecharger-client')      // inutile sur la page de téléchargement elle-même
-  const visible = canInstall || showIosInstructions || suggestHere || showUpdate
+  // Jamais pendant la composition (24/11/2026) : le bandeau, fixé en haut de page, recouvrait l'en-tête de l'examen (minuteur compris) et interceptait des clics.
+  const inExam = !!pathname?.startsWith('/exam')
+  const visible = !inExam && (canInstall || showIosInstructions || suggestHere || showUpdate)
   const ref = useRef<HTMLDivElement>(null)
 
   /* Signale la présence (+ hauteur réelle, qui varie selon si le texte

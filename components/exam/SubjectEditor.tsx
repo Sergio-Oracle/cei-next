@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import api from '@/lib/api'
 import { errMsg } from '@/lib/errors'
+import MathPreview from '@/components/shared/MathPreview'
 
 interface Issue { level: 'error' | 'warn' | 'info'; message: string }
 interface Row {
@@ -182,10 +183,13 @@ export default function SubjectEditor({ subjectId, canEdit, reason, focusNum, fo
               une ligne « Partie B — … » ouvre une nouvelle partie.
             </div>
             {loading ? <div style={{ padding: 30, color: '#64748b' }}><i className="fas fa-spinner fa-spin" /> Chargement du sujet…</div> : (
+              <>
               <textarea ref={taRef} value={text} readOnly={!canEdit} onChange={e => setText(e.target.value)} spellCheck
                 aria-label="Texte du sujet"
                 style={{ flex: 1, minHeight: 280, resize: 'none', width: '100%', boxSizing: 'border-box', border: '1.5px solid #cbd5e1', borderRadius: 10, padding: 12,
                   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: 14, lineHeight: `${LINE_H}px`, color: '#0f172a', background: canEdit ? '#fff' : '#f8fafc' }} />
+            <MathPreview text={text} />
+              </>
             )}
             <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 6 }}>{lines.length} ligne(s){dirty ? ' · modifications non enregistrées' : ''}</div>
             </>) : (
