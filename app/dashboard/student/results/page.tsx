@@ -8,6 +8,7 @@ import Modal from '@/components/ui/Modal'
 import { useProgressive } from '@/lib/useProgressive'
 import ShowMore from '@/components/ui/ShowMore'
 import { errMsg } from '@/lib/errors'
+import { MathText } from '@/components/shared/MathText'
 
 interface OnlineResult {
   attempt_id: number
@@ -202,7 +203,7 @@ export default function StudentResultsPage() {
             <div className="form-group">
               <label>Feedback du correcteur</label>
               <div style={{ padding: 12, background: 'var(--background)', borderRadius: 'var(--radius)', fontSize:17, whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}>
-                {viewItem.feedback}
+                <MathText text={viewItem.feedback}/>
               </div>
             </div>
           )}

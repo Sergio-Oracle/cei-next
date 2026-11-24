@@ -6,6 +6,9 @@ import api, { serverNow } from '@/lib/api'
 import { getCeiClient, isCeiClient, proveCeiClient, onCeiClientEvent, versionLt, CLIENT_SCREEN_SHARE_MIN } from '@/lib/ceiClient'
 import { totalAnswered, totalUnits } from '@/lib/answerUnits'
 import { JOIN_JITTER_MS, retryDelayMs } from '@/lib/lkRetry'
+import { MathText } from '@/components/shared/MathText'
+import MathCodeEditor from '@/components/exam/MathCodeEditor'
+import { bulletize, parseNumberFr } from '@/lib/mathSegments'
 import { studentShouldSubscribe, staffIdentities } from '@/lib/lkSubscriptions'
 import { missingMedia, REQUEST_MEDIA_KIND } from '@/lib/mediaHealth'
 import { ASSIST_PRESETS } from '@/components/shared/ClientAssistSettings'
@@ -5577,14 +5580,14 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}
     association:'Association',tri:'Classement',ordre:'Ordre',trous:'Texte à trous',court:'Réponse courte',numerique:'Numérique',cloze:'Champs à compléter',zones:'Placer sur l\'image',calculee:'Calcul'}
   // Texte à trous : {1} {2}… sont montrés comme (1) (2)… dans l'énoncé
   const [activeZone,setActiveZone]=useState(0)
-  const showGaps=(t:string)=>plain(block.type==='trous'?t.replace(/\{(\d{1,2})\}/g,'($1)'):t)
+  const showGaps=(t:string)=><MathText text={bulletize(block.type==='trous'?t.replace(/\{(\d{1,2})\}/g,'($1)'):t)} fmt={plain}/>
   return(
     <div style={{border:`2px solid ${answered?'#10b981':'#e2e8f0'}`,borderRadius:16,padding:'22px 24px',background:'#fff',boxShadow:'0 2px 8px rgba(0,0,0,.05)',marginBottom:16,transition:'border-color .2s'}}>
       <div style={{display:'flex',alignItems:'flex-start',gap:12,marginBottom:16}}>
         <span style={{width:34,height:34,borderRadius:'50%',background:isOpen?'#065f46':'#1e40af',color:'#fff',fontWeight:800,fontSize:18,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{block.num}</span>
         <div style={{flex:1}}>
           <div style={{fontWeight:700,fontSize:18,color:'#0f172a',lineHeight:1.5}}>{block.type==='cloze'&&/\{\d+\}/.test(block.text??'')?'Complétez le texte :':showGaps(block.text??'')}</div>
-          {block.extraLines&&block.extraLines.filter(l=>l.trim()&&!(block.type==='cloze'&&/\{\d+\}/.test(l))).length>0&&<div style={{fontSize:17,color:'#475569',marginTop:6}}>{joinWrappedLines(block.extraLines.filter(l=>!(block.type==='cloze'&&/\{\d+\}/.test(l)))).map((l,i)=><div key={i} style={{marginTop:i?4:0}}>{showGaps(l)}</div>)}</div>}
+          {block.extraLines&&block.extraLines.filter(l=>l.trim()&&!(block.type==='cloze'&&/\{\d+\}/.test(l))).length>0&&<div style={{fontSize:17,color:'#475569',marginTop:6}}>{joinWrappedLines(block.extraLines.filter(l=>!(block.type==='cloze'&&/\{\d+\}/.test(l)))).map((l,i)=><div key={i} style={{marginTop:i?4:0,...(/^\s*[*•]\s/.test(l)?{paddingLeft:'1.1em',textIndent:'-1.1em'}:{})}}>{showGaps(l)}</div>)}</div>}
         </div>
         <span style={{padding:'2px 8px',borderRadius:99,fontSize:13,fontWeight:700,flexShrink:0,background:isOpen?'#ecfdf5':'#eff6ff',color:isOpen?'#065f46':'#1e40af'}}>
           {TYPE_LABEL[block.type]??'Ouvert'}
@@ -5627,7 +5630,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}
             return(
               <label key={ci} onClick={()=>{setAnswers(p=>({...p,[key]:c.letter}));onAnswer?.(key,block.type)}} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',transition:'all .18s',userSelect:'none'}}>
                 <span style={{width:32,height:32,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:17,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{c.letter}</span>
-                <span style={{fontSize:18,color:'#1e293b',flex:1,lineHeight:1.5}}>{c.text}</span>
+                <span style={{fontSize:18,color:'#1e293b',flex:1,lineHeight:1.5}}><MathText text={c.text}/></span>
                 {sel&&<i className="fas fa-check-circle" style={{color:col,fontSize:22,flexShrink:0}}/>}
               </label>
             )
@@ -5651,7 +5654,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}
               <label key={ci} onClick={toggle} style={{display:'flex',alignItems:'center',gap:14,cursor:'pointer',padding:'14px 18px',border:`2px solid ${sel?col:'#e2e8f0'}`,borderRadius:12,background:sel?col+'18':'#fff',transition:'all .18s',userSelect:'none'}}>
                 <span style={{width:22,height:22,borderRadius:6,border:`2px solid ${sel?col:'#cbd5e1'}`,background:sel?col:'#fff',color:'#fff',display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:15.5}}>{sel&&<i className="fas fa-check"/>}</span>
                 <span style={{width:28,height:28,borderRadius:'50%',background:sel?col:'#f1f5f9',color:sel?'#fff':'#64748b',fontWeight:700,fontSize:15.5,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{c.letter}</span>
-                <span style={{fontSize:18,color:'#1e293b',flex:1,lineHeight:1.5}}>{c.text}</span>
+                <span style={{fontSize:18,color:'#1e293b',flex:1,lineHeight:1.5}}><MathText text={c.text}/></span>
               </label>
             )
           })}
@@ -5663,7 +5666,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}
             <span style={{fontSize:14.5,fontWeight:700,color:'#1e40af'}}>Réponses — glissez-en une sur la ligne voulue (ou touchez-la puis touchez la ligne) :</span>
             {shuffledRights.map((r,j)=>(
               <span key={j} draggable onDragStart={e=>{e.dataTransfer.setData('text/plain',r);e.dataTransfer.effectAllowed='move'}} onClick={()=>setArmed(a=>a===r?null:r)}
-                style={{padding:'6px 12px',border:`1.5px solid ${armed===r?'#1d4ed8':'#bfdbfe'}`,borderRadius:8,background:armed===r?'#dbeafe':'#fff',fontSize:16.5,cursor:'grab',userSelect:'none'}}><i className="fas fa-grip-vertical" style={{color:'#94a3b8',marginRight:6}}/>{r}</span>))}
+                style={{padding:'6px 12px',border:`1.5px solid ${armed===r?'#1d4ed8':'#bfdbfe'}`,borderRadius:8,background:armed===r?'#dbeafe':'#fff',fontSize:16.5,cursor:'grab',userSelect:'none'}}><i className="fas fa-grip-vertical" style={{color:'#94a3b8',marginRight:6}}/><MathText text={r}/></span>))}
           </div>
           {block.pairs.map((pr,i)=>{
             const sk=`${key}_${i}`;const sv=answers[sk]??''
@@ -5671,7 +5674,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}
             return(
               <div key={i} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();const v=e.dataTransfer.getData('text/plain');if(v&&shuffledRights.includes(v)) place(v)}}
                 onClick={()=>{if(armed) place(armed)}} style={{display:'flex',alignItems:'center',gap:12,borderRadius:10,outline:armed?'2px dashed #93c5fd':'none',outlineOffset:2}}>
-                <div style={{flex:1,padding:'12px 16px',border:'1.5px solid #e2e8f0',borderRadius:10,background:'#f8fafc',fontSize:17,color:'#0f172a',fontWeight:600}}>{pr.left}</div>
+                <div style={{flex:1,padding:'12px 16px',border:'1.5px solid #e2e8f0',borderRadius:10,background:'#f8fafc',fontSize:17,color:'#0f172a',fontWeight:600}}><MathText text={pr.left}/></div>
                 <i className="fas fa-arrow-right" style={{color:'#94a3b8',flexShrink:0}}/>
                 {/* Pas d'avance automatique : l'appariement comporte plusieurs
                     paires à compléter avant de continuer. */}
@@ -5693,7 +5696,7 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}
               {block.options.map(o=>(
                 <div key={o.letter} draggable onDragStart={e=>{e.dataTransfer.setData('text/plain',o.letter);e.dataTransfer.effectAllowed='move'}} onClick={()=>setArmed(a=>a===o.letter?null:o.letter)}
                   style={{display:'flex',gap:10,fontSize:16.5,color:'#1e293b',lineHeight:1.5,cursor:'grab',padding:'6px 10px',borderRadius:8,border:`1.5px solid ${armed===o.letter?'#1d4ed8':'#bfdbfe'}`,background:armed===o.letter?'#dbeafe':'#fff',userSelect:'none'}}>
-                  <i className="fas fa-grip-vertical" style={{color:'#94a3b8',alignSelf:'center'}}/><b style={{color:'#1e40af',minWidth:22}}>{o.letter}.</b><span>{o.text}</span>
+                  <i className="fas fa-grip-vertical" style={{color:'#94a3b8',alignSelf:'center'}}/><b style={{color:'#1e40af',minWidth:22}}>{o.letter}.</b><span><MathText text={o.text}/></span>
                 </div>))}
             </div>
           )}
@@ -5799,12 +5802,16 @@ function PQ({block,answers,setAnswers,onAnswer,mediaMap,blockDownload,attemptId}
           placeholder={block.type==='court'?'Votre réponse…':'Votre valeur (ex : 12,5)…'}
           style={{width:'100%',padding:'12px 14px',border:`1.5px solid ${(answers[key]??'').trim()?'#10b981':'#e2e8f0'}`,borderRadius:10,fontSize:18,color:'#0f172a',outline:'none',boxSizing:'border-box',background:'#fff'}}/>
       )}
+      {(block.type==='numerique'||block.type==='calculee')&&(answers[key]??'').trim()!==''&&(()=>{
+        const v=parseNumberFr(answers[key]??'')
+        return v===null
+          ?<div style={{marginTop:6,fontSize:14.5,color:'#b45309'}}>Entrez un nombre, par exemple 12,5.</div>
+          :<div style={{marginTop:6,fontSize:14.5,color:'#64748b'}}>Valeur lue : <b style={{color:'#0f172a'}}>{v.toLocaleString('fr-FR',{maximumFractionDigits:12})}</b></div>
+      })()}
       {block.type==='code'&&(
-        <textarea value={answers[key]??''} onChange={e=>setAnswers(p=>({...p,[key]:e.target.value}))} rows={10} spellCheck={false}
+        <MathCodeEditor value={answers[key]??''} onChange={v=>setAnswers(p=>({...p,[key]:v}))} rows={10}
           placeholder={`Rédigez votre réponse (code / démonstration) à la question ${block.num}…`}
-          style={{width:'100%',padding:'12px 14px',border:'1.5px solid #e2e8f0',borderRadius:8,fontSize:15.5,fontFamily:"'Courier New',monospace",whiteSpace:'pre',resize:'vertical',color:'#0f172a',outline:'none',boxSizing:'border-box',lineHeight:1.6,background:'#0f172a08',tabSize:2}}
-          onFocus={e=>{(e.target as HTMLElement).style.borderColor='#3b82f6'}}
-          onBlur={e=>{(e.target as HTMLElement).style.borderColor=(answers[key]?.trim()?'#10b981':'#e2e8f0')}}/>
+          borderColor={(answers[key]?.trim()?'#10b981':'#e2e8f0')}/>
       )}
       {block.upload&&(block.type==='open'||block.type==='code'||block.type==='subopen')&&<AttachmentBox attemptId={attemptId??null} num={block.num??''} answers={answers} setAnswers={setAnswers} required={block.upload==='required'}/>}
       {block.type==='open'&&(

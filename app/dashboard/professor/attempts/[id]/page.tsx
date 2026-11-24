@@ -9,6 +9,7 @@ import { fmtScore } from '@/lib/format'
 import { useToast } from '@/contexts/ToastContext'
 import { eventLabel } from '@/lib/eventLabels'
 import { errMsg } from '@/lib/errors'
+import { MathText } from '@/components/shared/MathText'
 
 interface Incident {
   timestamp: string
@@ -544,7 +545,7 @@ export default function AttemptDetailPage() {
         <div style={{ padding: '18px 20px' }}>
           {displayAnswer && displayAnswer.trim() !== '' ? (
             <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', fontSize:15.5, color: '#334155', background: '#f8fafc', padding: 16, borderRadius: 10, maxHeight: 320, overflowY: 'auto', border: '1px solid var(--border)', margin: 0, lineHeight: 1.8 }}>
-              {displayAnswer.substring(0, 3000)}{displayAnswer.length > 3000 ? '\n\n…(réponse tronquée à 3000 caractères)' : ''}
+              <MathText text={displayAnswer.substring(0, 3000)}/>{displayAnswer.length > 3000 ? '\n\n…(réponse tronquée à 3000 caractères)' : ''}
             </pre>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize:15.5, padding: '8px 0' }}>
@@ -595,7 +596,7 @@ export default function AttemptDetailPage() {
                     {q.correct !== undefined && (
                       <i className={`fas ${q.correct ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ color: q.correct ? '#10b981' : '#ef4444', fontSize: 16 }} />
                     )}
-                    {q.given && <span style={{ fontSize:14.5, color: 'var(--text-muted)' }}>Réponse : {q.given}</span>}
+                    {q.given && <span style={{ fontSize:14.5, color: 'var(--text-muted)' }}>Réponse : <MathText text={q.given}/></span>}
                     <span style={{ marginLeft: 'auto', fontSize:15.5, fontWeight: 700, color: q.score >= q.max * 0.5 ? '#059669' : '#dc2626' }}>
                       {editingQuestions ? (
                         <input type="number" min={0} max={q.max} step={0.25} value={edit?.score ?? ''}
@@ -621,7 +622,7 @@ export default function AttemptDetailPage() {
                         style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontFamily: 'inherit', fontSize:15, resize: 'vertical' }} />
                     </div>
                   ) : q.feedback ? (
-                    <p style={{ margin: 0, fontSize:15, color: '#475569', lineHeight: 1.6 }}>{q.feedback}</p>
+                    <p style={{ margin: 0, fontSize:15, color: '#475569', lineHeight: 1.6 }}><MathText text={q.feedback}/></p>
                   ) : null}
                 </div>
               )
@@ -689,7 +690,7 @@ export default function AttemptDetailPage() {
             </div>
           ) : data.feedback ? (
             <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', fontSize:15.5, color: '#1e3a5f', background: '#f0f9ff', padding: 16, borderRadius: 10, maxHeight: 420, overflowY: 'auto', border: '1px solid #bae6fd', margin: 0, lineHeight: 1.8 }}>
-              {data.feedback.substring(0, 4000)}{data.feedback.length > 4000 ? '\n\n…(feedback tronqué à 4000 caractères)' : ''}
+              <MathText text={data.feedback.substring(0, 4000)}/>{data.feedback.length > 4000 ? '\n\n…(feedback tronqué à 4000 caractères)' : ''}
             </pre>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize:15.5, padding: '8px 0' }}>
