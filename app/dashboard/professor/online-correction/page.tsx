@@ -8,6 +8,7 @@ import Modal from '@/components/ui/Modal'
 import { fmtScore } from '@/lib/format'
 import Progressive from '@/components/ui/Progressive'
 import { errMsg } from '@/lib/errors'
+import CodeBatchButton from '@/components/exam/CodeBatchButton'
 
 interface Attempt {
   id: number
@@ -229,6 +230,7 @@ export default function OnlineCorrectionPage() {
                       : <><i className="fas fa-magic" />Tout Corriger avec IA</>}
                   </button>
                 )}
+                <CodeBatchButton examId={exam.id} onDone={load} />
                 <button onClick={() => exportCSV(exam.id, exam.title)}
                   style={{ padding: '8px 14px', background: '#0f766e', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize:15.5, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="fas fa-file-excel" />Export Excel

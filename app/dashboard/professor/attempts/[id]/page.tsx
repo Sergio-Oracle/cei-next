@@ -10,6 +10,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { eventLabel } from '@/lib/eventLabels'
 import { errMsg } from '@/lib/errors'
 import { MathText } from '@/components/shared/MathText'
+import CodeGradingPanel from '@/components/exam/CodeGradingPanel'
 
 interface Incident {
   timestamp: string
@@ -554,6 +555,9 @@ export default function AttemptDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Questions de code : tous les tests (visibles + cachés) exécutés dans CE navigateur, résultat enregistré, note de la question mise à jour */}
+      <CodeGradingPanel attemptId={Number(id)} onGraded={(r) => setData(d => d ? { ...d, ...(r.question_scores?.length ? { score: r.score, question_scores: r.question_scores, feedback: (r as any).feedback ?? d.feedback } : {}) } : d)} />
 
       {/* Détail par question — correction manuelle plus fine que la note
           globale : n'ajuste que les questions nécessaires, la note totale

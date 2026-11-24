@@ -57,6 +57,15 @@ const nextConfig: NextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=604800' },
         ],
       },
+      // Exécuteur de code des questions « Maths / Programmation » (Pyodide + travailleur) : chargé depuis une iframe SANS origine (sandbox) →
+      // les fichiers doivent être lisibles en CORS. Même durée de cache que les modèles (7 jours) : ~10 Mo téléchargés une seule fois par appareil.
+      {
+        source: '/code-runner/(.*)',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Cache-Control', value: 'public, max-age=604800' },
+        ],
+      },
       {
         source: '/vendor/(.*)',
         headers: [

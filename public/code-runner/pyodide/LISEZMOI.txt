@@ -1,0 +1,3 @@
+Pyodide 0.29.5 (MPL-2.0) — https://pyodide.org — CPython compilé en WebAssembly.
+Fichiers copiés tels quels depuis le paquet npm pyodide@0.29.5 (aucune modification).
+Exécution de code Python des questions « Maths / Programmation » : voir ../worker.js et lib/codeRunner.ts.
